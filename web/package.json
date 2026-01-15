@@ -1,0 +1,44 @@
+{
+    "name": "mri_qadmin",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "shadcn:init": "npx shadcn@latest init",
+        "shadcn:add": "npx shadcn@latest add"
+    },
+    "devDependencies": {
+        "@alloc/quick-lru": "^5.2.0",
+        "@types/react": "^18.2.21",
+        "@types/react-dom": "^18.2.7",
+        "@vitejs/plugin-react": "^4.0.0",
+        "autoprefixer": "^10.4.14",
+        "postcss": "^8.4.27",
+        "tailwindcss": "^3.3.3",
+        "typescript": "^5.1.6",
+        "vite": "^5.0.0"
+    },
+    "dependencies": {
+        "@mriqbox/ui-kit": "^1.0.4",
+        "@radix-ui/react-slot": "^1.2.4",
+        "clsx": "^1.2.1",
+        "cmdk": "^1.1.1",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "tailwindcss-animate": "^1.0.7"
+    },
+    "optionalDependencies": {
+        "@radix-ui/react-accordion": "^1.0.4",
+        "@radix-ui/react-dialog": "^1.1.15",
+        "@radix-ui/react-dropdown-menu": "^1.0.4",
+        "@radix-ui/react-popover": "^1.1.15",
+        "@radix-ui/react-select": "^1.0.4",
+        "@radix-ui/react-tabs": "^1.0.4",
+        "@radix-ui/react-toggle": "^1.0.4",
+        "class-variance-authority": "^0.6.1",
+        "lucide-react": "^0.269.0",
+        "tailwind-merge": "^1.14.0"
+    }
+}

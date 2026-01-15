@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS mri_qadmin_chat (
+    message VARCHAR NOT NULL,
+    citizenid VARCHAR NOT NULL,
+    fullname VARCHAR NOT NULL,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
