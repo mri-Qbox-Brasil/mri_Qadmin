@@ -283,13 +283,16 @@ end)
 
 -- Set RoutingBucket
 RegisterNetEvent('mri_Qadmin:server:SetBucket', function(data, selectedData)
+    print(json.encode(data), json.encode(selectedData))
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
 
     local src = source
     local player = selectedData["Player"].value
-    local bucket = selectedData["Bucket"].value
+    local bucket = tonumber(selectedData["Bucket"].value)
     local currentBucket = GetPlayerRoutingBucket(player)
+
+    print(player, bucket, currentBucket)
 
     if bucket == currentBucket then
         return QBCore.Functions.Notify(src, locale("target_same_bucket", player), 'error', 7500)

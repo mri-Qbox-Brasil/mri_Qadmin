@@ -87,6 +87,7 @@
     "go_to": "Ir para",
     "bring": "Puxar",
     "send_back": "Enviar de Volta",
+    "set_bucket": "Setar Bucket",
     "revive": "Reviver",
     "verify": "Confiável/Suspeito",
     "remove_money": "Remover Dinheiro",
@@ -214,6 +215,7 @@
     "btn_delete": "Excluir",
     "confirm_warn": "Enviar advertência para %s?",
     "confirm_kick": "Kickar %s?",
+    "confirm_clear_inventory": "Tem certeza de que deseja limpar o inventário de %s?",
     "confirm_unban": "Desbanir %s?",
     "confirm_delete_vehicle": "Excluir o veículo com placa %s? Esta ação é permanente.",
     "title_dashboard": "Dashboard de Jogadores",
@@ -332,5 +334,8 @@
     "vehicles_none_found": "Nenhum veículo encontrado.",
     "items_none_found": "Nenhum item encontrado.",
     "search_by_name_id_or_license": "Procurar por nome, ID ou licença",
-    "unknown": "Desconhecido"
+    "unknown": "Desconhecido",
+    "id": "ID",
+    "ping": "Ping",
+    "bucket": "Bucket"
 }

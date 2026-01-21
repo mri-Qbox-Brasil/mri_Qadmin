@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { MriButton, MriDialog, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
+import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
+import ActionModal from '@/components/ActionModal'
+import { Wallet } from 'lucide-react'
 import { useI18n } from '@/context/I18n'
 
 export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defaultType = 'cash' }: { isGiving: boolean; playerId: string; onClose: () => void; onSubmit: (type: string, amount: number) => void; defaultType?: 'cash'|'bank'|'crypto' }) {
@@ -8,7 +10,13 @@ export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defa
   const { t } = useI18n()
 
   return (
-    <MriDialog title={isGiving ? t('money_modal_give') : t('money_modal_remove')} onClose={onClose}>
+    <ActionModal
+      title={isGiving ? t('money_modal_give') : t('money_modal_remove')}
+      icon={Wallet}
+      onClose={onClose}
+      onConfirm={() => onSubmit(moneyType, amount)}
+      confirmLabel={isGiving ? t('send') : t('remove')}
+    >
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_type')}</label>
       <div className="mb-4">
         <MriSelectSearch
@@ -24,12 +32,7 @@ export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defa
       </div>
 
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_amount')}</label>
-      <MriInput type="number" value={amount} onChange={(e) => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6" />
-
-      <div className="flex justify-end gap-3">
-        <MriButton variant="ghost" onClick={onClose}>{t('cancel_label')}</MriButton>
-        <MriButton onClick={() => { onSubmit(moneyType, amount); onClose(); }}>{isGiving ? t('send') : t('remove')}</MriButton>
-      </div>
-    </MriDialog>
+      <MriInput type="number" value={amount} onChange={(e) => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
+    </ActionModal>
   )
 }

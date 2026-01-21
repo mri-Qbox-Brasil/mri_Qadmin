@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useI18n } from '@/context/I18n'
 import { useAppState } from '@/context/AppState'
-import { MriButton, MriDialog, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
+import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
+import ActionModal from '@/components/ActionModal'
+import { Briefcase, Shield } from 'lucide-react'
 
 export default function ChangeGroupModal({
   type,
@@ -41,7 +43,12 @@ export default function ChangeGroupModal({
       : []
 
   return (
-    <MriDialog title={type === 'job' ? t('set_job') : t('set_gang')} onClose={onClose}>
+    <ActionModal
+      title={type === 'job' ? t('set_job') : t('set_gang')}
+      icon={type === 'job' ? Briefcase : Shield}
+      onClose={onClose}
+      onConfirm={() => onSubmit(group, grade)}
+    >
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_name')}</label>
       <div className="mb-4">
         <MriSelectSearch
@@ -65,13 +72,8 @@ export default function ChangeGroupModal({
               />
           </div>
       ) : (
-          <MriInput type="number" value={grade} onChange={e => setGrade(Number((e.target as HTMLInputElement).value))} className="mb-6" />
+          <MriInput type="number" value={grade} onChange={e => setGrade(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
       )}
-
-      <div className="flex justify-end gap-3">
-        <MriButton variant="ghost" onClick={onClose}>{t('cancel_label')}</MriButton>
-        <MriButton onClick={() => { onSubmit(group, grade); onClose(); }}>{t('confirm_label')}</MriButton>
-      </div>
-    </MriDialog>
+    </ActionModal>
   )
 }

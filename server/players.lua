@@ -58,6 +58,8 @@ local function getPlayers()
             name = playerData.charinfo.firstname .. ' ' .. playerData.charinfo.lastname,
             birthdate = playerData.charinfo.birthdate,
             phone = playerData.charinfo.phone,
+            bucket = GetPlayerRoutingBucket(k),
+            ping = GetPlayerPing(k),
             cid = playerData.citizenid,
             license = QBCore.Functions.GetIdentifier(k, 'license'),
             license2 = QBCore.Functions.GetIdentifier(k, 'license2'),
@@ -73,7 +75,6 @@ local function getPlayers()
             vehicles = vehicles,
             metadata = playerData.metadata,
             last_loggedout = playerData.lastLoggedOut,
-            ping = GetPlayerPing(k),
             online = true
         }
     end
@@ -137,6 +138,8 @@ local function getPlayers()
 
             players[#players + 1] = {
                 id = nil,
+                bucket = nil,
+                ping = nil,
                 name = (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or ""),
                 cid = player.citizenid,
                 license = player.license,

@@ -85,6 +85,7 @@
     "select_placeholder": "Seleccionar...",
     "clothing": "Menú de Ropa",
     "go_to": "Ir a",
+    "set_bucket": "Setar Bucket",
     "bring": "Traer",
     "send_back": "Enviar de Vuelta",
     "revive": "Revivir",
@@ -214,6 +215,7 @@
     "btn_delete": "Eliminar",
     "confirm_warn": "¿Advertir a %s?",
     "confirm_kick": "¿Expulsar a %s?",
+    "confirm_clear_inventory": "¿Estás seguro de que quieres borrar el inventario de %s?",
     "confirm_unban": "¿Desbanear a %s?",
     "confirm_delete_vehicle": "¿Eliminar el vehículo con la matrícula %s? Esta acción es permanente.",
     "title_dashboard": "Panel de Jugadores",
@@ -332,5 +334,8 @@
     "vehicles_none_found": "No se encontraron vehículos.",
     "items_none_found": "No se encontraron ítems.",
     "search_by_name_id_or_license": "Buscar por nombre, ID o licencia",
-    "unknown": "Desconocido"
+    "unknown": "Desconocido",
+    "id": "ID",
+    "ping": "Ping",
+    "bucket": "Bucket"
 }

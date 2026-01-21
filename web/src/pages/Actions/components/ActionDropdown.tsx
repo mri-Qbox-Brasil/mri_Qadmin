@@ -99,7 +99,7 @@ export default function ActionDropdown({
                   </label>
                   <MriInput
                     placeholder={item.placeholder || item.label}
-                    className="bg-background border-border focus:border-ring"
+                    className="bg-background border-border focus:border-ring h-10"
                     onChange={(e) =>
                       handleSelectData(subKey, { id: subKey, value: e.target.value }, false)
                     }
@@ -110,10 +110,15 @@ export default function ActionDropdown({
               let options: any[] = [];
               const dataKey = typeof item.data === "string" ? item.data : "";
 
+              let valueField = item.valueField || "value";
+              let labelField = item.labelField || "label";
+
               if (Array.isArray(item.data)) {
                 options = item.data;
               } else if (dataKey === "players") {
-                options = players || [];
+                options = (players || []).filter((p: any) => p.online); // Filter only online players
+                if (!item.valueField) valueField = "id"; // Default to id for players
+                if (!item.labelField) labelField = "name"; // Default to name for players
               } else if (dataKey === "vehicles") {
                 options = gameData.vehicles || [];
               } else if (dataKey === "items") {
@@ -141,7 +146,7 @@ export default function ActionDropdown({
                       <MriButton
                         variant="outline"
                         role="combobox"
-                        className="w-full justify-between bg-background border-border hover:bg-muted hover:text-foreground"
+                        className="w-full justify-between bg-background border-border hover:bg-muted hover:text-foreground h-10"
                       >
                         <span className="truncate">
                             {selectedData[subKey]?.label || t("select_placeholder")}
@@ -158,15 +163,12 @@ export default function ActionDropdown({
                         <MriCommandEmpty>{t("none_found")}</MriCommandEmpty>
                         <MriCommandGroup className="max-h-64 overflow-auto p-1">
                           {options.map((opt: any) => {
-                            const valueField = item.valueField || "value";
-                            const labelField = item.labelField || "label";
-
                             const value = opt[valueField];
                             const label = opt[labelField];
 
                             return (
                             <MriCommandItem
-                              key={value}
+                              key={String(value)}
                               onSelect={() => {
                                 handleSelectData(
                                   subKey,
@@ -184,7 +186,7 @@ export default function ActionDropdown({
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4 text-green-500",
-                                  selectedData[subKey]?.value === value
+                                  value !== undefined && selectedData[subKey]?.value === value
                                     ? "opacity-100"
                                     : "opacity-0"
                                 )}

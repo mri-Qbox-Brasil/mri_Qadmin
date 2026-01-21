@@ -2,13 +2,15 @@ import React from 'react'
 import { useI18n } from '@/context/I18n'
 import { useNui } from '@/context/NuiContext'
 import Spinner from '@/components/Spinner'
-import { MriButton, MriInput, MriPageHeader, MriBadge } from '@mriqbox/ui-kit'
-import { RefreshCw, Unlock, Search, Gavel } from 'lucide-react'
+import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { RefreshCw, Gavel } from 'lucide-react'
 import ConfirmAction from '@/components/players/ConfirmAction'
 
 import { cn } from '@/lib/utils'
 import { MOCK_GAME_DATA } from '@/utils/mockData'
 
+import SearchInput from '@/components/shared/SearchInput'
+import BanListRow from '@/components/bans/BanListRow'
 
 interface Ban {
   id: string
@@ -66,12 +68,6 @@ export default function Bans() {
     }
   }
 
-  const formatDate = (ts: number) => {
-    if (!ts) return t('na')
-    if (ts === 2147483647) return t('ban_duration_permanent')
-    return new Date(ts * 1000).toLocaleString()
-  }
-
   const filteredBans = bans.filter(ban => {
     const s = search.toLowerCase()
     return (ban.name && ban.name.toLowerCase().includes(s)) ||
@@ -86,15 +82,12 @@ export default function Bans() {
   return (
     <div className="h-full w-full flex flex-col bg-background">
       <MriPageHeader title={t('nav_bans')} icon={Gavel} count={filteredBans.length}>
-          <div className="relative w-72">
-               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-               <MriInput
-                  placeholder={t('search_placeholder_players')}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 bg-card border-border focus:border-ring h-10 transition-colors"
-               />
-          </div>
+          <SearchInput
+             placeholder={t('search_placeholder_players')}
+             value={search}
+             onChange={setSearch}
+             width="w-72"
+          />
           <MriButton onClick={fetchBans} disabled={loading} size="icon" variant="outline" className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10">
               <RefreshCw className={cn("h-4 w-4", loading && 'animate-spin')} />
           </MriButton>
@@ -123,36 +116,7 @@ export default function Bans() {
                 </thead>
                 <tbody className="divide-y divide-border">
                     {filteredBans.map((ban, i) => (
-                        <tr key={i} className="hover:bg-muted/40 transition-colors group">
-                            <td className="px-6 py-4 font-medium text-foreground">
-                                {ban.name}
-                                <div className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">ID: {ban.id}</div>
-                            </td>
-                            <td className="px-6 py-4 text-muted-foreground max-w-[300px] truncate" title={ban.reason}>{ban.reason}</td>
-                            <td className="px-6 py-4">
-                                <span className={cn(
-                                    "px-2 py-1 rounded text-xs font-bold border",
-                                    ban.expire === 2147483647
-                                        ? "bg-red-500/10 text-red-500 border-red-500/20"
-                                        : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                                )}>
-                                    {formatDate(ban.expire)}
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 text-muted-foreground">{ban.bannedby}</td>
-                            <td className="px-6 py-4 hidden 2xl:table-cell text-muted-foreground font-mono text-xs">{ban.license}</td>
-                            <td className="px-6 py-4 text-center">
-                                <MriButton
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setConfirmBan(ban)}
-                                    className="h-8 text-muted-foreground hover:text-green-400 hover:bg-green-500/10 transition-colors"
-                                >
-                                    <Unlock className="h-4 w-4 mr-2" />
-                                    {t('unban')}
-                                </MriButton>
-                            </td>
-                        </tr>
+                        <BanListRow key={i} ban={ban} onUnban={setConfirmBan} />
                     ))}
                 </tbody>
             </table>

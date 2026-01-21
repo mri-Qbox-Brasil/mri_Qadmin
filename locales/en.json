@@ -87,6 +87,7 @@
     "go_to": "Go To",
     "bring": "Bring",
     "send_back": "Send Back",
+    "set_bucket": "Set Bucket",
     "revive": "Revive",
     "verify": "Verified/Suspect",
     "remove_money": "Remove Money",
@@ -214,6 +215,7 @@
     "btn_delete": "Delete",
     "confirm_warn": "Warn %s?",
     "confirm_kick": "Kick %s?",
+    "confirm_clear_inventory": "Are you sure you want to clear %s's inventory?",
     "confirm_unban": "Unban %s?",
     "confirm_delete_vehicle": "Delete vehicle with plate %s? This action is permanent.",
     "title_dashboard": "Player Dashboard",
@@ -332,5 +334,8 @@
     "settings_scale_title": "Interface Scale",
     "settings_scale_description": "Adjust the interface size for better visibility.",
     "search_by_name_id_or_license": "Search by name, ID or license",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "id": "ID",
+    "ping": "Ping",
+    "bucket": "Bucket"
 }

@@ -10,6 +10,7 @@ import MoneyModal from '@/components/players/MoneyModal'
 import GiveItemModal from '@/components/players/GiveItemModal'
 import ChangeGroupModal from '@/components/players/ChangeGroupModal'
 import BanModal from '@/components/players/BanModal'
+import BucketModal from '@/components/players/BucketModal'
 import {
     Search,
     User,
@@ -34,87 +35,42 @@ import {
     Users,
     RefreshCw,
     Check,
+    Navigation,
     Plus,
     Minus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
 
+/* Atomic Components */
+import SectionHeader from '@/components/shared/SectionHeader'
+import GridActionButton from '@/components/shared/GridActionButton'
+import EconomyCard from '@/components/shared/EconomyCard'
+import PlayerGridCard from '@/components/players/PlayerGridCard'
+import PlayerListItem from '@/components/players/PlayerListItem'
+import PlayerVehicleCard from '@/components/players/PlayerVehicleCard'
 
-// Helper to format unix timestamp or date string
-const formatDate = (val: any) => {
-  const { t } = useI18n()
+// Helper to format unix timestamp or date string (kept for header usage mostly)
+const formatDate = (val: any, t: any) => {
   if (!val) return t('unknown')
-
   let date: Date
-  // Check if it's a number (Unix timestamp)
   if (!isNaN(val) && !isNaN(parseFloat(val))) {
      const num = Number(val)
-     // Heuristic: If num is small (e.g., < 100 billion), it's likely seconds.
-     // Current timestamp in seconds is ~1.7 billion. In ms it's ~1.7 trillion.
      if (num < 100000000000) {
          date = new Date(num * 1000)
      } else {
          date = new Date(num)
      }
   } else {
-      // Attempt to parse string date
       date = new Date(val)
   }
-
   if (isNaN(date.getTime())) return String(val)
-
   const day = String(date.getDate()).padStart(2, '0')
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const year = date.getFullYear()
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${day}/${month}/${year} ${hours}:${minutes}`
-}
-
-// Sub-component for Grid Card
-const PlayerGridCard = ({ player, onClick, onAction }: any) => {
-  const { t } = useI18n()
-  return (
-  <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-all group relative overflow-hidden" onClick={(e) => { e.stopPropagation(); onClick(player); }}>
-      <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center text-primary font-bold">
-                  {player.name.substring(0,2).toUpperCase()}
-              </div>
-              <div>
-                  <div className="font-bold text-base leading-none mb-1 text-foreground">{player.name}</div>
-                  <div className="text-[10px] text-muted-foreground font-mono">
-                    {player.online ? `${t('id')}: ${player.id} • ${t('ping')}: ${player.ping || 0}ms` : `${t('offline')} • ${formatDate(player.last_loggedout)}`}
-                  </div>
-              </div>
-          </div>
-          <div className={cn("w-2 h-2 rounded-full relative", player.online ? "bg-primary shadow-[0_0_8px_var(--primary)]" : "bg-red-500")}>
-            {player.online && (
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            )}
-          </div>
-      </div>
-
-      <div className="flex items-center justify-between mt-auto pt-2">
-           {player.metadata?.verified ? (
-            <div className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded border border-border font-bold tracking-wider">{t('status_verified')}</div>
-
-           ) : (
-            <div className="bg-red-500/20 text-red-500 text-[10px] px-2 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('status_suspect')}</div>
-           )}
-
-           <div className="flex items-center gap-1">
-               <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e) => { e.stopPropagation(); onAction('spectate_player', {}, player); }} disabled={!player.online}>
-                  <Eye className="w-3.5 h-3.5" />
-               </MriButton>
-               <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e) => { e.stopPropagation(); onAction('teleportToPlayer', {}, player); }} disabled={!player.online}>
-                  <Crosshair className="w-3.5 h-3.5" />
-               </MriButton>
-           </div>
-      </div>
-  </div>
-)
 }
 
 export default function Players() {
@@ -135,22 +91,26 @@ export default function Players() {
   const { players, setPlayers, selectedPlayer, setSelectedPlayer } = useAppState()
   const { t } = useI18n()
 
+  /* Modals State */
   const [showBanModal, setShowBanModal] = useState(false)
   const [showKickModal, setShowKickModal] = useState(false)
   const [showWarnModal, setShowWarnModal] = useState(false)
   const [showMoneyModal, setShowMoneyModal] = useState(false)
+  const [showBucketModal, setShowBucketModal] = useState(false)
   const [isGivingMoney, setIsGivingMoney] = useState(true)
   const [initialMoneyType, setInitialMoneyType] = useState<'cash'|'bank'|'crypto'>('cash')
   const [showGiveItemModal, setShowGiveItemModal] = useState(false)
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [groupType, setGroupType] = useState<'job' | 'gang'>('job')
+
+  /* Confirmations State */
   const [showDeleteVehicleConfirm, setShowDeleteVehicleConfirm] = useState(false)
   const [pendingDeletePlate, setPendingDeletePlate] = useState<string | null>(null)
+  const [showClearInventoryConfirm, setShowClearInventoryConfirm] = useState(false)
 
   const fetchPlayers = async () => {
     setLoading(true)
     try {
-      // Mock data for dev if needed, otherwise use empty array default
       const mock: any[] = MOCK_PLAYERS
       const players = await sendNui('getPlayers', {}, mock)
       const list = Array.isArray(players) ? players : mock
@@ -158,7 +118,6 @@ export default function Players() {
       setPlayersOffline(list.filter((p: any) => !p.online))
       try { setPlayers(list) } catch {}
 
-      // Fix: Update selected player with fresh data
       if (selectedPlayer) {
           const found = list.find((x: any) => String(x.id) === String(selectedPlayer.id))
           if (found) setSelectedPlayer(found)
@@ -187,7 +146,7 @@ export default function Players() {
     const p = targetPlayer || selectedPlayer
     if (!p) return
     const payload = { ...selectedData }
-    // Auto-populate player identifiers if available
+
     if (p) {
         if (!payload.cid && p.cid) payload.cid = { value: p.cid }
         if (!payload.license && p.license) payload.license = { value: p.license }
@@ -195,14 +154,12 @@ export default function Players() {
         if (!payload.name && p.name) payload.name = { value: p.name }
     }
 
-    // For legacy support or if specific ID action is needed
     if (!payload.Player && !payload.cid && !payload.Plate && !payload.VehiclePlate) {
       payload.Player = { value: p.id }
     } else if (!payload.Player && p.id) {
          payload.Player = { value: p.id }
     }
 
-    // Optimistic verify
     if (action === 'verifyPlayer') {
         const newMeta = { ...(p.metadata || {}) }
         newMeta.verified = !newMeta.verified
@@ -234,23 +191,6 @@ export default function Players() {
              (p.license || '').toLowerCase().includes(lower)
   }
 
-  // Helper for Action Grid Items
-  const ActionButton = ({ icon: Icon, label, onClick, variant = 'default', disabled = false }: any) => (
-      <MriButton
-        variant="secondary"
-        className={cn("h-12 flex items-center justify-start gap-3 px-4 bg-card hover:bg-muted border border-border text-foreground hover:text-foreground transition-all min-w-0 w-full",
-            variant === 'destructive' && "text-red-400 hover:text-red-300 hover:bg-red-900/20 hover:border-red-900/50",
-            variant === 'warning' && "text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/20 hover:border-yellow-900/50"
-        )}
-        onClick={onClick}
-        disabled={disabled}
-      >
-          <Icon className="w-4 h-4 shrink-0" />
-          <span className="font-medium text-sm truncate w-full text-left" title={label}>{label}</span>
-      </MriButton>
-  )
-
-  // Helper for unique identification (fallback to license or citizenid if ID is missing/reused)
   const getPlayerKey = (p: any) => {
       if (!p) return t('unknown')
       if (p.license) return p.license
@@ -263,11 +203,8 @@ export default function Players() {
       return getPlayerKey(selectedPlayer) === getPlayerKey(p)
   }
 
-  // Render Content
   return (
     <div className="h-full w-full flex flex-col bg-background text-foreground overflow-hidden">
-        {/* Top Header */}
-        {/* Top Header */}
         <MriPageHeader title={t('player_management')} icon={Users} count={playersOnline.length} countLabel={t('online')}>
              <div className="flex items-center bg-card border border-border rounded-lg p-1 gap-1">
                  <MriButton
@@ -309,7 +246,6 @@ export default function Players() {
              </MriButton>
         </MriPageHeader>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
             {/* GRID VIEW */}
             {viewMode === 'grid' && !selectedPlayer && (
@@ -336,118 +272,35 @@ export default function Players() {
                  </div>
             )}
 
-            {/* LIST VIEW (Split Logic) */}
+            {/* LIST VIEW */}
             {viewMode === 'list' && (
                 <div className="h-full flex">
-                    {/* List Sidebar */}
-                    <div className="w-96 flex flex-col border-r border-border bg-card/10"> {/* Expanded width to 96 to fit info */}
+                    <div className="w-96 flex flex-col border-r border-border bg-card/10">
                          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                            {/* Online Players */}
                             {filteredOnline.length > 0 && (
                                 <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('online')} ({filteredOnline.length})</div>
                             )}
                             {filteredOnline.map(player => (
-                                <div
+                                <PlayerListItem
                                     key={getPlayerKey(player)}
-                                    onClick={() => setSelectedPlayer(player)}
-                                    className={cn(
-                                        "group flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all border border-transparent hover:bg-muted/50",
-                                        isSelected(player) ? "bg-muted/80 border-primary/30 shadow-[0_0_15px_-5px_var(--primary)]" : "bg-card"
-                                    )}
-                                >
-                                    <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-primary font-bold border border-border text-sm shrink-0">
-                                        {player.name.substring(0,2).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0 flex flex-col gap-1">
-                                        <div className="flex items-center justify-between">
-                                            <div className={cn("font-medium truncate text-sm", isSelected(player) ? "text-primary" : "text-foreground")}>
-                                                {player.name}
-                                            </div>
-                                            {player.metadata?.verified ? (
-                                                <div className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 rounded border border-border font-bold tracking-wider">{t('status_verified')}</div>
-                                            ) : (
-                                                <div className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('status_suspect')}</div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className="text-[10px] text-muted-foreground flex items-center gap-2 font-mono">
-                                                <div className="flex items-center gap-1.5">
-                                                     <div className={cn("w-2 h-2 rounded-full relative", player.online ? "bg-primary shadow-[0_0_8px_var(--primary)]" : "bg-red-500")}>
-                                                        {player.online && (
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                                        )}
-                                                    </div>
-                                                     {t('id')}: {player.id}
-                                                </div>
-                                                <span>•</span>
-                                                <span>{player.ping || 0}ms</span>
-                                            </div>
-
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                 <MriButton
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-6 w-6 rounded bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 top-0.5 relative" /* Added slight top offset for alignment */
-                                                    onClick={(e) => { e.stopPropagation(); sendAction('spectate_player', {}, player); }}
-                                                    disabled={!player.online}
-                                                    title={t('spectate')}
-                                                 >
-                                                    <Eye className="w-3 h-3" />
-                                                 </MriButton>
-                                                 <MriButton
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-6 w-6 rounded bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 top-0.5 relative"
-                                                    onClick={(e) => { e.stopPropagation(); sendAction('teleportToPlayer', {}, player); }}
-                                                    disabled={!player.online}
-                                                    title={t('teleport_to')}
-                                                 >
-                                                    <Crosshair className="w-3 h-3" />
-                                                 </MriButton>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                    player={player}
+                                    isSelected={isSelected(player)}
+                                    onClick={setSelectedPlayer}
+                                    onAction={sendAction}
+                                />
                             ))}
 
-                            {/* Offline Players */}
                             {filteredOffline.length > 0 && (
                                 <>
                                 <div className="mt-4 px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('recently_offline')}</div>
                                 {filteredOffline.map(player => (
-                                    <div
+                                    <PlayerListItem
                                         key={getPlayerKey(player)}
-                                        onClick={() => setSelectedPlayer(player)}
-                                        className={cn(
-                                            "group flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all border border-transparent hover:bg-muted/50",
-                                            isSelected(player) ? "bg-muted/80 border-border" : "bg-card"
-                                        )}
-                                    >
-                                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-muted-foreground font-bold border border-border text-sm shrink-0">
-                                            {player.name.substring(0,2).toUpperCase()}
-                                        </div>
-                                        <div className="flex-1 min-w-0 flex flex-col gap-1">
-                                            <div className="flex items-center justify-between">
-                                                <div className="font-medium truncate text-sm text-muted-foreground">
-                                                    {player.name}
-                                                </div>
-                                                {player.metadata?.verified ? (
-                                                    <div className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 rounded border border-border font-bold tracking-wider">{t('status_verified')}</div>
-                                                ) : (
-                                                    <div className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('status_suspect')}</div>
-                                                )}
-                                            </div>
-                                            <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-mono">
-                                                <div className={cn("w-2 h-2 rounded-full relative", player.online ? "bg-primary shadow-[0_0_8px_var(--primary)]" : "bg-red-500")}>
-                                                    {player.online && (
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                                    )}
-                                                </div>
-                                                <span>{t('offline')} • {formatDate(player.last_loggedout)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                        player={player}
+                                        isSelected={isSelected(player)}
+                                        onClick={setSelectedPlayer}
+                                        onAction={sendAction}
+                                    />
                                 ))}
                                 </>
                             )}
@@ -457,13 +310,12 @@ export default function Players() {
             )}
 
 
-            {/* DETAILS OVERLAY (Absolute for Grid, Relative for List) */}
+            {/* DETAILS OVERLAY */}
             {selectedPlayer && (
                  <div className={cn(
                      "bg-background flex flex-col overflow-hidden transition-all duration-300",
                      viewMode === 'list' ? "absolute inset-0 left-96 z-10" : "absolute inset-0 z-20"
                  )}>
-                     {/* Detail Header / Back Button for Grid */}
                      {viewMode === 'grid' && (
                          <div className="p-4 border-b border-border flex items-center">
                              <MriButton variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => setSelectedPlayer(null)}>
@@ -472,7 +324,6 @@ export default function Players() {
                          </div>
                      )}
 
-                     {/* Profile Header */}
                     <div className="p-6 border-b border-border flex items-start gap-6 bg-card/5">
                         <div className="w-24 h-24 rounded-2xl bg-muted border border-border flex items-center justify-center relative shadow-xl">
                             <User className="w-10 h-10 text-primary" />
@@ -487,99 +338,75 @@ export default function Players() {
                                 <h2 className="text-3xl font-bold tracking-tight text-foreground">{selectedPlayer.name}</h2>
                             </div>
                             <div className="flex items-center gap-4 text-muted-foreground text-sm mb-4">
-                                {selectedPlayer.id && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs">ID: {selectedPlayer.id}</span>}
-                                {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">PING: {selectedPlayer.ping || 0}ms</span>}
+                                {selectedPlayer.id && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs">{t('id')}: {selectedPlayer.id}</span>}
+                                {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('ping')}: {selectedPlayer.ping || 0}ms</span>}
+                                {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('bucket')}: {selectedPlayer.bucket}</span>}
                             </div>
                         </div>
                         <div className="flex gap-2">
-                             <MriButton onClick={() => refreshPlayers()} disabled={loading} variant="outline" className="border-border bg-transparent hover:bg-muted text-foreground gap-2">
+                             <MriButton onClick={() => refreshPlayers()} disabled={loading} variant="outline" className={cn("border-border bg-transparent hover:bg-muted text-foreground gap-2", loading && "opacity-70 pointer-events-none")}>
                                 <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /> {t('refresh')}
                              </MriButton>
                         </div>
                     </div>
 
-                    {/* Scrollable Content */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                        {/* Action Grids */}
-
-                        {/* Quick Actions */}
                         <section>
-                            <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Ban className="w-3.5 h-3.5" /> {t('actions_quick')}
-                            </h3>
+                            <SectionHeader icon={Ban} title={t('actions_quick')} />
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                <ActionButton icon={Check} label={`${t('verify')}`} onClick={() => sendAction('verifyPlayer')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={Heart} label={`${t('revive')}`} onClick={() => sendAction('revivePlayer')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={Skull} label={`${t('kill')}`} onClick={() => sendAction('kill_player')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={User} label={`${t('clothing')}`} onClick={() => sendAction('clothing_menu')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={Lock} label={`${t('toggle_cuffs')}`} onClick={() => sendAction('toggle_cuffs')} disabled={!selectedPlayer.online} />
-                            </div>
-                        </section>
-                        {/* Moderation */}
-                        <section>
-                            <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Eye className="w-3.5 h-3.5" /> {t('moderation_section')}
-                            </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                <ActionButton icon={Eye} label={`${t('spectate')}`} onClick={() => sendAction('spectate_player')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={Lock} label={`${t('toggle_freeze')}`} onClick={() => sendAction('freeze_player')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={AlertTriangle} label={`${t('warn')}`} variant="warning" onClick={() => setShowWarnModal(true)} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={LogOut} label={`${t('kick')}`} onClick={() => setShowKickModal(true)} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={Ban} label={`${t('ban')}`} variant="destructive" onClick={() => setShowBanModal(true)} />
+                                <GridActionButton icon={Check} label={`${t('verify')}`} onClick={() => sendAction('verifyPlayer')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Heart} label={`${t('revive')}`} onClick={() => sendAction('revivePlayer')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Skull} label={`${t('kill')}`} onClick={() => sendAction('kill_player')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={User} label={`${t('clothing')}`} onClick={() => sendAction('clothing_menu')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Lock} label={`${t('toggle_cuffs')}`} onClick={() => sendAction('toggle_cuffs')} disabled={!selectedPlayer.online} />
                             </div>
                         </section>
 
-                        {/* Teleportation */}
+                        <section>
+                            <SectionHeader icon={Eye} title={t('moderation_section')} />
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                <GridActionButton icon={Eye} label={`${t('spectate')}`} onClick={() => sendAction('spectate_player')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Lock} label={`${t('toggle_freeze')}`} onClick={() => sendAction('freeze_player')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={AlertTriangle} label={`${t('warn')}`} variant="warning" onClick={() => setShowWarnModal(true)} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={LogOut} label={`${t('kick')}`} onClick={() => setShowKickModal(true)} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Ban} label={`${t('ban')}`} variant="destructive" onClick={() => setShowBanModal(true)} />
+                            </div>
+                        </section>
+
                          <section>
-                            <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Crosshair className="w-3.5 h-3.5" /> {t('teleportation_section')}
-                            </h3>
+                            <SectionHeader icon={Crosshair} title={t('teleportation_section')} />
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                <ActionButton icon={Crosshair} label={`${t('go_to')}`} onClick={() => sendAction('teleportToPlayer')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={Download} label={`${t('bring')}`} onClick={() => sendAction('bringPlayer')} disabled={!selectedPlayer.online} />
-                                <ActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction('sendPlayerBack')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Crosshair} label={`${t('go_to')}`} onClick={() => sendAction('teleportToPlayer')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Download} label={`${t('bring')}`} onClick={() => sendAction('bringPlayer')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction('sendPlayerBack')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Navigation} label={`${t('set_bucket')}`} onClick={() => setShowBucketModal(true)} disabled={!selectedPlayer.online} />
                             </div>
                         </section>
 
-                         {/* Economy & Groups Section */}
                         <section>
-                             <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                 <Wallet className="w-3.5 h-3.5" /> {t('economy_groups')}
-                             </h3>
+                             <SectionHeader icon={Wallet} title={t('economy_groups')} />
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                 {/* Cash */}
-                                 <div className="bg-card border border-border p-4 rounded-lg flex items-center justify-between">
-                                     <div>
-                                         <div className="text-xs text-muted-foreground font-bold uppercase">{t('option_cash')}</div>
-                                         <div className="text-xl font-bold text-green-500 font-mono">${(selectedPlayer.cash || 0).toLocaleString()}</div>
-                                     </div>
-                                     <div className="flex gap-1">
-                                         <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded bg-muted hover:bg-muted/80" onClick={() => { setIsGivingMoney(true); setInitialMoneyType('cash'); setShowMoneyModal(true); }}><Plus className="w-3.5 h-3.5" /></MriButton>
-                                         <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded bg-muted hover:bg-muted/80" onClick={() => { setIsGivingMoney(false); setInitialMoneyType('cash'); setShowMoneyModal(true); }}><Minus className="w-3.5 h-3.5" /></MriButton>
-                                     </div>
-                                 </div>
-                                 {/* Bank */}
-                                 <div className="bg-card border border-border p-4 rounded-lg flex items-center justify-between">
-                                     <div>
-                                         <div className="text-xs text-muted-foreground font-bold uppercase">{t('option_bank')}</div>
-                                         <div className="text-xl font-bold text-blue-500 font-mono">${(selectedPlayer.bank || 0).toLocaleString()}</div>
-                                     </div>
-                                     <div className="flex gap-1">
-                                         <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded bg-muted hover:bg-muted/80" onClick={() => { setIsGivingMoney(true); setInitialMoneyType('bank'); setShowMoneyModal(true); }}><Plus className="w-3.5 h-3.5" /></MriButton>
-                                         <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded bg-muted hover:bg-muted/80" onClick={() => { setIsGivingMoney(false); setInitialMoneyType('bank'); setShowMoneyModal(true); }}><Minus className="w-3.5 h-3.5" /></MriButton>
-                                     </div>
-                                 </div>
-                                 {/* Crypto */}
-                                 <div className="bg-card border border-border p-4 rounded-lg flex items-center justify-between">
-                                     <div>
-                                         <div className="text-xs text-muted-foreground font-bold uppercase">{t('option_crypto')}</div>
-                                         <div className="text-xl font-bold text-yellow-500 font-mono">{(selectedPlayer.crypto || 0).toLocaleString()}</div>
-                                     </div>
-                                     <div className="flex gap-1">
-                                         <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded bg-muted hover:bg-muted/80" onClick={() => { setIsGivingMoney(true); setInitialMoneyType('crypto'); setShowMoneyModal(true); }}><Plus className="w-3.5 h-3.5" /></MriButton>
-                                         <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded bg-muted hover:bg-muted/80" onClick={() => { setIsGivingMoney(false); setInitialMoneyType('crypto'); setShowMoneyModal(true); }}><Minus className="w-3.5 h-3.5" /></MriButton>
-                                     </div>
-                                 </div>
+                                 <EconomyCard
+                                    label={t('option_cash')}
+                                    amount={`$${(selectedPlayer.cash || 0).toLocaleString()}`}
+                                    amountColorClass="text-green-500"
+                                    onAdd={() => { setIsGivingMoney(true); setInitialMoneyType('cash'); setShowMoneyModal(true); }}
+                                    onRemove={() => { setIsGivingMoney(false); setInitialMoneyType('cash'); setShowMoneyModal(true); }}
+                                 />
+                                 <EconomyCard
+                                    label={t('option_bank')}
+                                    amount={`$${(selectedPlayer.bank || 0).toLocaleString()}`}
+                                    amountColorClass="text-blue-500"
+                                    onAdd={() => { setIsGivingMoney(true); setInitialMoneyType('bank'); setShowMoneyModal(true); }}
+                                    onRemove={() => { setIsGivingMoney(false); setInitialMoneyType('bank'); setShowMoneyModal(true); }}
+                                 />
+                                 <EconomyCard
+                                    label={t('option_crypto')}
+                                    amount={(selectedPlayer.crypto || 0).toLocaleString()}
+                                    amountColorClass="text-yellow-500"
+                                    onAdd={() => { setIsGivingMoney(true); setInitialMoneyType('crypto'); setShowMoneyModal(true); }}
+                                    onRemove={() => { setIsGivingMoney(false); setInitialMoneyType('crypto'); setShowMoneyModal(true); }}
+                                 />
                              </div>
 
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -594,7 +421,7 @@ export default function Players() {
                                     <div className="bg-card border border-border p-3 rounded-lg flex items-center justify-between">
                                         <span className="text-sm font-medium">{t('gang_label')}</span>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-muted-foreground">{selectedPlayer.gang.label}</span>
+                                            <span className="text-primary font-bold">{selectedPlayer.gang.label}</span>
                                             <span className="text-xs text-muted-foreground">{selectedPlayer.gang.grade.name} ({selectedPlayer.gang.grade.level})</span>
                                             <MriButton variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setGroupType('gang'); setShowGroupModal(true); }}>{t('btn_edit')}</MriButton>
                                         </div>
@@ -602,25 +429,18 @@ export default function Players() {
                              </div>
                         </section>
 
-                        {/* Player Vehicles */}
                          <section>
-                            <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Car className="w-3.5 h-3.5" /> {t('player_vehicles')}
-                            </h3>
+                            <SectionHeader icon={Car} title={t('player_vehicles')} />
                             {selectedPlayer.vehicles && selectedPlayer.vehicles.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                     {selectedPlayer.vehicles.map((v: any, i:number) => (
-                                        <div key={i} className="flex flex-col bg-card border border-border rounded-lg p-3">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-bold text-foreground">{v.label || v.model}</span>
-                                                <span className="font-mono text-xs bg-muted px-1.5 rounded">{v.plate}</span>
-                                            </div>
-                                            <div className="flex gap-2 mt-auto">
-                                                 <MriButton size="sm" variant="secondary" className="flex-1 h-7 text-xs bg-muted hover:bg-muted/80" onClick={() => sendAction('spawnPersonalVehicle', { VehiclePlate: { value: v.plate } })}>{t('btn_spawn')}</MriButton>
-                                                 <MriButton size="sm" variant="secondary" className="flex-1 h-7 text-xs bg-muted hover:bg-muted/80" onClick={() => sendAction('open_trunk', { Plate: { value: v.plate } })}>{t('btn_trunk')}</MriButton>
-                                                 <MriButton size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:bg-red-500/10" onClick={() => { setPendingDeletePlate(v.plate); setShowDeleteVehicleConfirm(true); }}><Trash2 className="w-4 h-4" /></MriButton>
-                                            </div>
-                                        </div>
+                                        <PlayerVehicleCard
+                                            key={i}
+                                            vehicle={v}
+                                            onSpawn={(plate) => sendAction('spawnPersonalVehicle', { VehiclePlate: { value: plate } })}
+                                            onOpenTrunk={(plate) => sendAction('open_trunk', { Plate: { value: plate } })}
+                                            onDelete={(plate) => { setPendingDeletePlate(plate); setShowDeleteVehicleConfirm(true); }}
+                                        />
                                     ))}
                                 </div>
                             ) : (
@@ -630,45 +450,38 @@ export default function Players() {
                             )}
                         </section>
 
-                         {/* Inventory Section */}
                          <section>
-                            <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <ExternalLink className="w-3.5 h-3.5" /> {t('inventory_management')}
-                            </h3>
+                            <SectionHeader icon={ExternalLink} title={t('inventory_management')} />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <MriButton onClick={() => sendAction('open_inventory')} disabled={!selectedPlayer.online} className="h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80">
+                                <MriButton onClick={() => sendAction('open_inventory')} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
                                     <div className="p-1.5 rounded bg-muted text-primary"><ExternalLink className="w-4 h-4" /></div>
                                     {t('open_inventory')}
                                 </MriButton>
-                                <MriButton onClick={() => setShowGiveItemModal(true)} disabled={!selectedPlayer.online} className="h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80">
+                                <MriButton onClick={() => setShowGiveItemModal(true)} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
                                     <div className="p-1.5 rounded bg-muted text-primary"><Gift className="w-4 h-4" /></div>
                                     {t('give_item_player')}
                                 </MriButton>
-                                <MriButton onClick={() => sendAction('clear_inventory')} disabled={!selectedPlayer.online} className="h-12 bg-card border border-border hover:bg-red-900/10 border-red-900/30 hover:border-red-500/50 justify-start gap-4 text-red-400">
+                                <MriButton onClick={() => setShowClearInventoryConfirm(true)} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-red-900/10 border-red-900/30 hover:border-red-500/50 justify-start gap-4 text-red-400", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
                                     <div className="p-1.5 rounded bg-red-900/30 text-red-500"><Trash2 className="w-4 h-4" /></div>
                                     {t('clear_inventory')}
                                 </MriButton>
                             </div>
                         </section>
 
-                         {/* Offline Actions */}
                         {!selectedPlayer.online && (
                              <section>
-                                <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <Skull className="w-3.5 h-3.5" /> {t('offline_actions')}
-                                </h3>
+                                <SectionHeader icon={Skull} title={t('offline_actions')} />
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                     <ActionButton icon={Trash2} label={`${t('delete_character')}`} variant="destructive" onClick={() => sendAction('delete_cid', { cid: { value: selectedPlayer.cid } })} />
-                                     <ActionButton icon={Ban} label={`${t('unban')}`} onClick={() => sendAction('unban_cid', { cid: { value: selectedPlayer.cid } })} />
+                                     <GridActionButton icon={Trash2} label={`${t('delete_character')}`} variant="destructive" onClick={() => sendAction('delete_cid', { cid: { value: selectedPlayer.cid } })} />
+                                     <GridActionButton icon={Ban} label={`${t('unban')}`} onClick={() => sendAction('unban_cid', { cid: { value: selectedPlayer.cid } })} />
                                 </div>
                             </section>
                         )}
 
-                         {/* Footer Info */}
                         <div className="p-4 border-t border-border bg-card/20 text-xs text-mono text-muted-foreground mt-auto">
                             <div className="flex items-center justify-between mb-2">
                                  <span className="text-muted-foreground font-bold tracking-wider">{t('connection_info')}</span>
-                                 <span className="font-mono">{t('last_logout')}: {formatDate(selectedPlayer.last_loggedout)}</span>
+                                 <span className="font-mono">{t('last_logout')}: {formatDate(selectedPlayer.last_loggedout, t)}</span>
                             </div>
                             <div className="grid grid-cols-2 gap-x-8 gap-y-2">
                                 <div className="flex justify-between border-b border-border/50 pb-1">
@@ -742,6 +555,13 @@ export default function Players() {
           }} />
         )}
 
+        {showBucketModal && selectedPlayer && (
+          <BucketModal onClose={() => setShowBucketModal(false)} onSubmit={(bucket) => {
+            sendAction('set_bucket', { Bucket: { value: bucket } })
+            setShowBucketModal(false)
+          }} />
+        )}
+
         {showGroupModal && selectedPlayer && (
           <ChangeGroupModal
             type={groupType}
@@ -761,7 +581,6 @@ export default function Players() {
 
         {showDeleteVehicleConfirm && pendingDeletePlate && (
           <ConfirmAction text={t('confirm_delete_vehicle').replace('%s', pendingDeletePlate)} onCancel={() => { setShowDeleteVehicleConfirm(false); setPendingDeletePlate(null); }} onConfirm={async () => {
-            // Optimistic update
             if (selectedPlayer && selectedPlayer.vehicles) {
                  const updated = {
                      ...selectedPlayer,
@@ -777,6 +596,17 @@ export default function Players() {
             setPendingDeletePlate(null)
             setTimeout(() => refreshPlayers(), 500)
           }} />
+        )}
+
+        {showClearInventoryConfirm && selectedPlayer && (
+            <ConfirmAction
+                text={t('confirm_clear_inventory').replace('%s', selectedPlayer.name)}
+                onCancel={() => setShowClearInventoryConfirm(false)}
+                onConfirm={() => {
+                    sendAction('clear_inventory');
+                    setShowClearInventoryConfirm(false);
+                }}
+            />
         )}
     </div>
   )

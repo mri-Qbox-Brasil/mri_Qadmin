@@ -707,12 +707,6 @@ Config.Actions = {
         },
     },
 
-    ["unbanPlayer"] = {
-        label = "Desbanir Jogador",
-        event = "mri_Qadmin:server:UnbanPlayer",
-        perms = "mod",
-        type = "server"
-    },
     ["update_vehicle_stock"] = {
         label = "Atualizar Estoque",
         event = "mri_Qadmin:server:UpdateVehicleStock",

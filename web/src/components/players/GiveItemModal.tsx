@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { MriButton, MriDialog, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
+import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
+import ActionModal from '@/components/ActionModal'
+import { Gift } from 'lucide-react'
 
 import { useI18n } from '@/context/I18n'
 import { useAppState } from '@/context/AppState'
@@ -47,7 +49,13 @@ export default function GiveItemModal({
   }))
 
   return (
-    <MriDialog title={t('modal_give_item_title').replace('%s', '')} onClose={onClose}>
+    <ActionModal
+      title={t('modal_give_item_title').replace('%s', '')}
+      icon={Gift}
+      onClose={onClose}
+      onConfirm={() => onSubmit(playerId, item, amount)}
+      isConfirmDisabled={!playerId || !item}
+    >
 
       {!disablePlayerSelect ? (
         <div className="mb-4">
@@ -69,7 +77,7 @@ export default function GiveItemModal({
             <MriInput
                 value={initialItemLabel || itemOptions.find(o => String(o.value).toLowerCase() === String(item).toLowerCase())?.label || item || ''}
                 disabled
-                className="opacity-70"
+                className="opacity-70 bg-background border-border h-10"
             />
         ) : (
             <MriSelectSearch
@@ -83,12 +91,7 @@ export default function GiveItemModal({
       </div>
 
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('quantity_label')}</label>
-      <MriInput type="number" value={amount} onChange={e => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6" />
-
-      <div className="flex justify-end gap-3">
-        <MriButton variant="ghost" onClick={onClose}>{t('cancel_label')}</MriButton>
-        <MriButton onClick={() => { if(playerId && item) { onSubmit(playerId, item, amount); onClose(); } }}>{t('confirm_label')}</MriButton>
-      </div>
-    </MriDialog>
+      <MriInput type="number" value={amount} onChange={e => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
+    </ActionModal>
   )
 }
