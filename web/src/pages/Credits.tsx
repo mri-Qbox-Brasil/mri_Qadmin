@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Spinner from '@/components/Spinner'
 import { useI18n } from '@/context/I18n'
 import { Info } from 'lucide-react'
-import { PageHeader } from '@mriqbox/ui-kit'
+import { MriPageHeader } from '@mriqbox/ui-kit'
 
 export default function Credits() {
   const [loading, setLoading] = useState(true)
@@ -10,7 +10,7 @@ export default function Credits() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <PageHeader title={t('nav_credits')} icon={Info} />
+      <MriPageHeader title={t('nav_credits')} icon={Info} />
 
       <div className="flex-1 w-full p-8 overflow-hidden relative">
         <div className="w-full h-full rounded-xl border border-border overflow-hidden relative shadow-lg">

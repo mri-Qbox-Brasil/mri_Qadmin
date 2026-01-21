@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import ButtonState from './ButtonState'
 import { cn } from '@/lib/utils'
 import { Box } from 'lucide-react'

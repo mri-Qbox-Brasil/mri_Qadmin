@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/context/I18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { Button, Input, Modal, PageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriModal, MriPageHeader } from '@mriqbox/ui-kit'
 
 import { Copy, Car, Search, Tag, DollarSign, RefreshCw } from 'lucide-react'
 import VehicleImage from './Vehicles/components/VehicleImage'
@@ -107,17 +107,17 @@ export default function Vehicles() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <PageHeader title={t('title_vehicles') || "Vehicles"} icon={Car} count={filteredVehicles.length}>
+      <MriPageHeader title={t('title_vehicles') || "Vehicles"} icon={Car} count={filteredVehicles.length}>
           <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
+              <MriInput
                 placeholder={t('search_placeholder_vehicles') || "Search vehicles..."}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 bg-card border-border focus:border-ring h-10 transition-colors"
               />
           </div>
-          <Button
+          <MriButton
             size="icon"
             variant="outline"
             className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -125,8 +125,8 @@ export default function Vehicles() {
             disabled={loading}
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-          </Button>
-      </PageHeader>
+          </MriButton>
+      </MriPageHeader>
 
       <div className="flex-1 overflow-auto px-8 pb-8 no-scrollbar" onScroll={handleScroll}>
         {filteredVehicles.length === 0 ? (
@@ -156,9 +156,9 @@ export default function Vehicles() {
                         </div>
 
                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-zinc-400 hover:text-white bg-black/50 hover:bg-black/80" onClick={() => copyToClipboard(v.model)}>
+                            <MriButton size="sm" variant="ghost" className="h-6 w-6 p-0 text-zinc-400 hover:text-white bg-black/50 hover:bg-black/80" onClick={() => copyToClipboard(v.model)}>
                                 <Copy className="w-3 h-3" />
-                            </Button>
+                            </MriButton>
                         </div>
                     </div>
 
@@ -182,7 +182,7 @@ export default function Vehicles() {
                         </div>
 
                         <div className="flex gap-2">
-                            <Button
+                            <MriButton
                                 variant="outline"
                                 size="sm"
                                 className="flex-1 h-8 text-xs border-input text-muted-foreground hover:text-foreground bg-transparent hover:bg-muted"
@@ -192,14 +192,14 @@ export default function Vehicles() {
                                 }}
                             >
                                 {t('btn_stock')}
-                            </Button>
-                            <Button
+                            </MriButton>
+                            <MriButton
                                 size="sm"
                                 className="flex-1 h-8 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50 text-foreground"
                                 onClick={() => sendNui('clickButton', { data: 'spawn_vehicle', selectedData: { Vehicle: { value: v.model } } })}
                             >
                                 {t('btn_spawn')}
-                            </Button>
+                            </MriButton>
                         </div>
                     </div>
               </div>
@@ -214,7 +214,7 @@ export default function Vehicles() {
       </div>
 
       {stockModal.show && (
-        <Modal onClose={() => setStockModal({show: false, vehicle: null})}>
+        <MriModal onClose={() => setStockModal({show: false, vehicle: null})} className="max-w-lg w-full">
           <div className="p-6">
              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <Car className="w-5 h-5 text-primary" />
@@ -224,21 +224,21 @@ export default function Vehicles() {
             <div className="space-y-4">
                 <div>
                      <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('stock_quantity_label')}</label>
-                     <Input
+                     <MriInput
                         type="number"
                         value={newStock}
                         onChange={e => setNewStock(Number(e.target.value))}
-                        className="bg-input border-input"
+                        className="bg-input border-input h-10"
                     />
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                    <Button onClick={() => setStockModal({show: false, vehicle: null})} variant="ghost" className="flex-1">{t('cancel_label')}</Button>
-                    <Button onClick={handleUpdateStock} className="flex-1">{t('confirm_label')}</Button>
+                    <MriButton onClick={() => setStockModal({show: false, vehicle: null})} variant="ghost" className="flex-1">{t('cancel_label')}</MriButton>
+                    <MriButton onClick={handleUpdateStock} className="flex-1">{t('confirm_label')}</MriButton>
                 </div>
             </div>
           </div>
-        </Modal>
+        </MriModal>
       )}
     </div>
   )

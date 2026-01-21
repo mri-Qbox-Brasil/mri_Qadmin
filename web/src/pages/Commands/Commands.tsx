@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/context/I18n'
 import { useNui } from '@/context/NuiContext'
-import { Button, Input, PageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { Search, Terminal, Command, Copy, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -43,17 +43,17 @@ export default function Commands() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <PageHeader title={t('nav_commands')} icon={Terminal} count={filteredCommands.length}>
+            <MriPageHeader title={t('nav_commands')} icon={Terminal} count={filteredCommands.length}>
                     <div className="relative w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
+                        <MriInput
                         placeholder={t('commands_search_placeholder')}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="pl-9 bg-card border-border focus:border-ring h-10 transition-colors"
                         />
                     </div>
-                    <Button
+                    <MriButton
                         size="icon"
                         variant="outline"
                         className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -61,8 +61,8 @@ export default function Commands() {
                         disabled={loading}
                     >
                         <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-                    </Button>
-            </PageHeader>
+                    </MriButton>
+            </MriPageHeader>
 
             <div className="flex-1 overflow-auto p-8 no-scrollbar">
                 {filteredCommands.length === 0 ? (
@@ -75,9 +75,9 @@ export default function Commands() {
                         {filteredCommands.map((cmd: any) => (
                             <div key={cmd.name} className="bg-card border border-border rounded-xl p-4 flex gap-4 hover:border-primary/50 hover:bg-muted/50 transition-all group relative overflow-hidden">
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => copyToClipboard(cmd.name)}>
+                                    <MriButton size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => copyToClipboard(cmd.name)}>
                                         <Copy className="w-3 h-3" />
-                                    </Button>
+                                   </MriButton>
                                 </div>
 
                                 <div className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center border border-border shrink-0">

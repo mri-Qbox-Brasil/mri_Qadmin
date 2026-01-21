@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNui } from "@/context/NuiContext";
-import { Button, Input, Popover, PopoverContent, PopoverTrigger, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriPopover, MriPopoverContent, MriPopoverTrigger, MriCommand, MriCommandEmpty, MriCommandGroup, MriCommandInput, MriCommandItem } from '@mriqbox/ui-kit'
 import { Check, ChevronsUpDown, Star, ChevronDown, ChevronRight, MousePointerClick } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppState } from "@/context/AppState";
@@ -97,7 +97,7 @@ export default function ActionDropdown({
                   <label className="text-xs font-medium text-muted-foreground ml-1">
                     {item.label}
                   </label>
-                  <Input
+                  <MriInput
                     placeholder={item.placeholder || item.label}
                     className="bg-background border-border focus:border-ring"
                     onChange={(e) =>
@@ -133,12 +133,12 @@ export default function ActionDropdown({
                   <label className="text-xs font-medium text-muted-foreground ml-1">
                     {item.label}
                   </label>
-                  <Popover
+                  <MriPopover
                     open={Boolean(popoverOpen[subKey])}
                     onOpenChange={(v: boolean) => setPopoverOpen((prev) => ({ ...prev, [subKey]: v }))}
                   >
-                    <PopoverTrigger asChild>
-                      <Button
+                    <MriPopoverTrigger asChild>
+                      <MriButton
                         variant="outline"
                         role="combobox"
                         className="w-full justify-between bg-background border-border hover:bg-muted hover:text-foreground"
@@ -147,16 +147,16 @@ export default function ActionDropdown({
                             {selectedData[subKey]?.label || t("select_placeholder")}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0 border-border bg-popover">
-                      <Command className="bg-transparent">
-                        <CommandInput
+                      </MriButton>
+                    </MriPopoverTrigger>
+                    <MriPopoverContent className="w-[300px] p-0 border-border bg-popover">
+                      <MriCommand className="bg-transparent">
+                        <MriCommandInput
                           placeholder={t("actions_search_placeholder")}
                           className="h-9"
                         />
-                        <CommandEmpty>{t("none_found")}</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto p-1">
+                        <MriCommandEmpty>{t("none_found")}</MriCommandEmpty>
+                        <MriCommandGroup className="max-h-64 overflow-auto p-1">
                           {options.map((opt: any) => {
                             const valueField = item.valueField || "value";
                             const labelField = item.labelField || "label";
@@ -165,7 +165,7 @@ export default function ActionDropdown({
                             const label = opt[labelField];
 
                             return (
-                            <CommandItem
+                            <MriCommandItem
                               key={value}
                               onSelect={() => {
                                 handleSelectData(
@@ -190,24 +190,24 @@ export default function ActionDropdown({
                                 )}
                               />
                               <span className="truncate">{label}</span>
-                            </CommandItem>
+                            </MriCommandItem>
                           )})}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                        </MriCommandGroup>
+                      </MriCommand>
+                    </MriPopoverContent>
+                  </MriPopover>
                 </div>
               );
             } else if (item.option === "button") {
               return (
-                <Button
+                <MriButton
                   key={idx}
                   variant="secondary"
                   className="w-full bg-secondary hover:bg-primary/20 hover:text-primary transition-colors border border-border"
                   onClick={() => handleSubClick(item)}
                 >
                   {item.label}
-                </Button>
+                </MriButton>
               );
             }
             return null;

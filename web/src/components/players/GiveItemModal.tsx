@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Input, Dialog, SelectSearch } from '@mriqbox/ui-kit'
+import { MriButton, MriDialog, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
 
 import { useI18n } from '@/context/I18n'
 import { useAppState } from '@/context/AppState'
@@ -47,12 +47,12 @@ export default function GiveItemModal({
   }))
 
   return (
-    <Dialog title={t('modal_give_item_title').replace('%s', '')} onClose={onClose}>
+    <MriDialog title={t('modal_give_item_title').replace('%s', '')} onClose={onClose}>
 
       {!disablePlayerSelect ? (
         <div className="mb-4">
              <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('select_player_label')}</label>
-             <SelectSearch
+             <MriSelectSearch
                  options={playerOptions}
                  value={String(playerId)}
                  onChange={setPlayerId}
@@ -66,13 +66,13 @@ export default function GiveItemModal({
       <div className="mb-4">
         <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_item_name')}</label>
         {disableItemSelect ? (
-            <Input
+            <MriInput
                 value={initialItemLabel || itemOptions.find(o => String(o.value).toLowerCase() === String(item).toLowerCase())?.label || item || ''}
                 disabled
                 className="opacity-70"
             />
         ) : (
-            <SelectSearch
+            <MriSelectSearch
                 options={itemOptions}
                 value={item}
                 onChange={setItem}
@@ -83,12 +83,12 @@ export default function GiveItemModal({
       </div>
 
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('quantity_label')}</label>
-      <Input type="number" value={amount} onChange={e => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6" />
+      <MriInput type="number" value={amount} onChange={e => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6" />
 
       <div className="flex justify-end gap-3">
-        <Button variant="ghost" onClick={onClose}>{t('cancel_label')}</Button>
-        <Button onClick={() => { if(playerId && item) { onSubmit(playerId, item, amount); onClose(); } }}>{t('confirm_label')}</Button>
+        <MriButton variant="ghost" onClick={onClose}>{t('cancel_label')}</MriButton>
+        <MriButton onClick={() => { if(playerId && item) { onSubmit(playerId, item, amount); onClose(); } }}>{t('confirm_label')}</MriButton>
       </div>
-    </Dialog>
+    </MriDialog>
   )
 }

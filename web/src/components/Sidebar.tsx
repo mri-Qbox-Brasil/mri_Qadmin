@@ -1,11 +1,9 @@
 import { useI18n } from '@/context/I18n'
-import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { Sidebar as GenericSidebar, SidebarItem } from '@mriqbox/ui-kit'
+import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
 import {
     LayoutDashboard,
     Users,
-    Server as ServerIcon,
     Terminal,
     MessageSquare,
     Box,
@@ -24,10 +22,9 @@ interface SidebarProps {
 
 export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
   const { t } = useI18n()
-  const { debugMode } = useNui()
   const { menuWide, setMenuWide } = useAppState()
 
-  const items: SidebarItem[] = [
+  const items: MriSidebarItem[] = [
     { icon: LayoutDashboard, label: t('nav_dashboard'), route: 'dashboard' },
     { icon: Box, label: '', divider: true },
     { icon: Users, label: t('nav_players'), route: 'players' },
@@ -45,7 +42,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
   ]
 
   return (
-    <GenericSidebar
+    <MriSidebar
       items={items}
       activeRoute={currentRoute}
       onNavigate={onRoute}

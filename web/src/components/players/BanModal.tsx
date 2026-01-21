@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Input, Modal, SelectSearch } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriModal, MriSelectSearch } from '@mriqbox/ui-kit'
 import { useI18n } from '@/context/I18n'
 import { Gavel, X } from 'lucide-react'
 
@@ -28,7 +28,7 @@ export default function BanModal({ onClose, onSubmit }: Props) {
   const [reason, setReason] = useState(t('ban_reason_placeholder'))
 
   return (
-    <Modal onClose={onClose}>
+    <MriModal onClose={onClose} className="max-w-lg w-full">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
             <div className="p-2 bg-destructive/10 rounded-lg">
@@ -44,7 +44,7 @@ export default function BanModal({ onClose, onSubmit }: Props) {
       <div className="space-y-4">
           <div>
               <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_duration')}</label>
-              <SelectSearch
+              <MriSelectSearch
                 options={banData}
                 value={duration}
                 onChange={(val) => setDuration(val)}
@@ -54,24 +54,24 @@ export default function BanModal({ onClose, onSubmit }: Props) {
 
           <div>
               <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_reason')}</label>
-              <Input
+              <MriInput
                 placeholder={t('ban_reason_placeholder')}
                 value={reason}
                 onChange={(e) => setReason((e.target as HTMLInputElement).value)}
-                className="bg-background border-border"
+                className="bg-background border-border h-10"
                />
           </div>
       </div>
 
       <div className="mt-6 flex gap-3">
-        <Button onClick={onClose} variant="ghost" className="flex-1">{t('cancel_label')}</Button>
-        <Button
+        <MriButton onClick={onClose} variant="ghost" className="flex-1">{t('cancel_label')}</MriButton>
+        <MriButton
             className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             onClick={() => { onSubmit(duration, reason); onClose(); }}
         >
             {t('confirm_label')}
-        </Button>
+        </MriButton>
       </div>
-    </Modal>
+    </MriModal>
   )
 }

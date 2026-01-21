@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useI18n } from '@/context/I18n'
 import Spinner from '@/components/Spinner'
 import { Github, ExternalLink, User, Calendar, History, GitCommit } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface ChangelogItem {
   repo: string

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useI18n } from '@/context/I18n'
 import Spinner from '@/components/Spinner'
 import { useNui } from '@/context/NuiContext'
-import { PageHeader, Input } from '@mriqbox/ui-kit'
+import { MriPageHeader, MriInput } from '@mriqbox/ui-kit'
 import { useAppState } from '@/context/AppState'
 import DevLocaleSwitcher from '@/components/DevLocaleSwitcher'
 import {
@@ -127,14 +127,14 @@ export default function Dashboard() {
     return () => { mounted = false }
   }, [players, sendNui, setPlayers])
 
-  if (loading) return <div className="h-full w-full flex flex-col bg-background"><PageHeader title={t('nav_dashboard')} icon={LayoutDashboard} /><div className="flex-1 flex items-center justify-center"><Spinner /></div></div>
+  if (loading) return <div className="h-full w-full flex flex-col bg-background"><MriPageHeader title={t('nav_dashboard')} icon={LayoutDashboard} /><div className="flex-1 flex items-center justify-center"><Spinner /></div></div>
   if (error) return <div className="p-6 text-red-400">{error}</div>
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <PageHeader title={t('nav_dashboard')} icon={LayoutDashboard}>
+      <MriPageHeader title={t('nav_dashboard')} icon={LayoutDashboard}>
          {debugMode && <DevLocaleSwitcher className="w-40" />}
-      </PageHeader>
+      </MriPageHeader>
 
       <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
           {/* Stats Grid */}
@@ -208,7 +208,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-bold text-foreground">{t('players')}</h2>
               <div className="relative w-80">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                 <Input
+                 <MriInput
                     placeholder={t('search_placeholder_players') || 'Search players...'}
                     value={playersSearch}
                     onChange={e => setPlayersSearch((e.target as HTMLInputElement).value)}

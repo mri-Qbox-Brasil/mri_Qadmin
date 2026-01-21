@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useI18n } from '@/context/I18n'
 import { useNui } from '@/context/NuiContext'
 import Spinner from '@/components/Spinner'
-import { Button, Input, PageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { RefreshCw, Briefcase, Skull, UserMinus, UserCog, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import ChangeGroupModal from '@/components/players/ChangeGroupModal'
 import ConfirmAction from '@/components/players/ConfirmAction'
@@ -157,7 +157,7 @@ export default function Groups() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            <Button
+                                            <MriButton
                                               variant="ghost"
                                               size="sm"
                                               className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -165,8 +165,8 @@ export default function Groups() {
                                               onClick={() => setEditingMember({ member, type, groupName: group.name })}
                                             >
                                                 <UserCog className="h-4 w-4" />
-                                            </Button>
-                                            <Button
+                                            </MriButton>
+                                            <MriButton
                                               variant="ghost"
                                               size="sm"
                                               className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
@@ -174,7 +174,7 @@ export default function Groups() {
                                               onClick={() => setFiringMember({ member, type })}
                                             >
                                                 <UserMinus className="h-4 w-4" />
-                                            </Button>
+                                            </MriButton>
                                         </div>
                                     </div>
                                 ))}
@@ -189,20 +189,20 @@ export default function Groups() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <PageHeader title={t('groups')} icon={Briefcase}>
+      <MriPageHeader title={t('groups')} icon={Briefcase}>
          <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
+            <MriInput
                placeholder={t('search_placeholder_players')}
                value={search}
                onChange={(e) => setSearch(e.target.value)}
                className="pl-9 bg-card border-border focus:border-ring h-10"
             />
          </div>
-         <Button onClick={fetchGroups} disabled={loading} size="icon" variant="outline" className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10">
+         <MriButton onClick={fetchGroups} disabled={loading} size="icon" variant="outline" className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-         </Button>
-      </PageHeader>
+         </MriButton>
+      </MriPageHeader>
 
       {loading ? (
         <div className="h-full flex items-center justify-center text-muted-foreground gap-2 p-8">

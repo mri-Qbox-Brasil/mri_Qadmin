@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { Button } from '@/components/ui/Button'
+import { MriButton } from '@mriqbox/ui-kit'
 import { Play, Square, RotateCw } from 'lucide-react'
 
 interface ButtonStateProps {
@@ -31,13 +31,13 @@ export default function ButtonState({ resource, icon, state }: ButtonStateProps)
   if (state === 'restart') IconComponent = RotateCw
 
   return (
-    <Button
+    <MriButton
         variant="ghost"
         size="icon"
         className="h-6 w-6 hover:bg-primary hover:text-primary-foreground"
         onClick={changeState}
     >
       <IconComponent className="h-4 w-4" />
-    </Button>
+    </MriButton>
   )
 }

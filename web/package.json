@@ -11,6 +11,7 @@
     },
     "devDependencies": {
         "@alloc/quick-lru": "^5.2.0",
+        "@radix-ui/react-popover": "^1.1.15",
         "@types/react": "^18.2.21",
         "@types/react-dom": "^18.2.7",
         "@vitejs/plugin-react": "^4.0.0",
@@ -21,11 +22,13 @@
         "vite": "^5.0.0"
     },
     "dependencies": {
-        "@mriqbox/ui-kit": "^1.0.4",
+        "@mriqbox/ui-kit": "^2.1.0",
         "@radix-ui/react-slot": "^1.2.4",
         "clsx": "^1.2.1",
         "cmdk": "^1.1.1",
+        "colord": "^2.9.3",
         "react": "^18.2.0",
+        "react-colorful": "^5.6.1",
         "react-dom": "^18.2.0",
         "tailwindcss-animate": "^1.0.7"
     },
@@ -33,7 +36,6 @@
         "@radix-ui/react-accordion": "^1.0.4",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-dropdown-menu": "^1.0.4",
-        "@radix-ui/react-popover": "^1.1.15",
         "@radix-ui/react-select": "^1.0.4",
         "@radix-ui/react-tabs": "^1.0.4",
         "@radix-ui/react-toggle": "^1.0.4",

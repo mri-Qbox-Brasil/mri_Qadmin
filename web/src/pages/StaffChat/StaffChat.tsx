@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
-import { Button, Input, PageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { Send, MessageSquare } from 'lucide-react'
 import { useI18n } from '@/context/I18n'
 
@@ -64,7 +64,7 @@ export default function StaffChat() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <PageHeader title={t('staffchat_title')} icon={MessageSquare} />
+      <MriPageHeader title={t('staffchat_title')} icon={MessageSquare} />
 
       <div className="flex-1 flex flex-col p-8 overflow-hidden">
 
@@ -107,16 +107,16 @@ export default function StaffChat() {
       </div>
 
       <div className="flex gap-3 items-center bg-muted/50 p-2 rounded-xl border border-border">
-          <Input
+          <MriInput
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder={t('staffchat_placeholder')}
             onKeyDown={e => e.key === 'Enter' && sendMessage()}
             className="flex-1 h-11 bg-transparent border-none focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
           />
-          <Button onClick={sendMessage} size="icon" className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
+          <MriButton onClick={sendMessage} size="icon" className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
               <Send className="h-5 w-5" />
-          </Button>
+          </MriButton>
       </div>
       </div>
     </div>

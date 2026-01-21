@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Button, Input, Dialog, SelectSearch } from '@mriqbox/ui-kit'
 import { useI18n } from '@/context/I18n'
 import { useAppState } from '@/context/AppState'
+import { MriButton, MriDialog, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
 
 export default function ChangeGroupModal({
   type,
@@ -41,10 +41,10 @@ export default function ChangeGroupModal({
       : []
 
   return (
-    <Dialog title={type === 'job' ? t('set_job') : t('set_gang')} onClose={onClose}>
+    <MriDialog title={type === 'job' ? t('set_job') : t('set_gang')} onClose={onClose}>
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_name')}</label>
       <div className="mb-4">
-        <SelectSearch
+        <MriSelectSearch
             options={groupOptions}
             value={group}
             onChange={(val) => { setGroup(val); setGrade(0); }} // Reset grade on group change
@@ -56,7 +56,7 @@ export default function ChangeGroupModal({
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_grade')}</label>
       {gradeOptions.length > 0 ? (
           <div className="mb-6">
-              <SelectSearch
+              <MriSelectSearch
                   options={gradeOptions}
                   value={grade}
                   onChange={(val) => setGrade(Number(val))}
@@ -65,13 +65,13 @@ export default function ChangeGroupModal({
               />
           </div>
       ) : (
-          <Input type="number" value={grade} onChange={e => setGrade(Number((e.target as HTMLInputElement).value))} className="mb-6" />
+          <MriInput type="number" value={grade} onChange={e => setGrade(Number((e.target as HTMLInputElement).value))} className="mb-6" />
       )}
 
       <div className="flex justify-end gap-3">
-        <Button variant="ghost" onClick={onClose}>{t('cancel_label')}</Button>
-        <Button onClick={() => { onSubmit(group, grade); onClose(); }}>{t('confirm_label')}</Button>
+        <MriButton variant="ghost" onClick={onClose}>{t('cancel_label')}</MriButton>
+        <MriButton onClick={() => { onSubmit(group, grade); onClose(); }}>{t('confirm_label')}</MriButton>
       </div>
-    </Dialog>
+    </MriDialog>
   )
 }

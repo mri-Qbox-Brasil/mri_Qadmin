@@ -4,7 +4,7 @@ import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/context/I18n'
 import ActionButton from './components/ActionButton'
 import ActionDropdown from './components/ActionDropdown'
-import { Button, Input, PageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { Search, Zap, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -71,7 +71,7 @@ export default function Actions() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <PageHeader title={t('nav_actions')} icon={Zap}>
+      <MriPageHeader title={t('nav_actions')} icon={Zap}>
          <div className="flex gap-2 bg-muted rounded-lg p-1 border border-border">
               <button
                  onClick={() => setFilter('all')}
@@ -95,14 +95,14 @@ export default function Actions() {
 
          <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
+              <MriInput
                  placeholder={t('actions_search_placeholder')}
                  value={search}
                  onChange={e => setSearch(e.target.value)}
                  className="pl-9 bg-card border-border focus:border-ring h-10 transition-colors"
               />
          </div>
-         <Button
+         <MriButton
             size="icon"
             variant="outline"
             className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -110,8 +110,8 @@ export default function Actions() {
             disabled={loading}
          >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-         </Button>
-      </PageHeader>
+         </MriButton>
+      </MriPageHeader>
 
       <div className="flex-1 overflow-auto p-8 no-scrollbar">
         {filteredActions.length === 0 ? (

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useI18n } from '@/context/I18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { Button, Input, PageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 
 import Spinner from '@/components/Spinner'
 import { Copy, Package, Search, Box, RefreshCw } from 'lucide-react'
@@ -102,19 +102,19 @@ export default function Items() {
   return (
     <div className="h-full w-full flex flex-col bg-background">
       {/* ... PageHeader ... */}
-      <PageHeader title={t('title_items') || "Items"} icon={Package} count={filtered.length}>
+      <MriPageHeader title={t('title_items') || "Items"} icon={Package} count={filtered.length}>
           {/* ... */}
            {/* ... Search ... */}
            <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
+              <MriInput
                 placeholder={t('search_placeholder_items') || "Search items..."}
                 value={search}
                 onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
                 className="pl-9 bg-card border-border focus:border-ring h-10 transition-colors"
               />
           </div>
-          <Button
+          <MriButton
             size="icon"
             variant="outline"
             className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -122,8 +122,8 @@ export default function Items() {
             disabled={loading}
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-          </Button>
-      </PageHeader>
+          </MriButton>
+      </MriPageHeader>
 
       {/*List*/}
       <div className="flex-1 overflow-auto p-8 no-scrollbar" onScroll={handleScroll}>
@@ -138,9 +138,9 @@ export default function Items() {
             {visibleItems.map(item => (
               <div key={item.item} className="bg-card border border-border rounded-xl p-4 flex gap-4 hover:border-primary/50 hover:bg-muted/50 transition-all group relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => copyToClipboard(item.item)}>
+                    <MriButton size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => copyToClipboard(item.item)}>
                         <Copy className="w-4 h-4" />
-                    </Button>
+                   </MriButton>
                 </div>
 
                 <div className="w-20 h-20 bg-muted/30 rounded-lg flex items-center justify-center border border-border shrink-0 p-2">
@@ -171,14 +171,14 @@ export default function Items() {
 
                   <div className="flex items-center justify-between mt-2">
                      <p className="text-xs text-muted-foreground truncate max-w-[120px]" title={item.description}>{item.description}</p>
-                     <Button
+                     <MriButton
                         size="sm"
                         variant="secondary"
                         className="h-7 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50"
                         onClick={() => openModal(item)}
                      >
                         {t('btn_spawn')}
-                     </Button>
+                     </MriButton>
                   </div>
                 </div>
               </div>

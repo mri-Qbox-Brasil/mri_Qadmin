@@ -57,9 +57,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             'yellow': '47 95% 57%',
         }
 
-        const colorValue = COLORS[accent]
+        const colorValue = COLORS[accent] || accent
         if (colorValue) {
              root.style.setProperty('--primary', colorValue)
+             root.style.setProperty('--ring', colorValue)
         }
         localStorage.setItem('ps:accent', accent)
 
