@@ -1,6 +1,6 @@
 import React from 'react'
 import { MriCard, MriPageHeader } from '@mriqbox/ui-kit'
-import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon } from 'lucide-react'
+import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/context/I18n'
@@ -118,6 +118,11 @@ export default function Settings() {
                                 </div>
                             </div>
                         </MriCard>
+
+                        <div className="flex items-center gap-2 text-lg font-medium text-foreground pb-2 border-b border-border">
+                            <Accessibility className="w-5 h-5 text-primary" />
+                            {t('settings_accessibility')}
+                        </div>
 
                         {/* Scale */}
                         <MriCard className="p-6 bg-card border-border flex flex-col gap-4">

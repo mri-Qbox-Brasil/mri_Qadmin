@@ -321,6 +321,7 @@
     "settings_theme_system": "Sistema",
     "settings_theme_active": "ACTIVO",
     "settings_accent_color": "COLOR DE ACENTO",
+    "settings_accessibility": "Accesibilidad",
     "settings_scale_title": "Escala de la Interfaz",
     "settings_scale_description": "Ajusta el tamaño de la interfaz para una mejor visibilidad.",
     "btn_edit": "Editar",

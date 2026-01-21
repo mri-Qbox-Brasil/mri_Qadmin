@@ -68,7 +68,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         // Apply to clean root div if possible, utilizing transform
         const appRoot = document.getElementById('root')
         if (appRoot) {
-            appRoot.style.transform = `scale(${scale / 100})`
+            appRoot.style.zoom = `${scale / 100}`
+            appRoot.style.removeProperty('transform') // Ensure transform is cleared if it existed
         }
         localStorage.setItem('ps:scale', String(scale))
 

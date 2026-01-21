@@ -328,6 +328,7 @@
     "settings_theme_system": "System",
     "settings_theme_active": "ACTIVE",
     "settings_accent_color": "ACCENT COLOR",
+    "settings_accessibility": "Accessibility",
     "settings_scale_title": "Interface Scale",
     "settings_scale_description": "Adjust the interface size for better visibility.",
     "search_by_name_id_or_license": "Search by name, ID or license",

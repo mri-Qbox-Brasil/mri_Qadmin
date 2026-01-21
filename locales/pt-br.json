@@ -321,6 +321,7 @@
     "settings_theme_system": "Sistema",
     "settings_theme_active": "ATIVO",
     "settings_accent_color": "COR DE DESTAQUE",
+    "settings_accessibility": "Acessibilidade",
     "settings_scale_title": "Escala da Interface",
     "settings_scale_description": "Ajuste o tamanho da interface para melhor visibilidade.",
     "btn_edit": "Editar",

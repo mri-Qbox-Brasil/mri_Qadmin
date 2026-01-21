@@ -29,7 +29,7 @@ export default function App() {
   const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const devParam = query ? query.get('devpanel') === '1' : false
   const devStorage = typeof window !== 'undefined' ? window.localStorage.getItem('ps:devOpen') === '1' : false
-  const [visible, setVisible] = useState<boolean>(isDev || devParam || devStorage)
+  const [visible, setVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
 
   useEffect(() => {
     const handler = (e: any) => {
