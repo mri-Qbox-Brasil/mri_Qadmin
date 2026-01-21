@@ -81,7 +81,7 @@ export default function Bans() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <MriPageHeader title={t('nav_bans')} icon={Gavel} count={filteredBans.length}>
+      <MriPageHeader title={t('nav_bans')} icon={Gavel} countLabel={t('records')} count={filteredBans.length}>
           <SearchInput
              placeholder={t('search_placeholder_players')}
              value={search}

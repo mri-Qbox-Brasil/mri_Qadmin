@@ -43,7 +43,7 @@ export default function Commands() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('nav_commands')} icon={Terminal} count={filteredCommands.length}>
+            <MriPageHeader title={t('nav_commands')} icon={Terminal} countLabel={t('records')} count={filteredCommands.length}>
                     <div className="relative w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <MriInput

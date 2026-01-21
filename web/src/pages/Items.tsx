@@ -80,7 +80,7 @@ export default function Items() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <MriPageHeader title={t('title_items') || "Items"} icon={Package} count={filtered.length}>
+      <MriPageHeader title={t('title_items') || "Items"} icon={Package} countLabel={t('records')} count={filtered.length}>
           <SearchInput
              placeholder={t('search_placeholder_items') || "Search items..."}
              value={search}

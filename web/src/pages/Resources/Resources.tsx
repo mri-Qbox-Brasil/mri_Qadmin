@@ -45,7 +45,7 @@ export default function Resources() {
     <div className="w-full h-full flex overflow-hidden bg-background">
       {/* Resource List */}
       <div className="w-1/2 h-full flex flex-col border-r border-border">
-         <MriPageHeader title={t('nav_resources')} icon={Box} count={filteredResources.length}>
+         <MriPageHeader title={t('nav_resources')} icon={Box} countLabel={t('records')} count={filteredResources.length}>
              <div className="relative w-full max-w-xs">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                  <MriInput

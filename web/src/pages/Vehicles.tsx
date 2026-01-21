@@ -105,7 +105,7 @@ export default function Vehicles() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <MriPageHeader title={t('title_vehicles') || "Vehicles"} icon={Car} count={filteredVehicles.length}>
+      <MriPageHeader title={t('title_vehicles') || "Vehicles"} icon={Car} countLabel={t('records')} count={filteredVehicles.length}>
           <SearchInput
             placeholder={t('search_placeholder_vehicles') || "Search vehicles..."}
             value={search}

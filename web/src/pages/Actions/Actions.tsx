@@ -71,7 +71,7 @@ export default function Actions() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <MriPageHeader title={t('nav_actions')} icon={Zap}>
+      <MriPageHeader title={t('nav_actions')} countLabel={t('records')} count={actionList.length} icon={Zap}>
          <div className="flex gap-2 bg-muted rounded-lg p-1 border border-border">
               <button
                  onClick={() => setFilter('all')}
