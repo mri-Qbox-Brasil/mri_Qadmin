@@ -16,5 +16,17 @@ export default defineConfig({
   build: {
     outDir: 'build',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/script.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+            return 'assets/styles.css';
+          }
+          return 'assets/[name].[ext]';
+        },
+      },
+    },
   }
 });
