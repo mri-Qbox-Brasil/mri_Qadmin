@@ -712,7 +712,13 @@ Config.Actions = {
         event = "mri_Qadmin:server:UpdateVehicleStock",
         perms = "admin",
         type = "server"
-    }
+    },
+    ["enable_wall"] = {
+        label = "Ativar/Desativar Wall",
+        event = "mri_Qadmin:server:enableWall",
+        perms = "mod",
+        type = "server"
+    },
 }
 
 Config.PlayerActions = {
