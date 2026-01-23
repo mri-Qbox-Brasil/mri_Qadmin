@@ -171,6 +171,16 @@ end)
 RegisterNetEvent('mri_Qadmin:client:RefreshPlayers', function()
     SendNUIMessage({ action = 'refreshPlayers' })
 end)
+
+RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
+    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
+    SendNUIMessage({
+        action = "updatePermissions",
+        data = perms or {}
+    })
+    -- Optional: Notify usually not needed for silent sync, but if user explicitly asked
+    -- TriggerEvent('QBCore:Notify', 'Permissions synchronized', 'primary', 2000)
+end)
 RegisterNUICallback("getData", function(data, cb)
     local results = GetCoreData()
     cb(results)
