@@ -128,24 +128,14 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
     }
 
     if (confirm.type === 'add') {
-         await sendNui('clickButton', {
-            data: 'add_principal',
-            type: 'server',
-            event: 'mri_Qadmin:server:AddPrincipal',
-            selectedData: {
-                child: { value: newPrincipal.child },
-                parent: { value: newPrincipal.parent },
-                description: { value: newPrincipal.description }
-            }
+         await sendNui('add_principal', {
+            child: newPrincipal.child,
+            parent: newPrincipal.parent,
+            description: newPrincipal.description
         })
         setNewPrincipal({ child: '', parent: '', description: '' })
     } else if (confirm.type === 'remove' && confirm.principal) {
-        await sendNui('clickButton', {
-            data: 'remove_principal',
-            type: 'server',
-            event: 'mri_Qadmin:server:RemovePrincipal',
-            selectedData: { id: { value: confirm.principal.id } }
-        })
+        await sendNui('remove_principal', { id: confirm.principal.id })
     }
 
     setConfirm(null)

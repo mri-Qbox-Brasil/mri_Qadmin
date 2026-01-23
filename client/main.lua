@@ -201,3 +201,23 @@ RegisterNUICallback("toggle_ace", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:ToggleAce', data.id)
     cb('ok')
 end)
+
+RegisterNUICallback("add_principal", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:AddPrincipal', data.child, data.parent, data.description)
+    cb('ok')
+end)
+
+RegisterNUICallback("remove_principal", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:RemovePrincipal', data.id)
+    cb('ok')
+end)
+
+RegisterNUICallback("add_ace", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:AddAce', data.principal, data.object, data.allow)
+    cb('ok')
+end)
+
+RegisterNUICallback("remove_ace", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:RemoveAce', data.id)
+    cb('ok')
+end)

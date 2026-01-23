@@ -133,24 +133,14 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
     }
 
     if (confirm.type === 'add') {
-         await sendNui('clickButton', {
-            data: 'add_ace',
-            type: 'server',
-            event: 'mri_Qadmin:server:AddAce',
-            selectedData: {
-                principal: { value: newAce.principal },
-                object: { value: newAce.object },
-                allow: { value: allowType === 1 }
-            }
+         await sendNui('add_ace', {
+            principal: newAce.principal,
+            object: newAce.object,
+            allow: allowType === 1
         })
         setNewAce({ principal: '', object: '', allow: 1 })
     } else if (confirm.type === 'remove' && confirm.ace) {
-        await sendNui('clickButton', {
-            data: 'remove_ace',
-            type: 'server',
-            event: 'mri_Qadmin:server:RemoveAce',
-            selectedData: { id: { value: confirm.ace.id } }
-        })
+        await sendNui('remove_ace', { id: confirm.ace.id })
     }
 
     setConfirm(null)
