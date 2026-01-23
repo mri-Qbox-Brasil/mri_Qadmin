@@ -37,20 +37,33 @@ function AceGroup({ principal, items, onRemove, onToggle }: { principal: string,
 
             {isOpen && (
                 <div className="divide-y divide-border/50">
-                    {items.map(ace => (
-                        <div key={ace.id} className="flex items-center gap-4 p-3 pl-9 hover:bg-muted/20 text-sm">
-                             <button
-                                onClick={(e) => { e.stopPropagation(); onToggle(ace) }}
-                                className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded transition-colors hover:opacity-80 ${ace.allow ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'}`}
-                             >
-                                {ace.allow ? t('permissions_allow') : t('permissions_deny')}
-                             </button>
-                             <span className="font-mono text-muted-foreground">{ace.object}</span>
-                             <button onClick={(e) => { e.stopPropagation(); onRemove(ace); }} className="ml-auto text-muted-foreground hover:text-red-500 transition-colors">
-                                <Trash2 className="w-4 h-4" />
-                             </button>
-                        </div>
-                    ))}
+                    {items.map(ace => {
+                        const isPending = ace.id > 10000000000
+                        return (
+                            <div key={ace.id} className={`flex items-center gap-4 p-3 pl-9 hover:bg-muted/20 text-sm ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <button
+                                    onClick={(e) => { e.stopPropagation(); if (!isPending) onToggle(ace) }}
+                                    disabled={isPending}
+                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded transition-colors ${
+                                        ace.allow
+                                        ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
+                                        : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
+                                    } ${isPending ? 'group-hover:bg-transparent' : ''}`}
+                                    >
+                                    {ace.allow ? t('permissions_allow') : t('permissions_deny')}
+                                    </button>
+                                    <span className="font-mono text-muted-foreground">{ace.object} {isPending && <span className="text-[10px] italic ml-2 opacity-70">...syncing</span>}</span>
+
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); if (!isPending) onRemove(ace); }}
+                                        className={`ml-auto transition-colors ${isPending ? 'text-muted-foreground/30' : 'text-muted-foreground hover:text-red-500'}`}
+                                        disabled={isPending}
+                                    >
+                                    {isPending ? <Spinner size="sm" /> : <Trash2 className="w-4 h-4" />}
+                                    </button>
+                            </div>
+                        )
+                    })}
                 </div>
             )}
         </div>
@@ -107,12 +120,13 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
   }
 
   const handleToggle = async (ace: Ace) => {
-    if (isEnvBrowser()) {
-        setAces(aces.map(a => a.id === ace.id ? {...a, allow: a.allow ? 0 : 1} : a))
-        return
-    }
+    // Optimistic update
+    setAces(prev => prev.map(a => a.id === ace.id ? {...a, allow: a.allow ? 0 : 1} : a))
+
+    if (isEnvBrowser()) return
+
     await sendNui('toggle_ace', { id: ace.id })
-    fetchAces()
+    // No manual fetch - wait for server broadcast
   }
 
   const executeAction = async () => {
@@ -137,18 +151,32 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
     }
 
     if (confirm.type === 'add') {
+         // Optimistic Add
+         const tempId = Date.now()
+         const newItem = {
+            id: tempId,
+            principal: newAce.principal,
+            object: newAce.object,
+            allow: allowType === 1 ? 1 : 0
+         }
+         setAces(prev => [...prev, newItem])
+         setNewAce({ principal: '', object: '', allow: 1 })
+
          await sendNui('add_ace', {
             principal: newAce.principal,
             object: newAce.object,
             allow: allowType === 1
         })
-        setNewAce({ principal: '', object: '', allow: 1 })
     } else if (confirm.type === 'remove' && confirm.ace) {
+        // Optimistic Remove
+        const removeId = confirm.ace.id
+        setAces(prev => prev.filter(a => a.id !== removeId))
+
         await sendNui('remove_ace', { id: confirm.ace.id })
     }
 
     setConfirm(null)
-    fetchAces()
+    // No manual fetch - wait for server broadcast
   }
 
   return (
@@ -182,16 +210,19 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                  searchPlaceholder={t('actions_search_placeholder')}
               />
           </div>
-          <div className="w-24">
+          <div className="w-32">
                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_type_label')}</label>
-               <select
-                 className="w-full h-9 bg-input border border-input rounded px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                 value={allowType}
-                 onChange={(e) => setAllowType(Number(e.target.value))}
-               >
-                  <option value={1}>{t('permissions_allow')}</option>
-                  <option value={0}>{t('permissions_deny')}</option>
-               </select>
+               <CreatableCombobox
+                 options={[
+                    { label: t('permissions_allow'), value: '1' },
+                    { label: t('permissions_deny'), value: '0' }
+                 ]}
+                 value={String(allowType)}
+                 onChange={(val) => setAllowType(Number(val))}
+                 placeholder={t('select_placeholder')}
+                 searchPlaceholder={t('actions_search_placeholder')}
+                 allowCreate={false}
+               />
           </div>
           <MriButton size="sm" className="h-9" onClick={handleAdd}>
               <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}

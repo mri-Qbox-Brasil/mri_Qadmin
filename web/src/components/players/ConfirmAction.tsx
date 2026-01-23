@@ -12,7 +12,7 @@ export default function ConfirmAction({ text, onConfirm, onCancel }: { text: str
       onClose={onCancel}
       onConfirm={onConfirm}
     >
-      <p className="mb-6 text-muted-foreground">{text}</p>
+      <p className="mb-6 text-muted-foreground break-all">{text}</p>
     </ActionModal>
   )
 }

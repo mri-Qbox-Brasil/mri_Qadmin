@@ -21,7 +21,7 @@ import { useI18n } from '@/context/I18n'
 function PrincipalGroup({ child, items, onRemove, players }: { child: string, items: Principal[], onRemove: (p: Principal) => void, players: any[] }) {
     const [isOpen, setIsOpen] = useState(false)
     const { t } = useI18n()
-    const player = players.find(p => p.license === child)
+    const player = players.find(p => child.includes(p.license) || p.license === child)
     const label = player ? `${player.name} (${child})` : child
 
     return (
@@ -40,16 +40,23 @@ function PrincipalGroup({ child, items, onRemove, players }: { child: string, it
 
             {isOpen && (
                 <div className="divide-y divide-border/50">
-                    {items.map(p => (
-                        <div key={p.id} className="flex items-center gap-4 p-3 pl-9 hover:bg-muted/20 text-sm">
-                             <span className="text-muted-foreground">inherited</span>
-                             <span className="font-mono font-bold text-primary">{p.parent}</span>
-                             {p.description && <span className="text-muted-foreground text-xs italic ml-2">- {p.description}</span>}
-                             <button onClick={(e) => { e.stopPropagation(); onRemove(p); }} className="ml-auto text-muted-foreground hover:text-red-500 transition-colors">
-                                <Trash2 className="w-4 h-4" />
-                             </button>
-                        </div>
-                    ))}
+                    {items.map(p => {
+                        const isPending = p.id > 10000000000
+                        return (
+                            <div key={p.id} className={`flex items-center gap-4 p-3 pl-9 hover:bg-muted/20 text-sm ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <span className="text-muted-foreground">inherited</span>
+                                    <span className="font-mono font-bold text-primary">{p.parent} {isPending && <span className="text-[10px] italic ml-2 opacity-70">...syncing</span>}</span>
+                                    {p.description && <span className="text-muted-foreground text-xs italic ml-2">- {p.description}</span>}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); if (!isPending) onRemove(p); }}
+                                        className={`ml-auto transition-colors ${isPending ? 'text-muted-foreground/30' : 'text-muted-foreground hover:text-red-500'}`}
+                                        disabled={isPending}
+                                    >
+                                    {isPending ? <Spinner size="sm" /> : <Trash2 className="w-4 h-4" />}
+                                    </button>
+                            </div>
+                        )
+                    })}
                 </div>
             )}
         </div>
@@ -132,18 +139,36 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
     }
 
     if (confirm.type === 'add') {
+         // Optimistic Add
+         const tempId = Date.now()
+         const newItem = {
+            id: tempId,
+            child: newPrincipal.child,
+            parent: newPrincipal.parent,
+            description: newPrincipal.description
+         }
+         // Avoid duplicates in UI if spam clicking
+         setPrincipals(prev => {
+             const exists = prev.some(p => p.child === newItem.child && p.parent === newItem.parent)
+             return exists ? prev : [...prev, newItem]
+         })
+         setNewPrincipal({ child: '', parent: '', description: '' })
+
          await sendNui('add_principal', {
             child: newPrincipal.child,
             parent: newPrincipal.parent,
             description: newPrincipal.description
         })
-        setNewPrincipal({ child: '', parent: '', description: '' })
     } else if (confirm.type === 'remove' && confirm.principal) {
+        // Optimistic Remove
+        const removeId = confirm.principal.id
+        setPrincipals(prev => prev.filter(p => p.id !== removeId))
+
         await sendNui('remove_principal', { id: confirm.principal.id })
     }
 
     setConfirm(null)
-    fetchPrincipals()
+    // No manual fetch - wait for server broadcast
   }
 
   return (

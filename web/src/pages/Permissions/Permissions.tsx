@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MriPageHeader, MriButton, MriInput } from '@mriqbox/ui-kit'
 import { Shield, Key, Users, Search, RefreshCw, Wand2 } from 'lucide-react'
 import { useI18n } from '@/context/I18n'
@@ -10,7 +10,7 @@ import ConfirmAction from '@/components/players/ConfirmAction'
 
 export default function Permissions() {
   const { t } = useI18n()
-  const { sendNui } = useNui()
+  const { sendNui, on, off } = useNui()
   const [activeTab, setActiveTab] = useState<'aces' | 'principals'>('principals')
   const [searchQuery, setSearchQuery] = useState('')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -21,10 +21,17 @@ export default function Permissions() {
     setRefreshTrigger(prev => prev + 1)
   }
 
+  useEffect(() => {
+      const onRefresh = () => handleRefresh()
+      on('refreshPermissionsLists', onRefresh)
+      return () => off('refreshPermissionsLists', onRefresh)
+  }, [on, off])
+
   const handleSeed = async () => {
      await sendNui('seed_pages')
      setShowSeedConfirm(false)
-     setTimeout(handleRefresh, 500)
+     // Also refresh manually a bit later just in case
+     setTimeout(handleRefresh, 1000)
   }
 
   return (

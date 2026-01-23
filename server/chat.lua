@@ -14,7 +14,6 @@ end
 RegisterNetEvent("onResourceStart", function(resourceName)
     if GetCurrentResourceName() == resourceName then
         messages = MySQL.Sync.fetchAll("SELECT * FROM mri_qadmin_chat", {}) or {}
-        print(json.encode(messages))
     end
 end)
 
@@ -26,7 +25,6 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, f
     notifyPlayers()
 
     messages[#messages + 1] = { message = message, citizenid = citizenid, fullname = fullname, createdAt = createdAt }
-    print(json.encode(messages))
 
     MySQL.Async.insert("INSERT INTO mri_qadmin_chat (message, citizenid, fullname) VALUES (?, ?, ?)", {
         message,
