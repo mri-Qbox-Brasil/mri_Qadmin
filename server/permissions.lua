@@ -170,6 +170,9 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
         local node = 'qadmin.page.' .. page
         if IsPlayerAceAllowed(src, node) then
             table.insert(allowed, node)
+        else
+            -- Debug failure for specific pages if needed, or just generally
+            -- print(('[mri_Qadmin] Denied %s for %s'):format(node, GetPlayerName(src)))
         end
     end
 
@@ -177,6 +180,8 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     if IsPlayerAceAllowed(src, 'qadmin.master') or QBCore.Functions.HasPermission(src, 'admin') then
         table.insert(allowed, 'qadmin.master')
     end
+
+    print(('[mri_Qadmin] GetMyPermissions for %s: %s'):format(GetPlayerName(src), json.encode(allowed)))
 
     return allowed
 end)

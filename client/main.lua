@@ -178,6 +178,9 @@ RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
         action = "updatePermissions",
         data = perms or {}
     })
+    SendNUIMessage({
+        action = "refreshPermissionsLists"
+    })
     -- Optional: Notify usually not needed for silent sync, but if user explicitly asked
     -- TriggerEvent('QBCore:Notify', 'Permissions synchronized', 'primary', 2000)
 end)

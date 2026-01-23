@@ -80,9 +80,35 @@ export default function App() {
     const onPerms = (perms: string[]) => {
         setMyPermissions(perms || [])
     }
-    on('updatePermissions', onPerms)
-    return () => off('updatePermissions', onPerms)
+    const onRefreshLists = () => {
+        // Increment trigger to force reload of lists
+        // We use setGameData hack or just use the new trigger
+        // Assuming we added 'setPermissionRefreshTrigger' to AppState
+        useAppState().setPermissionRefreshTrigger(prev => prev + 1)
+    }
+    // Wait, useAppState cannot be called inside useEffect callback if valid hook rules
+    // But we extract setters outside
   }, [on, off, setMyPermissions])
+
+  // Correct implementation:
+  const { setPermissionRefreshTrigger } = useAppState()
+
+  useEffect(() => {
+    const onPerms = (perms: string[]) => {
+        setMyPermissions(perms || [])
+    }
+    const onRefreshLists = () => {
+         setPermissionRefreshTrigger(prev => prev + 1)
+    }
+
+    on('updatePermissions', onPerms)
+    on('refreshPermissionsLists', onRefreshLists)
+
+    return () => {
+        off('updatePermissions', onPerms)
+        off('refreshPermissionsLists', onRefreshLists)
+    }
+  }, [on, off, setMyPermissions, setPermissionRefreshTrigger])
 
   // Listen for NUI visibility messages from the client resource
   useEffect(() => {

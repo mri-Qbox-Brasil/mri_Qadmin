@@ -68,6 +68,8 @@ interface AppStateValue {
   // User Permissions
   myPermissions: string[]
   setMyPermissions: (p: string[]) => void
+  permissionRefreshTrigger: number
+  setPermissionRefreshTrigger: React.Dispatch<React.SetStateAction<number>>
 }
 
 const AppStateContext = createContext<AppStateValue | undefined>(undefined)
@@ -77,6 +79,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [menuWide, setMenuWide] = useState<boolean>(false)
   const [myPermissions, setMyPermissions] = useState<string[]>([]) // Start empty
+  const [permissionRefreshTrigger, setPermissionRefreshTrigger] = useState<number>(0)
 
   const [gameData, setGameData] = useState<GameData>({
     items: [],
@@ -107,7 +110,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       vehicleDev, setVehicleDev,
       showCoords, setShowCoords,
       entityInfo, setEntityInfo,
-      myPermissions, setMyPermissions
+      myPermissions, setMyPermissions,
+      permissionRefreshTrigger, setPermissionRefreshTrigger
     }}>
       {children}
     </AppStateContext.Provider>
