@@ -30,10 +30,10 @@ export default function Permissions() {
   return (
     <div className="h-full w-full flex flex-col bg-background">
       <MriPageHeader
-        title="Permissions Manager"
+        title={t('permissions_title')}
         icon={Shield}
         count={itemCount}
-        countLabel={activeTab === 'principals' ? 'Inheritances' : 'Permissions'}
+        countLabel={activeTab === 'principals' ? t('permissions_inheritance') : t('permissions_aces')}
       >
         <div className="flex items-center gap-3">
             <div className="flex gap-2 bg-muted rounded-lg p-1 border border-border">
@@ -45,7 +45,7 @@ export default function Permissions() {
                     )}
                 >
                     <Users className="w-3.5 h-3.5" />
-                    Inheritance
+                    {t('permissions_inheritance')}
                 </button>
                 <button
                     onClick={() => setActiveTab('aces')}
@@ -55,14 +55,14 @@ export default function Permissions() {
                     )}
                 >
                     <Key className="w-3.5 h-3.5" />
-                    Permissions
+                    {t('permissions_aces')}
                 </button>
             </div>
 
             <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <MriInput
-                    placeholder="Search..."
+                    placeholder={t('actions_search_placeholder')}
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     className="pl-9 bg-card border-border focus:border-ring h-10 transition-colors"
@@ -74,7 +74,7 @@ export default function Permissions() {
                 variant="outline"
                 className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                 onClick={handleRefresh}
-                title="Refresh"
+                title={t('refresh')}
             >
                 <RefreshCw className="w-4 h-4" />
             </MriButton>
@@ -84,7 +84,7 @@ export default function Permissions() {
                 variant="outline"
                 className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                 onClick={() => setShowSeedConfirm(true)}
-                title="Create Default Page Permissions"
+                title={t('permissions_seed_btn')}
             >
                 <Wand2 className="w-4 h-4" />
             </MriButton>
@@ -96,8 +96,8 @@ export default function Permissions() {
             {activeTab === 'principals' ? (
                 <div className="flex flex-col h-full space-y-4 overflow-hidden">
                     <div>
-                        <h2 className="text-lg font-bold">Inheritance & Groups</h2>
-                        <p className="text-muted-foreground text-sm">Manage which principals inherit permissions from others (e.g., adding a player to a group).</p>
+                        <h2 className="text-lg font-bold">{t('permissions_inheritance_title')}</h2>
+                        <p className="text-muted-foreground text-sm">{t('permissions_inheritance_desc')}</p>
                     </div>
                     <div className="flex-1 overflow-hidden">
                         <PrincipalsList searchQuery={searchQuery} refreshTrigger={refreshTrigger} onCountChange={setItemCount} />
@@ -106,8 +106,8 @@ export default function Permissions() {
             ) : (
                 <div className="flex flex-col h-full space-y-4 overflow-hidden">
                     <div>
-                         <h2 className="text-lg font-bold">Access Control Entries (Aces)</h2>
-                         <p className="text-muted-foreground text-sm">Define what each principal (group or player) is allowed or denied to do.</p>
+                         <h2 className="text-lg font-bold">{t('permissions_aces_title')}</h2>
+                         <p className="text-muted-foreground text-sm">{t('permissions_aces_desc')}</p>
                     </div>
                     <div className="flex-1 overflow-hidden">
                         <AcesList searchQuery={searchQuery} refreshTrigger={refreshTrigger} onCountChange={setItemCount} />
@@ -119,7 +119,7 @@ export default function Permissions() {
 
        {showSeedConfirm && (
         <ConfirmAction
-          text="Do you want to create default page permissions (qadmin.page.*) for group.admin?"
+          text={t('permissions_seed_confirm')}
           onConfirm={handleSeed}
           onCancel={() => setShowSeedConfirm(false)}
         />

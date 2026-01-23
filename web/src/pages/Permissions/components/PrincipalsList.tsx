@@ -16,8 +16,11 @@ interface Principal {
   description?: string
 }
 
+import { useI18n } from '@/context/I18n'
+
 function PrincipalGroup({ child, items, onRemove, players }: { child: string, items: Principal[], onRemove: (p: Principal) => void, players: any[] }) {
     const [isOpen, setIsOpen] = useState(false)
+    const { t } = useI18n()
     const player = players.find(p => p.license === child)
     const label = player ? `${player.name} (${child})` : child
 
@@ -31,7 +34,7 @@ function PrincipalGroup({ child, items, onRemove, players }: { child: string, it
                 <User className="w-4 h-4 text-primary" />
                 <span className="font-mono text-sm font-medium">{label}</span>
                 <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto">
-                    {items.length} groups
+                    {items.length} {t('groups')}
                 </span>
             </div>
 
@@ -55,6 +58,7 @@ function PrincipalGroup({ child, items, onRemove, players }: { child: string, it
 
 export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, onCountChange }: { searchQuery?: string, refreshTrigger?: number, onCountChange?: (n: number) => void }) {
   const { sendNui } = useNui()
+  const { t } = useI18n()
   const { players } = useAppState()
   const [principals, setPrincipals] = useState<Principal[]>([])
   const [loading, setLoading] = useState(false)
@@ -146,7 +150,7 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
     <div className="flex flex-col h-full space-y-4">
       <div className="flex gap-2 items-end bg-card p-4 rounded-lg border border-border shrink-0">
           <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Child (Member)</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_child_label')}</label>
               <CreatableCombobox
                  options={[
                      ...players.map(p => ({ label: `${p.name} (${p.license})`, value: p.license })),
@@ -154,12 +158,12 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
                  ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)}
                  value={newPrincipal.child}
                  onChange={(val) => setNewPrincipal({...newPrincipal, child: val})}
-                 placeholder="Select player or type identifier..."
-                 searchPlaceholder="Search player..."
+                 placeholder={t('select_player_label')}
+                 searchPlaceholder={t('search_placeholder_players')}
               />
           </div>
           <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Parent (Group)</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_parent_label')}</label>
               <CreatableCombobox
                  options={[
                      { label: 'group.admin', value: 'group.admin' },
@@ -168,12 +172,12 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
                  ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)}
                  value={newPrincipal.parent}
                  onChange={(val) => setNewPrincipal({...newPrincipal, parent: val})}
-                 placeholder="Select or type group..."
-                 searchPlaceholder="Search group..."
+                 placeholder={t('select_placeholder')}
+                 searchPlaceholder={t('actions_search_placeholder')}
               />
           </div>
           <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Description</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_desc_label')}</label>
               <MriInput
                 value={newPrincipal.description}
                 onChange={(e) => setNewPrincipal({...newPrincipal, description: e.target.value})}
@@ -182,7 +186,7 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
               />
           </div>
           <MriButton size="sm" className="h-9" onClick={handleAdd}>
-              <Plus className="w-4 h-4 mr-1" /> Add
+              <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
           </MriButton>
       </div>
 
@@ -191,7 +195,7 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
             {loading ? (
                 <div className="p-8 flex justify-center"><Spinner /></div>
             ) : principals.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">No inheritance found</div>
+                <div className="p-8 text-center text-muted-foreground">{t('permissions_no_inheritance')}</div>
             ) : (
                 (() => {
                     // Filter first
@@ -206,7 +210,7 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
                     })
 
                     if (filtered.length === 0 && searchQuery) {
-                        return <div className="p-8 text-center text-muted-foreground">No matches for "{searchQuery}"</div>
+                        return <div className="p-8 text-center text-muted-foreground">{t('permissions_no_matches').replace('%s', searchQuery)}</div>
                     }
 
                     // Group by child
@@ -233,8 +237,8 @@ export default function PrincipalsList({ searchQuery = '', refreshTrigger = 0, o
       {confirm && (
         <ConfirmAction
           text={confirm.type === 'add'
-            ? `Are you sure you want to ADD inheritance '${newPrincipal.child}' -> '${newPrincipal.parent}'?`
-            : `Are you sure you want to REMOVE inheritance '${confirm.principal?.child}' -> '${confirm.principal?.parent}'?`
+            ? t('permissions_confirm_add_principal').replace('%s', newPrincipal.child).replace('%s', newPrincipal.parent)
+            : t('permissions_confirm_remove_principal').replace('%s', confirm.principal?.child || '').replace('%s', confirm.principal?.parent || '')
           }
           onConfirm={executeAction}
           onCancel={() => setConfirm(null)}

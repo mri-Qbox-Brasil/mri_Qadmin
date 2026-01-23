@@ -15,8 +15,11 @@ interface Ace {
   allow: number
 }
 
+import { useI18n } from '@/context/I18n'
+
 function AceGroup({ principal, items, onRemove, onToggle }: { principal: string, items: Ace[], onRemove: (a: Ace) => void, onToggle: (a: Ace) => void }) {
     const [isOpen, setIsOpen] = useState(false)
+    const { t } = useI18n()
 
     return (
         <div className="border border-border rounded-md bg-card overflow-hidden">
@@ -28,7 +31,7 @@ function AceGroup({ principal, items, onRemove, onToggle }: { principal: string,
                 <Shield className="w-4 h-4 text-primary" />
                 <span className="font-mono text-sm font-medium">{principal}</span>
                 <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto">
-                    {items.length} aces
+                    {items.length} {t('permissions_aces').toLowerCase()}
                 </span>
             </div>
 
@@ -40,7 +43,7 @@ function AceGroup({ principal, items, onRemove, onToggle }: { principal: string,
                                 onClick={(e) => { e.stopPropagation(); onToggle(ace) }}
                                 className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded transition-colors hover:opacity-80 ${ace.allow ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'}`}
                              >
-                                {ace.allow ? 'ALLOW' : 'DENY'}
+                                {ace.allow ? t('permissions_allow') : t('permissions_deny')}
                              </button>
                              <span className="font-mono text-muted-foreground">{ace.object}</span>
                              <button onClick={(e) => { e.stopPropagation(); onRemove(ace); }} className="ml-auto text-muted-foreground hover:text-red-500 transition-colors">
@@ -56,6 +59,7 @@ function AceGroup({ principal, items, onRemove, onToggle }: { principal: string,
 
 export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCountChange }: { searchQuery?: string, refreshTrigger?: number, onCountChange?: (n: number) => void }) {
   const { sendNui } = useNui()
+  const { t } = useI18n()
   const [aces, setAces] = useState<Ace[]>([])
   const [loading, setLoading] = useState(false)
   const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1 })
@@ -151,7 +155,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
     <div className="flex flex-col h-full space-y-4">
       <div className="flex gap-2 items-end bg-card p-4 rounded-lg border border-border shrink-0">
           <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Principal</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_principal_label')}</label>
               <CreatableCombobox
                  options={[
                      { label: 'group.admin', value: 'group.admin' },
@@ -160,12 +164,12 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                  ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)} // Unique
                  value={newAce.principal}
                  onChange={(val) => setNewAce({...newAce, principal: val})}
-                 placeholder="Select or type principal..."
-                 searchPlaceholder="Search principal..."
+                 placeholder={t('select_placeholder')}
+                 searchPlaceholder={t('actions_search_placeholder')}
                />
           </div>
           <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Object</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_object_label')}</label>
               <CreatableCombobox
                  options={[
                      { label: 'command.noclip', value: 'command.noclip' },
@@ -174,23 +178,23 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                  ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)}
                  value={newAce.object}
                  onChange={(val) => setNewAce({...newAce, object: val})}
-                 placeholder="Select or type object..."
-                 searchPlaceholder="Search object..."
+                 placeholder={t('select_placeholder')}
+                 searchPlaceholder={t('actions_search_placeholder')}
               />
           </div>
           <div className="w-24">
-               <label className="text-xs font-medium text-muted-foreground mb-1 block">Type</label>
+               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_type_label')}</label>
                <select
                  className="w-full h-9 bg-input border border-input rounded px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                  value={allowType}
                  onChange={(e) => setAllowType(Number(e.target.value))}
                >
-                  <option value={1}>Allow</option>
-                  <option value={0}>Deny</option>
+                  <option value={1}>{t('permissions_allow')}</option>
+                  <option value={0}>{t('permissions_deny')}</option>
                </select>
           </div>
           <MriButton size="sm" className="h-9" onClick={handleAdd}>
-              <Plus className="w-4 h-4 mr-1" /> Add
+              <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
           </MriButton>
       </div>
 
@@ -199,7 +203,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
             {loading ? (
                 <div className="p-8 flex justify-center"><Spinner /></div>
             ) : aces.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">No permissions found</div>
+                <div className="p-8 text-center text-muted-foreground">{t('permissions_no_aces')}</div>
             ) : (
                 (() => {
                     // Filter first
@@ -213,7 +217,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                     })
 
                     if (filtered.length === 0 && searchQuery) {
-                        return <div className="p-8 text-center text-muted-foreground">No matches for "{searchQuery}"</div>
+                        return <div className="p-8 text-center text-muted-foreground">{t('permissions_no_matches').replace('%s', searchQuery)}</div>
                     }
 
                     // Group by principal
@@ -240,8 +244,8 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
       {confirm && (
         <ConfirmAction
           text={confirm.type === 'add'
-            ? `Are you sure you want to ADD permission '${newAce.object}' to '${newAce.principal}'?`
-            : `Are you sure you want to REMOVE permission '${confirm.ace?.object}' from '${confirm.ace?.principal}'?`
+            ? t('permissions_confirm_add_ace').replace('%s', newAce.object).replace('%s', newAce.principal)
+            : t('permissions_confirm_remove_ace').replace('%s', confirm.ace?.object || '').replace('%s', confirm.ace?.principal || '')
           }
           onConfirm={executeAction}
           onCancel={() => setConfirm(null)}
