@@ -16,14 +16,19 @@ import Vehicles from '@/pages/Vehicles'
 import Groups from '@/pages/Groups'
 import Credits from '@/pages/Credits'
 import Settings from '@/pages/Settings'
+import Permissions from '@/pages/Permissions/Permissions'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
 import { isEnvBrowser } from '@/utils/misc'
 import { MOCK_GAME_DATA, MOCK_PLAYERS } from '@/utils/mockData'
 
+import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
+
+// ... existing imports
+
 export default function App() {
-  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings'>('dashboard')
-  const { players, setSelectedPlayer, setGameData, setPlayers } = useAppState()
+  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions'>('dashboard')
+  const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions } = useAppState()
   const { on, off, sendNui } = useNui()
   const isDev = (import.meta as any)?.env?.DEV === true
   const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
@@ -36,13 +41,21 @@ export default function App() {
       const detail = e?.detail || {}
       const { route: r, playerId } = detail
       if (!r) return
+
+      // Permission Check for navigation
+      if (r in PAGE_PERMISSIONS) {
+          const perm = PAGE_PERMISSIONS[r as keyof typeof PAGE_PERMISSIONS]
+          if (!hasPermission(myPermissions, perm)) {
+              console.log('Access denied to', r)
+              return
+          }
+      }
+
       if (r === 'players') {
-        // try to find player in current state
         const p = players?.find((x: any) => String(x.id) === String(playerId))
         if (p) {
           setSelectedPlayer(p)
         } else if (playerId) {
-          // store pending id so Players can pick it up after loading
           (window as any).__ps_pendingPlayerId = playerId
         }
         setRoute('players')
@@ -53,14 +66,23 @@ export default function App() {
 
     window.addEventListener('ps:navigate', handler as EventListener)
     return () => window.removeEventListener('ps:navigate', handler as EventListener)
-  }, [players, setSelectedPlayer])
+  }, [players, setSelectedPlayer, myPermissions])
 
   useEffect(() => {
     if (isEnvBrowser()) {
       setGameData(MOCK_GAME_DATA)
       setPlayers(MOCK_PLAYERS)
+      setMyPermissions(['qadmin.page.*']) // Full access in dev
     }
-  }, [setGameData, setPlayers])
+  }, [setGameData, setPlayers, setMyPermissions])
+
+  useEffect(() => {
+    const onPerms = (perms: string[]) => {
+        setMyPermissions(perms || [])
+    }
+    on('updatePermissions', onPerms)
+    return () => off('updatePermissions', onPerms)
+  }, [on, off, setMyPermissions])
 
   // Listen for NUI visibility messages from the client resource
   useEffect(() => {
@@ -68,6 +90,14 @@ export default function App() {
       console.log('[App] Received setVisible:', data)
       const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.data) : Boolean(data)
       setVisible(newVis)
+
+      if (newVis && !isEnvBrowser()) {
+          // Fetch permissions
+          sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
+              if (Array.isArray(perms)) setMyPermissions(perms)
+          }).catch(console.error)
+      }
+
       try {
         const root = document.getElementById('root')
         if (root) root.style.display = newVis ? '' : 'none'
@@ -77,7 +107,7 @@ export default function App() {
     }
     on('setVisible', onVisible)
     return () => off('setVisible', onVisible)
-  }, [on, off])
+  }, [on, off, sendNui, setMyPermissions])
 
   // ensure root display follows `visible` (covers initial dev mode)
   useEffect(() => {
@@ -152,6 +182,7 @@ export default function App() {
          route === 'credits' ? <Credits /> :
          route === 'settings' ? <Settings /> :
          route === 'dashboard' ? <Dashboard /> :
+         route === 'permissions' ? <Permissions /> :
          null}
       </div>
     </div>

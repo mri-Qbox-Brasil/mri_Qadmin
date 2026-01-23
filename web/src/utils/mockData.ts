@@ -48,6 +48,19 @@ export const MOCK_PLAYERS = [
     }
 ];
 
+export const MOCK_ACES = [
+    { id: 1, principal: 'group.admin', object: 'command.noclip', allow: 1 },
+    { id: 2, principal: 'group.admin', object: 'command.givecar', allow: 1 },
+    { id: 3, principal: 'group.mod', object: 'command.kick', allow: 1 },
+    { id: 4, principal: 'identifier.steam:11000010a3c2b1d', object: 'command.god', allow: 0 },
+];
+
+export const MOCK_PRINCIPALS = [
+    { id: 1, child: 'identifier.steam:11000010a3c2b1d', parent: 'group.admin' },
+    { id: 2, child: 'identifier.license:abc1234567890', parent: 'group.mod' },
+    { id: 3, child: 'group.admin', parent: 'group.mod' },
+];
+
 export const MOCK_GAME_DATA = {
     items: Array.from({ length: 20 }).map((_, i) => ({
         name: `item_${i}`,

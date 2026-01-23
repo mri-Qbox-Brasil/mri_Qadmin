@@ -175,3 +175,29 @@ RegisterNUICallback("getData", function(data, cb)
     local results = GetCoreData()
     cb(results)
 end)
+
+-- Permissions Callbacks Matcher
+RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(data, cb)
+    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
+    cb(perms or {})
+end)
+
+RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(data, cb)
+    local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals', false)
+    cb(principals or {})
+end)
+
+RegisterNUICallback("mri_Qadmin:callback:GetAces", function(data, cb)
+    local aces = lib.callback.await('mri_Qadmin:callback:GetAces', false)
+    cb(aces or {})
+end)
+
+RegisterNUICallback("seed_pages", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:SeedPageAces')
+    cb('ok')
+end)
+
+RegisterNUICallback("toggle_ace", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:ToggleAce', data.id)
+    cb('ok')
+end)

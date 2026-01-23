@@ -64,6 +64,10 @@ interface AppStateValue {
   setShowCoords: (v: CoordsData | null) => void
   entityInfo: EntityInfoData | null
   setEntityInfo: (v: EntityInfoData | null) => void
+
+  // User Permissions
+  myPermissions: string[]
+  setMyPermissions: (p: string[]) => void
 }
 
 const AppStateContext = createContext<AppStateValue | undefined>(undefined)
@@ -72,6 +76,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [players, setPlayers] = useState<Player[]>([])
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [menuWide, setMenuWide] = useState<boolean>(false)
+  const [myPermissions, setMyPermissions] = useState<string[]>([]) // Start empty
 
   const [gameData, setGameData] = useState<GameData>({
     items: [],
@@ -101,7 +106,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       staffMessages, setStaffMessages,
       vehicleDev, setVehicleDev,
       showCoords, setShowCoords,
-      entityInfo, setEntityInfo
+      entityInfo, setEntityInfo,
+      myPermissions, setMyPermissions
     }}>
       {children}
     </AppStateContext.Provider>

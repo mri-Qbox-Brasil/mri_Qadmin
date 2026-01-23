@@ -12,7 +12,8 @@ import {
     Car,
     Info,
     Briefcase,
-    Settings
+    Settings,
+    Shield
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -20,9 +21,13 @@ interface SidebarProps {
     currentRoute: string
 }
 
+import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
+
+// ... existing imports
+
 export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
   const { t } = useI18n()
-  const { menuWide, setMenuWide } = useAppState()
+  const { menuWide, setMenuWide, myPermissions } = useAppState()
 
   const items: MriSidebarItem[] = [
     { icon: LayoutDashboard, label: t('nav_dashboard'), route: 'dashboard' },
@@ -35,11 +40,20 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     { icon: Car, label: t('nav_vehicles'), route: 'vehicles' },
     { icon: Terminal, label: t('nav_commands'), route: 'commands' },
     { icon: Wand2, label: t('nav_actions'), route: 'actions' },
+    { icon: Shield, label: 'Permissions', route: 'permissions' },
     { icon: Box, label: t('nav_resources'), route: 'resources' },
     { icon: Box, label: '', divider: true },
     { icon: Settings, label: t('nav_settings'), route: 'settings' },
     { icon: Info, label: t('nav_credits'), route: 'credits' },
-  ]
+  ].filter(item => {
+      if (item.divider) return true
+      if (!item.route) return true
+      // Check if permission exists for route
+      if (item.route in PAGE_PERMISSIONS) {
+          return hasPermission(myPermissions, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
+      }
+      return true
+  })
 
   return (
     <MriSidebar
