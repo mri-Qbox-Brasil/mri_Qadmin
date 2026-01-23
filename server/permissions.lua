@@ -37,26 +37,41 @@ lib.callback.register('mri_Qadmin:callback:GetAces', function(source)
     return MySQL.query.await('SELECT * FROM mri_qadmin_aces')
 end)
 
+local function BroadcastPermissionUpdate()
+    print('[mri_Qadmin] Broadcasting Permission Update to ALL clients')
+    TriggerClientEvent('mri_Qadmin:client:ForceReloadPermissions', -1)
+end
+
+-- Hook into existing events
 RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow)
     local src = source
     if not QBCore.Functions.HasPermission(src, 'admin') then return end
+
+    print(('[mri_Qadmin] AddAce Request: %s %s %s'):format(principal, object, tostring(allow)))
 
     MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow) VALUES (?, ?, ?)', {principal, object, allow and 1 or 0})
     local type = allow and 'allow' or 'deny'
     ExecuteCommand(('add_ace %s %s %s'):format(principal, object, type))
 
     TriggerClientEvent('QBCore:Notify', src, 'Ace Added successfully', 'success')
+    BroadcastPermissionUpdate()
 end)
 
 RegisterNetEvent('mri_Qadmin:server:RemoveAce', function(id)
     local src = source
     if not QBCore.Functions.HasPermission(src, 'admin') then return end
 
+    print(('[mri_Qadmin] RemoveAce Request ID: %s'):format(id))
+    local ace = MySQL.single.await('SELECT * FROM mri_qadmin_aces WHERE id = ?', {id})
     if ace then
+        print(('[mri_Qadmin] Removing Ace: %s %s'):format(ace.principal, ace.object))
         MySQL.query.await('DELETE FROM mri_qadmin_aces WHERE id = ?', {id})
         local type = ace.allow == 1 and 'allow' or 'deny'
         ExecuteCommand(('remove_ace %s %s %s'):format(ace.principal, ace.object, type))
         TriggerClientEvent('QBCore:Notify', src, 'Ace Removed successfully', 'success')
+        BroadcastPermissionUpdate()
+    else
+        print('[mri_Qadmin] Ace not found in DB')
     end
 end)
 
