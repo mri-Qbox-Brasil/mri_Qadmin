@@ -15,6 +15,13 @@ local function ApplyPrincipalToAllIdentifiers(src, parent)
 end
 
 local function LoadPermissions()
+    -- Check/Add Description column for Aces
+    local hasDesc = MySQL.scalar.await("SELECT count(*) FROM information_schema.columns WHERE table_name = 'mri_qadmin_aces' AND column_name = 'description' AND table_schema = DATABASE()")
+    if hasDesc == 0 then
+        MySQL.query.await('ALTER TABLE mri_qadmin_aces ADD COLUMN description VARCHAR(255) DEFAULT NULL')
+        print('[mri_Qadmin] Added description column to mri_qadmin_aces')
+    end
+
     -- Cleanup Duplicates first
     MySQL.query.await('DELETE t1 FROM mri_qadmin_principals t1 INNER JOIN mri_qadmin_principals t2 WHERE t1.id > t2.id AND t1.child = t2.child AND t1.parent = t2.parent')
     MySQL.query.await('DELETE t1 FROM mri_qadmin_aces t1 INNER JOIN mri_qadmin_aces t2 WHERE t1.id > t2.id AND t1.principal = t2.principal AND t1.object = t2.object')
@@ -162,25 +169,25 @@ local function BroadcastPermissionUpdate()
 end
 
 -- Hook into existing events
-RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow)
+RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow, description)
     local src = source
     if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
 
-    print(('[mri_Qadmin] AddAce Request: %s %s %s'):format(principal, object, tostring(allow)))
+    print(('[mri_Qadmin] AddAce Request: %s %s %s Desc=%s'):format(principal, object, tostring(allow), tostring(description)))
 
     -- Check if exists
     local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {principal, object})
     if exists then
-        print(('[mri_Qadmin] Ace already exists (ID: %s). Updating allow state.'):format(exists.id))
-        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ? WHERE id = ?', {allow and 1 or 0, exists.id})
+        print(('[mri_Qadmin] Ace already exists (ID: %s). Updating allow state and description.'):format(exists.id))
+        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ?, description = ? WHERE id = ?', {allow and 1 or 0, description, exists.id})
     else
-        MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow) VALUES (?, ?, ?)', {principal, object, allow and 1 or 0})
+        MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {principal, object, allow and 1 or 0, description})
     end
 
     local type = allow and 'allow' or 'deny'
     ExecuteCommand(('add_ace %s %s %s'):format(principal, object, type))
 
-    TriggerClientEvent('QBCore:Notify', src, 'Ace Added successfully', 'success')
+    TriggerClientEvent('QBCore:Notify', src, 'Ace Added/Updated successfully', 'success')
     BroadcastPermissionUpdate()
 end)
 
@@ -311,6 +318,16 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
     end
 end)
 
+local function verifyAndAdd(group, ace, allow, description)
+    local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {group, ace})
+    if not exists then
+         MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {group, ace, allow, description})
+         ExecuteCommand(('add_ace %s %s %s'):format(group, ace, allow))
+         return true
+    end
+    return false
+end
+
 RegisterNetEvent('mri_Qadmin:server:SeedPageAces', function()
     local src = source
     if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
@@ -325,12 +342,14 @@ RegisterNetEvent('mri_Qadmin:server:SeedPageAces', function()
     for _, page in ipairs(pages) do
         local ace = 'qadmin.page.' .. page
         -- Check if exists for group.admin
-        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {'group.admin', ace})
-        if not exists then
-             MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow) VALUES (?, ?, ?)', {'group.admin', ace, 1})
-             ExecuteCommand(('add_ace %s %s allow'):format('group.admin', ace))
-             count = count + 1
+        if verifyAndAdd('group.admin', ace, 1) then
+            count = count + 1
         end
+    end
+
+    -- Add qadmin.master
+    if verifyAndAdd('group.admin', 'qadmin.master', 1) then
+        count = count + 1
     end
 
     if count > 0 then
@@ -359,14 +378,29 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
         local node = 'qadmin.page.' .. page
         if IsPlayerAceAllowed(src, node) then
             table.insert(allowed, node)
-            debugResults[node] = true
-        else
-            debugResults[node] = false
         end
     end
 
-    -- Also check for master bypass or QBCore admin
-    if IsPlayerAceAllowed(src, 'qadmin.master') or QBCore.Functions.HasPermission(src, 'admin') then
+    -- Check Actions
+    if Config.Actions then
+        for k, v in pairs(Config.Actions) do
+            if CheckPerms(src, v.perms) then
+                table.insert(allowed, 'action.' .. k)
+            end
+        end
+    end
+
+    -- Check Player Actions
+    if Config.PlayerActions then
+        for k, v in pairs(Config.PlayerActions) do
+            if CheckPerms(src, v.perms) then
+                table.insert(allowed, 'action.' .. k)
+            end
+        end
+    end
+
+    -- Also check for master bypass
+    if IsPlayerAceAllowed(src, 'qadmin.master') then
         table.insert(allowed, 'qadmin.master')
         debugResults['qadmin.master'] = true
     end

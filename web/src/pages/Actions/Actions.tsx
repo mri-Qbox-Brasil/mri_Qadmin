@@ -9,7 +9,7 @@ import { Search, Zap, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Actions() {
-  const { gameData, setGameData } = useAppState()
+  const { gameData, setGameData, myPermissions } = useAppState()
   const { sendNui } = useNui()
   const { t } = useI18n()
   const [search, setSearch] = useState('')
@@ -61,6 +61,11 @@ export default function Actions() {
   }, [actions])
 
   const filteredActions = actionList.filter((action: any) => {
+    // Permission Check
+    const permKey = `action.${action.id}`
+    const hasPerm = myPermissions.includes('qadmin.master') || myPermissions.includes(permKey)
+    if (!hasPerm) return false
+
     const matchesSearch = action.label.toLowerCase().includes(search.toLowerCase())
     if (!matchesSearch) return false
     if (filter === 'favorites') {

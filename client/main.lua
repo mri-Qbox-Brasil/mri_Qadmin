@@ -7,6 +7,7 @@ local function setupMenu()
 	PlayerData = QBCore.Functions.GetPlayerData()
 	local resources = lib.callback.await('mri_Qadmin:callback:GetResources', false)
 	local server = lib.callback.await('mri_Qadmin:callback:GetServerInfo', false)
+    local permissions = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
 	GetData()
 	SendNUIMessage({
 		action = "setupUI",
@@ -15,7 +16,8 @@ local function setupMenu()
 			resources = resources,
 			playerData = PlayerData,
 			server = server,
-			vehicleImages = Config.VehicleImages
+			vehicleImages = Config.VehicleImages,
+            permissions = permissions
 		}
 	})
 end
@@ -226,7 +228,7 @@ RegisterNUICallback("remove_principal", function(data, cb)
 end)
 
 RegisterNUICallback("add_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:AddAce', data.principal, data.object, data.allow)
+    TriggerServerEvent('mri_Qadmin:server:AddAce', data.principal, data.object, data.allow, data.description)
     cb('ok')
 end)
 

@@ -2,14 +2,30 @@ local function noPerms(source)
     QBCore.Functions.Notify(source, "You are not Admin or God.", 'error')
 end
 
---- @param perms string
+--- @param perms string | table
 function CheckPerms(source, perms)
-    local hasPerms = QBCore.Functions.HasPermission(source, perms)
-    if not hasPerms then
-        return noPerms(source)
+    local isMaster = IsPlayerAceAllowed(source, 'qadmin.master')
+    print(('[DEBUG] CheckPerms Source: %s | Master: %s'):format(source, tostring(isMaster)))
+
+    -- Master Bypass
+    if isMaster then return true end
+
+    -- Check Native ACEs (Granular)
+    if type(perms) == 'string' then
+        local allowed = IsPlayerAceAllowed(source, perms)
+        print(('[DEBUG] Checking String Ace [%s]: %s'):format(perms, tostring(allowed)))
+        if allowed then return true end
+    elseif type(perms) == 'table' then
+        for _, p in pairs(perms) do
+            local allowed = IsPlayerAceAllowed(source, p)
+            -- print(('[DEBUG] Checking Table Ace [%s]: %s'):format(p, tostring(allowed)))
+            if allowed then return true end
+        end
     end
 
-    return hasPerms
+    -- Fail
+    print('[DEBUG] CheckPerms FAILED')
+    return noPerms(source)
 end
 
 function CheckDataFromKey(key)

@@ -10,7 +10,8 @@ export default function Listeners() {
     setShowCoords,
     setEntityInfo,
     setGameData,
-    setStaffMessages
+    setStaffMessages,
+    setMyPermissions
   } = useAppState()
 
   useEffect(() => {
@@ -21,6 +22,9 @@ export default function Listeners() {
       }))
       if (data.server) {
         // Option: we could store server info in AppState too if we want it global
+      }
+      if (data.permissions) {
+        setMyPermissions(data.permissions)
       }
     }
 
@@ -57,6 +61,10 @@ export default function Listeners() {
       setStaffMessages(data)
     }
 
+    const setPermissions = (data: any) => {
+        setMyPermissions(data || [])
+    }
+
     on('setupUI', setupUI)
     on('setResourceData', setResourceData)
     on('setPlayersData', setPlayersData)
@@ -65,6 +73,7 @@ export default function Listeners() {
     on('showCoordsMenu', showCoordsMenu)
     on('showEntityInfo', showEntityInfo)
     on('setMessages', setMessages)
+    on('updatePermissions', setPermissions)
 
     // Request initial data to avoid race conditions
     sendNui('getData').then(onData)

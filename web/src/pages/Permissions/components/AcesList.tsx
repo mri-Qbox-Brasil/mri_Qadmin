@@ -7,19 +7,27 @@ import { isEnvBrowser } from '@/utils/misc'
 import { MOCK_ACES } from '@/utils/mockData'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import CreatableCombobox from '@/components/shared/CreatableCombobox'
+import { useAppState } from '@/context/AppState'
+import { useI18n } from '@/context/I18n'
 
 interface Ace {
   id: number
   principal: string
   object: string
   allow: number
+  description?: string
 }
 
-import { useI18n } from '@/context/I18n'
-
-function AceGroup({ principal, items, onRemove, onToggle }: { principal: string, items: Ace[], onRemove: (a: Ace) => void, onToggle: (a: Ace) => void }) {
+function AceGroup({ principal, items, onRemove, onToggle, players }: { principal: string, items: Ace[], onRemove: (a: Ace) => void, onToggle: (a: Ace) => void, players: any[] }) {
     const [isOpen, setIsOpen] = useState(false)
     const { t } = useI18n()
+
+    // Resolve name if principal is a player identifier
+    const player = players.find(p => principal.includes(p.license) || p.license === principal || principal.includes(p.citizenid))
+    const label = player ? `${player.name} (${principal})` : principal
+
+    // Aggregate descriptions
+    const descriptions = items.map(p => p.description).filter(Boolean).join(', ')
 
     return (
         <div className="border border-border rounded-md bg-card overflow-hidden">
@@ -29,8 +37,9 @@ function AceGroup({ principal, items, onRemove, onToggle }: { principal: string,
             >
                 {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                 <Shield className="w-4 h-4 text-primary" />
-                <span className="font-mono text-sm font-medium">{principal}</span>
-                <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto">
+                <span className="font-mono text-sm font-medium">{label}</span>
+                {descriptions && <span className="text-xs text-muted-foreground italic truncate max-w-[200px]">- {descriptions}</span>}
+                <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto shrink-0">
                     {items.length} {t('permissions_aces').toLowerCase()}
                 </span>
             </div>
@@ -52,7 +61,11 @@ function AceGroup({ principal, items, onRemove, onToggle }: { principal: string,
                                     >
                                     {ace.allow ? t('permissions_allow') : t('permissions_deny')}
                                     </button>
-                                    <span className="font-mono text-muted-foreground">{ace.object} {isPending && <span className="text-[10px] italic ml-2 opacity-70">...syncing</span>}</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-mono">{ace.object}</span>
+                                        {ace.description && <span className="text-muted-foreground text-xs italic">{ace.description}</span>}
+                                        {isPending && <span className="text-[10px] italic opacity-70">...syncing</span>}
+                                    </div>
 
                                     <button
                                         onClick={(e) => { e.stopPropagation(); if (!isPending) onRemove(ace); }}
@@ -73,9 +86,10 @@ function AceGroup({ principal, items, onRemove, onToggle }: { principal: string,
 export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCountChange }: { searchQuery?: string, refreshTrigger?: number, onCountChange?: (n: number) => void }) {
   const { sendNui } = useNui()
   const { t } = useI18n()
+  const { players } = useAppState()
   const [aces, setAces] = useState<Ace[]>([])
   const [loading, setLoading] = useState(false)
-  const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1 })
+  const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1, description: '' })
   const [allowType, setAllowType] = useState(1)
 
   const [confirm, setConfirm] = useState<{ type: 'add' | 'remove', ace?: Ace } | null>(null)
@@ -126,7 +140,6 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
     if (isEnvBrowser()) return
 
     await sendNui('toggle_ace', { id: ace.id })
-    // No manual fetch - wait for server broadcast
   }
 
   const executeAction = async () => {
@@ -139,10 +152,11 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                id: mockId,
                principal: newAce.principal,
                object: newAce.object,
-               allow: allowType
+               allow: allowType,
+               description: newAce.description
             }
             setAces([...aces, newItem])
-            setNewAce({ principal: '', object: '', allow: 1 })
+            setNewAce({ principal: '', object: '', allow: 1, description: '' })
           } else if (confirm.type === 'remove' && confirm.ace) {
             setAces(aces.filter(a => a.id !== confirm.ace?.id))
           }
@@ -157,15 +171,17 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
             id: tempId,
             principal: newAce.principal,
             object: newAce.object,
-            allow: allowType === 1 ? 1 : 0
+            allow: allowType === 1 ? 1 : 0,
+            description: newAce.description
          }
          setAces(prev => [...prev, newItem])
-         setNewAce({ principal: '', object: '', allow: 1 })
+         setNewAce({ principal: '', object: '', allow: 1, description: '' })
 
          await sendNui('add_ace', {
             principal: newAce.principal,
             object: newAce.object,
-            allow: allowType === 1
+            allow: allowType === 1,
+            description: newAce.description
         })
     } else if (confirm.type === 'remove' && confirm.ace) {
         // Optimistic Remove
@@ -176,13 +192,12 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
     }
 
     setConfirm(null)
-    // No manual fetch - wait for server broadcast
   }
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      <div className="flex gap-2 items-end bg-card p-4 rounded-lg border border-border shrink-0">
-          <div className="flex-1">
+      <div className="bg-card p-4 rounded-lg border border-border shrink-0 grid grid-cols-12 gap-3 items-end">
+          <div className="col-span-6">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_principal_label')}</label>
               <CreatableCombobox
                  options={[
@@ -196,7 +211,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                  searchPlaceholder={t('actions_search_placeholder')}
                />
           </div>
-          <div className="flex-1">
+          <div className="col-span-6">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_object_label')}</label>
               <CreatableCombobox
                  options={[
@@ -210,7 +225,17 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                  searchPlaceholder={t('actions_search_placeholder')}
               />
           </div>
-          <div className="w-32">
+
+          <div className="col-span-8">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_desc_label')}</label>
+              <MriInput
+                value={newAce.description}
+                onChange={(e) => setNewAce({...newAce, description: e.target.value})}
+                placeholder="Ex: Temp Access"
+                className="bg-input border-input h-9"
+              />
+          </div>
+          <div className="col-span-2">
                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_type_label')}</label>
                <CreatableCombobox
                  options={[
@@ -219,14 +244,16 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                  ]}
                  value={String(allowType)}
                  onChange={(val) => setAllowType(Number(val))}
-                 placeholder={t('select_placeholder')}
-                 searchPlaceholder={t('actions_search_placeholder')}
+                 placeholder="Select"
+                 searchPlaceholder=""
                  allowCreate={false}
                />
           </div>
-          <MriButton size="sm" className="h-9" onClick={handleAdd}>
-              <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
-          </MriButton>
+          <div className="col-span-2">
+               <MriButton size="sm" className="h-9 w-full" onClick={handleAdd}>
+                  <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
+               </MriButton>
+          </div>
       </div>
 
       <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
@@ -258,15 +285,26 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                         return acc
                     }, {} as Record<string, Ace[]>)
 
-                    return Object.entries(grouped).map(([principal, items]) => (
-                        <AceGroup
-                            key={principal}
-                            principal={principal}
-                            items={items}
-                            onRemove={handleRemove}
-                            onToggle={handleToggle}
-                        />
-                    ))
+                    return Object.entries(grouped).map(([principal, items]) => {
+                        // Deduplicate items by object
+                        const uniqueMap = new Map<string, Ace>()
+                        items.forEach(item => {
+                            // Always overwrite with the latest item in the list (effectively "updating" it if duplicate exists)
+                            uniqueMap.set(item.object, { ...item })
+                        })
+                        const uniqueItems = Array.from(uniqueMap.values())
+
+                        return (
+                            <AceGroup
+                                key={principal}
+                                principal={principal}
+                                items={uniqueItems}
+                                onRemove={handleRemove}
+                                onToggle={handleToggle}
+                                players={players}
+                            />
+                        )
+                    })
                 })()
             )}
         </div>

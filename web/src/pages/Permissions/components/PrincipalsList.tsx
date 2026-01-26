@@ -23,6 +23,7 @@ function PrincipalGroup({ child, items, onRemove, players }: { child: string, it
     const { t } = useI18n()
     const player = players.find(p => child.includes(p.license) || p.license === child)
     const label = player ? `${player.name} (${child})` : child
+    const descriptions = items.map(p => p.description).filter(Boolean).join(', ')
 
     return (
         <div className="border border-border rounded-md bg-card overflow-hidden">
@@ -33,7 +34,8 @@ function PrincipalGroup({ child, items, onRemove, players }: { child: string, it
                 {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                 <User className="w-4 h-4 text-primary" />
                 <span className="font-mono text-sm font-medium">{label}</span>
-                <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto">
+                {descriptions && <span className="text-xs text-muted-foreground italic truncate max-w-[200px]">- {descriptions}</span>}
+                <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto shrink-0">
                     {items.length} {t('groups')}
                 </span>
             </div>
