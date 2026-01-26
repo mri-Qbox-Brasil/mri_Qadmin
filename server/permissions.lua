@@ -5,13 +5,16 @@ local QBCore = exports['qb-core']:GetCoreObject()
 -----------------------------------------------------------------------------------------------------------------------------------------
 
 -- Helper: Apply principal to all identifiers of a source
+-- [MODIFIED] Disabled expansion to prevent "sticky" permissions on Steam/Discord IDs that are hard to remove.
+-- Relying on the primary database identifier (License) is sufficient for FiveM's IsPlayerAceAllowed.
 local function ApplyPrincipalToAllIdentifiers(src, parent)
-    local num = GetNumPlayerIdentifiers(src)
-    for i = 0, num-1 do
-        local id = GetPlayerIdentifier(src, i)
-        print(('[mri_Qadmin] Expanding Principal: identifier.%s -> %s'):format(id, parent))
-        ExecuteCommand(('add_principal identifier.%s %s'):format(id, parent))
-    end
+    -- local num = GetNumPlayerIdentifiers(src)
+    -- for i = 0, num-1 do
+    --     local id = GetPlayerIdentifier(src, i)
+    --     print(('[mri_Qadmin] Expanding Principal: identifier.%s -> %s'):format(id, parent))
+    --     ExecuteCommand(('add_principal identifier.%s %s'):format(id, parent))
+    -- end
+    print('[mri_Qadmin] ApplyPrincipalToAllIdentifiers called but DISABLED (using primary identifier only).')
 end
 
 local function LoadPermissions()
@@ -162,19 +165,21 @@ local function BroadcastPermissionUpdate()
 end
 
 -- Hook into existing events
-RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow)
+RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow, description)
     local src = source
     if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
 
-    print(('[mri_Qadmin] AddAce Request: %s %s %s'):format(principal, object, tostring(allow)))
+    print(('[mri_Qadmin] AddAce Request: %s %s %s Desc: %s'):format(principal, object, tostring(allow), tostring(description)))
 
     -- Check if exists
     local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {principal, object})
     if exists then
         print(('[mri_Qadmin] Ace already exists (ID: %s). Updating allow state.'):format(exists.id))
-        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ? WHERE id = ?', {allow and 1 or 0, exists.id})
+        -- Update allow AND description if provided? Or just allow?
+        -- User might want to update description.
+        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ?, description = ? WHERE id = ?', {allow and 1 or 0, description, exists.id})
     else
-        MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow) VALUES (?, ?, ?)', {principal, object, allow and 1 or 0})
+        MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {principal, object, allow and 1 or 0, description})
     end
 
     local type = allow and 'allow' or 'deny'
@@ -260,28 +265,49 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
 
     -- Execute for the specific child string provided
     ExecuteCommand(('add_principal %s %s'):format(child, parent))
+    
+    -- SAFETY: If child looks like an identifier (e.g., license:...), add it as identifier.child too
+    -- This ensures it works even if the online player check below fails or if player is offline
+    if string.find(child, ':') and not string.find(child, 'identifier%.') then
+        print(('[mri_Qadmin] Executing Safety Command: add_principal identifier.%s %s'):format(child, parent))
+        ExecuteCommand(('add_principal identifier.%s %s'):format(child, parent))
+    end
 
     -- Try to find if 'child' is an online player and expand to all their identifiers
     local players = QBCore.Functions.GetPlayers()
+    local foundOnline = false
     for _, id in ipairs(players) do
         local p = QBCore.Functions.GetPlayer(id)
         if p then
             local pLicense = p.PlayerData.license
             local fullLicense = 'license:'..pLicense
             -- Match loosely against license or exact string
+            -- Also check if child matches any identifier directly
+            
+            local match = false
             if child == pLicense or child == fullLicense or child == p.PlayerData.name then
-                 ApplyPrincipalToAllIdentifiers(id, parent)
-                 break
-            end
-            -- Also check arbitrary identifiers
-            local num = GetNumPlayerIdentifiers(id)
-            for i = 0, num-1 do
-                if GetPlayerIdentifier(id, i) == child then
-                     ApplyPrincipalToAllIdentifiers(id, parent)
-                     break
+                match = true
+            else
+                local num = GetNumPlayerIdentifiers(id)
+                for i = 0, num-1 do
+                    if GetPlayerIdentifier(id, i) == child then
+                         match = true
+                         break
+                    end
                 end
             end
+
+            if match then
+                 print(('[mri_Qadmin] Found Online Player for Principal Add: %s (Src: %s)'):format(p.PlayerData.name, id))
+                 ApplyPrincipalToAllIdentifiers(id, parent)
+                 foundOnline = true
+                 break
+            end
         end
+    end
+    
+    if not foundOnline then
+        print('[mri_Qadmin] Player not found online for immediate expansion. Permissions will apply when they rejoin/relog.')
     end
 
     TriggerClientEvent('QBCore:Notify', src, 'Principal Added successfully', 'success')
@@ -300,14 +326,124 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
         MySQL.query.await('DELETE FROM mri_qadmin_principals WHERE id = ?', {id})
 
         -- Also need to remove the ACL entry
-        -- Since we added it via 'identifier.', we might need to remove it similarly if we want it gone from runtime too
-        ExecuteCommand(('remove_principal identifier.%s %s'):format(data.child, data.parent))
-        ExecuteCommand(('remove_principal %s %s'):format(data.child, data.parent)) -- Try raw too just in case
+        print(('[mri_Qadmin] RemovePrincipal: Data Child: "%s" Parent: "%s"'):format(data.child, data.parent))
+        
+        -- Remove "identifier.license:xxx"
+        local cmd1 = ('remove_principal identifier.%s %s'):format(data.child, data.parent)
+        print(('[mri_Qadmin] Executing: %s'):format(cmd1))
+        ExecuteCommand(cmd1)
+        
+        -- Remove "license:xxx"
+        local cmd2 = ('remove_principal %s %s'):format(data.child, data.parent)
+        print(('[mri_Qadmin] Executing: %s'):format(cmd2))
+        ExecuteCommand(cmd2)
+
+        -- Force refresh for the specific client if they are online to be sure
+        local players = QBCore.Functions.GetPlayers()
+        for _, id in ipairs(players) do
+             local p = QBCore.Functions.GetPlayer(id)
+             if p then
+                 -- Debug matching
+                 local fullLicense = 'license:'..p.PlayerData.license
+                 -- print(('[mri_Qadmin] Checking player %s (License: %s Full: %s) against %s'):format(p.PlayerData.name, p.PlayerData.license, fullLicense, data.child))
+                 
+                 if p.PlayerData.license == data.child or fullLicense == data.child then
+                     print(('[mri_Qadmin] Targeting online player %s (Src: %s) for update'):format(p.PlayerData.name, id))
+                     TriggerClientEvent('QBCore:Notify', id, 'Suas permissões foram atualizadas.', 'primary')
+                     
+                     -- Try removing explicit runtime identifiers too just in case
+                     local num = GetNumPlayerIdentifiers(id)
+                     for i = 0, num-1 do
+                        local ident = GetPlayerIdentifier(id, i)
+                        ExecuteCommand(('remove_principal identifier.%s %s'):format(ident, data.parent))
+                     end
+                 end
+             end
+        end
+
+        -- Logic to remove from all online identifiers if player is online
+        local child = data.child
+        local parent = data.parent
+        local players = QBCore.Functions.GetPlayers()
+        for _, id in ipairs(players) do
+            local p = QBCore.Functions.GetPlayer(id)
+            if p then
+                local pLicense = p.PlayerData.license
+                local fullLicense = 'license:'..pLicense
+                
+                local match = false
+                if child == pLicense or child == fullLicense or child == p.PlayerData.name then
+                    match = true
+                else
+                    local num = GetNumPlayerIdentifiers(id)
+                    for i = 0, num-1 do
+                        if GetPlayerIdentifier(id, i) == child then
+                             match = true
+                             break
+                        end
+                    end
+                end
+
+                if match then
+                    print(('[mri_Qadmin] Found Online Player for Principal Remove: %s (Src: %s)'):format(p.PlayerData.name, id))
+                    local num = GetNumPlayerIdentifiers(id)
+                    for i = 0, num-1 do
+                        local ident = GetPlayerIdentifier(id, i)
+                        print(('[mri_Qadmin] Removing Principal: identifier.%s -> %s'):format(ident, parent))
+                        ExecuteCommand(('remove_principal identifier.%s %s'):format(ident, parent))
+                    end
+                    break
+                end
+            end
+        end
 
         TriggerClientEvent('QBCore:Notify', src, 'Principal Removed successfully', 'success')
         BroadcastPermissionUpdate()
+        -- Verification Loop
+        local checks = 0
+        local stillHas = true
+        while checks < 5 and stillHas do
+            Wait(100)
+            if IsPrincipalAceAllowed(child, data.parent) or IsPrincipalAceAllowed('identifier.'..child, data.parent) then
+                print(('[mri_Qadmin] WARNING: Permission still active after removal attempt %d...'):format(checks+1))
+            else
+                stillHas = false
+                print('[mri_Qadmin] SUCCESS: Permission successfully revoked.')
+            end
+            checks = checks + 1
+        end
+        if stillHas then
+            print('^1[mri_Qadmin] CRITICAL: Failed to revoke permission! Check if resource has "command.remove_principal" allowed in server.cfg!^7')
+        end
+
     else
          print('[mri_Qadmin] Principal NOT FOUND in DB with ID: ' .. tostring(id))
+    end
+end)
+
+RegisterNetEvent('onResourceStart', function(resourceName)
+    if GetCurrentResourceName() == resourceName then
+        local myRes = 'resource.' .. resourceName
+        local missing = false
+        
+        if not IsPrincipalAceAllowed(myRes, 'command.add_principal') then
+             print('^1[mri_Qadmin] [CRITICAL] Resource missing "command.add_principal"!^7')
+             missing = true
+        end
+        if not IsPrincipalAceAllowed(myRes, 'command.remove_principal') then
+             print('^1[mri_Qadmin] [CRITICAL] Resource missing "command.remove_principal"! THIS WILL CAUSE PERMISSIONS TO STICK!^7')
+             missing = true
+        end
+
+        if missing then
+             print('^1[mri_Qadmin] Please add these lines to your server.cfg / permissions.cfg:^7')
+             print(('^3add_ace %s command.add_principal allow^7'):format(myRes))
+             print(('^3add_ace %s command.remove_principal allow^7'):format(myRes))
+             print(('^3add_ace %s command.add_ace allow^7'):format(myRes))
+             print(('^3add_ace %s command.remove_ace allow^7'):format(myRes))
+        end
+
+        LoadPermissions()
     end
 end)
 

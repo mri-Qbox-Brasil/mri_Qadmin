@@ -35,6 +35,10 @@ RegisterNetEvent('mri_Qadmin:client:KillPlayer', function(data, selectedData)
     QBCore.Functions.Notify(locale("kill_player", player), 'success')
 end)
 
+RegisterNetEvent('mri_Qadmin:client:ForceKill', function()
+    SetEntityHealth(PlayerPedId(), 0)
+end)
+
 -- Cuff/Uncuff
 RegisterNetEvent('mri_Qadmin:client:ToggleCuffs', function(player)
     local target = GetPlayerServerId(player)
