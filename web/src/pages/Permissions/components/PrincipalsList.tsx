@@ -362,15 +362,25 @@ export default function PrincipalsList({
                 {} as Record<string, Principal[]>,
               );
 
-              return Object.entries(grouped).map(([child, items]) => (
-                <PrincipalGroup
-                  key={child}
-                  child={child}
-                  items={items}
-                  onRemove={handleRemove}
-                  players={players}
-                />
-              ));
+
+              return Object.entries(grouped).map(([child, items]) => {
+                  // Deduplicate items by parent (similar to AcesList logic)
+                  const uniqueMap = new Map<string, Principal>();
+                  items.forEach((item) => {
+                    uniqueMap.set(item.parent, { ...item });
+                  });
+                  const uniqueItems = Array.from(uniqueMap.values());
+
+                  return (
+                    <PrincipalGroup
+                      key={child}
+                      child={child}
+                      items={uniqueItems}
+                      onRemove={handleRemove}
+                      players={players}
+                    />
+                  );
+              });
             })()
           )}
         </div>

@@ -31,16 +31,26 @@ export default function StaffChat() {
     return t('time_seconds_ago', [Math.floor(seconds)])
   }
 
+  const [myCitizenid, setMyCitizenid] = useState<string | null>(null)
+
   // Polling messages
   useEffect(() => {
     const fetchMessages = async () => {
         try {
-            const result = await sendNui('GetMessages', {}, MOCK_GAME_DATA.staffMessages)
-            if (result && Array.isArray(result)) {
-                setStaffMessages(result)
+            const result = await sendNui<any>('GetMessages', {}, MOCK_GAME_DATA.staffMessages)
+            // Handle both legacy array and new object response format
+            if (result) {
+                if (Array.isArray(result)) {
+                    setStaffMessages(result)
+                } else if (typeof result === 'object' && 'messages' in result) {
+                    setStaffMessages(result.messages)
+                    if (result.myCitizenid) {
+                        setMyCitizenid(result.myCitizenid)
+                    }
+                }
             }
         } catch (e) {
-            console.error(e)
+            console.error('[StaffChat] Error fetching messages:', e)
         }
     }
 
@@ -77,7 +87,7 @@ export default function StaffChat() {
           ) : (
               <div className="flex flex-col gap-2">
                 {staffMessages.map((msg: any, idx) => {
-                  const isMine = msg.fullname === 'John Doe' // Mock check
+                  const isMine = myCitizenid ? msg.citizenid === myCitizenid : false
                   return (
                     <div key={idx} className={cn("flex w-full", isMine ? "justify-end" : "justify-start")}>
                         <div className={cn(

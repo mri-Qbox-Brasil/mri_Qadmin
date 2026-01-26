@@ -76,26 +76,12 @@ export default function App() {
     }
   }, [setGameData, setPlayers, setMyPermissions])
 
-  useEffect(() => {
-    const onPerms = (perms: string[]) => {
-        setMyPermissions(perms || [])
-    }
-    const onRefreshLists = () => {
-        // Increment trigger to force reload of lists
-        // We use setGameData hack or just use the new trigger
-        // Assuming we added 'setPermissionRefreshTrigger' to AppState
-        useAppState().setPermissionRefreshTrigger(prev => prev + 1)
-    }
-    // Wait, useAppState cannot be called inside useEffect callback if valid hook rules
-    // But we extract setters outside
-  }, [on, off, setMyPermissions])
-
   // Correct implementation:
   const { setPermissionRefreshTrigger } = useAppState()
 
   useEffect(() => {
     const onPerms = (perms: string[]) => {
-        setMyPermissions(perms || [])
+        setMyPermissions(Array.isArray(perms) ? perms : [])
     }
     const onRefreshLists = () => {
          setPermissionRefreshTrigger(prev => prev + 1)

@@ -450,13 +450,13 @@ RegisterNetEvent('mri_Qadmin:server:SeedPageAces', function()
     for _, page in ipairs(pages) do
         local ace = 'qadmin.page.' .. page
         -- Check if exists for group.admin
-        if verifyAndAdd('group.admin', ace, 1) then
+        if verifyAndAdd('group.admin', ace, 1, 'Page: ' .. page) then
             count = count + 1
         end
     end
 
     -- Add qadmin.master
-    if verifyAndAdd('group.admin', 'qadmin.master', 1) then
+    if verifyAndAdd('group.admin', 'qadmin.master', 1, 'Master') then
         count = count + 1
     end
 

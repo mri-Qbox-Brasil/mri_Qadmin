@@ -24,25 +24,37 @@ export default function Listeners() {
         // Option: we could store server info in AppState too if we want it global
       }
       if (data.permissions) {
-        setMyPermissions(data.permissions)
+        setMyPermissions(Array.isArray(data.permissions) ? data.permissions : [])
       }
     }
 
     const setResourceData = (data: any) => {
-      setGameData((prev: any) => ({ ...prev, resources: data }))
+      setGameData((prev: any) => ({ ...prev, resources: Array.isArray(data) ? data : [] }))
     }
 
     const setPlayersData = (data: any) => {
-      setPlayers(data)
+      setPlayers(Array.isArray(data) ? data : [])
     }
 
     const onData = (data: any) => {
+      // Helper to ensure array
+      const asArray = (arr: any) => Array.isArray(arr) ? arr : []
+
       setGameData((prev: any) => ({
         ...prev,
         ...data,
-        peds: data.pedlist || prev.peds || []
+        items: asArray(data.items),
+        jobs: asArray(data.jobs),
+        gangs: asArray(data.gangs),
+        locations: asArray(data.locations),
+        peds: Array.isArray(data.pedlist) ? data.pedlist : (Array.isArray(prev.peds) ? prev.peds : []),
+        vehicles: asArray(data.vehicles),
+        commands: asArray(data.commands),
+        bans: asArray(data.bans),
+        // Actions can be object or array, handled by component
+        actions: data.actions || prev.actions || []
       }))
-      setPlayers(data.players || [])
+      setPlayers(asArray(data.players || []))
     }
 
     const showVehicleMenu = (data: any) => {
@@ -58,11 +70,11 @@ export default function Listeners() {
     }
 
     const setMessages = (data: any) => {
-      setStaffMessages(data)
+      setStaffMessages(Array.isArray(data) ? data : (data && Array.isArray(data.messages) ? data.messages : []))
     }
 
     const setPermissions = (data: any) => {
-        setMyPermissions(data || [])
+        setMyPermissions(Array.isArray(data) ? data : [])
     }
 
     on('setupUI', setupUI)

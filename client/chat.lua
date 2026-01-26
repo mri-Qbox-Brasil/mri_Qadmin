@@ -4,24 +4,22 @@ end
 
 RegisterNUICallback("GetMessages", function(_, cb)
 	local data = getMessagesCallBack()
-	if next(data) then
-		SendNUIMessage({
-			action = "setMessages",
-			data = data
-		})
-	end
-	cb(1)
+	cb({
+		messages = data or {},
+		myCitizenid = PlayerData and PlayerData.citizenid or nil
+	})
 end)
 
 RegisterNUICallback("SendMessage", function(msgData, cb)
+    if not PlayerData or not PlayerData.citizenid then return cb(0) end
+
 	local message = msgData.message
 
 	TriggerServerEvent("mri_Qadmin:server:sendMessage", message, PlayerData.citizenid, PlayerData.charinfo.firstname .. " " .. PlayerData.charinfo.lastname)
 
 	local data = getMessagesCallBack()
-	SendNUIMessage({
-		action = "setMessages",
-		data = data
+	cb({
+		messages = data or {},
+		myCitizenid = PlayerData.citizenid
 	})
-	cb(1)
 end)

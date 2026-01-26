@@ -30,7 +30,7 @@ export interface GameData {
   locations: any[]
   peds: any[]
   vehicles: any[]
-  actions: any[]
+  actions: any[] | Record<string, any>
   resources: any[]
   commands: any[]
   vehicleImages: string
