@@ -92,58 +92,63 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
   const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1, description: '' })
   const [allowType, setAllowType] = useState(1)
 
-  const [confirm, setConfirm] = useState<{ type: 'add' | 'remove', ace?: Ace } | null>(null)
+  const [confirm, setConfirm] = useState<{
+    type: "add" | "remove";
+    ace?: Ace;
+  } | null>(null);
 
   const fetchAces = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-        if (isEnvBrowser()) {
-          setTimeout(() => {
-             if (aces.length === 0) {
-                 setAces(MOCK_ACES)
-                 onCountChange?.(MOCK_ACES.length)
-             } else {
-                 onCountChange?.(aces.length)
-             }
-             setLoading(false)
-          }, 500)
-          return
-        }
-        const data = await sendNui('mri_Qadmin:callback:GetAces')
-        const list = Array.isArray(data) ? data : []
-        setAces(list)
-        onCountChange?.(list.length)
+      if (isEnvBrowser()) {
+        setTimeout(() => {
+          if (aces.length === 0) {
+            setAces(MOCK_ACES);
+            onCountChange?.(MOCK_ACES.length);
+          } else {
+            onCountChange?.(aces.length);
+          }
+          setLoading(false);
+        }, 500);
+        return;
+      }
+      const data = await sendNui("mri_Qadmin:callback:GetAces");
+      const list = Array.isArray(data) ? data : [];
+      setAces(list);
+      onCountChange?.(list.length);
     } catch (e) {
-        console.error(e)
+      console.error(e);
     } finally {
-        if (!isEnvBrowser()) setLoading(false)
+      if (!isEnvBrowser()) setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAces()
-  }, [refreshTrigger])
+    fetchAces();
+  }, [refreshTrigger]);
 
   const handleAdd = async () => {
-    if (!newAce.principal || !newAce.object) return
-    setConfirm({ type: 'add' })
-  }
+    if (!newAce.principal || !newAce.object) return;
+    setConfirm({ type: "add" });
+  };
 
   const handleRemove = async (ace: Ace) => {
-    setConfirm({ type: 'remove', ace })
-  }
+    setConfirm({ type: "remove", ace });
+  };
 
   const handleToggle = async (ace: Ace) => {
     // Optimistic update
-    setAces(prev => prev.map(a => a.id === ace.id ? {...a, allow: a.allow ? 0 : 1} : a))
+    setAces((prev) =>
+      prev.map((a) => (a.id === ace.id ? { ...a, allow: a.allow ? 0 : 1 } : a)),
+    );
 
-    if (isEnvBrowser()) return
+    if (isEnvBrowser()) return;
 
     await sendNui('toggle_ace', { id: ace.id })
   }
 
   const executeAction = async () => {
-    if (!confirm) return
+    if (!confirm) return;
 
     if (isEnvBrowser()) {
         if (confirm.type === 'add') {
@@ -174,6 +179,9 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
             allow: allowType === 1 ? 1 : 0,
             description: newAce.description
          }
+
+         // Optimistic state update with deduplication check?
+         // Actually just append, let the list render dedupe it or let server sync fix it.
          setAces(prev => [...prev, newItem])
          setNewAce({ principal: '', object: '', allow: 1, description: '' })
 
@@ -188,7 +196,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
         const removeId = confirm.ace.id
         setAces(prev => prev.filter(a => a.id !== removeId))
 
-        await sendNui('remove_ace', { id: confirm.ace.id })
+        await sendNui("remove_ace", { id: confirm.ace.id });
     }
 
     setConfirm(null)
@@ -258,32 +266,45 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
 
       <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto pr-1">
-            {loading ? (
-                <div className="p-8 flex justify-center"><Spinner /></div>
-            ) : aces.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">{t('permissions_no_aces')}</div>
-            ) : (
-                (() => {
-                    // Filter first
-                    const filtered = aces.filter(a => {
-                        const search = searchQuery.toLowerCase()
-                        if (!search) return true
-                        return (
-                            a.principal.toLowerCase().includes(search) ||
-                            a.object.toLowerCase().includes(search)
-                        )
-                    })
+          {loading ? (
+            <div className="p-8 flex justify-center">
+              <Spinner />
+            </div>
+          ) : aces.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              {t('permissions_no_aces')}
+            </div>
+          ) : (
+            (() => {
+              // Filter first
+              const filtered = aces.filter((a) => {
+                const search = searchQuery.toLowerCase();
+                if (!search) return true;
+                return (
+                  a.principal.toLowerCase().includes(search) ||
+                  a.object.toLowerCase().includes(search) ||
+                  (a.description &&
+                    a.description.toLowerCase().includes(search))
+                );
+              });
 
-                    if (filtered.length === 0 && searchQuery) {
-                        return <div className="p-8 text-center text-muted-foreground">{t('permissions_no_matches').replace('%s', searchQuery)}</div>
-                    }
+              if (filtered.length === 0 && searchQuery) {
+                return (
+                  <div className="p-8 text-center text-muted-foreground">
+                    {t('permissions_no_matches').replace('%s', searchQuery)}
+                  </div>
+                );
+              }
 
-                    // Group by principal
-                    const grouped = filtered.reduce((acc, curr) => {
-                        if (!acc[curr.principal]) acc[curr.principal] = []
-                        acc[curr.principal].push(curr)
-                        return acc
-                    }, {} as Record<string, Ace[]>)
+              // Group by principal
+              const grouped = filtered.reduce(
+                (acc, curr) => {
+                  if (!acc[curr.principal]) acc[curr.principal] = [];
+                  acc[curr.principal].push(curr);
+                  return acc;
+                },
+                {} as Record<string, Ace[]>,
+              );
 
                     return Object.entries(grouped).map(([principal, items]) => {
                         // Deduplicate items by object
@@ -312,14 +333,19 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
 
       {confirm && (
         <ConfirmAction
-          text={confirm.type === 'add'
-            ? t('permissions_confirm_add_ace').replace('%s', newAce.object).replace('%s', newAce.principal)
-            : t('permissions_confirm_remove_ace').replace('%s', confirm.ace?.object || '').replace('%s', confirm.ace?.principal || '')
+          text={
+            confirm.type === "add"
+              ? t('permissions_confirm_add_ace')
+                  .replace('%s', newAce.object)
+                  .replace('%s', newAce.principal)
+              : t('permissions_confirm_remove_ace')
+                  .replace('%s', confirm.ace?.object || "")
+                  .replace('%s', confirm.ace?.principal || "")
           }
           onConfirm={executeAction}
           onCancel={() => setConfirm(null)}
         />
       )}
     </div>
-  )
+  );
 }

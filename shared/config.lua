@@ -3,7 +3,7 @@ Config = Config or {}
 Config.Fuel = "cdn-fuel"        -- "ps-fuel", "LegacyFuel", "ox_fuel"
 Config.ResourcePerms = 'admin' -- permission to control resource(start stop restart)
 Config.ShowCommandsPerms = 'admin' -- permission to show all commands
-Config.OpenPanelPerms = { 'admin', 'mod', 'support' }
+Config.OpenPanelPerms = { 'admin', 'mod', 'support', 'apprentice' }
 Config.RenewedPhone = false    -- if you use qb-phone from renewed. (multijob)
 
 -- Key Bindings
@@ -25,7 +25,7 @@ Config.Actions = {
 
     ["ban_player"] = {
         label = "Banir Jogador",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Reason", option = "text" },
@@ -51,7 +51,7 @@ Config.Actions = {
 
     ["bring_player"] = {
         label = "Puxar Jogador",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:BringPlayer" },
@@ -60,7 +60,7 @@ Config.Actions = {
 
     ["change_weather"] = {
         label = "Alterar Clima",
-        perms = "mod",
+        perms = "apprentice",
         dropdown = {
             {
                 label = "Weather",
@@ -89,7 +89,7 @@ Config.Actions = {
 
     ["change_time"] = {
         label = "Alterar Horário",
-        perms = "mod",
+        perms = "apprentice",
         dropdown = {
             {
                 label = "Time Events",
@@ -109,7 +109,7 @@ Config.Actions = {
 
     ["change_plate"] = {
         label = "Alterar Placa",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Plate",   option = "text" },
             { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:ChangePlate" },
@@ -118,7 +118,7 @@ Config.Actions = {
 
     ["clear_inventory"] = {
         label = "Limpar Inventário",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClearInventory" },
@@ -127,7 +127,7 @@ Config.Actions = {
 
     ["clear_inventory_offline"] = {
         label = "Limpar Inventário Offline",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Citizen ID", option = "text", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClearInventoryOffline" },
@@ -136,7 +136,7 @@ Config.Actions = {
 
     ["clothing_menu"] = {
         label = "Dar Menu de Roupas",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClothingMenu" },
@@ -145,7 +145,7 @@ Config.Actions = {
 
     ["set_ped"] = {
         label = "Definir Ped",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Player",     option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Ped Models", option = "dropdown", data = "pedlist" },
@@ -155,7 +155,7 @@ Config.Actions = {
 
     ["copy_coords"] = {
         label = "Copiar Coordenadas",
-        perms = "mod",
+        perms = "apprentice",
         dropdown = {
             {
                 label = "Copy Coords",
@@ -175,12 +175,12 @@ Config.Actions = {
         label = "Deletar Veículo",
         type = "command",
         event = "dv",
-        perms = "mod",
+        perms = "apprentice",
     },
 
     ["freeze_player"] = {
         label = "Congelar Jogador",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:FreezePlayer" },
@@ -192,7 +192,7 @@ Config.Actions = {
         perms = "mod",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-            { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:KillPlayer" },
+            { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:KillPlayer" },
         },
     },
 
@@ -207,7 +207,7 @@ Config.Actions = {
 
     ["remove_stress"] = {
         label = "Remover Estresse",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Jogador (Opcional)", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar",           option = "button", type = "server", event = "mri_Qadmin:server:RemoveStress" },
@@ -216,7 +216,7 @@ Config.Actions = {
 
     ["set_ammo"] = {
         label = "Definir Munição",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Quantidade de Munição", option = "text" },
             { label = "Confirmar",      option = "button", type = "client", event = "mri_Qadmin:client:SetAmmo" },
@@ -227,12 +227,12 @@ Config.Actions = {
         label = "Modo Deus",
         type = "client",
         event = "mri_Qadmin:client:ToggleGodmode",
-        perms = "mod",
+        perms = "admin",
     },
 
     ["give_car"] = {
         label = "Dar Carro",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Vehicle",           option = "dropdown", data = "vehicles", valueField = "model", labelField = "name" },
             { label = "Player",            option = "dropdown", data = "players", valueField = "id", labelField = "name" },
@@ -267,7 +267,7 @@ Config.Actions = {
         label = "Ativar/Desativar Laser",
         type = "client",
         event = "mri_Qadmin:client:ToggleLaser",
-        perms = "mod",
+        perms = "support",
     },
 
     -- ["set_perms"] = {
@@ -290,7 +290,7 @@ Config.Actions = {
 
     ["set_bucket"] = {
         label = "Definir Bucket de Roteamento",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Bucket",  option = "text" },
@@ -300,7 +300,7 @@ Config.Actions = {
 
     ["get_bucket"] = {
         label = "Obter Bucket de Roteamento",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:GetBucket" },
@@ -320,12 +320,12 @@ Config.Actions = {
         label = "Noclip",
         type = "client",
         event = "mri_Qadmin:client:ToggleNoClip",
-        perms = "mod",
+        perms = "apprentice",
     },
 
     ["open_inventory"] = {
         label = "Abrir Inventário",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:openInventory" },
@@ -371,12 +371,12 @@ Config.Actions = {
         label = "Reviver Todos",
         type = "server",
         event = "mri_Qadmin:server:ReviveAll",
-        perms = "mod",
+        perms = "admin",
     },
 
     ["revive_player"] = {
         label = "Reviver Jogador",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:Revive" },
@@ -399,7 +399,7 @@ Config.Actions = {
 
     ["set_job"] = {
         label = "Definir Emprego",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Job", option = "dropdown", data = "jobs", valueField = "name", labelField = "label" },
@@ -409,7 +409,7 @@ Config.Actions = {
 
     ["fire_job"] = {
         label = "Demitir do Emprego",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             {
@@ -434,7 +434,7 @@ Config.Actions = {
 
     ["fire_gang"] = {
         label = "Demitir da Gangue",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             {
@@ -459,7 +459,7 @@ Config.Actions = {
 
     ["set_gang"] = {
         label = "Definir Gangue",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Gang",    option = "dropdown", data = "gangs", valueField = "name", labelField = "label" },
@@ -469,7 +469,7 @@ Config.Actions = {
 
     ["give_money"] = {
         label = "Dar Dinheiro",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Amount", option = "text" },
@@ -488,7 +488,7 @@ Config.Actions = {
 
     ["give_money_all"] = {
         label = "Dar Dinheiro para Todos",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Amount",  option = "text" },
             {
@@ -506,7 +506,7 @@ Config.Actions = {
 
     ["remove_money"] = {
         label = "Remover Dinheiro",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Amount", option = "text" },
@@ -535,7 +535,7 @@ Config.Actions = {
 
     ["give_item_all"] = {
         label = "Dar Item para Todos",
-        perms = "mod",
+        perms = "admin",
         dropdown = {
             { label = "Item",    option = "dropdown", data = "items", valueField = "item", labelField = "name" },
             { label = "Amount",  option = "text" },
@@ -556,7 +556,7 @@ Config.Actions = {
         label = "Consertar Veículo",
         type = "command",
         event = "fix",
-        perms = "mod",
+        perms = "support",
     },
 
     ["fix_vehicle_for"] = {
@@ -570,7 +570,7 @@ Config.Actions = {
 
     ["spectate_player"] = {
         label = "Espectar Jogador",
-        perms = "mod",
+        perms = "apprentice",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:SpectateTarget" },
@@ -588,7 +588,7 @@ Config.Actions = {
 
     ["telport_to_coords"] = {
         label = "Teleportar para Coordenadas",
-        perms = "mod",
+        perms = "apprentice",
         dropdown = {
             { label = "Coordenadas",  option = "text" },
             { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:TeleportToCoords" },
@@ -597,7 +597,7 @@ Config.Actions = {
 
     ["teleport_to_location"] = {
         label = "Teleportar para Localização",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Location", option = "dropdown", data = "locations" },
             { label = "Confirmar",  option = "button",   type = "client",   event = "mri_Qadmin:client:TeleportToLocation" },
@@ -608,7 +608,7 @@ Config.Actions = {
         label = "Teleportar para Marcador",
         type = "command",
         event = "tpm",
-        perms = "mod",
+        perms = "support",
     },
 
     ["teleport_back"] = {
@@ -622,7 +622,7 @@ Config.Actions = {
         label = "Menu de Desenvolvimento de Veículos",
         type = "client",
         event = "mri_Qadmin:client:ToggleVehDevMenu",
-        perms = "mod",
+        perms = "admin",
     },
 
     ["toggle_coords"] = {
@@ -664,7 +664,7 @@ Config.Actions = {
 
     ["warn_player"] = {
         label = "Alertar Jogador",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Reason",  option = "text" },
@@ -676,12 +676,12 @@ Config.Actions = {
         label = "Munição Infinita",
         type = "client",
         event = "mri_Qadmin:client:setInfiniteAmmo",
-        perms = "mod",
+        perms = "admin",
     },
 
     ["kick_player"] = {
         label = "Expulsar Jogador",
-        perms = "mod",
+        perms = "support",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Reason",  option = "text" },
@@ -726,24 +726,24 @@ Config.PlayerActions = {
         label = "Teleportar",
         type = "server",
         event = "mri_Qadmin:server:TeleportToPlayer",
-        perms = "mod",
+        perms = "support",
     },
     ["bringPlayer"] = {
         label = "Puxar",
         type = "server",
         event = "mri_Qadmin:server:BringPlayer",
-        perms = "mod",
+        perms = "support",
     },
     ["sendPlayerBack"] = {
         label = "Enviar de Volta",
         type = "server",
         event = "mri_Qadmin:server:SendPlayerBack",
-        perms = "mod",
+        perms = "support",
     },
     ["revivePlayer"] = {
         label = "Reviver",
         event = "mri_Qadmin:server:Revive",
-        perms = "mod",
+        perms = "support",
         type = "server"
     },
     ["verifyPlayer"] = {
@@ -755,13 +755,13 @@ Config.PlayerActions = {
     ["givePlayerMoney"] = {
         label = "Dar Dinheiro",
         event = "mri_Qadmin:server:givePlayerMoney",
-        perms = "mod",
+        perms = "admin",
         type = "server"
     },
     ["removePlayerMoney"] = {
         label = "Remover Dinheiro",
         event = "mri_Qadmin:server:removePlayerMoney",
-        perms = "mod",
+        perms = "admin",
         type = "server"
     },
     ["clothesMenu"] = {
@@ -773,7 +773,7 @@ Config.PlayerActions = {
     ["spawnPersonalVehicle"] = {
         label = "Gerar Veículo Pessoal",
         event = "mri_Qadmin:client:SpawnPersonalVehicle",
-        perms = "mod",
+        perms = "admin",
         type = "client"
     },
     ["deletePersonalVehicle"] = {
@@ -785,31 +785,31 @@ Config.PlayerActions = {
     ["banPlayer"] = {
         label = "Banir Jogador",
         event = "mri_Qadmin:server:BanPlayer",
-        perms = "mod",
+        perms = "support",
         type = "server"
     },
     ["kickPlayer"] = {
         label = "Expulsar Jogador",
         event = "mri_Qadmin:server:KickPlayer",
-        perms = "mod",
+        perms = "support",
         type = "server"
     },
     ["unban_cid"] = {
         label = "Banir Jogador",
         event = "mri_Qadmin:server:unban_cid",
-        perms = "mod",
+        perms = "support",
         type = "server"
     },
     ["delete_cid"] = {
         label = "Excluir Jogador",
         event = "mri_Qadmin:server:delete_cid",
-        perms = "mod",
+        perms = "admin",
         type = "server"
     },
     ["unban_rowid"] = {
         label = "Desbanir Jogador",
         event = "mri_Qadmin:server:unban_rowid",
-        perms = "mod",
+        perms = "admin",
         type = "server"
     },
 }

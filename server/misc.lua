@@ -485,3 +485,23 @@ RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(data, selectedData)
         TriggerClientEvent('QBCore:Notify', src, "Nenhum banimento removido.", "error", 5000)
     end
 end)
+-- Kill Player
+RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(data, selectedData)
+    local data = CheckDataFromKey(data)
+    if not data or not CheckPerms(source, data.perms) then return end
+    
+    local src = source
+    local targetId = tonumber(selectedData["Player"].value)
+    local targetPed = GetPlayerPed(targetId)
+    local targetPlayer = QBCore.Functions.GetPlayer(targetId)
+    
+    print(('[mri_Qadmin] KillPlayer: Admin %s killing Target %s'):format(src, targetId))
+
+    if targetPlayer then
+        -- Trigger client event on target to kill themselves (reliable way)
+        TriggerClientEvent('mri_Qadmin:client:ForceKill', targetPlayer.PlayerData.source)
+        QBCore.Functions.Notify(src, locale("kill_player", targetPlayer.PlayerData.charinfo.firstname), 'success')
+    else
+        QBCore.Functions.Notify(src, locale("not_online"), 'error')
+    end
+end)
