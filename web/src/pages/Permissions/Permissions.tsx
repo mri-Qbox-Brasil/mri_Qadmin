@@ -5,6 +5,7 @@ import { useI18n } from '@/context/I18n'
 import AcesList from './components/AcesList'
 import PrincipalsList from './components/PrincipalsList'
 import { cn } from '@/lib/utils'
+import PermissionsSkeleton from '@/components/skeletons/PermissionsSkeleton'
 import { useNui } from '@/context/NuiContext'
 import ConfirmAction from '@/components/players/ConfirmAction'
 

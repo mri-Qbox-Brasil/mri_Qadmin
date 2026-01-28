@@ -16,6 +16,8 @@ import ConfirmAction from "@/components/players/ConfirmAction";
 import CreatableCombobox from "@/components/shared/CreatableCombobox";
 import { useAppState } from "@/context/AppState";
 import { useI18n } from "@/context/I18n";
+import { Virtuoso } from "react-virtuoso";
+import PermissionsSkeleton from "@/components/skeletons/PermissionsSkeleton";
 
 interface Principal {
   id: number;
@@ -322,10 +324,8 @@ export default function PrincipalsList({
 
       <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto pr-1">
-          {loading ? (
-            <div className="p-8 flex justify-center">
-              <Spinner />
-            </div>
+          {loading && principals.length === 0 ? (
+            <PermissionsSkeleton />
           ) : principals.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               {t("permissions_no_inheritance")}
@@ -362,25 +362,31 @@ export default function PrincipalsList({
                 {} as Record<string, Principal[]>,
               );
 
-
-              return Object.entries(grouped).map(([child, items]) => {
-                  // Deduplicate items by parent (similar to AcesList logic)
+              // Group by child
+              const groupedEntries = Object.entries(grouped).map(([child, items]) => {
                   const uniqueMap = new Map<string, Principal>();
                   items.forEach((item) => {
                     uniqueMap.set(item.parent, { ...item });
                   });
-                  const uniqueItems = Array.from(uniqueMap.values());
-
-                  return (
-                    <PrincipalGroup
-                      key={child}
-                      child={child}
-                      items={uniqueItems}
-                      onRemove={handleRemove}
-                      players={players}
-                    />
-                  );
+                  return { child, items: Array.from(uniqueMap.values()) }
               });
+
+              return (
+                  <Virtuoso
+                      style={{ height: '100%' }}
+                      data={groupedEntries}
+                      itemContent={(index, { child, items }) => (
+                          <div className="pb-3">
+                              <PrincipalGroup
+                                  child={child}
+                                  items={items}
+                                  onRemove={handleRemove}
+                                  players={players}
+                              />
+                          </div>
+                      )}
+                  />
+              );
             })()
           )}
         </div>

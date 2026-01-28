@@ -13,7 +13,8 @@ import {
     Info,
     Briefcase,
     Settings,
-    Shield
+    Shield,
+    Package
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -41,7 +42,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     { icon: Terminal, label: t('nav_commands'), route: 'commands' },
     { icon: Wand2, label: t('nav_actions'), route: 'actions' },
     { icon: Shield, label: 'Permissions', route: 'permissions' },
-    { icon: Box, label: t('nav_resources'), route: 'resources' },
+    { icon: Package, label: t('nav_resources'), route: 'resources' },
     { icon: Box, label: '', divider: true },
     { icon: Settings, label: t('nav_settings'), route: 'settings' },
     { icon: Info, label: t('nav_credits'), route: 'credits' },

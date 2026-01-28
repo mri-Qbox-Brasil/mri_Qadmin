@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { VirtuosoGrid } from 'react-virtuoso'
 import { useI18n } from '@/context/I18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import Spinner from '@/components/Spinner'
 import { Package, Box, RefreshCw } from 'lucide-react'
@@ -18,7 +20,6 @@ export default function Items() {
   const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [displayLimit, setDisplayLimit] = useState(50)
 
   const handleRefresh = async () => {
     setLoading(true)
@@ -52,21 +53,10 @@ export default function Items() {
     )
   }, [items, search])
 
-  // Reset limit on search
-  useEffect(() => {
-    setDisplayLimit(50)
-  }, [search])
 
-  const visibleItems = filtered.slice(0, displayLimit)
+  /* Removed manual pagination logic */
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget
-    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
-      if (displayLimit < filtered.length) {
-        setDisplayLimit(prev => prev + 50)
-      }
-    }
-  }
+
 
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
 
@@ -77,6 +67,8 @@ export default function Items() {
   function closeModal() {
     setSelectedItem(null)
   }
+
+  if (loading) return <GridSkeleton />
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
@@ -97,24 +89,22 @@ export default function Items() {
           </MriButton>
       </MriPageHeader>
 
-      <div className="flex-1 overflow-auto p-8 no-scrollbar" onScroll={handleScroll}>
+      <div className="flex-1 overflow-hidden p-4">
         {filtered.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                <Box className="w-12 h-12 opacity-20" />
                <p>{t('items_none_found')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {visibleItems.map(item => (
-                <ItemGridCard key={item.item} item={item} onSpawn={openModal} />
-            ))}
-          </div>
+          <VirtuosoGrid
+             style={{ height: '100%' }}
+             data={filtered}
+             listClassName="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 pb-4"
+             itemContent={(index, item) => (
+                 <ItemGridCard key={item.item} item={item} onSpawn={openModal} />
+             )}
+          />
         )}
-         {displayLimit < filtered.length && (
-            <div className="py-8 flex justify-center">
-                <Spinner size="sm" />
-            </div>
-         )}
       </div>
 
       {selectedItem && (

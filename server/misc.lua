@@ -283,7 +283,7 @@ end)
 
 -- Set RoutingBucket
 RegisterNetEvent('mri_Qadmin:server:SetBucket', function(data, selectedData)
-    print(json.encode(data), json.encode(selectedData))
+    Debug(json.encode(data), json.encode(selectedData))
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
 
@@ -292,7 +292,7 @@ RegisterNetEvent('mri_Qadmin:server:SetBucket', function(data, selectedData)
     local bucket = tonumber(selectedData["Bucket"].value)
     local currentBucket = GetPlayerRoutingBucket(player)
 
-    print(player, bucket, currentBucket)
+    Debug(player, bucket, currentBucket)
 
     if bucket == currentBucket then
         return QBCore.Functions.Notify(src, locale("target_same_bucket", player), 'error', 7500)
@@ -459,10 +459,37 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(data, selectedData)
     TriggerClientEvent("mri_Qadmin:client:setPed", Player.PlayerData.source, ped)
 end)
 
--- Callback para listar todos os bans
-lib.callback.register('mri_Qadmin:callback:GetBans', function(source)
-    local bans = MySQL.query.await('SELECT * FROM bans') or {}
-    return bans
+-- Callback para listar bans com paginação e busca
+lib.callback.register('mri_Qadmin:callback:GetBans', function(source, data)
+    local page = data and tonumber(data.page) or 1
+    local pageSize = data and tonumber(data.pageSize) or 50
+    local search = data and data.search or ""
+    local offset = (page - 1) * pageSize
+
+    local query = 'SELECT * FROM bans'
+    local countQuery = 'SELECT COUNT(1) FROM bans'
+    local params = {}
+
+    if search ~= "" then
+        local pattern = "%" .. search .. "%"
+        query = query .. ' WHERE name LIKE ? OR reason LIKE ? OR license LIKE ?'
+        countQuery = countQuery .. ' WHERE name LIKE ? OR reason LIKE ? OR license LIKE ?'
+        params = { pattern, pattern, pattern }
+    end
+
+    local total = MySQL.scalar.await(countQuery, params)
+
+    query = query .. ' LIMIT ? OFFSET ?'
+    table.insert(params, pageSize)
+    table.insert(params, offset)
+
+    local bans = MySQL.query.await(query, params) or {}
+
+    return {
+        data = bans,
+        total = total,
+        pages = math.ceil(total / pageSize)
+    }
 end)
 
 -- Desbanir por ID da linha
@@ -489,13 +516,13 @@ end)
 RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(data, selectedData)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
-    
+
     local src = source
     local targetId = tonumber(selectedData["Player"].value)
     local targetPed = GetPlayerPed(targetId)
     local targetPlayer = QBCore.Functions.GetPlayer(targetId)
-    
-    print(('[mri_Qadmin] KillPlayer: Admin %s killing Target %s'):format(src, targetId))
+
+    Debug(('[mri_Qadmin] KillPlayer: Admin %s killing Target %s'):format(src, targetId))
 
     if targetPlayer then
         -- Trigger client event on target to kill themselves (reliable way)

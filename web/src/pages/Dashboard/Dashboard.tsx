@@ -5,6 +5,7 @@ import Spinner from '@/components/Spinner'
 import { useNui } from '@/context/NuiContext'
 import { MriPageHeader, MriInput } from '@mriqbox/ui-kit'
 import { useAppState } from '@/context/AppState'
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import DevLocaleSwitcher from '@/components/DevLocaleSwitcher'
 import {
     Wallet,
@@ -15,8 +16,10 @@ import {
     Gavel,
     User,
     Search,
-    LayoutDashboard
+    LayoutDashboard,
+    RefreshCw
 } from 'lucide-react'
+import { TableVirtuoso } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
 
@@ -48,28 +51,68 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [summary, setSummary] = useState<any>(null)
   const [playersSearch, setPlayersSearch] = useState<string>('')
+  const [isSyncing, setIsSyncing] = useState(false)
+
   const [sortBy, setSortBy] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   const { sendNui, debugMode } = useNui()
   const { t } = useI18n()
-  const { players, setPlayers } = useAppState()
+  const { players, setPlayers, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch } = useAppState()
 
+  // Defer the players update so sorting doesn't block the UI thread during high-frequency sync updates
+  const deferredPlayers = React.useDeferredValue(players)
+
+  // Background Sync Logic (Identical to Players.tsx)
+    const syncRemainingPages = async (startPage: number, totalPages: number, currentSearch: string) => {
+        if (startPage > totalPages || currentSearch !== '') {
+            setIsSyncing(false)
+            return
+        }
+
+        setIsSyncing(true)
+
+        try {
+            if (abortSyncRef.current) {
+                 setIsSyncing(false)
+                 return
+            }
+
+            // Optimization: Fetch larger chunks (250) to reduce re-renders compared to 100
+            const limit = 250
+            const payload = { page: startPage, limit: limit, search: currentSearch }
+            const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
+
+            // Small breathing room for UI
+            await new Promise(r => setTimeout(r, 100))
+             if (abortSyncRef.current) { setIsSyncing(false); return; }
+
+            const response = await sendNui('getPlayers', payload, mock)
+            const data = Array.isArray(response) ? response : (response.data || [])
+
+            if (data && data.length > 0) {
+                setPlayers(prev => [...prev, ...data])
+                syncRemainingPages(startPage + 1, totalPages, currentSearch)
+            } else {
+                setIsSyncing(false)
+            }
+
+        } catch (e) {
+            console.error("Sync error", e)
+            setIsSyncing(false)
+        }
+    }
+
+    const abortSyncRef = React.useRef(false)
+
+  // Client-side sorting of the FULL LIST (since we load everything eventually)
   const displayedPlayers = React.useMemo(() => {
-    if (!players) return []
-    const q = (playersSearch || '').toLowerCase().trim()
-    let list = players.filter((p: any) => {
-      if (!q) return true
-      return (
-        String(p.name || '').toLowerCase().includes(q) ||
-        String(p.cid || '').toLowerCase().includes(q) ||
-        String(p.id || '').toLowerCase().includes(q)
-      )
-    })
+    if (!deferredPlayers) return []
+    let list = [...deferredPlayers]
 
     if (!sortBy) return list
 
-    list = list.slice().sort((a: any, b: any) => {
+    list.sort((a: any, b: any) => {
       if (sortBy === 'name') {
         return sortDir === 'asc'
           ? String(a.name || '').localeCompare(String(b.name || ''))
@@ -81,7 +124,7 @@ export default function Dashboard() {
     })
 
     return list
-  }, [players, playersSearch, sortBy, sortDir])
+  }, [deferredPlayers, sortBy, sortDir])
 
   function toggleSort(field: string) {
     if (sortBy === field) {
@@ -94,40 +137,105 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function load() {
-      setLoading(true)
+      // Load server info only once
       try {
         const serverInfo = await sendNui('getServerInfo', {}, mockSummary)
         setSummary(serverInfo || mockSummary)
       } catch (e: any) {
         setError(e?.message ?? t('error_loading_data'))
-      } finally {
-        setLoading(false)
       }
     }
     load()
   }, [sendNui])
 
-  // ensure players are populated even if the Players page wasn't opened
+  // Fetch Players (Progressive)
   useEffect(() => {
-    if (players && players.length > 0) return
     let mounted = true
-    async function loadPlayers() {
-      try {
-        const mock: any[] = MOCK_PLAYERS
-        const list = await sendNui('getPlayers', {}, mock)
-        if (!mounted) return
-        if (list && Array.isArray(list) && list.length > 0) {
-          try { setPlayers(list) } catch (e) {}
-        }
-      } catch (e) {
-        // ignore errors, players may be populated elsewhere
-      }
-    }
-    loadPlayers()
-    return () => { mounted = false }
-  }, [players, sendNui, setPlayers])
 
-  if (loading) return <div className="h-full w-full flex flex-col bg-background"><MriPageHeader title={t('nav_dashboard')} icon={LayoutDashboard} /><div className="flex-1 flex items-center justify-center"><Spinner /></div></div>
+    const fetchPlayers = async () => {
+        if (playersSearch !== '') {
+             abortSyncRef.current = true
+        } else {
+             abortSyncRef.current = false
+        }
+
+         // Cache Check
+         if (playersSearch === '') {
+              const now = Date.now()
+              if (now - lastPlayersFetch < 60000 && players.length > 0) {
+                  setLoading(false)
+                  return
+              }
+         }
+
+        setLoading(true)
+        try {
+            // Initial Fetch 100
+            const limit = 100
+            const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
+            const payload = { page: 1, limit: limit, search: playersSearch }
+
+            const response = await sendNui('getPlayers', payload, mock)
+
+            if (!mounted) return
+
+            const data = Array.isArray(response) ? response : (response.data || [])
+            const total = Array.isArray(response) ? response.length : (response.total || 0)
+            const pages = Array.isArray(response) ? 1 : (response.pages || 1)
+
+            setPlayers(data)
+            setPagination(prev => ({ ...prev, page: 1, total, totalPages: pages }))
+
+            // Start Sync if needed
+            if (playersSearch === '' && pages > 1) {
+                setTimeout(() => syncRemainingPages(2, pages, ''), 1000)
+            } else {
+                setIsSyncing(false)
+            }
+
+            if (playersSearch === '') {
+                 setLastPlayersFetch(Date.now())
+            }
+
+        } catch (e: any) {
+             // ignore
+        } finally {
+            if(mounted) setLoading(false)
+        }
+    }
+
+    if (playersSearch) {
+        const timer = setTimeout(() => {
+            fetchPlayers()
+        }, 500)
+        return () => {
+            mounted = false
+            clearTimeout(timer)
+        }
+    } else {
+        fetchPlayers()
+        return () => { mounted = false }
+    }
+  }, [sendNui, playersSearch]) // Removed 'page' dependency as we don't paginate manually anymore
+
+    const SyncFooter = () => {
+       if (!loading && !isSyncing) return null
+       return (
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2">
+                {loading && <div className="bg-background p-2 rounded-full shadow-lg border border-border"><Spinner /></div>}
+                {isSyncing && !loading && (
+                    <div className="flex items-center gap-2 text-xs bg-card px-4 py-2 rounded-full shadow-lg border border-primary/20 text-primary animate-pulse">
+                        <RefreshCw className="w-3 h-3 animate-spin"/>
+                        {t('loading_more')} ({players.length}/{pagination.total})
+                    </div>
+                )}
+            </div>
+       )
+    }
+
+
+
+  if (loading || !summary) return <DashboardSkeleton />
   if (error) return <div className="p-6 text-red-400">{error}</div>
 
   return (
@@ -203,8 +311,8 @@ export default function Dashboard() {
           </div>
 
           {/* Players Table Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
+          <div className="flex-1 min-h-0 flex flex-col relative h-[600px]">
+            <div className="flex items-center justify-between mb-4 shrink-0">
               <h2 className="text-lg font-bold text-foreground">{t('players')}</h2>
               <div className="relative w-80">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -217,44 +325,43 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="border border-border rounded-xl overflow-hidden bg-card">
-              <table className="w-full text-left">
-                <thead className="bg-muted/50 border-b border-border">
-                    <tr className="text-xs uppercase font-bold text-muted-foreground tracking-wider">
-                      <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('name')}>
-                        {t('player_name')} {sortBy === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                      </th>
-                      <th className="px-6 py-4">CID</th>
-                      <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('cash')}>
-                        {t('dashboard_cash_on_hand')} {sortBy === 'cash' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                      </th>
-                      <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('bank')}>
-                        {t('dashboard_bank_balance')} {sortBy === 'bank' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                      </th>
-                      <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('crypto')}>
-                        {t('dashboard_crypto')} {sortBy === 'crypto' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                      </th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {displayedPlayers && displayedPlayers.length > 0 ? (
-                    displayedPlayers.map((p: any) => (
-                      <tr key={p.id || p.name} className="hover:bg-muted/40 transition-colors">
-                        <td className="px-6 py-4 font-medium text-foreground">{p.name || p.cid || p.id}</td>
-                        <td className="px-6 py-4 text-muted-foreground font-mono text-xs">{p.cid ?? '-'}</td>
-                        <td className="px-6 py-4 text-foreground/80">{p.cash ?? p.money ?? '-'} </td>
-                        <td className="px-6 py-4 text-foreground/80">{p.bank ?? '-'} </td>
-                        <td className="px-6 py-4 text-foreground/80">{p.crypto ?? '-'} </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">{t('no_player_available')}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="border border-border rounded-xl bg-card flex-1 min-h-0 relative overflow-hidden">
+                <TableVirtuoso
+                    style={{ height: '100%', width: '100%' }}
+                    data={displayedPlayers}
+                    components={{
+                         Table: (props) => <table {...props} className="w-full text-left" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }} />,
+                    }}
+                    fixedHeaderContent={() => (
+                         <tr className="bg-muted border-b border-border text-xs uppercase font-bold text-muted-foreground tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[30%]" onClick={() => toggleSort('name')}>
+                                {t('player_name')} {sortBy === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th className="px-6 py-4 w-[15%]">CID</th>
+                            <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[20%]" onClick={() => toggleSort('cash')}>
+                                {t('dashboard_cash_on_hand')} {sortBy === 'cash' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[20%]" onClick={() => toggleSort('bank')}>
+                                {t('dashboard_bank_balance')} {sortBy === 'bank' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[15%]" onClick={() => toggleSort('crypto')}>
+                                {t('dashboard_crypto')} {sortBy === 'crypto' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                        </tr>
+                    )}
+                    itemContent={(index, p) => (
+                        <>
+                            <td className="px-6 py-4 font-medium text-foreground w-[30%] truncate">{p.name || p.cid || p.id}</td>
+                            <td className="px-6 py-4 text-muted-foreground font-mono text-xs w-[15%] truncate">{p.cid ?? '-'}</td>
+                            <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">{p.cash ?? p.money ?? '-'} </td>
+                            <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">{p.bank ?? '-'} </td>
+                            <td className="px-6 py-4 text-foreground/80 w-[15%] truncate">{p.crypto ?? '-'} </td>
+                        </>
+                    )}
+                />
+                <SyncFooter />
             </div>
+
           </div>
       </div>
     </div>

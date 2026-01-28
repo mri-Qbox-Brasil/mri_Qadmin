@@ -16,12 +16,44 @@ shared_scripts {
 
 server_scripts {
     "@oxmysql/lib/MySQL.lua",
-    "server/**/*.lua",
+    "server/main.lua",
+    "server/utils.lua",
+    "server/chat.lua",
+    "server/commands.lua",
+    "server/db.lua",
+    "server/groups.lua",
+    "server/inventory.lua",
+    "server/items.lua",
+    "server/locations.lua",
+    "server/misc.lua",
+    "server/peds.lua",
+    "server/permissions.lua",
+    "server/players.lua",
+    "server/resources.lua",
+    "server/server_data.lua",
+    "server/spectate.lua",
+    "server/teleport.lua",
+    "server/trolls.lua",
+    "server/vehicle.lua",
+    "server/wall.lua",
 }
 
 client_scripts {
     "client/main.lua",
-    "client/**/*.lua",
+    "client/utils.lua",
+    "client/data.lua",
+    "client/chat.lua",
+    "client/inventory.lua",
+    "client/misc.lua",
+    "client/noclip.lua",
+    "client/players.lua",
+    "client/spectate.lua",
+    "client/teleport.lua",
+    "client/toggle_laser.lua",
+    "client/troll.lua",
+    "client/vehicles.lua",
+    "client/wall.lua",
+    "client/world.lua",
 }
 
 dependencies {

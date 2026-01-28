@@ -46,7 +46,6 @@ export default function App() {
       if (r in PAGE_PERMISSIONS) {
           const perm = PAGE_PERMISSIONS[r as keyof typeof PAGE_PERMISSIONS]
           if (!hasPermission(myPermissions, perm)) {
-              console.log('Access denied to', r)
               return
           }
       }
@@ -99,7 +98,6 @@ export default function App() {
   // Listen for NUI visibility messages from the client resource
   useEffect(() => {
     const onVisible = (data: any) => {
-      console.log('[App] Received setVisible:', data)
       const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.data) : Boolean(data)
       setVisible(newVis)
 

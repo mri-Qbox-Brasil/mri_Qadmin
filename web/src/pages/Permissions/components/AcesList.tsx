@@ -9,6 +9,8 @@ import ConfirmAction from '@/components/players/ConfirmAction'
 import CreatableCombobox from '@/components/shared/CreatableCombobox'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/context/I18n'
+import { Virtuoso } from 'react-virtuoso'
+import PermissionsSkeleton from '@/components/skeletons/PermissionsSkeleton'
 
 interface Ace {
   id: number
@@ -266,10 +268,8 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
 
       <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto pr-1">
-          {loading ? (
-            <div className="p-8 flex justify-center">
-              <Spinner />
-            </div>
+          {loading && aces.length === 0 ? (
+            <PermissionsSkeleton />
           ) : aces.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               {t('permissions_no_aces')}
@@ -306,30 +306,35 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                 {} as Record<string, Ace[]>,
               );
 
-                    return Object.entries(grouped).map(([principal, items]) => {
-                        // Deduplicate items by object
-                        const uniqueMap = new Map<string, Ace>()
-                        items.forEach(item => {
-                            // Always overwrite with the latest item in the list (effectively "updating" it if duplicate exists)
-                            uniqueMap.set(item.object, { ...item })
-                        })
-                        const uniqueItems = Array.from(uniqueMap.values())
-
-                        return (
-                            <AceGroup
-                                key={principal}
-                                principal={principal}
-                                items={uniqueItems}
-                                onRemove={handleRemove}
-                                onToggle={handleToggle}
-                                players={players}
-                            />
-                        )
+                const groupedEntries = Object.entries(grouped).map(([principal, items]) => {
+                    const uniqueMap = new Map<string, Ace>()
+                    items.forEach(item => {
+                        uniqueMap.set(item.object, { ...item })
                     })
-                })()
-            )}
-        </div>
-      </div>
+                    return { principal, items: Array.from(uniqueMap.values()) }
+                });
+
+                return (
+                    <Virtuoso
+                        style={{ height: '100%' }}
+                        data={groupedEntries}
+                        itemContent={(index, { principal, items }) => (
+                            <div className="pb-3">
+                                <AceGroup
+                                    principal={principal}
+                                    items={items}
+                                    onRemove={handleRemove}
+                                    onToggle={handleToggle}
+                                    players={players}
+                                />
+                            </div>
+                        )}
+                    />
+                )
+            })()
+        )}
+    </div>
+  </div>
 
       {confirm && (
         <ConfirmAction

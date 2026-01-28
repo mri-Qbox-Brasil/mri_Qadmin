@@ -63,7 +63,6 @@ export default function CreatableCombobox({
                 <div
                     className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
                     onClick={() => {
-                        console.log('Creating new value (empty state):', searchValue)
                         onChange(searchValue)
                         setOpen(false)
                         setSearchValue("")
@@ -82,7 +81,6 @@ export default function CreatableCombobox({
                       key={opt.value}
                       value={`${opt.label} ${opt.value}`} // Combine for better searching
                       onSelect={() => {
-                          console.log('Selected existing:', opt.value)
                           onChange(opt.value)
                           setOpen(false)
                           setSearchValue("")
@@ -101,7 +99,6 @@ export default function CreatableCombobox({
                    <MriCommandItem
                       value={searchValue}
                       onSelect={() => {
-                          console.log('Creating new value (list):', searchValue)
                           onChange(searchValue)
                           setOpen(false)
                           setSearchValue("")

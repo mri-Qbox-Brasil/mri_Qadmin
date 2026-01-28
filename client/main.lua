@@ -25,7 +25,7 @@ end
 RegisterNUICallback('getServerInfo', function(_, cb)
     local serverInfo = lib.callback.await('mri_Qadmin:callback:GetServerInfo', false)
     if not serverInfo then
-        print("Erro: Nenhum dado recebido do servidor.")
+        Debug("Erro: Nenhum dado recebido do servidor.")
         cb({ error = "Erro ao carregar informações do servidor." })
         return
     end
@@ -75,10 +75,22 @@ RegisterNUICallback("hideUI", function(_, cb)
 	cb({ status = "ok" })
 end)
 
+local actionCooldowns = {}
+
 RegisterNUICallback("clickButton", function(data, cb)
-    print("Button clicked:", json.encode(data))
-	local selectedData = data.selectedData
+    local selectedData = data.selectedData
 	local key = data.data
+
+    -- Cooldown check
+    local now = GetGameTimer()
+    if actionCooldowns[key] and (now - actionCooldowns[key] < 500) then
+        Debug(("Ignorando clique duplicado para: %s"):format(key))
+        cb("ok")
+        return
+    end
+    actionCooldowns[key] = now
+
+    Debug("Button clicked:", json.encode(data))
 	local data = CheckDataFromKey(key)
 	if not data or not CheckPerms(data.perms) then
 		cb("ok")
@@ -144,7 +156,7 @@ end)
 
 -- Get players
 RegisterNUICallback("getPlayers", function(data, cb)
-	local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', false)
+	local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', false, data.page, data.limit, data.search)
 	cb(players)
 end)
 
@@ -172,6 +184,10 @@ end)
 
 RegisterNetEvent('mri_Qadmin:client:RefreshPlayers', function()
     SendNUIMessage({ action = 'refreshPlayers' })
+end)
+
+RegisterNetEvent('mri_Qadmin:client:UpdateResourceState', function(data)
+    SendNUIMessage({ action = 'updateResourceState', data = data })
 end)
 
 RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()

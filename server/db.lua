@@ -27,7 +27,7 @@ local function executeQueries(queries, callback)
             queries[index],
             {},
             function()
-                print("Tabela verificada/criada: " .. index)
+                Debug("Tabela verificada/criada: " .. index)
                 index = index + 1
                 executeNextQuery()
             end
@@ -43,7 +43,7 @@ local function createTables()
     executeQueries(
         queries,
         function()
-            print("Todas as tabelas foram verificadas/criadas.")
+            Debug("Todas as tabelas foram verificadas/criadas.")
         end
     )
 end
@@ -52,7 +52,7 @@ AddEventHandler(
     "onResourceStart",
     function(resourceName)
         if GetCurrentResourceName() == resourceName then
-            print("Recurso " .. resourceName .. " iniciado. Verificando/criando tabelas...")
+            Debug("Recurso " .. resourceName .. " iniciado. Verificando/criando tabelas...")
             createTables()
         end
     end

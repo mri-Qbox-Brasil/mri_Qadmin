@@ -7,6 +7,8 @@ import { RefreshCw, Briefcase, Skull, UserMinus, UserCog, ChevronDown, ChevronUp
 import ChangeGroupModal from '@/components/players/ChangeGroupModal'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { cn } from '@/lib/utils'
+import GroupsSkeleton from '@/components/skeletons/GroupsSkeleton'
+import GroupList from '@/components/groups/GroupList'
 import { MOCK_GAME_DATA } from '@/utils/mockData'
 
 
@@ -36,7 +38,7 @@ export default function Groups() {
   const [data, setData] = useState<GroupsData>({ jobs: [], gangs: [] })
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   // Modals state
   const [editingMember, setEditingMember] = useState<{ member: GroupMember, type: 'job' | 'gang', groupName: string } | null>(null)
@@ -63,8 +65,8 @@ export default function Groups() {
     fetchGroups()
   }, [fetchGroups])
 
-  const toggleCollapse = (key: string) => {
-    setCollapsed(prev => ({ ...prev, [key]: !prev[key] }))
+  const toggleExpand = (key: string) => {
+    setExpanded(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   const handleFire = async () => {
@@ -89,20 +91,7 @@ export default function Groups() {
       }
   }
 
-  const filteredGroups = (groups: Group[]) => {
-      const s = search.toLowerCase()
-      return groups.map(g => ({
-          ...g,
-          members: g.members.filter(m => m.name.toLowerCase().includes(s))
-      })).filter(g => g.members.length > 0 || g.name.toLowerCase().includes(s))
-  }
 
-  const renderGrade = (grade: number | { level: number, name: string }) => {
-      if (typeof grade === 'object' && grade !== null) {
-          return `${grade.name} (${grade.level})`
-      }
-      return grade
-  }
 
   const getGradeLevel = (grade: number | { level: number, name: string }) => {
       if (typeof grade === 'object' && grade !== null) {
@@ -111,81 +100,7 @@ export default function Groups() {
       return Number(grade) || 0
   }
 
-  const renderGroupList = (groups: Group[], type: 'job' | 'gang') => {
-      const list = filteredGroups(groups)
-      return list.map((group, idx) => {
-          const key = `${type}-${group.name}-${idx}`
-          const isCollapsed = collapsed[key]
 
-          return (
-              <div key={key} className="bg-card rounded-xl border border-border overflow-hidden shadow-sm transition-all hover:border-primary/50 group">
-                  <div
-                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted transition-colors"
-                    onClick={() => toggleCollapse(key)}
-                  >
-                      <div className="flex items-center gap-3">
-                           <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center bg-muted text-muted-foreground border border-border", type === 'job' ? 'group-hover:text-blue-400 group-hover:border-blue-400/20' : 'group-hover:text-red-400 group-hover:border-red-400/20')}>
-                                {type === 'job' ? <Briefcase className="w-5 h-5" /> : <Skull className="w-5 h-5" />}
-                           </div>
-                           <div>
-                                <span className="font-bold text-lg text-foreground">{group.label}</span>
-                                <p className="text-xs text-muted-foreground font-mono">ID: {group.name} • {t('groups_members').replace('%s', String(group.members.length))}</p>
-                           </div>
-                      </div>
-
-                      <div className="p-1 rounded-md bg-muted/50 border border-border text-muted-foreground">
-                        {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                      </div>
-                  </div>
-
-                  {!isCollapsed && (
-                      <div className="border-t border-border bg-muted/30">
-                          {group.members.length === 0 ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">{t('groups_no_members')}</div>
-                          ) : (
-                              <div className="divide-y divide-border/50">
-                                {group.members.map(member => (
-                                    <div key={member.id} className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn("w-2 h-2 rounded-full relative", member.online ? "bg-primary shadow-[0_0_8px_var(--primary)]" : "bg-red-500")}>
-                                                    {member.online && (
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                                    )}
-                                                </div>
-                                            <span className="font-medium text-foreground/90">{member.name}</span>
-                                            <span className="text-xs text-muted-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded border border-border font-mono">Grade: {renderGrade(member.grade)}</span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <MriButton
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
-                                              title={t('change_group_title_' + type)}
-                                              onClick={() => setEditingMember({ member, type, groupName: group.name })}
-                                            >
-                                                <UserCog className="h-4 w-4" />
-                                            </MriButton>
-                                            <MriButton
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                                              title={t('fire_' + type)}
-                                              onClick={() => setFiringMember({ member, type })}
-                                            >
-                                                <UserMinus className="h-4 w-4" />
-                                            </MriButton>
-                                        </div>
-                                    </div>
-                                ))}
-                              </div>
-                          )}
-                      </div>
-                  )}
-              </div>
-          )
-      })
-  }
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
@@ -205,29 +120,44 @@ export default function Groups() {
       </MriPageHeader>
 
       {loading ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground gap-2 p-8">
-            <Spinner />
-            <p>{t('loading_groups')}</p>
-        </div>
+        <GroupsSkeleton />
       ) : (
-        <div className="flex-1 overflow-auto grid grid-cols-1 lg:grid-cols-2 gap-6 p-8 pb-4">
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-border">
+        <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-6 p-8 pb-4">
+            <div className="flex flex-col gap-4 h-full overflow-hidden">
+                <div className="flex items-center gap-2 pb-2 border-b border-border shrink-0">
                     <Briefcase className="h-5 w-5 text-blue-500" />
                     <h2 className="text-lg font-bold text-foreground">{t('groups_jobs')}</h2>
                 </div>
-                <div className="flex flex-col gap-3">
-                    {renderGroupList(data.jobs, 'job')}
+                <div className="flex-1 min-h-0">
+                    <GroupList
+                        groups={data.jobs}
+                        type="job"
+                        search={search}
+                        expanded={expanded}
+                        toggleExpand={toggleExpand}
+                        onEdit={(m, g) => setEditingMember({ member: m, type: 'job', groupName: g })}
+                        onFire={(m) => setFiringMember({ member: m, type: 'job' })}
+                        t={t}
+                    />
                 </div>
             </div>
 
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-border">
+            <div className="flex flex-col gap-4 h-full overflow-hidden">
+                <div className="flex items-center gap-2 pb-2 border-b border-border shrink-0">
                     <Skull className="h-5 w-5 text-red-500" />
                     <h2 className="text-lg font-bold text-foreground">{t('groups_gangs')}</h2>
                 </div>
-                <div className="flex flex-col gap-3">
-                    {renderGroupList(data.gangs, 'gang')}
+                <div className="flex-1 min-h-0">
+                    <GroupList
+                        groups={data.gangs}
+                        type="gang"
+                        search={search}
+                        expanded={expanded}
+                        toggleExpand={toggleExpand}
+                        onEdit={(m, g) => setEditingMember({ member: m, type: 'gang', groupName: g })}
+                        onFire={(m) => setFiringMember({ member: m, type: 'gang' })}
+                        t={t}
+                    />
                 </div>
             </div>
         </div>

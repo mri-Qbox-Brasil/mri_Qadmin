@@ -5,6 +5,8 @@ import { useNui } from '@/context/NuiContext'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { Search, Terminal, Command, Copy, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { VirtuosoGrid } from 'react-virtuoso'
+import CommandsSkeleton from '@/components/skeletons/CommandsSkeleton'
 
 export default function Commands() {
     const { gameData, setGameData } = useAppState()
@@ -64,20 +66,25 @@ export default function Commands() {
                     </MriButton>
             </MriPageHeader>
 
-            <div className="flex-1 overflow-auto p-8 no-scrollbar">
-                {filteredCommands.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
-                        <Command className="w-10 h-10 opacity-20" />
-                        <p>{t('commands_none_found')}</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {filteredCommands.map((cmd: any) => (
+            {loading && commands.length === 0 ? (
+                <CommandsSkeleton />
+            ) : filteredCommands.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
+                    <Command className="w-10 h-10 opacity-20" />
+                    <p>{t('commands_none_found')}</p>
+                </div>
+            ) : (
+                <div className="flex-1 overflow-hidden p-8">
+                    <VirtuosoGrid
+                        style={{ height: '100%' }}
+                        data={filteredCommands}
+                        listClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                        itemContent={(index, cmd) => (
                             <div key={cmd.name} className="bg-card border border-border rounded-xl p-4 flex gap-4 hover:border-primary/50 hover:bg-muted/50 transition-all group relative overflow-hidden">
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <MriButton size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => copyToClipboard(cmd.name)}>
                                         <Copy className="w-3 h-3" />
-                                   </MriButton>
+                                    </MriButton>
                                 </div>
 
                                 <div className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center border border-border shrink-0">
@@ -89,10 +96,10 @@ export default function Commands() {
                                     <p className="text-xs text-muted-foreground truncate" title={cmd.description}>{cmd.description || t('no_description')}</p>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                        )}
+                    />
+                </div>
+            )}
         </div>
     )
 }

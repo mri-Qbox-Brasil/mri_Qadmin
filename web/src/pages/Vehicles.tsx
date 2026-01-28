@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
+import { VirtuosoGrid } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/context/I18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import { Car, RefreshCw } from 'lucide-react'
 import Spinner from '@/components/Spinner'
@@ -18,7 +20,6 @@ export default function Vehicles() {
   const { sendNui } = useNui()
   const { gameData, setGameData } = useAppState()
   const [search, setSearch] = useState('')
-  const [displayLimit, setDisplayLimit] = useState(50)
   const [loading, setLoading] = useState(false)
 
   const vehicles = React.useMemo(() => {
@@ -61,21 +62,7 @@ export default function Vehicles() {
     )
   }, [vehicles, search])
 
-  // Reset limit on search
-  React.useEffect(() => {
-    setDisplayLimit(50)
-  }, [search])
 
-  const visibleVehicles = filteredVehicles.slice(0, displayLimit)
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget
-    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
-      if (displayLimit < filteredVehicles.length) {
-        setDisplayLimit(prev => prev + 50)
-      }
-    }
-  }
 
   const handleUpdateStock = async (vehicle: any, newStock: number) => {
     if (!vehicle) return
@@ -103,6 +90,8 @@ export default function Vehicles() {
     }
   }
 
+  if (loading) return <GridSkeleton />
+
   return (
     <div className="h-full w-full flex flex-col bg-background">
       <MriPageHeader title={t('title_vehicles') || "Vehicles"} icon={Car} countLabel={t('records')} count={filteredVehicles.length}>
@@ -122,28 +111,26 @@ export default function Vehicles() {
           </MriButton>
       </MriPageHeader>
 
-      <div className="flex-1 overflow-auto px-8 pb-8 no-scrollbar" onScroll={handleScroll}>
+      <div className="flex-1 overflow-hidden px-8 pb-8">
         {filteredVehicles.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
             <Car className="w-12 h-12 opacity-20" />
             <p>{t('vehicles_none_found')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-8">
-            {visibleVehicles.map(v => (
-                <VehicleGridCard
+          <VirtuosoGrid
+             style={{ height: '100%' }}
+             data={filteredVehicles}
+             listClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-8"
+             itemContent={(index, v) => (
+                 <VehicleGridCard
                     key={v.model}
                     vehicle={v}
                     onSpawn={(model) => sendNui('clickButton', { data: 'spawn_vehicle', selectedData: { Vehicle: { value: model } } })}
                     onUpdateStock={(veh) => setStockModal({ show: true, vehicle: veh })}
                 />
-            ))}
-          </div>
-        )}
-        {displayLimit < filteredVehicles.length && (
-            <div className="py-8 flex justify-center">
-                <Spinner size="sm" />
-            </div>
+             )}
+          />
         )}
       </div>
 

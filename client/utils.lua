@@ -50,5 +50,5 @@ end
 --- @param message string
 function Log(title, message)
 	TriggerServerEvent("qb-log:server:CreateLog", "mri_Qadmin", title, "red", message)
-    print("[mri_Qadmin LOG] " .. title .. ": " .. message)
+    Debug("[mri_Qadmin LOG] " .. title .. ": " .. message)
 end

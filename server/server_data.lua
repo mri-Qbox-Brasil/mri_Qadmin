@@ -3,24 +3,17 @@ QBCore = exports["qb-core"]:GetCoreObject()
 lib.callback.register(
     "mri_Qadmin:callback:GetServerInfo",
     function(source, cb)
-        local totalCash, totalBank, totalCrypto = 0, 0, 0
-        local vehicleCount = MySQL.scalar.await("SELECT COUNT(1) FROM player_vehicles") or 0
-        local bansCount = MySQL.scalar.await("SELECT COUNT(1) FROM bans") or 0
-        local characterCount = MySQL.scalar.await("SELECT COUNT(1) FROM players") or 0
-
-        local playerMoneyData = MySQL.query.await(
-            [[
-            select
-                sum(JSON_UNQUOTE(JSON_EXTRACT(money, '$.cash'))) as cash,
-                sum(JSON_UNQUOTE(JSON_EXTRACT(money, '$.bank'))) as bank,
-                sum(JSON_UNQUOTE(JSON_EXTRACT(money, '$.crypto'))) as crypto
-            from
-                players
-            ]]
-        )
-        totalCash = playerMoneyData[1].cash or 0
-        totalBank = playerMoneyData[1].bank or 0
-        totalCrypto = playerMoneyData[1].crypto or 0
+        local stats = MySQL.single.await([[
+            SELECT
+                (SELECT COUNT(1) FROM player_vehicles) as vehicleCount,
+                (SELECT COUNT(1) FROM bans) as bansCount,
+                (SELECT COUNT(1) FROM players) as characterCount,
+                (SELECT COUNT(DISTINCT license) FROM players) as uniquePlayers,
+                SUM(JSON_UNQUOTE(JSON_EXTRACT(money, '$.cash'))) as totalCash,
+                SUM(JSON_UNQUOTE(JSON_EXTRACT(money, '$.bank'))) as totalBank,
+                SUM(JSON_UNQUOTE(JSON_EXTRACT(money, '$.crypto'))) as totalCrypto
+            FROM players
+        ]])
 
         local onlinePlayers = 0
         local GetPlayers = QBCore.Functions.GetQBPlayers()
@@ -28,17 +21,15 @@ lib.callback.register(
             onlinePlayers = onlinePlayers + 1
         end
 
-        local uniquePlayers = MySQL.scalar.await("SELECT COUNT(DISTINCT license) FROM players") or 0
-
         local serverInfo = {
-            totalCash = totalCash,
-            totalBank = totalBank,
-            totalCrypto = totalCrypto,
-            uniquePlayers = uniquePlayers,
+            totalCash = stats.totalCash or 0,
+            totalBank = stats.totalBank or 0,
+            totalCrypto = stats.totalCrypto or 0,
+            uniquePlayers = stats.uniquePlayers or 0,
             onlinePlayers = onlinePlayers,
-            vehicleCount = vehicleCount,
-            bansCount = bansCount,
-            characterCount = characterCount
+            vehicleCount = stats.vehicleCount or 0,
+            bansCount = stats.bansCount or 0,
+            characterCount = stats.characterCount or 0
         }
 
         return serverInfo

@@ -1,3 +1,4 @@
+import React from "react";
 import { useNui } from "@/context/NuiContext";
 import { Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,11 +17,25 @@ export default function ActionButton({
   onToggleFavorite,
 }: ActionButtonProps) {
   const { sendNui } = useNui();
+  const [isProcessing, setIsProcessing] = React.useState(false);
+
+  const handleClick = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+        await sendNui("clickButton", { data: id });
+    } finally {
+        setIsProcessing(false);
+    }
+  };
 
   return (
     <div
-      className="group relative bg-card border border-border rounded-xl hover:border-primary/50 hover:bg-muted transition-all cursor-pointer overflow-hidden p-4 flex flex-col justify-between min-h-[100px]"
-      onClick={() => sendNui("clickButton", { data: id })}
+      className={cn(
+        "group relative bg-card border border-border rounded-xl hover:border-primary/50 hover:bg-muted transition-all cursor-pointer overflow-hidden p-4 flex flex-col justify-between min-h-[100px]",
+        isProcessing && "opacity-50 pointer-events-none"
+      )}
+      onClick={handleClick}
     >
        <div className="flex justify-between items-start mb-2">
            <div className="p-2 rounded-lg bg-muted border border-border text-muted-foreground group-hover:text-primary group-hover:border-primary/20 transition-colors">

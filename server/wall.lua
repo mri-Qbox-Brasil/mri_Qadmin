@@ -41,8 +41,8 @@ QBCore.Commands.Add("wall", "Enable/Disable wall", {}, false, function(source, a
 end, "wall")
 
 RegisterNetEvent("mri_Qadmin:server:enableWall", function(data)
-    print('wall_source', source)
-    print('wall_data', data)
+    Debug('wall_source', source)
+    Debug('wall_data', data)
     enableWall(source)
 end)
 

@@ -43,11 +43,27 @@ export interface EntityInfoData {
   hash: string
 }
 
+export interface PaginationState {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  search: string
+}
+
 interface AppStateValue {
   players: Player[]
   setPlayers: React.Dispatch<React.SetStateAction<Player[]>>
   selectedPlayer: Player | null
   setSelectedPlayer: (p: Player | null) => void
+
+  // Pagination
+  pagination: PaginationState
+  setPagination: React.Dispatch<React.SetStateAction<PaginationState>>
+  // Caching
+  lastPlayersFetch: number
+  setLastPlayersFetch: React.Dispatch<React.SetStateAction<number>>
+
   menuWide: boolean
   setMenuWide: (v: boolean) => void
 
@@ -77,6 +93,13 @@ const AppStateContext = createContext<AppStateValue | undefined>(undefined)
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [players, setPlayers] = useState<Player[]>([])
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
+
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 1, limit: 20, total: 0, totalPages: 1, search: ''
+  })
+
+  const [lastPlayersFetch, setLastPlayersFetch] = useState<number>(0)
+
   const [menuWide, setMenuWide] = useState<boolean>(false)
   const [myPermissions, setMyPermissions] = useState<string[]>([]) // Start empty
   const [permissionRefreshTrigger, setPermissionRefreshTrigger] = useState<number>(0)
@@ -104,6 +127,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     <AppStateContext.Provider value={{
       players, setPlayers,
       selectedPlayer, setSelectedPlayer,
+      pagination, setPagination,
+      lastPlayersFetch, setLastPlayersFetch,
       menuWide, setMenuWide,
       gameData, setGameData,
       staffMessages, setStaffMessages,

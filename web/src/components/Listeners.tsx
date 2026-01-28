@@ -54,7 +54,7 @@ export default function Listeners() {
         // Actions can be object or array, handled by component
         actions: data.actions || prev.actions || []
       }))
-      setPlayers(asArray(data.players || []))
+
     }
 
     const showVehicleMenu = (data: any) => {

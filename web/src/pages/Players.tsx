@@ -3,6 +3,8 @@ import { useI18n } from '@/context/I18n'
 import Spinner from '@/components/Spinner'
 import { useNui } from '@/context/NuiContext'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
+import { Virtuoso, VirtuosoGrid } from 'react-virtuoso'
+import PlayersSkeleton from '@/components/skeletons/PlayersSkeleton'
 
 import { useAppState } from '@/context/AppState'
 import ConfirmAction from '@/components/players/ConfirmAction'
@@ -75,6 +77,7 @@ const formatDate = (val: any, t: any) => {
 
 export default function Players() {
   const [loading, setLoading] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     const saved = localStorage.getItem('mri_qadmin_view_mode')
@@ -84,11 +87,10 @@ export default function Players() {
   useEffect(() => {
     localStorage.setItem('mri_qadmin_view_mode', viewMode)
   }, [viewMode])
-  const [playersOnline, setPlayersOnline] = useState<any[]>([])
-  const [playersOffline, setPlayersOffline] = useState<any[]>([])
+  /* Removed legacy local filtering state */
 
   const { sendNui } = useNui()
-  const { players, setPlayers, selectedPlayer, setSelectedPlayer } = useAppState()
+  const { players, setPlayers, selectedPlayer, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch } = useAppState()
   const { t } = useI18n()
 
   /* Modals State */
@@ -102,33 +104,123 @@ export default function Players() {
   const [showGiveItemModal, setShowGiveItemModal] = useState(false)
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [groupType, setGroupType] = useState<'job' | 'gang'>('job')
+  const [isProcessingAction, setIsProcessingAction] = useState(false)
 
   /* Confirmations State */
   const [showDeleteVehicleConfirm, setShowDeleteVehicleConfirm] = useState(false)
   const [pendingDeletePlate, setPendingDeletePlate] = useState<string | null>(null)
   const [showClearInventoryConfirm, setShowClearInventoryConfirm] = useState(false)
 
-  const fetchPlayers = async () => {
+  // Background Sync Logic
+  const syncRemainingPages = async (startPage: number, totalPages: number, currentSearch: string) => {
+      if (startPage > totalPages || currentSearch !== '') {
+          setIsSyncing(false)
+          return
+      }
+
+      setIsSyncing(true)
+
+      // Fetch next chunk
+      try {
+          // Check if search changed during sync, if so abort
+          // (We can't easily check 'search' state here without ref, so we pass currentSearch and rely on effect cleanup or check)
+          // Ideally we use a Ref for search to check current value.
+
+          // Simple Abort Check using Ref from closure scope if we had it, or just rely on currentSearch arg being passed down
+          // But 'fetchPlayers' updates 'abortSyncRef', let's use that.
+          if (abortSyncRef.current) {
+               setIsSyncing(false)
+               return
+          }
+
+          const limit = 100
+          const payload = { page: startPage, limit: limit, search: currentSearch }
+          const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
+
+          // Small delay to not freeze UI completely and allow render
+          await new Promise(r => setTimeout(r, 200))
+           if (abortSyncRef.current) { setIsSyncing(false); return; }
+
+          const response = await sendNui('getPlayers', payload, mock)
+          const data = Array.isArray(response) ? response : (response.data || [])
+
+          if (data && data.length > 0) {
+              setPlayers(prev => [...prev, ...data])
+              // Continue sync
+              syncRemainingPages(startPage + 1, totalPages, currentSearch)
+          } else {
+              setIsSyncing(false)
+          }
+
+      } catch (e) {
+          console.error("Sync error", e)
+          setIsSyncing(false)
+      }
+  }
+
+  // Ref to track if we should continue syncing (to abort on search)
+  const abortSyncRef = useState({ current: false })[0]
+
+  const fetchPlayers = async (pageToFetch = 1, searchQuery = '', forceRefresh = false) => {
+    // If searching, abort any running sync
+    if (searchQuery !== '') {
+        abortSyncRef.current = true
+    } else {
+        abortSyncRef.current = false
+    }
+
+    // Cache Check
+    if (pageToFetch === 1 && searchQuery === '' && !forceRefresh) {
+        const now = Date.now()
+        // 60 seconds cache
+        if (now - lastPlayersFetch < 60000 && players.length > 0) {
+             // Cache hit, don't fetch
+             // But ensure we start sync if we haven't finished?
+             // Actually, if we have cache, assume we rely on what is in state.
+             // If local state is big, we are good.
+             return
+        }
+    }
+
     setLoading(true)
     try {
-      const mock: any[] = MOCK_PLAYERS
-      const players = await sendNui('getPlayers', {}, mock)
-      const list = Array.isArray(players) ? players : mock
-      setPlayersOnline(list.filter((p: any) => p.online))
-      setPlayersOffline(list.filter((p: any) => !p.online))
-      try { setPlayers(list) } catch {}
+      // 1. Initial Fetch (Page 1) - Fetch 100 items (or more) to fill screen
+      const limit = 100
+      const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
+
+      const payload = {
+          page: pageToFetch,
+          limit: limit,
+          search: searchQuery
+      }
+
+      const response = await sendNui('getPlayers', payload, mock)
+      const data = Array.isArray(response) ? response : (response.data || [])
+      const total = Array.isArray(response) ? response.length : (response.total || 0)
+      const pages = Array.isArray(response) ? 1 : (response.pages || 1)
+
+      if (pageToFetch === 1) {
+          setPlayers(data)
+          // If clearing search or initial load, start background sync for rest
+          if (searchQuery === '' && pages > 1) {
+              // Start sync from Page 2
+              setTimeout(() => syncRemainingPages(2, pages, ''), 1000)
+          }
+          if (searchQuery === '') {
+             setLastPlayersFetch(Date.now())
+          }
+      } else {
+        // Legacy manual page handling
+        setPlayers(prev => [...prev, ...data])
+      }
+
+      setPagination(prev => ({ ...prev, page: pageToFetch, total, totalPages: pages, search: searchQuery }))
 
       if (selectedPlayer) {
-          const found = list.find((x: any) => String(x.id) === String(selectedPlayer.id))
+          const found = data.find((x: any) => String(x.id) === String(selectedPlayer.id))
           if (found) setSelectedPlayer(found)
       }
 
-      const pending = (window as any).__ps_pendingPlayerId
-      if (pending) {
-        const found = list.find((x: any) => String(x.id) === String(pending))
-        if (found) setSelectedPlayer(found)
-        delete (window as any).__ps_pendingPlayerId
-      }
     } catch (e) {
       // ignore
     } finally {
@@ -136,15 +228,30 @@ export default function Players() {
     }
   }
 
+  // Debounced search effect
   useEffect(() => {
-    fetchPlayers()
-  }, [sendNui])
+    const timer = setTimeout(() => {
+        fetchPlayers(1, search)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [search])
 
-  const refreshPlayers = fetchPlayers
+  // Initial load handled by search effect (search='')
+  // But we need to handle pagination changes not triggering this effect if we put fetch in search only?
+  // We can separate them.
+
+  const handlePageChange = (newPage: number) => {
+      fetchPlayers(newPage, search)
+  }
+
+  const refreshPlayers = () => fetchPlayers(pagination.page, search, true)
 
   async function sendAction(action: string, selectedData: Record<string, any> = {}, targetPlayer: any = null) {
+    if (isProcessingAction) return
     const p = targetPlayer || selectedPlayer
     if (!p) return
+
+    setIsProcessingAction(true)
     const payload = { ...selectedData }
 
     if (p) {
@@ -168,9 +275,8 @@ export default function Players() {
         const updated = { ...p, metadata: newMeta }
 
         if (selectedPlayer && selectedPlayer.id === p.id) setSelectedPlayer(updated)
-
-        setPlayersOnline(prev => prev.map(x => x.id === updated.id ? updated : x))
-        setPlayersOffline(prev => prev.map(x => x.id === updated.id ? updated : x))
+        // Update local list optimistic
+        setPlayers(prev => prev.map(x => x.id === updated.id ? updated : x))
     }
 
     try {
@@ -178,17 +284,9 @@ export default function Players() {
       if (action === 'verifyPlayer') await refreshPlayers()
     } catch (e) {
       console.error('sendAction error', e)
+    } finally {
+      setIsProcessingAction(false)
     }
-  }
-
-  const filteredOnline = playersOnline.filter(p => matchesSearch(p, search))
-  const filteredOffline = playersOffline.filter(p => matchesSearch(p, search))
-
-  function matchesSearch(p: any, s: string) {
-      const lower = s.toLowerCase()
-      return (p.name || '').toLowerCase().includes(lower) ||
-             String(p.id).includes(lower) ||
-             (p.license || '').toLowerCase().includes(lower)
   }
 
   const getPlayerKey = (p: any) => {
@@ -198,14 +296,31 @@ export default function Players() {
       return String(p.id)
   }
 
+    const SyncFooter = () => {
+       if (!loading && !isSyncing) return null
+       return (
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2">
+                {loading && <div className="bg-background p-2 rounded-full shadow-lg border border-border"><Spinner /></div>}
+                {isSyncing && !loading && (
+                    <div className="flex items-center gap-2 text-xs bg-card px-4 py-2 rounded-full shadow-lg border border-primary/20 text-primary animate-pulse">
+                        <RefreshCw className="w-3 h-3 animate-spin"/>
+                        {t('loading_more')} ({players.length}/{pagination.total})
+                    </div>
+                )}
+            </div>
+       )
+    }
+
   const isSelected = (p: any) => {
       if (!selectedPlayer) return false
       return getPlayerKey(selectedPlayer) === getPlayerKey(p)
   }
 
+  if (loading && players.length === 0) return <PlayersSkeleton />
+
   return (
     <div className="h-full w-full flex flex-col bg-background text-foreground overflow-hidden">
-        <MriPageHeader title={t('player_management')} icon={Users} count={playersOnline.length} countLabel={t('online')}>
+        <MriPageHeader title={t('player_management')} icon={Users} count={pagination.total} countLabel={t('total_players')}>
              <div className="flex items-center bg-card border border-border rounded-lg p-1 gap-1">
                  <MriButton
                     size="icon"
@@ -244,56 +359,39 @@ export default function Players() {
              >
                 <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
              </MriButton>
+
         </MriPageHeader>
 
         <div className="flex-1 overflow-hidden relative">
             {/* GRID VIEW */}
             {viewMode === 'grid' && !selectedPlayer && (
-                 <div className="h-full overflow-y-auto p-6">
-                     {loading && <div className="flex justify-center mb-8"><Spinner /></div>}
-
-                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                         {filteredOnline.map(p => (
-                             <PlayerGridCard key={getPlayerKey(p)} player={p} onClick={setSelectedPlayer} onAction={sendAction} />
-                         ))}
+                 <div className="h-full flex flex-col relative">
+                     <div className="flex-1 min-h-0 p-4">
+                         <VirtuosoGrid
+                            style={{ height: '100%' }}
+                            data={players}
+                            listClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"
+                            itemContent={(index, p) => (
+                                <div className="pb-2">
+                                    <PlayerGridCard key={getPlayerKey(p)} player={p} onClick={setSelectedPlayer} onAction={sendAction} />
+                                </div>
+                            )}
+                         />
                      </div>
-
-                     {filteredOffline.length > 0 && (
-                        <>
-                        <div className="my-6 border-b border-border" />
-                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">{t('recently_offline')}</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 opacity-75">
-                             {filteredOffline.map(p => (
-                                 <PlayerGridCard key={getPlayerKey(p)} player={p} onClick={setSelectedPlayer} onAction={sendAction} />
-                             ))}
-                         </div>
-                        </>
-                     )}
+                     <SyncFooter />
                  </div>
             )}
 
             {/* LIST VIEW */}
             {viewMode === 'list' && (
                 <div className="h-full flex">
-                    <div className="w-96 flex flex-col border-r border-border bg-card/10">
-                         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                            {filteredOnline.length > 0 && (
-                                <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('online')} ({filteredOnline.length})</div>
-                            )}
-                            {filteredOnline.map(player => (
-                                <PlayerListItem
-                                    key={getPlayerKey(player)}
-                                    player={player}
-                                    isSelected={isSelected(player)}
-                                    onClick={setSelectedPlayer}
-                                    onAction={sendAction}
-                                />
-                            ))}
-
-                            {filteredOffline.length > 0 && (
-                                <>
-                                <div className="mt-4 px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('recently_offline')}</div>
-                                {filteredOffline.map(player => (
+                    <div className="w-96 flex flex-col border-r border-border bg-card/10 h-full relative">
+                         <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('all_players')} ({pagination.total})</div>
+                         <div className="flex-1 min-h-0">
+                             <Virtuoso
+                                style={{ height: '100%' }}
+                                data={players}
+                                itemContent={(index, player) => (
                                     <PlayerListItem
                                         key={getPlayerKey(player)}
                                         player={player}
@@ -301,10 +399,10 @@ export default function Players() {
                                         onClick={setSelectedPlayer}
                                         onAction={sendAction}
                                     />
-                                ))}
-                                </>
-                            )}
+                                )}
+                             />
                          </div>
+                         <SyncFooter />
                     </div>
                 </div>
             )}
@@ -587,8 +685,7 @@ export default function Players() {
                      vehicles: selectedPlayer.vehicles.filter((v: any) => v.plate !== pendingDeletePlate)
                  }
                  setSelectedPlayer(updated)
-                 setPlayersOnline(prev => prev.map(p => p.id === updated.id ? updated : p))
-                 setPlayersOffline(prev => prev.map(p => p.id === updated.id ? updated : p))
+                 setPlayers(prev => prev.map(p => p.id === updated.id ? updated : p))
              }
 
             await sendAction('deletePersonalVehicle', { Plate: { value: pendingDeletePlate } })

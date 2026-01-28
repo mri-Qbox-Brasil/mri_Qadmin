@@ -10,6 +10,7 @@ Config.RenewedPhone = false    -- if you use qb-phone from renewed. (multijob)
 Config.Keybindings = true
 Config.AdminKey = "0"
 Config.NoclipKey = "9"
+Config.Debug = false -- Set to true to enable debug prints
 
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"
@@ -835,3 +836,8 @@ AddEventHandler("onResourceStart", function()
         Config.Inventory = 'qb-inventory'
     end
 end)
+
+function Debug(...)
+    if not Config.Debug then return end
+    print('[mri_Qadmin DEBUG]', ...)
+end

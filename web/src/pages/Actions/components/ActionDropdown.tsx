@@ -27,6 +27,7 @@ export default function ActionDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedData, setSelectedData] = useState<Record<string, any>>({});
   const [popoverOpen, setPopoverOpen] = useState<Record<string, boolean>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSelectData = (
     subId: string,
@@ -40,11 +41,17 @@ export default function ActionDropdown({
     }
   };
 
-  const handleSubClick = (item: any) => {
-    sendNui("clickButton", {
-      data: id,
-      selectedData: selectedData,
-    });
+  const handleSubClick = async (item: any) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+        await sendNui("clickButton", {
+            data: id,
+            selectedData: selectedData,
+        });
+    } finally {
+        setIsProcessing(false);
+    }
   };
 
   return (

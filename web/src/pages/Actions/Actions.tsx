@@ -7,6 +7,8 @@ import ActionDropdown from './components/ActionDropdown'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { Search, Zap, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { VirtuosoGrid } from 'react-virtuoso'
+import ActionsSkeleton from '@/components/skeletons/ActionsSkeleton'
 
 export default function Actions() {
   const { gameData, setGameData, myPermissions } = useAppState()
@@ -118,16 +120,20 @@ export default function Actions() {
          </MriButton>
       </MriPageHeader>
 
-      <div className="flex-1 overflow-auto p-8 no-scrollbar">
-        {filteredActions.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+      {loading && actionList.length === 0 ? (
+        <ActionsSkeleton />
+      ) : filteredActions.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <Zap className="w-10 h-10 opacity-20" />
                 <p>{t('none_found')}</p>
             </div>
         ) : (
-            <div className="@container">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
-                    {filteredActions.map((action: any) => (
+            <div className="flex-1 overflow-hidden p-8">
+                <VirtuosoGrid
+                    style={{ height: '100%' }}
+                    data={filteredActions}
+                    listClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start"
+                    itemContent={(index, action) => (
                         action.dropdown ? (
                             <ActionDropdown
                                 key={action.id}
@@ -145,11 +151,10 @@ export default function Actions() {
                                 onToggleFavorite={toggleFavorite}
                             />
                         )
-                    ))}
-                </div>
+                    )}
+                />
             </div>
         )}
-      </div>
     </div>
   )
 }

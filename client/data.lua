@@ -7,7 +7,7 @@ function GetCoreData()
         vehicles = lib.callback.await('mri_Qadmin:callback:GetVehicles', false) or {},
         commands = lib.callback.await('mri_Qadmin:callback:GetCommands', false) or {},
         resources = lib.callback.await('mri_Qadmin:callback:GetResources', false) or {},
-        players = lib.callback.await('mri_Qadmin:callback:GetPlayers', false) or {},
+
         jobs = groups.jobs or {},
         gangs = groups.gangs or {},
         pedlist = lib.callback.await('mri_Qadmin:callback:GetPedList', false) or {},

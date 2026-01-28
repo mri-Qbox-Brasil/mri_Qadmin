@@ -5,13 +5,15 @@ import { useI18n } from '@/context/I18n'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import ResourceCard from './components/ResourceCard'
 import Changelog from './components/Changelog'
-import { Search, Box, Database, RefreshCw } from 'lucide-react'
+import { Search, Database, RefreshCw, Package } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { Virtuoso } from 'react-virtuoso'
+import ResourcesSkeleton from '@/components/skeletons/ResourcesSkeleton'
 
 export default function Resources() {
   const { gameData, setGameData } = useAppState()
-  const { sendNui } = useNui()
+  const { sendNui, on, off } = useNui()
   const { t } = useI18n()
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
@@ -41,11 +43,38 @@ export default function Resources() {
     }
   }
 
+  React.useEffect(() => {
+    const handleUpdate = (data: any) => {
+        if (!data || !data.name) return
+        setGameData((prev: any) => {
+            const existing = prev.resources || []
+            const index = existing.findIndex((r: any) => r.name === data.name)
+
+            let newResources
+            if (index > -1) {
+                newResources = [...existing]
+                newResources[index] = { ...newResources[index], ...data }
+            } else {
+                newResources = [...existing, data]
+            }
+
+            return { ...prev, resources: newResources }
+        })
+    }
+
+    on('updateResourceState', handleUpdate)
+    return () => off('updateResourceState', handleUpdate)
+  }, [on, off, setGameData])
+
+  if (loading && resources.length === 0) {
+      return <ResourcesSkeleton />
+  }
+
   return (
     <div className="w-full h-full flex overflow-hidden bg-background">
       {/* Resource List */}
-      <div className="w-1/2 h-full flex flex-col border-r border-border">
-         <MriPageHeader title={t('nav_resources')} icon={Box} countLabel={t('records')} count={filteredResources.length}>
+      <div className="w-1/2 h-full flex flex-col border-r border-border overflow-hidden">
+         <MriPageHeader title={t('nav_resources')} icon={Package} countLabel={t('records')} count={filteredResources.length}>
              <div className="relative w-full max-w-xs">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                  <MriInput
@@ -66,23 +95,28 @@ export default function Resources() {
              </MriButton>
          </MriPageHeader>
 
-        <div className="flex-1 overflow-auto space-y-3 pr-2 no-scrollbar p-6">
+        <div className="flex-1 overflow-hidden p-6">
             {filteredResources.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                     <Database className="w-10 h-10 opacity-20" />
                     <p>{t('resources_none_found')}</p>
                 </div>
             ) : (
-                filteredResources.map((res: any) => (
-                    <ResourceCard
-                        key={res.name}
-                        label={res.name}
-                        version={res.version}
-                        author={res.author}
-                        description={res.description}
-                        state={res.resourceState}
-                    />
-                ))
+                <Virtuoso
+                    style={{ height: '100%' }}
+                    data={filteredResources}
+                    itemContent={(index, res) => (
+                        <div className="pb-3">
+                            <ResourceCard
+                                label={res.name}
+                                version={res.version}
+                                author={res.author}
+                                description={res.description}
+                                state={res.resourceState}
+                            />
+                        </div>
+                    )}
+                />
             )}
         </div>
       </div>

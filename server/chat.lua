@@ -20,7 +20,7 @@ end)
 RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, fullname)
     local src = source
     -- Allow if admin OR has specific staffchat permission
-    if not (QBCore.Functions.HasPermission(src, "admin") or IsPlayerAceAllowed(src, 'qadmin.page.staffchat')) then 
+    if not (QBCore.Functions.HasPermission(src, "admin") or IsPlayerAceAllowed(src, 'qadmin.page.staffchat')) then
         return QBCore.Functions.Notify(src, "Sem permissão para usar o chat.", "error")
     end
 
@@ -39,21 +39,21 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, f
         end
 
         local placeholders = string.rep('?,', #identifiers):sub(1, -2)
-        
+
         -- Query to find description from ANY of the player's identifiers
         local query = ('SELECT a.description FROM mri_qadmin_principals p JOIN mri_qadmin_aces a ON a.principal = p.parent WHERE p.child IN (%s) AND a.description IS NOT NULL AND a.description != "" LIMIT 1'):format(placeholders)
-        
+
         local rows = MySQL.Sync.fetchAll(query, identifiers)
-        
+
         if rows and #rows > 0 then
              fullname = ('%s (%s)'):format(fullname, rows[1].description)
         else
              -- Fallback: Permissions fallback
              -- Fetch all Ace definitions that have a description
              local aces = MySQL.Sync.fetchAll('SELECT principal, object, description FROM mri_qadmin_aces WHERE description IS NOT NULL AND description != ""')
-             
+
              local candidates = {}
-             
+
              for _, ace in ipairs(aces) do
                  -- Check if the player has the SPECIFIC permission object granted to this group
                  -- e.g. If group.admin has 'qadmin.page.dashboard', and player has it, they match.
@@ -61,7 +61,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, f
                      table.insert(candidates, { principal = ace.principal, description = ace.description })
                  end
              end
-             
+
              if #candidates > 0 then
                  -- Priority sorting: god > admin > mod > others
                  local function getPriority(principal)
@@ -72,12 +72,12 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, f
                      if principal:find('apprentice') then return 60 end
                      return 0
                  end
-                 
+
                  table.sort(candidates, function(a,b) return getPriority(a.principal) > getPriority(b.principal) end)
-                 
+
                  -- Use top one
                  local best = candidates[1]
-                 print(('[mri_Qadmin] Chat Fallback: Matched %s via object check. Desc: %s'):format(best.principal, best.description))
+                 Debug(('[mri_Qadmin] Chat Fallback: Matched %s via object check. Desc: %s'):format(best.principal, best.description))
                  fullname = ('%s (%s)'):format(fullname, best.description)
              end
         end

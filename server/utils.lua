@@ -5,7 +5,7 @@ end
 --- @param perms string | table
 function CheckPerms(source, perms)
     local isMaster = IsPlayerAceAllowed(source, 'qadmin.master')
-    print(('[DEBUG] CheckPerms Source: %s | Master: %s'):format(source, tostring(isMaster)))
+    Debug(('[DEBUG] CheckPerms Source: %s | Master: %s'):format(source, tostring(isMaster)))
 
     -- Master Bypass
     if isMaster then return true end
@@ -13,7 +13,7 @@ function CheckPerms(source, perms)
     -- Check Native ACEs (Granular)
     if type(perms) == 'string' then
         local allowed = IsPlayerAceAllowed(source, perms)
-        print(('[DEBUG] Checking String Ace [%s]: %s'):format(perms, tostring(allowed)))
+        Debug(('[DEBUG] Checking String Ace [%s]: %s'):format(perms, tostring(allowed)))
         if allowed then return true end
     elseif type(perms) == 'table' then
         for _, p in pairs(perms) do
@@ -24,7 +24,7 @@ function CheckPerms(source, perms)
     end
 
     -- Fail
-    print('[DEBUG] CheckPerms FAILED')
+    Debug('[DEBUG] CheckPerms FAILED')
     return noPerms(source)
 end
 

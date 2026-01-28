@@ -20,13 +20,13 @@ RegisterNetEvent('mri_Qadmin:cancelSpectate', function()
     end
     SetEntityVisible(cache.ped, true, 0)
     spectateInfo = { toggled = false, target = 0, targetPed = 0 }
-    
+
     if oldPos then
-        print(('[mri_Qadmin] Spectate: Restoring Position: %s'):format(oldPos))
+        Debug(('[mri_Qadmin] Spectate: Restoring Position: %s'):format(oldPos))
         RequestCollisionAtCoord(oldPos.x, oldPos.y, oldPos.z)
         SetEntityCoords(cache.ped, oldPos.x, oldPos.y, oldPos.z, false, false, false, false)
     else
-        print('[mri_Qadmin] Spectate WARNING: No oldPos saved to restore!')
+        Debug('[mri_Qadmin] Spectate WARNING: No oldPos saved to restore!')
     end
     oldPos = nil;
 end)
