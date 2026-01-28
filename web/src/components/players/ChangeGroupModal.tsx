@@ -47,7 +47,7 @@ export default function ChangeGroupModal({
       title={type === 'job' ? t('set_job') : t('set_gang')}
       icon={type === 'job' ? Briefcase : Shield}
       onClose={onClose}
-      onConfirm={() => onSubmit(group, grade)}
+      onConfirm={() => { onSubmit(group, grade); onClose(); }}
     >
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_name')}</label>
       <div className="mb-4">

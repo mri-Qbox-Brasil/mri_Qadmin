@@ -143,43 +143,49 @@ local function preparePlayers()
 end
 
 -- Toggle Blips and Names events
-RegisterNetEvent('mri_Qadmin:client:toggleBlips', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+RegisterNetEvent('mri_Qadmin:client:toggleBlips', function(actionKey)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     if not ShowBlips then preparePlayers() end
     ToggleBlipsAndNames(true)
 end)
 
-RegisterNetEvent('mri_Qadmin:client:toggleNames', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+RegisterNetEvent('mri_Qadmin:client:toggleNames', function(actionKey)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     if not ShowNames then preparePlayers() end
     ToggleBlipsAndNames(false)
 end)
 
 -- SetJob
-RegisterNetEvent('mri_Qadmin:client:SetJob', function(data, selectedData)
-    local data = CheckDataFromKey(data)
+RegisterNetEvent('mri_Qadmin:client:SetJob', function(actionKey, selectedData)
+    local data = CheckDataFromKey(actionKey)
     if not data or not CheckPerms(data.perms) then return end
     local playerId = selectedData["Player"].value
     if not playerId then return end
     if not selectedData["Job"] then return end
-    exports.mri_Qbox:setPlayerJob(playerId, {selectedData["Job"].value})
+    TriggerServerEvent('mri_Qadmin:server:SetJob', actionKey, selectedData)
+end)
+
+RegisterNetEvent('mri_Qadmin:client:RefreshPlayers', function()
+    SendNUIMessage({
+        action = "RefreshPlayers"
+    })
 end)
 
 -- Set Gang
-RegisterNetEvent('mri_Qadmin:client:SetGang', function(data, selectedData)
-    local data = CheckDataFromKey(data)
+RegisterNetEvent('mri_Qadmin:client:SetGang', function(actionKey, selectedData)
+    local data = CheckDataFromKey(actionKey)
     if not data or not CheckPerms(data.perms) then return end
     local playerId = selectedData["Player"].value
     if not playerId then return end
     if not selectedData["Gang"] then return end
-    exports.mri_Qbox:setPlayerGang(playerId, {selectedData["Gang"].value})
+    TriggerServerEvent('mri_Qadmin:server:SetGang', actionKey, selectedData)
 end)
 
 -- Mute Player
-RegisterNetEvent("mri_Qadmin:client:MutePlayer", function(data, selectedData)
-    local data = CheckDataFromKey(data)
+RegisterNetEvent("mri_Qadmin:client:MutePlayer", function(actionKey, selectedData)
+    local data = CheckDataFromKey(actionKey)
     if not data or not CheckPerms(data.perms) then return end
     local playerId = selectedData["Player"].value
     if not playerId then return end

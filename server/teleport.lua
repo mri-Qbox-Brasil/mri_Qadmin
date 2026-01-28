@@ -1,9 +1,9 @@
 local previousPositions = {}
 
 -- Teleport To Player
-RegisterNetEvent('mri_Qadmin:server:TeleportToPlayer', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:TeleportToPlayer', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
     local player = selectedData["Player"].value
@@ -15,9 +15,9 @@ RegisterNetEvent('mri_Qadmin:server:TeleportToPlayer', function(data, selectedDa
 end)
 
 -- Bring Player
-RegisterNetEvent('mri_Qadmin:server:BringPlayer', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:BringPlayer', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
     local targetId = selectedData["Player"].value
@@ -68,9 +68,9 @@ RegisterNetEvent('mri_Qadmin:server:BringPlayer', function(data, selectedData)
 end)
 
 -- Send Player Back
-RegisterNetEvent('mri_Qadmin:server:SendPlayerBack', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:SendPlayerBack', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local targetId = selectedData["Player"].value
     local lastPos = previousPositions[targetId]

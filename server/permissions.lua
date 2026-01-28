@@ -436,9 +436,17 @@ local function verifyAndAdd(group, ace, allow, description)
     return false
 end
 
-RegisterNetEvent('mri_Qadmin:server:SeedPageAces', function()
+RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
     local src = source
-    if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not (QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
+
+    -- Assign current admin to group.admin if they aren't master yet
+    if not IsPlayerAceAllowed(src, 'qadmin.master') then
+        local license = Player.PlayerData.license
+        ExecuteCommand(('add_principal identifier.license:%s group.admin'):format(license))
+        Debug(('[DEBUG] Assigned identifier.license:%s to group.admin'):format(license))
+    end
 
     -- List of pages to protect
     local pages = {
@@ -460,10 +468,34 @@ RegisterNetEvent('mri_Qadmin:server:SeedPageAces', function()
         count = count + 1
     end
 
+    -- Seed Actions from Config
+    local actionTypes = {
+        { tbl = Config.Actions, label = 'Action' },
+        { tbl = Config.PlayerActions, label = 'Player Action' },
+        { tbl = Config.OtherActions, label = 'Other Action' }
+    }
+
+    for _, typeInfo in ipairs(actionTypes) do
+        if typeInfo.tbl then
+            for k, v in pairs(typeInfo.tbl) do
+                if v.perms and string.find(v.perms, 'qadmin.action.') then
+                    if verifyAndAdd('group.admin', v.perms, 1, typeInfo.label .. ': ' .. (v.label or k)) then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+    end
+
+    -- Add qadmin.open by default too
+    if verifyAndAdd('group.admin', 'qadmin.open', 1, 'Open Panel') then
+        count = count + 1
+    end
+
     if count > 0 then
-        TriggerClientEvent('QBCore:Notify', src, ('Seeded %d page permissions for group.admin'):format(count), 'success')
+        TriggerClientEvent('QBCore:Notify', src, ('Seeded %d permissions for group.admin'):format(count), 'success')
     else
-        TriggerClientEvent('QBCore:Notify', src, 'All page permissions already exist', 'primary')
+        TriggerClientEvent('QBCore:Notify', src, 'All permissions already exist', 'primary')
     end
 end)
 

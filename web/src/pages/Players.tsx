@@ -39,7 +39,9 @@ import {
     Check,
     Navigation,
     Plus,
-    Minus
+    Minus,
+    UserMinus,
+    UserCog
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
@@ -110,6 +112,7 @@ export default function Players() {
   const [showDeleteVehicleConfirm, setShowDeleteVehicleConfirm] = useState(false)
   const [pendingDeletePlate, setPendingDeletePlate] = useState<string | null>(null)
   const [showClearInventoryConfirm, setShowClearInventoryConfirm] = useState(false)
+  const [showDismissConfirm, setShowDismissConfirm] = useState<'job' | 'gang' | null>(null)
 
   // Background Sync Logic
   const syncRemainingPages = async (startPage: number, totalPages: number, currentSearch: string) => {
@@ -239,6 +242,12 @@ export default function Players() {
   // Initial load handled by search effect (search='')
   // But we need to handle pagination changes not triggering this effect if we put fetch in search only?
   // We can separate them.
+
+  const { on, off } = useNui()
+  useEffect(() => {
+    on('RefreshPlayers', refreshPlayers)
+    return () => off('RefreshPlayers', refreshPlayers)
+  }, [pagination.page, search])
 
   const handlePageChange = (newPage: number) => {
       fetchPlayers(newPage, search)
@@ -455,7 +464,7 @@ export default function Players() {
                                 <GridActionButton icon={Check} label={`${t('verify')}`} onClick={() => sendAction('verifyPlayer')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Heart} label={`${t('revive')}`} onClick={() => sendAction('revivePlayer')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Skull} label={`${t('kill')}`} onClick={() => sendAction('kill_player')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={User} label={`${t('clothing')}`} onClick={() => sendAction('clothing_menu')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={User} label={`${t('clothing')}`} onClick={() => sendAction('clothingMenu')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Lock} label={`${t('toggle_cuffs')}`} onClick={() => sendAction('toggle_cuffs')} disabled={!selectedPlayer.online} />
                             </div>
                         </section>
@@ -513,7 +522,14 @@ export default function Players() {
                                         <div className="flex items-center gap-2">
                                             <span className="text-primary font-bold">{selectedPlayer.job.label}</span>
                                             <span className="text-xs text-muted-foreground">{selectedPlayer.job.grade.name} ({selectedPlayer.job.grade.level})</span>
-                                            <MriButton variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setGroupType('job'); setShowGroupModal(true); }}>{t('btn_edit')}</MriButton>
+                                            <div className="flex items-center bg-background/50 border border-border rounded-md overflow-hidden ml-2">
+                                                <MriButton variant="ghost" size="icon" className="h-7 w-7 border-r border-border rounded-none hover:bg-primary/10" onClick={() => { setGroupType('job'); setShowGroupModal(true); }}>
+                                                    <UserCog className="w-3.5 h-3.5 text-primary" />
+                                                </MriButton>
+                                                <MriButton variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-none" onClick={() => setShowDismissConfirm('job')}>
+                                                    <UserMinus className="w-3.5 h-3.5" />
+                                                </MriButton>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="bg-card border border-border p-3 rounded-lg flex items-center justify-between">
@@ -521,7 +537,14 @@ export default function Players() {
                                         <div className="flex items-center gap-2">
                                             <span className="text-primary font-bold">{selectedPlayer.gang.label}</span>
                                             <span className="text-xs text-muted-foreground">{selectedPlayer.gang.grade.name} ({selectedPlayer.gang.grade.level})</span>
-                                            <MriButton variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setGroupType('gang'); setShowGroupModal(true); }}>{t('btn_edit')}</MriButton>
+                                            <div className="flex items-center bg-background/50 border border-border rounded-md overflow-hidden ml-2">
+                                                <MriButton variant="ghost" size="icon" className="h-7 w-7 border-r border-border rounded-none hover:bg-primary/10" onClick={() => { setGroupType('gang'); setShowGroupModal(true); }}>
+                                                    <UserCog className="w-3.5 h-3.5 text-primary" />
+                                                </MriButton>
+                                                <MriButton variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-none" onClick={() => setShowDismissConfirm('gang')}>
+                                                    <UserMinus className="w-3.5 h-3.5" />
+                                                </MriButton>
+                                            </div>
                                         </div>
                                     </div>
                              </div>
@@ -702,6 +725,25 @@ export default function Players() {
                 onConfirm={() => {
                     sendAction('clear_inventory');
                     setShowClearInventoryConfirm(false);
+                }}
+            />
+        )}
+
+        {showDismissConfirm && selectedPlayer && (
+            <ConfirmAction
+                text={showDismissConfirm === 'job'
+                    ? t('confirm_fire_job', [selectedPlayer.name, selectedPlayer.job.label])
+                    : t('confirm_fire_gang', [selectedPlayer.name, selectedPlayer.gang.label])
+                }
+                onCancel={() => setShowDismissConfirm(null)}
+                onConfirm={() => {
+                    if (showDismissConfirm === 'job') {
+                        sendAction('fireJob', { Job: { value: 'unemployed' }, Grade: { value: 0 } })
+                    } else {
+                        sendAction('fireGang', { Gang: { value: 'none' }, Grade: { value: 0 } })
+                    }
+                    setShowDismissConfirm(null)
+                    setTimeout(() => refreshPlayers(), 500)
                 }}
             />
         )}

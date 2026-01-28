@@ -58,11 +58,11 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
 end)
 
 -- Give Car
-RegisterNetEvent("mri_Qadmin:server:givecar", function(data, selectedData)
+RegisterNetEvent("mri_Qadmin:server:givecar", function(actionKey, selectedData)
     local src = source
 
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
@@ -123,11 +123,11 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(data, selectedData)
 end)
 
 -- Give Car
-RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(data, selectedData)
+RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(actionKey, selectedData)
     local src = source
 
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
@@ -170,9 +170,9 @@ lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(source, pl
 end)
 
 -- Fix Vehicle for player
-RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
     local src = source
     local playerId = selectedData['Player'].value
     local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
@@ -187,11 +187,11 @@ RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(data, selectedData)
 end)
 
 -- Delete Vehicle by Plate
-RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(data, selectedData)
+RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(actionKey, selectedData)
     local src = source
 
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(src, data.perms) then
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(src, actionData.perms) then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
@@ -215,9 +215,9 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(data, select
 end)
 
 -- Update Vehicle Stock
-lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(src, data.perms) then return false end
+lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(src, actionData.perms) then return false end
 
     local model = selectedData["model"].value
     local stock = tonumber(selectedData["stock"].value)

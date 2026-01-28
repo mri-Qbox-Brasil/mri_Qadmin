@@ -340,9 +340,11 @@ lib.callback.register('mri_Qadmin:callback:GetPlayers', function(source, page, l
     return getPlayers(page, limit, search)
 end)
 
-RegisterNetEvent('mri_Qadmin:server:SetJob', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then
+        return
+    end
     local src = source
 
     local playerId, Job, Grade = selectedData["Player"].value, selectedData["Job"].value, selectedData["Grade"].value
@@ -393,14 +395,17 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(data, selectedData)
         end
 
         QBCore.Functions.Notify(src, locale("jobset", name, Job, grade.name), 'success', 5000)
+        TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
 
 
 -- Set Gang
-RegisterNetEvent('mri_Qadmin:server:SetGang', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then
+        return
+    end
     local src = source
 
     local playerId, Gang, Grade = selectedData["Player"].value, selectedData["Gang"].value, selectedData["Grade"].value
@@ -446,6 +451,7 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(data, selectedData)
         end
 
         QBCore.Functions.Notify(src, locale("gangset", name, Gang, grade.name), 'success', 5000)
+        TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
 

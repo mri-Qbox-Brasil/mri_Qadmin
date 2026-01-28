@@ -77,39 +77,39 @@ end)
 
 local actionCooldowns = {}
 
-RegisterNUICallback("clickButton", function(data, cb)
-    local selectedData = data.selectedData
-	local key = data.data
+RegisterNUICallback("clickButton", function(nuiData, cb)
+    local selectedData = nuiData.selectedData
+	local actionKey = nuiData.data
 
     -- Cooldown check
     local now = GetGameTimer()
-    if actionCooldowns[key] and (now - actionCooldowns[key] < 500) then
-        Debug(("Ignorando clique duplicado para: %s"):format(key))
+    if actionCooldowns[actionKey] and (now - actionCooldowns[actionKey] < 500) then
+        Debug(("Ignorando clique duplicado para: %s"):format(actionKey))
         cb("ok")
         return
     end
-    actionCooldowns[key] = now
+    actionCooldowns[actionKey] = now
 
-    Debug("Button clicked:", json.encode(data))
-	local data = CheckDataFromKey(key)
-	if not data or not CheckPerms(data.perms) then
+    Debug("Button clicked:", json.encode(nuiData))
+	local actionData = CheckDataFromKey(actionKey)
+	if not actionData or not CheckPerms(actionData.perms) then
 		cb("ok")
 		return
 	end
 
-	if data.type == "client" then
-		TriggerEvent(data.event, key, selectedData)
-	elseif data.type == "server" then
-		TriggerServerEvent(data.event, key, selectedData)
-	elseif data.type == "command" then
-		ExecuteCommand(data.event)
+	if actionData.type == "client" then
+		TriggerEvent(actionData.event, actionKey, selectedData)
+	elseif actionData.type == "server" then
+		TriggerServerEvent(actionData.event, actionKey, selectedData)
+	elseif actionData.type == "command" then
+		ExecuteCommand(actionData.event)
 	end
 
-	Log("Action Used: " .. key,
+	Log("Action Used: " .. actionKey,
             PlayerData.name ..
             " (" ..
             PlayerData.citizenid ..
-            ") - Used: " .. key .. (selectedData and (" with args: " .. json.encode(selectedData)) or ""))
+            ") - Used: " .. actionKey .. (selectedData and (" with args: " .. json.encode(selectedData)) or ""))
 	TriggerEvent('mri_Qadmin:client:PlayHUDSound', 'success')
 	cb({ status = "ok" })
 end)
@@ -224,7 +224,7 @@ RegisterNUICallback("mri_Qadmin:callback:GetAces", function(data, cb)
 end)
 
 RegisterNUICallback("seed_pages", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:SeedPageAces')
+    TriggerServerEvent('mri_Qadmin:server:SeedAces')
     cb('ok')
 end)
 

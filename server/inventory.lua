@@ -1,7 +1,7 @@
 -- Clear Inventory
-RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
     local player = tonumber(selectedData["Player"].value)
@@ -23,9 +23,9 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(data, selectedData
 end)
 
 -- Clear Inventory Offline
-RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
     local citizenId = selectedData["Citizen ID"].value
@@ -70,8 +70,8 @@ RegisterNetEvent('mri_Qadmin:server:OpenStash', function(data)
 end)
 
 -- Open Trunk [ox side]
-RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(data, vehiclePlate)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(actionData, vehiclePlate)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
     if not vehiclePlate then
         return QBCore.Functions.Notify(source, locale("no_plate"), 'error', 7500)
     end
@@ -84,9 +84,9 @@ RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(data, vehiclePlate)
 end)
 
 -- Give Item
-RegisterNetEvent('mri_Qadmin:server:GiveItem', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:GiveItem', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local target = selectedData["Player"].value
     local item = selectedData["Item"].value
@@ -105,9 +105,9 @@ RegisterNetEvent('mri_Qadmin:server:GiveItem', function(data, selectedData)
 end)
 
 -- Give Item to All
-RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(actionKey, selectedData)
+    local actionData = CheckDataFromKey(actionKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local item = selectedData["Item"].value
     local amount = selectedData["Amount"].value
