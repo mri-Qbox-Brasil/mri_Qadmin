@@ -18,10 +18,15 @@ Professional and modern Admin Panel for Qbox/QbCore servers.
 - **Items Database**: Search and give items.
 - **Server Resources**: Monitor and manage server resources.
 - **Staff Chat**: Integrated chat for staff members.
-- **Developer Tools**: Entity info, coordinates, and more.
+- **Developer Tools**:
+    - Entity info, coordinates, and more.
+    - **Dynamic Wall (ESP)**: Custom colors for Dead players, Invisible players, and by permission groups (ACE Principals).
 - **Customizable**:
     - Dark/Light modes.
     - Custom accent colors (Hex, RGB, HSL support).
+
+## Documentation
+- [View in Portuguese](README.md)
 
 ## Credits & Acknowledgements
 

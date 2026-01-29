@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/context/I18n'
 import { useTheme } from '@/context/ThemeContext'
 import { CustomColorPicker } from '@/components/CustomColorPicker'
+import ConfirmAction from '@/components/players/ConfirmAction'
 
 const THEMES = [
     { id: 'light', icon: Sun, label: 'settings_theme_light' },
@@ -24,6 +25,12 @@ const COLORS = [
     { id: 'yellow', value: '47 95% 57%', class: 'bg-yellow-500' },
 ]
 
+const WALL_DEFAULTS = {
+    dead: '#FF0000',
+    invisible: '#FFFF00',
+    default: '#0000FF'
+}
+
 export default function Settings() {
     const { t, locale, preferredLocale, setPreferredLocale, supportedLanguages } = useI18n()
     const { theme, setTheme, accent, setAccent, scale, setScale } = useTheme()
@@ -32,6 +39,7 @@ export default function Settings() {
     const [wallSettings, setWallSettings] = React.useState<any>(null)
     const [availableGroups, setAvailableGroups] = React.useState<string[]>([])
     const [newGroupColor, setNewGroupColor] = React.useState({ group: '', color: '#0000FF' })
+    const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null)
 
     const fetchWallSettings = React.useCallback(async () => {
         try {
@@ -197,7 +205,7 @@ export default function Settings() {
                         <MriCard className="p-6 space-y-8 bg-card border-border">
                             <p className="text-sm text-muted-foreground">{t('settings_wall_esp_desc')}</p>
 
-                            {wallSettings && (
+                            {wallSettings && wallSettings.settings && (
                                 <>
                                     {/* Global Wall Colors */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -210,8 +218,18 @@ export default function Settings() {
                                                     color={wallSettings.settings.dead}
                                                     onChange={(val) => saveWallSetting('global', 'dead', val)}
                                                     active={true}
+                                                    format="hex"
                                                 />
-                                                <span className="text-xs font-mono text-muted-foreground uppercase">{wallSettings.settings.dead}</span>
+                                                <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.dead}</span>
+                                                <MriButton
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                    onClick={() => saveWallSetting('global', 'dead', WALL_DEFAULTS.dead)}
+                                                    title={t('restore_default')}
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5" />
+                                                </MriButton>
                                             </div>
                                         </div>
 
@@ -224,8 +242,18 @@ export default function Settings() {
                                                     color={wallSettings.settings.invisible}
                                                     onChange={(val) => saveWallSetting('global', 'invisible', val)}
                                                     active={true}
+                                                    format="hex"
                                                 />
-                                                <span className="text-xs font-mono text-muted-foreground uppercase">{wallSettings.settings.invisible}</span>
+                                                <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.invisible}</span>
+                                                <MriButton
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                    onClick={() => saveWallSetting('global', 'invisible', WALL_DEFAULTS.invisible)}
+                                                    title={t('restore_default')}
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5" />
+                                                </MriButton>
                                             </div>
                                         </div>
 
@@ -238,8 +266,18 @@ export default function Settings() {
                                                     color={wallSettings.settings.default}
                                                     onChange={(val) => saveWallSetting('global', 'default', val)}
                                                     active={true}
+                                                    format="hex"
                                                 />
-                                                <span className="text-xs font-mono text-muted-foreground uppercase">{wallSettings.settings.default}</span>
+                                                <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.default}</span>
+                                                <MriButton
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                    onClick={() => saveWallSetting('global', 'default', WALL_DEFAULTS.default)}
+                                                    title={t('restore_default')}
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5" />
+                                                </MriButton>
                                             </div>
                                         </div>
                                     </div>
@@ -249,7 +287,7 @@ export default function Settings() {
                                         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings_wall_groups')}</h3>
 
                                         <div className="space-y-3">
-                                            {Object.entries(wallSettings.colors).map(([principal, color]: [any, any]) => (
+                                            {wallSettings.colors && Object.entries(wallSettings.colors).map(([principal, color]: [any, any]) => (
                                                 <div key={principal} className="flex items-center justify-between bg-muted/20 p-3 rounded-lg border border-border/50">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
@@ -260,12 +298,13 @@ export default function Settings() {
                                                             color={color}
                                                             onChange={(val) => saveWallSetting('principal', principal, val)}
                                                             active={true}
+                                                            format="hex"
                                                         />
                                                         <MriButton
                                                             size="icon"
                                                             variant="ghost"
                                                             className="h-8 w-8 text-muted-foreground hover:text-red-500"
-                                                            onClick={() => deleteGroupColor(principal)}
+                                                            onClick={() => setConfirmDelete(principal)}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </MriButton>
@@ -291,6 +330,7 @@ export default function Settings() {
                                                     color={newGroupColor.color}
                                                     onChange={(val) => setNewGroupColor(prev => ({ ...prev, color: val }))}
                                                     active={true}
+                                                    format="hex"
                                                 />
                                                 <MriButton
                                                     onClick={() => saveWallSetting('principal', newGroupColor.group, newGroupColor.color)}
@@ -308,6 +348,17 @@ export default function Settings() {
                     </div>
                 </div>
             </div>
+
+            {confirmDelete && (
+                <ConfirmAction
+                    text={t('settings_wall_confirm_delete_group').replace('%s', confirmDelete)}
+                    onConfirm={() => {
+                        deleteGroupColor(confirmDelete)
+                        setConfirmDelete(null)
+                    }}
+                    onCancel={() => setConfirmDelete(null)}
+                />
+            )}
         </div>
     )
 }

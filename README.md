@@ -20,7 +20,9 @@ Painel Administrativo profissional e moderno para servidores Qbox/QbCore.
 - **Banco de Dados de Itens**: Pesquisar e dar itens.
 - **Resources do Servidor**: Monitorar e gerenciar os resources do servidor.
 - **Chat da Staff**: Chat integrado para membros da equipe.
-- **Ferramentas de Desenvolvedor**: Informações de entidades, coordenadas e mais.
+- **Ferramentas de Desenvolvedor**:
+    - Informações de entidades, coordenadas e mais.
+    - **Wall (ESP) Dinâmico**: Escolha cores personalizadas para jogadores Mortos, Invisíveis e por Cargos (ACE Principals).
 - **Personalizável**:
     - Modos Claro/Escuro.
     - Cores de destaque personalizadas (Suporte a Hex, RGB, HSL).

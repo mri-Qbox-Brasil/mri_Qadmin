@@ -90,6 +90,7 @@ function PrincipalGroup({
                     color={color || '#0000FF'}
                     onChange={(val) => onColorChange(child, val)}
                     active={!!color}
+                    format="hex"
                 />
             )}
             <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
@@ -130,6 +131,7 @@ function PrincipalGroup({
                             color={principalColors[p.parent] || '#0000FF'}
                             onChange={(val) => onColorChange(p.parent, val)}
                             active={!!principalColors[p.parent]}
+                            format="hex"
                         />
                     )}
                     <button

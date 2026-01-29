@@ -12,18 +12,23 @@ local wall_settings = {
 }
 
 local function LoadWallData()
-    local colors = MySQL.query.await('SELECT * FROM mri_qadmin_wall_colors') or {}
+    local success, colors = pcall(MySQL.query.await, 'SELECT * FROM mri_qadmin_wall_colors')
+    colors = success and colors or {}
     principal_colors = {}
     for _, c in ipairs(colors) do
         principal_colors[c.principal] = c.color
     end
 
-    local settings = MySQL.query.await('SELECT * FROM mri_qadmin_settings WHERE name LIKE "wall_%"') or {}
+    local success2, settings = pcall(MySQL.query.await, 'SELECT * FROM mri_qadmin_settings WHERE name LIKE "wall_%"')
+    settings = success2 and settings or {}
     for _, s in ipairs(settings) do
         local key = s.name:gsub("wall_", "")
         wall_settings[key] = s.value
     end
-    Debug('Wall Data Loaded', #colors .. ' colors, ' .. #settings .. ' settings')
+    Debug('Wall Data Loaded:', #colors .. ' colors, ' .. #settings .. ' settings')
+    for p, c in pairs(principal_colors) do
+        Debug(' - Color Cache:', p, c)
+    end
 end
 
 local function GetPlayerESPColor(src)
@@ -111,10 +116,13 @@ AddEventHandler('onResourceStart', function(resourceName)
     end
 
     local Players = QBCore.Functions.GetPlayers()
-    LoadWallData()
-    for _, PlayerId in pairs(Players) do
-        updateWallInfos(PlayerId)
-    end
+    CreateThread(function()
+        Wait(500) -- Wait for DB
+        LoadWallData()
+        for _, PlayerId in pairs(Players) do
+            updateWallInfos(PlayerId)
+        end
+    end)
 end)
 
 -----------------------------------------------------------------------------------------------------------------------------------------

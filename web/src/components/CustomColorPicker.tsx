@@ -13,9 +13,10 @@ interface CustomColorPickerProps {
     color: string;
     onChange: (color: string) => void;
     active: boolean;
+    format?: 'hex' | 'hsl-string';
 }
 
-export const CustomColorPicker = ({ color, onChange, active }: CustomColorPickerProps) => {
+export const CustomColorPicker = ({ color, onChange, active, format = 'hsl-string' }: CustomColorPickerProps) => {
     const { t } = useI18n();
 
     const parseCustomFormat = (c: string) => {
@@ -63,9 +64,13 @@ export const CustomColorPicker = ({ color, onChange, active }: CustomColorPicker
     };
 
     const commitChange = () => {
-         const hsl = colord(hex).toHsl();
-         const hslString = `${Math.round(hsl.h)} ${Math.round(hsl.s)}% ${Math.round(hsl.l)}%`;
-         onChange(hslString);
+         if (format === 'hex') {
+             onChange(hex);
+         } else {
+             const hsl = colord(hex).toHsl();
+             const hslString = `${Math.round(hsl.h)} ${Math.round(hsl.s)}% ${Math.round(hsl.l)}%`;
+             onChange(hslString);
+         }
     };
 
     const updateFromInput = (type: string, val: string | number, part?: string) => {
