@@ -1,6 +1,6 @@
 import React from 'react'
 import { MriButton, MriCard, MriPageHeader, MriSelectSearch } from '@mriqbox/ui-kit'
-import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility, Languages, RotateCcw, Eye, Ghost, User, Plus, Trash2 } from 'lucide-react'
+import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility, Languages, RotateCcw, Eye, Ghost, User, Plus, Trash2, Search } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 
 import { cn } from '@/lib/utils'
@@ -40,6 +40,7 @@ export default function Settings() {
     const [availableGroups, setAvailableGroups] = React.useState<string[]>([])
     const [newGroupColor, setNewGroupColor] = React.useState({ group: '', color: '#0000FF' })
     const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null)
+    const [groupSearch, setGroupSearch] = React.useState('')
 
     const fetchWallSettings = React.useCallback(async () => {
         try {
@@ -284,33 +285,57 @@ export default function Settings() {
 
                                     {/* Group Colors */}
                                     <div className="space-y-4 pt-6 border-t border-border/50">
-                                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings_wall_groups')}</h3>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings_wall_groups')}</h3>
 
-                                        <div className="space-y-3">
-                                            {wallSettings.colors && Object.entries(wallSettings.colors).map(([principal, color]: [any, any]) => (
-                                                <div key={principal} className="flex items-center justify-between bg-muted/20 p-3 rounded-lg border border-border/50">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
-                                                        <span className="font-mono text-sm font-bold">{principal}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
-                                                         <CustomColorPicker
-                                                            color={color}
-                                                            onChange={(val) => saveWallSetting('principal', principal, val)}
-                                                            active={true}
-                                                            format="hex"
-                                                        />
-                                                        <MriButton
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 text-muted-foreground hover:text-red-500"
-                                                            onClick={() => setConfirmDelete(principal)}
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </MriButton>
-                                                    </div>
+                                            <div className="relative w-full sm:w-64">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                                                <input
+                                                    type="text"
+                                                    value={groupSearch}
+                                                    onChange={(e) => setGroupSearch(e.target.value)}
+                                                    placeholder={t('search_groups')}
+                                                    className="w-full h-8 pl-9 pr-3 rounded-md bg-muted/30 border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {wallSettings.colors && Object.entries(wallSettings.colors)
+                                                    .filter(([principal]) => principal.toLowerCase().includes(groupSearch.toLowerCase()))
+                                                    .map(([principal, color]: [any, any]) => (
+                                                        <div key={principal} className="flex items-center justify-between bg-muted/20 p-3 rounded-lg border border-border/50 group/item hover:border-primary/50 transition-colors">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-4 h-4 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: color }} />
+                                                                <span className="font-mono text-xs font-bold truncate max-w-[120px]" title={principal}>{principal}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <CustomColorPicker
+                                                                    color={color}
+                                                                    onChange={(val) => saveWallSetting('principal', principal, val)}
+                                                                    active={true}
+                                                                    format="hex"
+                                                                />
+                                                                <MriButton
+                                                                    size="icon"
+                                                                    variant="ghost"
+                                                                    className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                                                                    onClick={() => setConfirmDelete(principal)}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </MriButton>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+
+                                            {wallSettings.colors && Object.entries(wallSettings.colors).filter(([principal]) => principal.toLowerCase().includes(groupSearch.toLowerCase())).length === 0 && (
+                                                <div className="text-center py-8 border-2 border-dashed border-border rounded-xl">
+                                                    <Search className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                                                    <p className="text-sm text-muted-foreground">{t('permissions_no_matches')?.replace('%s', groupSearch) || `No matches for "${groupSearch}"`}</p>
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
 
                                         <div className="flex flex-col sm:flex-row items-end gap-3 bg-secondary/30 rounded-xl p-4 border border-border/50 mt-4">

@@ -387,5 +387,6 @@
     "settings_wall_select_group": "Select Group",
     "settings_wall_group_color": "Group Color",
     "restore_default": "Restore Default",
-    "settings_wall_confirm_delete_group": "Are you sure you want to remove the custom color for group '%s'?"
+    "settings_wall_confirm_delete_group": "Are you sure you want to remove the custom color for group '%s'?",
+    "search_groups": "Search groups..."
 }
