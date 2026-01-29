@@ -40,6 +40,15 @@ function CheckPerms(source, perms)
     return noPerms(source)
 end
 
+--- Extract value from selectedData safely (handles both {value = x} and x)
+function GetValue(data, key)
+    if not data or not key or not data[key] then return nil end
+    if type(data[key]) == "table" then
+        return data[key].value
+    end
+    return data[key]
+end
+
 function CheckDataFromKey(key)
     local actions = Config.Actions[key]
     if actions then

@@ -78,12 +78,10 @@ export default function Dashboard() {
                  return
             }
 
-            // Optimization: Fetch larger chunks (250) to reduce re-renders compared to 100
-            const limit = 250
+            const limit = 300
             const payload = { page: startPage, limit: limit, search: currentSearch }
             const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
 
-            // Small breathing room for UI
             await new Promise(r => setTimeout(r, 100))
              if (abortSyncRef.current) { setIsSyncing(false); return; }
 
@@ -170,8 +168,7 @@ export default function Dashboard() {
 
         setLoading(true)
         try {
-            // Initial Fetch 100
-            const limit = 100
+            const limit = 300
             const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
             const payload = { page: 1, limit: limit, search: playersSearch }
 
@@ -194,7 +191,7 @@ export default function Dashboard() {
             }
 
             if (playersSearch === '') {
-                 setLastPlayersFetch(Date.now())
+                setLastPlayersFetch(Date.now())
             }
 
         } catch (e: any) {
@@ -361,7 +358,6 @@ export default function Dashboard() {
                 />
                 <SyncFooter />
             </div>
-
           </div>
       </div>
     </div>

@@ -11,6 +11,7 @@
     "body_health": "Saúde do veículo: ",
     "bucket_get": "O jogador %s está no bucket: %s",
     "bucket_set": "Roteamento configurado para o bucket: %s",
+    "spectate_exit": "Sair",
     "bucket_set_for_target": "Bucket de roteamento configurado para: %s no bucket: %s",
     "cannot_store_veh": "Não é possível guardar este veículo na sua garagem",
     "cant_spectate_yourself": "Você não pode se observar",

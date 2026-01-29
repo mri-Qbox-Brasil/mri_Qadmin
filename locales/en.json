@@ -11,6 +11,7 @@
     "body_health": "Body health: ",
     "bucket_get": "Player %s is in bucket: %s",
     "bucket_set": "Routing bucket set to: %s",
+    "spectate_exit": "Exit",
     "bucket_set_for_target": "Routing bucket set to: %s for bucket: %s",
     "cannot_store_veh": "Cannot store this vehicle in your garage",
     "cant_spectate_yourself": "You cannot spectate yourself",

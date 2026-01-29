@@ -136,7 +136,7 @@ export default function Players() {
                return
           }
 
-          const limit = 100
+          const limit = 300
           const payload = { page: startPage, limit: limit, search: currentSearch }
           const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
 
@@ -187,8 +187,7 @@ export default function Players() {
 
     setLoading(true)
     try {
-      // 1. Initial Fetch (Page 1) - Fetch 100 items (or more) to fill screen
-      const limit = 100
+      const limit = 300
       const mock: any = { data: MOCK_PLAYERS.slice(0, limit), total: MOCK_PLAYERS.length, pages: Math.ceil(MOCK_PLAYERS.length / limit) }
 
       const payload = {

@@ -347,7 +347,10 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
     end
     local src = source
 
-    local playerId, Job, Grade = selectedData["Player"].value, selectedData["Job"].value, selectedData["Grade"].value
+    local playerId = GetValue(selectedData, "Player")
+    local Job = GetValue(selectedData, "Job")
+    local Grade = GetValue(selectedData, "Grade")
+
     local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
     if not Player then
         Debug(playerId)
@@ -407,7 +410,10 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
     end
     local src = source
 
-    local playerId, Gang, Grade = selectedData["Player"].value, selectedData["Gang"].value, selectedData["Grade"].value
+    local playerId = GetValue(selectedData, "Player")
+    local Gang = GetValue(selectedData, "Gang")
+    local Grade = GetValue(selectedData, "Grade")
+
     local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
     if not Player then
         Player = QBCore.Functions.GetOfflinePlayerByCitizenId(playerId)
@@ -459,8 +465,8 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(data, selectedData)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
     local src = source
-    local rank = selectedData["Permissions"].value
-    local targetId = selectedData["Player"].value
+    local rank = GetValue(selectedData, "Permissions")
+    local targetId = GetValue(selectedData, "Player")
     local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
 
     if not tPlayer then
@@ -479,7 +485,8 @@ RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(data, selectedData)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
     local src = source
-    local targetId = selectedData['Player (Optional)'] and tonumber(selectedData['Player (Optional)'].value) or src
+    local playerOpt = GetValue(selectedData, 'Player (Optional)')
+    local targetId = playerOpt and tonumber(playerOpt) or src
     local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
 
     if not tPlayer then

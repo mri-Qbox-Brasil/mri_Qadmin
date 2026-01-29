@@ -3,31 +3,30 @@ local spectating = {}
 RegisterNetEvent('mri_Qadmin:server:SpectateTarget', function(data, selectedData)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
-    local player = selectedData["Player"].value
-
+    local player = GetValue(selectedData, "Player")
     local type = "1"
-    if player == source then return QBCore.Functions.Notify(source, locale("cant_spectate_yourself"), 'error', 7500) end
     if spectating[source] then type = "0" end
-    TriggerEvent('mri_Qadmin:spectate', player, type == "1", source, data.perms)
-    CheckRoutingbucket(source, player)
+
+    if player and player ~= source then
+        CheckRoutingbucket(source, player)
+        TriggerEvent('mri_Qadmin:spectate', tonumber(player), type == "1", source, data.perms)
+    else
+        TriggerClientEvent('QBCore:Notify', source, "Jogador inválido.", 'error')
+    end
 end)
 
 AddEventHandler('mri_Qadmin:spectate', function(target, on, source, perms)
-    local tPed = GetPlayerPed(target)
     local data = {}
     data.perms = perms
-    if DoesEntityExist(tPed) then
-        if not on then
-            TriggerClientEvent('mri_Qadmin:cancelSpectate', source)
-            spectating[source] = false
-            FreezeEntityPosition(GetPlayerPed(source), false)
-            TriggerClientEvent('mri_Qadmin:client:toggleNames', source, data)
-        elseif on then
-            TriggerClientEvent('mri_Qadmin:requestSpectate', source, NetworkGetNetworkIdFromEntity(tPed), target,
-                GetPlayerName(target))
-            spectating[source] = true
-            TriggerClientEvent('mri_Qadmin:client:toggleNames', source, data)
-        end
+    if not on then
+        TriggerClientEvent('mri_Qadmin:cancelSpectate', source)
+        spectating[source] = false
+        FreezeEntityPosition(GetPlayerPed(source), false)
+        TriggerClientEvent('mri_Qadmin:client:toggleNames', source, data)
+    elseif on then
+        TriggerClientEvent('mri_Qadmin:requestSpectate', source, target, GetPlayerName(target))
+        spectating[source] = true
+        TriggerClientEvent('mri_Qadmin:client:toggleNames', source, data)
     end
 end)
 
