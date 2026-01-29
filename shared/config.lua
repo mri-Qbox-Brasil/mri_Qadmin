@@ -6,6 +6,12 @@ Config.ShowCommandsPerms = 'admin' -- permission to show all commands
 Config.OpenPanelPerms = { 'qadmin.open', 'admin' }
 Config.RenewedPhone = false    -- if you use qb-phone from renewed. (multijob)
 
+Config.SupportedLanguages = {
+    { id = 'pt-br', label = 'Português (BR)' },
+    { id = 'en', label = 'English' },
+    { id = 'es', label = 'Español' },
+}
+
 -- Key Bindings
 Config.Keybindings = true
 Config.AdminKey = "0"

@@ -1,6 +1,6 @@
 import React from 'react'
-import { MriCard, MriPageHeader } from '@mriqbox/ui-kit'
-import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility } from 'lucide-react'
+import { MriCard, MriPageHeader, MriSelectSearch } from '@mriqbox/ui-kit'
+import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility, Languages, RotateCcw } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/context/I18n'
@@ -24,7 +24,7 @@ const COLORS = [
 ]
 
 export default function Settings() {
-    const { t } = useI18n()
+    const { t, locale, preferredLocale, setPreferredLocale, supportedLanguages } = useI18n()
     const { theme, setTheme, accent, setAccent, scale, setScale } = useTheme()
 
     const handleScaleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,52 +48,6 @@ export default function Settings() {
 
                         <MriCard className="p-6 space-y-8 bg-card border-border">
 
-                            {/* Theme Mode */}
-                            <div className="space-y-3">
-                                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings_theme_mode')}</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {THEMES.map((item) => {
-                                        const Icon = item.icon
-                                        const isActive = theme === item.id
-                                        return (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => setTheme(item.id)}
-                                                className={cn(
-                                                    "relative flex items-center gap-3 p-4 rounded-xl border transition-all duration-200 text-left",
-                                                    isActive
-                                                        ? "bg-secondary border-primary shadow-[0_0_0_1px_var(--primary)]"
-                                                        : "bg-secondary/50 border-border hover:bg-muted"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "p-2 rounded-full transition-colors",
-                                                    isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                                                )}>
-                                                    <Icon className="w-5 h-5" />
-                                                </div>
-                                                <span className={cn(
-                                                    "font-medium",
-                                                    isActive ? "text-foreground" : "text-muted-foreground"
-                                                )}>{t(item.label)}</span>
-
-                                                {isActive && (
-                                                    <div className="absolute top-2 right-2 flex items-center gap-1">
-                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider hidden sm:block">
-                                                            {t('settings_theme_active')}
-                                                        </span>
-                                                        <span className="flex h-2 w-2 relative">
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-
                             {/* Accent Color */}
                             <div className="space-y-3">
                                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings_accent_color')}</h3>
@@ -115,6 +69,42 @@ export default function Settings() {
                                         onChange={setAccent}
                                         active={!COLORS.some(c => c.id === accent)}
                                     />
+                                </div>
+                            </div>
+
+                            {/* Language Selection */}
+                            <div className="space-y-3 pt-4 border-t border-border/50">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                        <Languages className="w-3.5 h-3.5" /> Language / Idioma
+                                    </h3>
+                                    {preferredLocale && (
+                                        <button
+                                            onClick={() => setPreferredLocale(null)}
+                                            className="text-[10px] flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors uppercase font-bold tracking-tighter"
+                                        >
+                                            <RotateCcw className="w-3 h-3" /> Reset to Default
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-end gap-4 bg-secondary/30 rounded-xl p-4 border border-border">
+                                        <div className="flex-1 space-y-1.5">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">
+                                                {t('label_select_language') || "Select Language"}
+                                            </label>
+                                            <MriSelectSearch
+                                                options={supportedLanguages.map(lang => ({
+                                                    label: lang.label,
+                                                    value: lang.id
+                                                }))}
+                                                value={preferredLocale || locale}
+                                                onChange={(val) => setPreferredLocale(val)}
+                                                className="bg-background"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </MriCard>

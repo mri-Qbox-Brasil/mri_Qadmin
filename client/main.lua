@@ -17,7 +17,8 @@ local function setupMenu()
 			playerData = PlayerData,
 			server = server,
 			vehicleImages = Config.VehicleImages,
-            permissions = permissions
+            permissions = permissions,
+            supportedLanguages = Config.SupportedLanguages
 		}
 	})
 end
@@ -33,8 +34,8 @@ RegisterNUICallback('getServerInfo', function(_, cb)
 end)
 
 -- Provide translations to the frontend when requested (frontend calls this on mount)
-RegisterNUICallback('getTranslations', function(_, cb)
-	local locale = GetConvar('ox_locale', 'pt-br')
+RegisterNUICallback('getTranslations', function(data, cb)
+	local locale = (data and data.locale) or GetConvar('ox_locale', 'pt-br')
 	local path = ('locales/%s.json'):format(locale)
 	local raw = LoadResourceFile(GetCurrentResourceName(), path)
 	if raw then

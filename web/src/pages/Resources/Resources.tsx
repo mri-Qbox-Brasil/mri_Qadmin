@@ -5,7 +5,7 @@ import { useI18n } from '@/context/I18n'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import ResourceCard from './components/ResourceCard'
 import Changelog from './components/Changelog'
-import { Search, Database, RefreshCw, Package } from 'lucide-react'
+import { Search, Database, RefreshCw, Container } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Virtuoso } from 'react-virtuoso'
@@ -74,7 +74,7 @@ export default function Resources() {
     <div className="w-full h-full flex overflow-hidden bg-background">
       {/* Resource List */}
       <div className="w-1/2 h-full flex flex-col border-r border-border overflow-hidden">
-         <MriPageHeader title={t('nav_resources')} icon={Package} countLabel={t('records')} count={filteredResources.length}>
+         <MriPageHeader title={t('nav_resources')} icon={Container} countLabel={t('records')} count={filteredResources.length}>
              <div className="relative w-full max-w-xs">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                  <MriInput

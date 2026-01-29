@@ -9,6 +9,10 @@ interface I18nContextValue {
   locale: string
   setLocale: (l: string) => void
   translations: Translations
+  preferredLocale: string | null
+  setPreferredLocale: (l: string | null) => void
+  supportedLanguages: { id: string, label: string, flag: string }[]
+  setSupportedLanguages: (langs: { id: string, label: string, flag: string }[]) => void
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined)
@@ -17,13 +21,25 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const { sendNui, on, off } = useNui()
   const [locale, setLocale] = useState<string>('en')
   const [translations, setTranslations] = useState<Translations>(en as Translations)
+  const [preferredLocale, setPreferredLocaleState] = useState<string | null>(localStorage.getItem('mri_qadmin_locale'))
+  const [supportedLanguages, setSupportedLanguages] = useState<{ id: string, label: string, flag: string }[]>([
+    { id: 'pt-br', label: 'Português (BR)', flag: '🇧🇷' },
+    { id: 'en', label: 'English', flag: '🇺🇸' },
+    { id: 'es', label: 'Español', flag: '🇪🇸' },
+  ])
+
+  const setPreferredLocale = (val: string | null) => {
+    if (val) localStorage.setItem('mri_qadmin_locale', val)
+    else localStorage.removeItem('mri_qadmin_locale')
+    setPreferredLocaleState(val)
+  }
 
   useEffect(() => {
     let mounted = true
 
     async function load() {
       try {
-        const resp: any = await sendNui('getTranslations', {}, null)
+        const resp: any = await sendNui('getTranslations', { locale: preferredLocale }, null)
         if (!mounted) return
         if (resp) {
           if (resp.translations && typeof resp.translations === 'object') {
@@ -31,7 +47,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
           } else if (typeof resp === 'object') {
             setTranslations({ ...(en as Translations), ...resp })
           }
-          if (resp.locale) setLocale(resp.locale)
+
+          const serverLocale = resp.locale || 'pt-br'
+          setLocale(preferredLocale || serverLocale)
         }
       } catch (e) {
         // fallback to en
@@ -44,7 +62,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       if (!data) return
       if (data.translations) setTranslations({ ...(en as Translations), ...data.translations })
       else if (typeof data === 'object') setTranslations({ ...(en as Translations), ...data })
-      if (data.locale) setLocale(data.locale)
+
+      const serverLocale = data.locale || 'pt-br'
+      setLocale(preferredLocale || serverLocale)
     }
 
     on('setTranslations', handler)
@@ -52,7 +72,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       off('setTranslations', handler)
     }
-  }, [sendNui, on, off])
+  }, [sendNui, on, off, preferredLocale])
 
   function interpolate(str: string, vars?: Record<string, any> | any[]) {
     if (!vars) return str
@@ -75,7 +95,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <I18nContext.Provider value={{ t, locale, setLocale, translations }}>
+    <I18nContext.Provider value={{ t, locale, setLocale, translations, preferredLocale, setPreferredLocale, supportedLanguages, setSupportedLanguages }}>
       {children}
     </I18nContext.Provider>
   )

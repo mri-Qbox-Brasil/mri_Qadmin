@@ -11,6 +11,7 @@ import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/context/I18n'
 import { Virtuoso } from 'react-virtuoso'
 import PermissionsSkeleton from '@/components/skeletons/PermissionsSkeleton'
+import { cn } from '@/lib/utils'
 
 interface Ace {
   id: number
@@ -225,8 +226,6 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_object_label')}</label>
               <CreatableCombobox
                  options={[
-                     { label: 'command.noclip', value: 'command.noclip' },
-                     { label: 'command.god', value: 'command.god' },
                      ...aces.map(a => ({ label: a.object, value: a.object }))
                  ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)}
                  value={newAce.object}
@@ -247,17 +246,32 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
           </div>
           <div className="col-span-2">
                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_type_label')}</label>
-               <CreatableCombobox
-                 options={[
-                    { label: t('permissions_allow'), value: '1' },
-                    { label: t('permissions_deny'), value: '0' }
-                 ]}
-                 value={String(allowType)}
-                 onChange={(val) => setAllowType(Number(val))}
-                 placeholder="Select"
-                 searchPlaceholder=""
-                 allowCreate={false}
-               />
+               <div className="flex bg-muted/50 rounded-md p-1 h-9 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setAllowType(1)}
+                    className={cn(
+                      "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
+                      allowType === 1
+                        ? "bg-green-500 text-white shadow-sm scale-[1.02]"
+                        : "text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {t('permissions_allow')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllowType(0)}
+                    className={cn(
+                      "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
+                      allowType === 0
+                        ? "bg-red-500 text-white shadow-sm scale-[1.02]"
+                        : "text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {t('permissions_deny')}
+                  </button>
+               </div>
           </div>
           <div className="col-span-2">
                <MriButton size="sm" className="h-9 w-full" onClick={handleAdd}>

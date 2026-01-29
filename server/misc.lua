@@ -3,7 +3,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_cid', function(actionKey, selectedData
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local citizenid = selectedData["cid"].value
+    local citizenid = GetValue(selectedData, "cid")
     if not citizenid then
         TriggerClientEvent('QBCore:Notify', src, "CID inválido.", "error", 5000)
         return
@@ -36,7 +36,7 @@ RegisterNetEvent('mri_Qadmin:server:delete_cid', function(actionKey, selectedDat
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local citizenid = selectedData["cid"].value
+    local citizenid = GetValue(selectedData, "cid")
     if not citizenid then
         TriggerClientEvent('QBCore:Notify', src, "CID inválido.", "error", 5000)
         return
@@ -60,9 +60,11 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
-    local player = selectedData["Player"] and tonumber(selectedData["Player"].value)
-    local reason = selectedData["Reason"].value or ""
-    local time = tonumber(selectedData["Duration"] and selectedData["Duration"].value or selectedData["Duração"] and selectedData["Duração"].value) -- Support both keys
+    local player = GetValue(selectedData, "Player")
+    player = player and tonumber(player)
+    local reason = GetValue(selectedData, "Reason") or ""
+    local duration = GetValue(selectedData, "Duration") or GetValue(selectedData, "Duração")
+    local time = tonumber(duration)
 
     local banTime = time == 2147483647 and 2147483647 or tonumber(os.time() + time)
     local timeTable = os.date('*t', banTime)
@@ -94,12 +96,12 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     else
         -- OFFLINE BAN
         -- We need at least a license or CID
-        local license = selectedData["license"] and selectedData["license"].value
-        local discord = selectedData["discord"] and selectedData["discord"].value
-        local name = selectedData["name"] and selectedData["name"].value or "Offline Player"
+        local license = GetValue(selectedData, "license")
+        local discord = GetValue(selectedData, "discord")
+        local name = GetValue(selectedData, "name") or "Offline Player"
 
         -- If we only have CID, try to fetch license
-        local cid = selectedData["cid"] and selectedData["cid"].value
+        local cid = GetValue(selectedData, "cid")
         if not license and cid then
              license = MySQL.scalar.await('SELECT license FROM players WHERE citizenid = ?', { cid })
         end
@@ -131,7 +133,7 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
         return
     end
 
-    local targetId = tonumber(selectedData["Player"] and selectedData["Player"].value)
+    local targetId = tonumber(GetValue(selectedData, "Player"))
     if not targetId then
         return
     end
@@ -165,9 +167,9 @@ end)
 RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
-    local targetId = selectedData["Player"].value
+    local targetId = GetValue(selectedData, "Player")
     local target = QBCore.Functions.GetPlayer(targetId)
-    local reason = selectedData["Reason"].value
+    local reason = GetValue(selectedData, "Reason")
     local sender = QBCore.Functions.GetPlayer(source)
     local warnId = 'WARN-' .. math.random(1111, 9999)
     if target ~= nil then
@@ -191,8 +193,9 @@ RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(actionKey, selectedDat
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
     local src = source
-    local target = QBCore.Functions.GetPlayer(selectedData["Player"].value)
-    local reason = selectedData["Reason"].value
+    local playerVal = GetValue(selectedData, "Player")
+    local target = QBCore.Functions.GetPlayer(tonumber(playerVal))
+    local reason = GetValue(selectedData, "Reason")
 
     if not target then
         QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
@@ -208,7 +211,7 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
 	local actionData = CheckDataFromKey(actionKey)
 	if not actionData or not CheckPerms(source, actionData.perms) then return end
 
-	local playerId = tonumber(selectedData["Player"].value)
+	local playerId = tonumber(GetValue(selectedData, "Player"))
 	local Player = QBCore.Functions.GetPlayer(playerId)
 
 	if Player then
@@ -228,6 +231,7 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
 
 		local message = newState and "Jogador marcado como verificado." or "Verificação removida do jogador."
 		TriggerClientEvent('QBCore:Notify', source, message, newState and "success" or "error")
+        TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
 	end
 end)
 
@@ -235,13 +239,14 @@ end)
 RegisterNetEvent('mri_Qadmin:server:Revive', function(actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
-    local player = selectedData["Player"].value
+    local player = GetValue(selectedData, "Player")
 
     if GetResourceState('mri_Qbox') ~= 'started' then
         TriggerClientEvent('hospital:client:Revive', player)
     else
         TriggerClientEvent('mri_Qadmin:client:ExecuteCommand', source, ('revive %s'):format(player))
     end
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
 end)
 
 -- Revive All
@@ -279,6 +284,7 @@ RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(actionKey)
             end
         end
     end
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
 end)
 
 -- Set RoutingBucket
@@ -288,9 +294,9 @@ RegisterNetEvent('mri_Qadmin:server:SetBucket', function(actionKey, selectedData
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local player = selectedData["Player"].value
-    local bucket = tonumber(selectedData["Bucket"].value)
-    local currentBucket = GetPlayerRoutingBucket(player)
+    local player = GetValue(selectedData, "Player")
+    local bucket = tonumber(GetValue(selectedData, "Bucket"))
+    local currentBucket = GetPlayerRoutingBucket(tonumber(player))
 
     Debug(player, bucket, currentBucket)
 
@@ -300,6 +306,7 @@ RegisterNetEvent('mri_Qadmin:server:SetBucket', function(actionKey, selectedData
 
     SetPlayerRoutingBucket(player, bucket)
     QBCore.Functions.Notify(src, locale("bucket_set_for_target", player, bucket), 'success', 7500)
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
 -- Get RoutingBucket
@@ -308,8 +315,8 @@ RegisterNetEvent('mri_Qadmin:server:GetBucket', function(actionKey, selectedData
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local player = selectedData["Player"].value
-    local currentBucket = GetPlayerRoutingBucket(player)
+    local player = GetValue(selectedData, "Player")
+    local currentBucket = GetPlayerRoutingBucket(tonumber(player))
 
     QBCore.Functions.Notify(src, locale("bucket_get", player, currentBucket), 'success', 7500)
 end)
@@ -320,8 +327,9 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local target, amount, moneyType = selectedData["Player"].value, selectedData["Amount"].value,
-        selectedData["Type"].value
+    local target = GetValue(selectedData, "Player")
+    local amount = GetValue(selectedData, "Amount")
+    local moneyType = GetValue(selectedData, "Type")
     local Player = QBCore.Functions.GetPlayer(tonumber(target))
 
     if Player == nil then
@@ -332,6 +340,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "give_money_crypto" or "give_money"), tonumber(amount),
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
 -- Give Money to all
@@ -340,7 +349,8 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedD
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local amount, moneyType = selectedData["Amount"].value, selectedData["Type"].value
+    local amount = GetValue(selectedData, "Amount")
+    local moneyType = GetValue(selectedData, "Type")
     local players = QBCore.Functions.GetPlayers()
 
     for _, v in pairs(players) do
@@ -349,6 +359,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedD
         QBCore.Functions.Notify(src,
             locale((moneyType == "crypto" and "give_money_all_crypto" or "give_money_all"), tonumber(amount)), "success")
     end
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
 -- Take Money
@@ -357,8 +368,9 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(actionKey, selectedData
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local target, amount, moneyType = selectedData["Player"].value, selectedData["Amount"].value,
-        selectedData["Type"].value
+    local target = GetValue(selectedData, "Player")
+    local amount = GetValue(selectedData, "Amount")
+    local moneyType = GetValue(selectedData, "Type")
     local Player = QBCore.Functions.GetPlayer(tonumber(target))
 
     if Player == nil then
@@ -374,6 +386,7 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(actionKey, selectedData
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "take_money_crypto" or "take_money"), tonumber(amount) .. "R$",
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
 -- Blackout
@@ -401,7 +414,7 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(actionKey, selectedDat
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
-    local target = tonumber(selectedData["Player"].value)
+    local target = tonumber(GetValue(selectedData, "Player"))
 
     if GetResourceState("ND_Police") == "started" then
         local playerIsCuffed = Player(target).state.isCuffed
@@ -417,6 +430,7 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(actionKey, selectedDat
 
     TriggerClientEvent('mri_Qadmin:client:ToggleCuffs', target)
     QBCore.Functions.Notify(source, locale("toggled_cuffs"), 'success')
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
 end)
 
 -- Give Clothing Menu
@@ -425,7 +439,7 @@ RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(actionKey, selectedD
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local target = tonumber(selectedData["Player"].value)
+    local target = tonumber(GetValue(selectedData, "Player"))
 
     if target == nil then
         return QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
@@ -447,8 +461,8 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(actionKey, selectedData)
         return
     end
 
-    local ped = selectedData["Ped Models"].label
-    local tsrc = selectedData["Player"].value
+    local ped = GetValue(selectedData, "Ped Models") -- Assuming label as default if table
+    local tsrc = tonumber(GetValue(selectedData, "Player"))
     local Player = QBCore.Functions.GetPlayer(tsrc)
 
     if not Player then
@@ -457,6 +471,7 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(actionKey, selectedData)
     end
 
     TriggerClientEvent("mri_Qadmin:client:setPed", Player.PlayerData.source, ped)
+    TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
 -- Callback para listar bans com paginação e busca
@@ -498,7 +513,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(actionKey, selectedDa
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local banId = selectedData["ban_id"] and tonumber(selectedData["ban_id"].value)
+    local banId = tonumber(GetValue(selectedData, "ban_id"))
     if not banId then
         TriggerClientEvent('QBCore:Notify', src, "ID do banimento inválido.", "error", 5000)
         return
@@ -518,7 +533,7 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(actionKey, selectedDat
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local targetId = tonumber(selectedData["Player"].value)
+    local targetId = tonumber(GetValue(selectedData, "Player"))
     local targetPed = GetPlayerPed(targetId)
     local targetPlayer = QBCore.Functions.GetPlayer(targetId)
 

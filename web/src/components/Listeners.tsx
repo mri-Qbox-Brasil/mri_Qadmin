@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNui } from '../context/NuiContext'
 import { useAppState } from '../context/AppState'
+import { useI18n } from '../context/I18n'
 
 export default function Listeners() {
   const { on, off, sendNui } = useNui()
@@ -13,6 +14,7 @@ export default function Listeners() {
     setStaffMessages,
     setMyPermissions
   } = useAppState()
+  const { setSupportedLanguages } = useI18n()
 
   useEffect(() => {
     const setupUI = (data: any) => {
@@ -25,6 +27,9 @@ export default function Listeners() {
       }
       if (data.permissions) {
         setMyPermissions(Array.isArray(data.permissions) ? data.permissions : [])
+      }
+      if (data.supportedLanguages) {
+        setSupportedLanguages(data.supportedLanguages)
       }
     }
 

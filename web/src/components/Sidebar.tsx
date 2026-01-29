@@ -14,8 +14,13 @@ import {
     Briefcase,
     Settings,
     Shield,
-    Package
+    Container,
+    Sun,
+    Moon,
+    Monitor
 } from 'lucide-react'
+import { useTheme } from '@/context/ThemeContext'
+import { cn } from '@/lib/utils'
 
 interface SidebarProps {
     onRoute: (r: any) => void
@@ -29,6 +34,15 @@ import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
 export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
   const { t } = useI18n()
   const { menuWide, setMenuWide, myPermissions } = useAppState()
+  const { theme, setTheme } = useTheme()
+
+  const toggleTheme = () => {
+    if (theme === 'dark') setTheme('light')
+    else if (theme === 'light') setTheme('system')
+    else setTheme('dark')
+  }
+
+  const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor
 
   const items: MriSidebarItem[] = [
     { icon: LayoutDashboard, label: t('nav_dashboard'), route: 'dashboard' },
@@ -42,7 +56,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     { icon: Terminal, label: t('nav_commands'), route: 'commands' },
     { icon: Wand2, label: t('nav_actions'), route: 'actions' },
     { icon: Shield, label: 'Permissions', route: 'permissions' },
-    { icon: Package, label: t('nav_resources'), route: 'resources' },
+    { icon: Container, label: t('nav_resources'), route: 'resources' },
     { icon: Box, label: '', divider: true },
     { icon: Settings, label: t('nav_settings'), route: 'settings' },
     { icon: Info, label: t('nav_credits'), route: 'credits' },
@@ -57,12 +71,37 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
   })
 
   return (
-    <MriSidebar
-      items={items}
-      activeRoute={currentRoute}
-      onNavigate={onRoute}
-      collapsed={!menuWide}
-      onToggleCollapse={() => setMenuWide(!menuWide)}
-    />
+    <div className="flex flex-col h-full bg-card border-r border-border">
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <MriSidebar
+          items={items}
+          activeRoute={currentRoute}
+          onNavigate={onRoute}
+          collapsed={!menuWide}
+          onToggleCollapse={() => setMenuWide(!menuWide)}
+        />
+      </div>
+
+      <div className={cn(
+        "p-3 border-t border-border flex items-center transition-all duration-300",
+        !menuWide ? "justify-center" : "justify-between"
+      )}>
+        {menuWide && (
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">
+            {t('settings_theme_mode') || "Theme"}
+          </span>
+        )}
+        <button
+          onClick={toggleTheme}
+          className={cn(
+            "p-2 rounded-lg transition-all hover:bg-muted text-muted-foreground hover:text-primary active:scale-95",
+            !menuWide && "w-10 h-10 flex items-center justify-center bg-secondary/30"
+          )}
+          title={t(`settings_theme_${theme}`)}
+        >
+          <ThemeIcon className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   )
 }
