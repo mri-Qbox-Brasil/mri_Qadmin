@@ -95,32 +95,35 @@ export default function StaffChat() {
                  data={staffMessages}
                  initialTopMostItemIndex={staffMessages.length - 1} // Start at bottom
                  followOutput="auto"
-                 itemContent={(index, msg) => {
-                    const isMine = myCitizenid ? msg.citizenid === myCitizenid : false
-                    return (
-                        <div className={cn("flex w-full py-1", isMine ? "justify-end" : "justify-start")}>
-                            <div className={cn(
-                                "flex flex-col max-w-[70%] min-w-[80px] rounded-lg px-2 py-1 shadow-sm text-[13px] break-words relative group leading-snug",
-                                isMine
-                                    ? "bg-primary text-primary-foreground rounded-tr-none"
-                                    : "bg-card border border-border text-foreground rounded-tl-none"
-                            )}>
-                                {!isMine && (
-                                    <span className={cn("text-[10px] font-bold mb-0.5 opacity-90", isMine ? "text-primary-foreground" : "text-primary")}>{msg.fullname}</span>
-                                )}
-                                <div className="flex flex-wrap gap-x-2 items-end justify-between">
-                                    <span className="mr-2">{msg.message}</span>
-                                    <span className={cn(
-                                        "text-[9px] whitespace-nowrap opacity-70 ml-auto",
-                                        isMine ? "text-primary-foreground" : "text-muted-foreground"
-                                    )}>
-                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                 }}
+itemContent={(index, msg) => {
+  const isMine = myCitizenid ? msg.citizenid === myCitizenid : false
+  return (
+      <div className={cn("flex w-full py-0.5", isMine ? "justify-end" : "justify-start")}>
+          <div className={cn(
+              "flex flex-col max-w-[85%] min-w-[80px] rounded-xl px-2.5 py-1 shadow-sm text-[13px] break-words relative group leading-tight transition-all",
+              isMine
+                  ? "bg-primary text-primary-foreground rounded-tr-none shadow-[0_1px_4px_rgba(var(--primary),0.15)]"
+                  : "bg-muted/50 border border-border/50 text-foreground rounded-tl-none"
+          )}>
+              {!isMine && (
+                  <span className={cn(
+                      "text-[9px] font-bold mb-0.5 tracking-wide uppercase",
+                      "text-primary/80"
+                  )}>{msg.fullname}</span>
+              )}
+              <div className="flex flex-col gap-0.5">
+                  <span className="leading-snug">{msg.message}</span>
+                  <span className={cn(
+                      "text-[8px] font-medium opacity-60 self-end",
+                      isMine ? "text-primary-foreground" : "text-muted-foreground"
+                  )}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+              </div>
+          </div>
+      </div>
+  )
+}}
               />
           )}
       </div>

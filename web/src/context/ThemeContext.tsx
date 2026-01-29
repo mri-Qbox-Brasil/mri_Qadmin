@@ -1,4 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { colord, extend } from "colord";
+import namesPlugin from "colord/plugins/names";
+
+extend([namesPlugin]);
+// ... (rest of the interface and context remains same)
 
 interface ThemeContextType {
     theme: string
@@ -58,8 +63,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
 
         const colorValue = COLORS[accent] || accent
+
+        // Calculate dynamic foreground using colord
+        // If it's a name, colord will resolve it. If it's "h s% l%", colord("hsl(...)") works.
+        const colorForColord = colorValue.includes('%') ? `hsl(${colorValue})` : colorValue
+        const c = colord(colorForColord)
+        const isDark = c.isDark()
+
+        // Use high-contrast foreground
+        const fgValue = isDark ? '210 40% 98%' : '240 10% 3.9%'
+
         if (colorValue) {
              root.style.setProperty('--primary', colorValue)
+             root.style.setProperty('--primary-foreground', fgValue)
              root.style.setProperty('--ring', colorValue)
         }
         localStorage.setItem('ps:accent', accent)
