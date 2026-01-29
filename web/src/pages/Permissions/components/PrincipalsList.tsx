@@ -7,8 +7,10 @@ import {
   ChevronDown,
   ChevronRight,
   User,
+  Palette,
 } from "lucide-react";
 import { useNui } from "@/context/NuiContext";
+import { CustomColorPicker } from "@/components/CustomColorPicker";
 import Spinner from "@/components/Spinner";
 import { isEnvBrowser } from "@/utils/misc";
 import { MOCK_PRINCIPALS } from "@/utils/mockData";
@@ -31,11 +33,15 @@ function PrincipalGroup({
   items,
   onRemove,
   players,
+  principalColors,
+  onColorChange,
 }: {
   child: string;
   items: Principal[];
   onRemove: (p: Principal) => void;
   players: any[];
+  principalColors: Record<string, string>;
+  onColorChange: (p: string, c: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useI18n();
@@ -46,6 +52,10 @@ function PrincipalGroup({
 
   // Aggregate descriptions for the header summary
   const descriptions = items.map(p => p.description).filter(Boolean).join(', ')
+
+  // Determine if this is a group and if it has a color
+  const isGroup = items.some(p => p.parent.startsWith('group.'))
+  const color = principalColors[child] || principalColors[items[0]?.parent] || null
 
   // Find first available description for a simpler header if preferred, but joined is nicer for summary
   // const groupDescription = items.find((i) => i.description)?.description;
@@ -70,10 +80,22 @@ function PrincipalGroup({
             - {descriptions}
           </span>
         )}
+        {color && (
+             <div className="w-3 h-3 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: color }} />
+        )}
 
-        <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto">
-          {items.length} {t("groups")}
-        </span>
+        <div className="flex items-center gap-2 ml-auto">
+             {child.startsWith('group.') && (
+                <CustomColorPicker
+                    color={color || '#0000FF'}
+                    onChange={(val) => onColorChange(child, val)}
+                    active={!!color}
+                />
+            )}
+            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                {items.length} {t("groups")}
+            </span>
+        </div>
       </div>
 
       {isOpen && (
@@ -145,6 +167,7 @@ export default function PrincipalsList({
     parent: "",
     description: "",
   });
+  const [principalColors, setPrincipalColors] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<{
     type: "add" | "remove";
     principal?: Principal;
@@ -184,6 +207,12 @@ export default function PrincipalsList({
       // Count unique children (principals)
       const unique = new Set(list.map((p: any) => p.child)).size;
       onCountChange?.(unique);
+
+      // Fetch Wall Colors
+      const wallData = await sendNui("mri_Qadmin:callback:GetWallSettings", {}, { colors: {} });
+      if (wallData && wallData.colors) {
+          setPrincipalColors(wallData.colors);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -258,6 +287,11 @@ export default function PrincipalsList({
 
     setConfirm(null);
     // No manual fetch - wait for server broadcast
+  };
+
+  const handleColorChange = async (principal: string, color: string) => {
+    setPrincipalColors(prev => ({ ...prev, [principal]: color }));
+    await sendNui('mri_Qadmin:server:SaveWallSetting', { type: 'principal', key: principal, value: color });
   };
 
   return (
@@ -382,6 +416,8 @@ export default function PrincipalsList({
                                   items={items}
                                   onRemove={handleRemove}
                                   players={players}
+                                  principalColors={principalColors}
+                                  onColorChange={handleColorChange}
                               />
                           </div>
                       )}

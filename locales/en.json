@@ -376,5 +376,14 @@
     "permissions_confirm_add_principal": "Are you sure you want to ADD inheritance '%s' -> '%s'?",
     "permissions_confirm_remove_principal": "Are you sure you want to REMOVE inheritance '%s' -> '%s'?",
     "permissions_confirm_add_ace": "Are you sure you want to ADD permission '%s' to '%s'?",
-    "permissions_confirm_remove_ace": "Are you sure you want to REMOVE permission '%s' from '%s'?"
+    "permissions_confirm_remove_ace": "Are you sure you want to REMOVE permission '%s' from '%s'?",
+    "settings_wall_esp": "Wall / ESP Settings",
+    "settings_wall_esp_desc": "Customize ESP line colors based on player state and rank.",
+    "settings_wall_dead": "Color: Dead Player",
+    "settings_wall_invisible": "Color: Invisible Player",
+    "settings_wall_default": "Color: Default / Others",
+    "settings_wall_groups": "Group Colors (Inheritance)",
+    "settings_wall_add_group": "Add Group Color",
+    "settings_wall_select_group": "Select Group",
+    "settings_wall_group_color": "Group Color"
 }

@@ -241,7 +241,7 @@ export default function Dashboard() {
          {debugMode && <DevLocaleSwitcher className="w-40" />}
       </MriPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
+      <div className="flex-1 flex flex-col p-8 no-scrollbar overflow-hidden">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard
@@ -308,7 +308,7 @@ export default function Dashboard() {
           </div>
 
           {/* Players Table Section */}
-          <div className="flex-1 min-h-0 flex flex-col relative h-[600px]">
+          <div className="flex-1 min-h-0 flex flex-col relative">
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h2 className="text-lg font-bold text-foreground">{t('players')}</h2>
               <div className="relative w-80">

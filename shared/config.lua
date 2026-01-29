@@ -831,6 +831,12 @@ Config.PlayerActions = {
         perms = "qadmin.action.fire_gang",
         type = "server"
     },
+    ["give_item_player"] = {
+        label = "Dar Item",
+        event = "mri_Qadmin:server:GiveItem",
+        perms = "qadmin.action.give_item",
+        type = "server"
+    },
 }
 
 Config.OtherActions = {

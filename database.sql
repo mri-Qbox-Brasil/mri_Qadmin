@@ -19,3 +19,13 @@ CREATE TABLE IF NOT EXISTS mri_qadmin_principals (
     parent VARCHAR(255) NOT NULL,
     description VARCHAR(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE IF NOT EXISTS mri_qadmin_wall_colors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    principal VARCHAR(255) NOT NULL UNIQUE,
+    color VARCHAR(7) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS mri_qadmin_settings (
+    name VARCHAR(50) PRIMARY KEY,
+    value TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

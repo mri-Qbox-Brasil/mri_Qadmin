@@ -89,6 +89,11 @@ Citizen.CreateThread(function()
     end
 end)
 
+local function HexToRGB(hex)
+    hex = hex:gsub("#", "")
+    return tonumber("0x" .. hex:sub(1, 2)), tonumber("0x" .. hex:sub(3, 4)), tonumber("0x" .. hex:sub(5, 6))
+end
+
 Citizen.CreateThread(
     function()
         while true do
@@ -98,52 +103,54 @@ Citizen.CreateThread(
                 for k, id in ipairs(GetActivePlayers()) do
                     local src = GetPlayerServerId(id)
                     local nped_id = GetPlayerPed(id)
-                    --and nped_id ~= ped_id
-                    if ((NetworkIsPlayerActive( id ))) then
-                        x1, y1, z1 = table.unpack( GetEntityCoords( ped_id, true ) )
-                        x2, y2, z2 = table.unpack( GetEntityCoords( nped_id, true ) )
-                        distance = math.floor(GetDistanceBetweenCoords(x1,  y1,  z1,  x2,  y2,  z2,  true))
-                        x,y,z = table.unpack(GetPedBoneCoords(nped_id, 0, 0.0, 0.0, -0.9))
-                        px,py,pz = table.unpack(GetGameplayCamCoord())
+                    if ((NetworkIsPlayerActive(id))) then
+                        x1, y1, z1 = table.unpack(GetEntityCoords(ped_id, true))
+                        x2, y2, z2 = table.unpack(GetEntityCoords(nped_id, true))
+                        distance = math.floor(GetDistanceBetweenCoords(x1, y1, z1, x2, y2, z2, true))
+                        px, py, pz = table.unpack(GetGameplayCamCoord())
+
                         if nped_id ~= -1 and wall_users[src] ~= nil then
-                            if GetDistanceBetweenCoords(x, y, z, px, py, pz, true) <= walldistance then
+                            if GetDistanceBetweenCoords(x2, y2, z2, px, py, pz, true) <= walldistance then
                                 local armour = GetPedArmour(nped_id)
                                 local health = math.floor(GetEntityHealth(nped_id))
                                 local armahash = GetSelectedPedWeapon(nped_id)
                                 local skin = GetEntityModel(nped_id)
-                                local inv = false
-                                local defaultText = "~w~["..(wall_users[src].citizenid or "N/A").."] "..src.." - ~w~"..(wall_users[src].name or "N/A").."\n~w~Health:~g~ "..health.." ~w~| Armour:~b~ "..armour.."~w~"
+                                local inv = not IsEntityVisible(nped_id)
+
+                                local defaultText = "~w~[" .. (wall_users[src].citizenid or "N/A") .. "] " .. src .. " - ~w~" .. (wall_users[src].name or "N/A") .. "\n~w~Health:~g~ " .. health .. " ~w~| Armour:~b~ " .. armour .. "~w~"
                                 local extraText = "\n"
 
-                                if not IsEntityVisible(nped_id) then
-                                    extraText = extraText.."\n~r~INVISÍVEL~w~"
-                                    inv = true
+                                if inv then
+                                    extraText = extraText .. "\n~r~INVISÍVEL~w~"
                                 end
 
                                 if skin ~= 1885233650 and skin ~= -1667301416 then
-                                    extraText = extraText.."\n~w~Model: ~r~"..skin.."~w~"
+                                    extraText = extraText .. "\n~w~Model: ~r~" .. skin .. "~w~"
                                 end
 
                                 if wall_users[src].wallstats == true then
-                                    extraText = extraText.."\n~w~[~g~WALL ON~w~]"
+                                    extraText = extraText .. "\n~w~[~g~WALL ON~w~]"
                                 end
 
                                 if armas[tostring(armahash)] then
-                                    extraText = extraText.."\n~w~ "..(armas[tostring(armahash)] or "Arma Desconhecida"):upper()
+                                    extraText = extraText .. "\n~w~ " .. (armas[tostring(armahash)] or "Arma Desconhecida"):upper()
                                 end
 
-                                DrawText3D(x2, y2, z2+1.2, defaultText)
-                                DrawText3D(x2, y2, z2+0.8, extraText)
+                                DrawText3D(x2, y2, z2 + 1.2, defaultText)
+                                DrawText3D(x2, y2, z2 + 0.8, extraText)
 
-                                if health < 101 then --morto
-                                    DrawLine(x2, y2, z2, x1, y1, z1, 255, 0, 0, 255)
-                                elseif wall_users[src] and wall_users[src].staff and wall_users[src].staff ~= "" then --staff
-                                    DrawLine(x2, y2, z2, x1, y1, z1, 255, 0, 255, 255)
-                                elseif inv then --invisivel
-                                    DrawLine(x2, y2, z2, x1, y1, z1, 255, 255, 0, 255)
-                                else --normal
-                                    DrawLine(x2, y2, z2, x1, y1, z1, 0, 0, 255, 255)
+                                -- Dynamic Color Selection
+                                local r, g, b = 0, 0, 255 -- Final fallback
+
+                                if health < 101 then -- Morto
+                                    r, g, b = HexToRGB(wall_users[src].dead_color or "#FF0000")
+                                elseif inv then -- Invisivel
+                                    r, g, b = HexToRGB(wall_users[src].inv_color or "#FFFF00")
+                                else
+                                    r, g, b = HexToRGB(wall_users[src].color or "#0000FF")
                                 end
+
+                                DrawLine(x2, y2, z2, x1, y1, z1, r, g, b, 255)
                             end
                         end
                     end

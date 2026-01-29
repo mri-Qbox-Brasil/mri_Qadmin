@@ -4,8 +4,8 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(actionKey, selecte
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local player = tonumber(selectedData["Player"].value)
-    local Player = QBCore.Functions.GetPlayer(player)
+    local player = GetValue(selectedData, "Player")
+    local Player = QBCore.Functions.GetPlayer(tonumber(player))
 
     if not Player then
         return QBCore.Functions.Notify(source, locale("not_online"), 'error', 7500)
@@ -28,7 +28,7 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(actionKey, 
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
     local src = source
-    local citizenId = selectedData["Citizen ID"].value
+    local citizenId = GetValue(selectedData, "Citizen ID")
     local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
 
     if Player then
@@ -88,10 +88,10 @@ RegisterNetEvent('mri_Qadmin:server:GiveItem', function(actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
-    local target = selectedData["Player"].value
-    local item = selectedData["Item"].value
-    local amount = selectedData["Amount"].value
-    local Player = QBCore.Functions.GetPlayer(target)
+    local target = GetValue(selectedData, "Player")
+    local item = GetValue(selectedData, "Item")
+    local amount = GetValue(selectedData, "Amount")
+    local Player = QBCore.Functions.GetPlayer(tonumber(target))
 
     if not item or not amount then return end
     if not Player then
@@ -109,15 +109,17 @@ RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(actionKey, selectedDa
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
 
-    local item = selectedData["Item"].value
-    local amount = selectedData["Amount"].value
+    local item = GetValue(selectedData, "Item")
+    local amount = GetValue(selectedData, "Amount")
     local players = QBCore.Functions.GetPlayers()
 
     if not item or not amount then return end
 
     for _, id in pairs(players) do
         local Player = QBCore.Functions.GetPlayer(id)
-        Player.Functions.AddItem(item, amount)
-        QBCore.Functions.Notify(source, locale("give_item_all", amount .. " " .. item), "success", 7500)
+        if Player then
+            Player.Functions.AddItem(item, amount)
+        end
     end
+    QBCore.Functions.Notify(source, locale("give_item_all", amount .. " " .. item), "success", 7500)
 end)

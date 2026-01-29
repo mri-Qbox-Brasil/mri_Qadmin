@@ -1,6 +1,7 @@
 import React from 'react'
-import { MriCard, MriPageHeader, MriSelectSearch } from '@mriqbox/ui-kit'
-import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility, Languages, RotateCcw } from 'lucide-react'
+import { MriButton, MriCard, MriPageHeader, MriSelectSearch } from '@mriqbox/ui-kit'
+import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility, Languages, RotateCcw, Eye, Ghost, User, Plus, Trash2 } from 'lucide-react'
+import { useNui } from '@/context/NuiContext'
 
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/context/I18n'
@@ -26,6 +27,46 @@ const COLORS = [
 export default function Settings() {
     const { t, locale, preferredLocale, setPreferredLocale, supportedLanguages } = useI18n()
     const { theme, setTheme, accent, setAccent, scale, setScale } = useTheme()
+    const { sendNui } = useNui()
+
+    const [wallSettings, setWallSettings] = React.useState<any>(null)
+    const [availableGroups, setAvailableGroups] = React.useState<string[]>([])
+    const [newGroupColor, setNewGroupColor] = React.useState({ group: '', color: '#0000FF' })
+
+    const fetchWallSettings = React.useCallback(async () => {
+        try {
+            const data = await sendNui('mri_Qadmin:callback:GetWallSettings', {}, {
+                colors: { 'group.admin': '#00FF00', 'group.mod': '#FF00FF' },
+                settings: { dead: '#FF0000', invisible: '#FFFF00', default: '#0000FF' }
+            })
+            setWallSettings(data)
+
+            // Fetch groups for the selector
+            const aces = await sendNui("mri_Qadmin:callback:GetAces", {}, [])
+            if (Array.isArray(aces)) {
+                const uniqueGroups = Array.from(
+                    new Set(aces.map((a: any) => a.principal)),
+                ).filter((p: string) => p.startsWith("group.")) as string[]
+                setAvailableGroups(uniqueGroups)
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }, [sendNui])
+
+    React.useEffect(() => {
+        fetchWallSettings()
+    }, [fetchWallSettings])
+
+    const saveWallSetting = async (type: 'global' | 'principal', key: string, value: string) => {
+        await sendNui('mri_Qadmin:server:SaveWallSetting', { type, key, value })
+        fetchWallSettings()
+    }
+
+    const deleteGroupColor = async (principal: string) => {
+        await sendNui('mri_Qadmin:server:DeleteWallPrincipalColor', { principal })
+        fetchWallSettings()
+    }
 
     const handleScaleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value)
@@ -143,6 +184,126 @@ export default function Settings() {
                                 </div>
                                 <span className="text-xs font-medium text-muted-foreground">A+</span>
                             </div>
+                        </MriCard>
+                    </div>
+
+                    {/* Wall / ESP Settings */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-lg font-medium text-foreground pb-2 border-b border-border">
+                            <Eye className="w-5 h-5 text-primary" />
+                            {t('settings_wall_esp')}
+                        </div>
+
+                        <MriCard className="p-6 space-y-8 bg-card border-border">
+                            <p className="text-sm text-muted-foreground">{t('settings_wall_esp_desc')}</p>
+
+                            {wallSettings && (
+                                <>
+                                    {/* Global Wall Colors */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                                <Ghost className="w-3.5 h-3.5 text-red-500" /> {t('settings_wall_dead')}
+                                            </label>
+                                            <div className="flex items-center gap-3">
+                                                <CustomColorPicker
+                                                    color={wallSettings.settings.dead}
+                                                    onChange={(val) => saveWallSetting('global', 'dead', val)}
+                                                    active={true}
+                                                />
+                                                <span className="text-xs font-mono text-muted-foreground uppercase">{wallSettings.settings.dead}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                                <Sun className="w-3.5 h-3.5 text-yellow-500" /> {t('settings_wall_invisible')}
+                                            </label>
+                                            <div className="flex items-center gap-3">
+                                                <CustomColorPicker
+                                                    color={wallSettings.settings.invisible}
+                                                    onChange={(val) => saveWallSetting('global', 'invisible', val)}
+                                                    active={true}
+                                                />
+                                                <span className="text-xs font-mono text-muted-foreground uppercase">{wallSettings.settings.invisible}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                                <User className="w-3.5 h-3.5 text-blue-500" /> {t('settings_wall_default')}
+                                            </label>
+                                            <div className="flex items-center gap-3">
+                                                <CustomColorPicker
+                                                    color={wallSettings.settings.default}
+                                                    onChange={(val) => saveWallSetting('global', 'default', val)}
+                                                    active={true}
+                                                />
+                                                <span className="text-xs font-mono text-muted-foreground uppercase">{wallSettings.settings.default}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Group Colors */}
+                                    <div className="space-y-4 pt-6 border-t border-border/50">
+                                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings_wall_groups')}</h3>
+
+                                        <div className="space-y-3">
+                                            {Object.entries(wallSettings.colors).map(([principal, color]: [any, any]) => (
+                                                <div key={principal} className="flex items-center justify-between bg-muted/20 p-3 rounded-lg border border-border/50">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
+                                                        <span className="font-mono text-sm font-bold">{principal}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                         <CustomColorPicker
+                                                            color={color}
+                                                            onChange={(val) => saveWallSetting('principal', principal, val)}
+                                                            active={true}
+                                                        />
+                                                        <MriButton
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                                                            onClick={() => deleteGroupColor(principal)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </MriButton>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row items-end gap-3 bg-secondary/30 rounded-xl p-4 border border-border/50 mt-4">
+                                            <div className="flex-1 space-y-1.5 w-full">
+                                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">
+                                                    {t('settings_wall_select_group')}
+                                                </label>
+                                                <MriSelectSearch
+                                                    options={availableGroups.map(g => ({ label: g, value: g }))}
+                                                    value={newGroupColor.group}
+                                                    onChange={(val) => setNewGroupColor(prev => ({ ...prev, group: val }))}
+                                                    className="bg-background h-10"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-3 h-10">
+                                                <CustomColorPicker
+                                                    color={newGroupColor.color}
+                                                    onChange={(val) => setNewGroupColor(prev => ({ ...prev, color: val }))}
+                                                    active={true}
+                                                />
+                                                <MriButton
+                                                    onClick={() => saveWallSetting('principal', newGroupColor.group, newGroupColor.color)}
+                                                    disabled={!newGroupColor.group}
+                                                    className="h-10 border border-border/50"
+                                                >
+                                                    <Plus className="w-4 h-4 mr-2" /> {t('settings_wall_add_group')}
+                                                </MriButton>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </MriCard>
                     </div>
                 </div>

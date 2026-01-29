@@ -376,5 +376,14 @@
     "permissions_confirm_add_principal": "Tem certeza que deseja ADICIONAR herança '%s' -> '%s'?",
     "permissions_confirm_remove_principal": "Tem certeza que deseja REMOVER herança '%s' -> '%s'?",
     "permissions_confirm_add_ace": "Tem certeza que deseja ADICIONAR permissão '%s' para '%s'?",
-    "permissions_confirm_remove_ace": "Tem certeza que deseja REMOVER permissão '%s' de '%s'?"
+    "permissions_confirm_remove_ace": "Tem certeza que deseja REMOVER permissão '%s' de '%s'?",
+    "settings_wall_esp": "Configurações do Wall / ESP",
+    "settings_wall_esp_desc": "Personalize as cores das linhas do comando /wall baseado no estado e cargo do jogador.",
+    "settings_wall_dead": "Cor: Jogador Morto",
+    "settings_wall_invisible": "Cor: Jogador Invisível",
+    "settings_wall_default": "Cor: Padrão / Outros",
+    "settings_wall_groups": "Cores por Grupo (Herança)",
+    "settings_wall_add_group": "Adicionar Cor de Grupo",
+    "settings_wall_select_group": "Selecionar Grupo",
+    "settings_wall_group_color": "Cor do Grupo"
 }

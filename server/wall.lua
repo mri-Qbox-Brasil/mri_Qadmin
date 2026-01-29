@@ -4,6 +4,51 @@ GlobalState["mri_wall"] = "mri_wall:"..math.random(100000000,200000000)
 local encrypt = GlobalState["mri_wall"]
 
 local wall_infos = {}
+local principal_colors = {}
+local wall_settings = {
+    dead = "#FF0000",
+    invisible = "#FFFF00",
+    default = "#0000FF"
+}
+
+local function LoadWallData()
+    local colors = MySQL.query.await('SELECT * FROM mri_qadmin_wall_colors') or {}
+    principal_colors = {}
+    for _, c in ipairs(colors) do
+        principal_colors[c.principal] = c.color
+    end
+
+    local settings = MySQL.query.await('SELECT * FROM mri_qadmin_settings WHERE name LIKE "wall_%"') or {}
+    for _, s in ipairs(settings) do
+        local key = s.name:gsub("wall_", "")
+        wall_settings[key] = s.value
+    end
+    Debug('Wall Data Loaded', #colors .. ' colors, ' .. #settings .. ' settings')
+end
+
+local function GetPlayerESPColor(src)
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return wall_settings.default end
+
+    local license = 'license:' .. Player.PlayerData.license
+    local identifier = 'identifier.' .. license
+
+    local bestColor = wall_settings.default
+
+    -- Check principals in principal_colors
+    -- We sort them to ensure consistent priority (e.g. group.admin > group.mod)
+    local sortedPrincipals = {}
+    for p, _ in pairs(principal_colors) do table.insert(sortedPrincipals, p) end
+    table.sort(sortedPrincipals) -- Lexicographical order as a simple priority
+
+    for _, principal in ipairs(sortedPrincipals) do
+        if IsPrincipalAceAllowed(identifier, principal) or IsPrincipalAceAllowed(license, principal) then
+            bestColor = principal_colors[principal]
+        end
+    end
+
+    return bestColor
+end
 
 local function updateWallInfos(source)
     local Player = QBCore.Functions.GetPlayer(source)
@@ -19,6 +64,9 @@ local function updateWallInfos(source)
             wall_infos[source].name = name
         end
         wall_infos[source].wallstats = false
+        wall_infos[source].color = GetPlayerESPColor(source)
+        wall_infos[source].dead_color = wall_settings.dead
+        wall_infos[source].inv_color = wall_settings.invisible
     end
 end
 
@@ -63,9 +111,58 @@ AddEventHandler('onResourceStart', function(resourceName)
     end
 
     local Players = QBCore.Functions.GetPlayers()
+    LoadWallData()
     for _, PlayerId in pairs(Players) do
         updateWallInfos(PlayerId)
     end
+end)
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+-- NUI CALLBACKS & EVENTS
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+lib.callback.register('mri_Qadmin:callback:GetWallSettings', function(source)
+    return {
+        colors = principal_colors,
+        settings = wall_settings
+    }
+end)
+
+RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
+    local src = source
+    if not CheckPerms(src, 'admin') then return end
+
+    if type == 'global' then
+        wall_settings[key] = value
+        MySQL.query.await('INSERT INTO mri_qadmin_settings (name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', { 'wall_' .. key, value, value })
+    elseif type == 'principal' then
+        principal_colors[key] = value
+        MySQL.query.await('INSERT INTO mri_qadmin_wall_colors (principal, color) VALUES (?, ?) ON DUPLICATE KEY UPDATE color = ?', { key, value, value })
+    end
+
+    -- Refresh all online players colors
+    local Players = QBCore.Functions.GetPlayers()
+    for _, id in pairs(Players) do
+        updateWallInfos(id)
+    end
+
+    TriggerClientEvent('QBCore:Notify', src, 'Wall settings updated', 'success')
+end)
+
+RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principal)
+    local src = source
+    if not CheckPerms(src, 'admin') then return end
+
+    principal_colors[principal] = nil
+    MySQL.query.await('DELETE FROM mri_qadmin_wall_colors WHERE principal = ?', { principal })
+
+    -- Refresh all online players colors
+    local Players = QBCore.Functions.GetPlayers()
+    for _, id in pairs(Players) do
+        updateWallInfos(id)
+    end
+
+    TriggerClientEvent('QBCore:Notify', src, 'Principal color removed', 'success')
 end)
 
 AddEventHandler('playerDropped', function()

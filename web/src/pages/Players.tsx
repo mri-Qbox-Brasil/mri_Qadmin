@@ -640,16 +640,22 @@ export default function Players() {
         {showMoneyModal && selectedPlayer && (
           <MoneyModal isGiving={isGivingMoney} defaultType={initialMoneyType} playerId={selectedPlayer.id} onClose={() => setShowMoneyModal(false)} onSubmit={(type, amount) => {
             sendAction(isGivingMoney ? 'give_money' : 'remove_money', { Type: { value: type }, Amount: { value: amount } })
+            setShowMoneyModal(false)
           }} />
         )}
 
         {showGiveItemModal && selectedPlayer && (
           <GiveItemModal
-            initialPlayerId={selectedPlayer.id}
+            initialPlayerId={String(selectedPlayer.id)}
             disablePlayerSelect={true}
             onClose={() => setShowGiveItemModal(false)}
             onSubmit={(targetId, item, amount) => {
-                sendAction('give_item_player', { Item: { value: item }, Amount: { value: amount } })
+                sendAction('give_item_player', {
+                    Player: { value: targetId },
+                    Item: { value: item },
+                    Amount: { value: amount }
+                })
+                setShowGiveItemModal(false)
             }}
           />
         )}
@@ -693,10 +699,11 @@ export default function Players() {
             }
             onClose={() => setShowGroupModal(false)}
             onSubmit={(group, grade) => {
-            const dataName = groupType === 'job' ? 'set_job' : 'set_gang'
-            const fieldName = groupType === 'job' ? 'Job' : 'Gang'
-            sendAction(dataName, { [fieldName]: { value: group }, Grade: { value: grade } })
-          }} />
+              const dataName = groupType === 'job' ? 'set_job' : 'set_gang'
+              const fieldName = groupType === 'job' ? 'Job' : 'Gang'
+              sendAction(dataName, { [fieldName]: { value: group }, Grade: { value: grade } })
+              setShowGroupModal(false)
+            }} />
         )}
 
         {showDeleteVehicleConfirm && pendingDeletePlate && (
