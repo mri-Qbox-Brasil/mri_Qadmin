@@ -124,20 +124,29 @@ function PrincipalGroup({
                    </span>
                 )}
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isPending) onRemove(p);
-                  }}
-                  className={`ml-auto transition-colors ${isPending ? "text-muted-foreground/30" : "text-muted-foreground hover:text-red-500"}`}
-                  disabled={isPending}
-                >
-                  {isPending ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                </button>
+                <div className="ml-auto flex items-center gap-3">
+                    {p.parent.startsWith('group.') && (
+                        <CustomColorPicker
+                            color={principalColors[p.parent] || '#0000FF'}
+                            onChange={(val) => onColorChange(p.parent, val)}
+                            active={!!principalColors[p.parent]}
+                        />
+                    )}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isPending) onRemove(p);
+                        }}
+                        className={`transition-colors ${isPending ? "text-muted-foreground/30" : "text-muted-foreground hover:text-red-500"}`}
+                        disabled={isPending}
+                    >
+                        {isPending ? (
+                            <Spinner size="sm" />
+                        ) : (
+                            <Trash2 className="w-4 h-4" />
+                        )}
+                    </button>
+                </div>
               </div>
             );
           })}

@@ -161,3 +161,22 @@ Citizen.CreateThread(
         end
     end
 )
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+-- NUI CALLBACKS
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+RegisterNUICallback("mri_Qadmin:callback:GetWallSettings", function(data, cb)
+    local results = lib.callback.await('mri_Qadmin:callback:GetWallSettings', false)
+    cb(results or {})
+end)
+
+RegisterNUICallback("mri_Qadmin:server:SaveWallSetting", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:SaveWallSetting', data.type, data.key, data.value)
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:DeleteWallPrincipalColor", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:DeleteWallPrincipalColor', data.principal)
+    cb('ok')
+end)
