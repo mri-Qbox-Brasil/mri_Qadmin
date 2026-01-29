@@ -33,12 +33,12 @@ end
 
 local function GetPlayerESPColor(src)
     local Player = QBCore.Functions.GetPlayer(src)
-    if not Player then return wall_settings.default end
+    if not Player then return nil end
 
     local license = 'license:' .. Player.PlayerData.license
     local identifier = 'identifier.' .. license
 
-    local bestColor = wall_settings.default
+    local bestColor = nil
 
     -- Check principals in principal_colors
     -- We sort them to ensure consistent priority (e.g. group.admin > group.mod)
@@ -69,9 +69,10 @@ local function updateWallInfos(source)
             wall_infos[source].name = name
         end
         wall_infos[source].wallstats = false
-        wall_infos[source].color = GetPlayerESPColor(source)
+        wall_infos[source].group_color = GetPlayerESPColor(source)
         wall_infos[source].dead_color = wall_settings.dead
         wall_infos[source].inv_color = wall_settings.invisible
+        wall_infos[source].default_color = wall_settings.default
     end
 end
 
@@ -90,13 +91,16 @@ local function enableWall(source)
 end
 
 QBCore.Commands.Add("wall", "Enable/Disable wall", {}, false, function(source, args)
+    if not CheckPerms(source, 'qadmin.action.enable_wall') then return end
     enableWall(source)
-end, "wall")
+end)
 
 RegisterNetEvent("mri_Qadmin:server:enableWall", function(data)
-    Debug('wall_source', source)
+    local src = source
+    if not CheckPerms(src, 'qadmin.action.enable_wall') then return end
+    Debug('wall_source', src)
     Debug('wall_data', data)
-    enableWall(source)
+    enableWall(src)
 end)
 
 QBCore.Functions.CreateCallback('mri_wall:getWallInfos', function(source, cb)

@@ -142,12 +142,14 @@ Citizen.CreateThread(
                                 -- Dynamic Color Selection
                                 local r, g, b = 0, 0, 255 -- Final fallback
 
-                                if health < 101 then -- Morto
+                                if wall_users[src].group_color then -- Cor de Permissão (Prioridade Máxima)
+                                    r, g, b = HexToRGB(wall_users[src].group_color)
+                                elseif health < 101 then -- Morto
                                     r, g, b = HexToRGB(wall_users[src].dead_color or "#FF0000")
                                 elseif inv then -- Invisivel
                                     r, g, b = HexToRGB(wall_users[src].inv_color or "#FFFF00")
-                                else
-                                    r, g, b = HexToRGB(wall_users[src].color or "#0000FF")
+                                else -- Vivo / Padrão
+                                    r, g, b = HexToRGB(wall_users[src].default_color or "#0000FF")
                                 end
 
                                 DrawLine(x2, y2, z2, x1, y1, z1, r, g, b, 255)
