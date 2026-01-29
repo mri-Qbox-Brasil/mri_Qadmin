@@ -399,7 +399,6 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
     end
 end)
 
-
 -- Set Gang
 RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
@@ -454,7 +453,6 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
-
 
 -- Set Perms
 RegisterNetEvent("mri_Qadmin:server:SetPerms", function(data, selectedData)

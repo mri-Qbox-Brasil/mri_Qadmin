@@ -23,6 +23,7 @@ local function DisabledControls()
     EnableControlAction(0, 221, true) -- Mouse Y
     EnableControlAction(0, 245, true) -- Chat
     EnableControlAction(0, 200, true) -- ESC
+    EnableControlAction(0, 199, true) -- P
 end
 
 -- Checks if a control is always pressed (pressed or disabled)
@@ -225,10 +226,12 @@ local function ToggleNoclip()
         CreateThread(function()
             while noclip do
                 Wait(0)
-                DisabledControls()
-                UpdateCameraRotation()
-                UpdateSpeed()
-                UpdateMovement()
+                if not IsPauseMenuActive() then
+                    DisabledControls()
+                    UpdateCameraRotation()
+                    UpdateSpeed()
+                    UpdateMovement()
+                end
             end
         end)
     else
