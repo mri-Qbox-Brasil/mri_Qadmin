@@ -9,6 +9,8 @@ export const MOCK_PLAYERS = [
         ping: 25,
         bucket: 1,
         online: true,
+        health: 100,
+        armor: 100,
         metadata: { verified: true },
         job: { label: "Police", name: "police", grade: { name: "Officer", level: 1 } },
         gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },

@@ -38,10 +38,13 @@ import {
     RefreshCw,
     Check,
     Navigation,
-    Plus,
-    Minus,
+    RotateCcw,
     UserMinus,
-    UserCog
+    UserCog,
+    Beef,
+    GlassWater,
+    Shield,
+    Brain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
@@ -113,6 +116,33 @@ export default function Players() {
   const [pendingDeletePlate, setPendingDeletePlate] = useState<string | null>(null)
   const [showClearInventoryConfirm, setShowClearInventoryConfirm] = useState(false)
   const [showDismissConfirm, setShowDismissConfirm] = useState<'job' | 'gang' | null>(null)
+  const [showVitalConfirm, setShowVitalConfirm] = useState<{ vital: string; label: string; value: number } | null>(null)
+
+  interface Player {
+    id: string | number
+    cid?: string
+    license?: string
+    name: string
+    job: { label: string; grade: { name: string; level: number } }
+    gang: { label: string; grade: { name: string; level: number } }
+    cash: number
+    bank: number
+    crypto: number
+    vehicles?: any[] // Assuming vehicles is an array of any for now
+    online: boolean
+    ping?: number
+    bucket?: number
+    health?: number
+    armor?: number
+    last_loggedout?: number | string
+    metadata?: {
+      verified?: boolean
+      hunger?: number
+      thirst?: number
+      stress?: number
+      isdead?: boolean
+    }
+  }
 
   // Background Sync Logic
   const syncRemainingPages = async (startPage: number, totalPages: number, currentSearch: string) => {
@@ -244,9 +274,46 @@ export default function Players() {
 
   const { on, off } = useNui()
   useEffect(() => {
+    const handleVitals = (data: any) => {
+        console.log('[DEBUG] Vitals received:', data)
+        setPlayers(prev => prev.map(p => {
+            if (String(p.id) === String(data.id)) {
+                return { ...p, health: data.health, armor: data.armor, metadata: data.metadata }
+            }
+            return p
+        }))
+
+        setSelectedPlayer((prev: any) => {
+            if (prev && String(prev.id) === String(data.id)) {
+                console.log('[DEBUG] Updating selected player directly')
+                return { ...prev, health: data.health, armor: data.armor, metadata: data.metadata }
+            }
+            return prev
+        })
+    }
+
     on('RefreshPlayers', refreshPlayers)
-    return () => off('RefreshPlayers', refreshPlayers)
+    on('UpdatePlayerVitals', handleVitals)
+    return () => {
+        off('RefreshPlayers', refreshPlayers)
+        off('UpdatePlayerVitals', handleVitals)
+    }
   }, [pagination.page, search])
+
+  // Sync selected player when list updates
+  useEffect(() => {
+      if (selectedPlayer) {
+          const found = players.find(p => String(p.id) === String(selectedPlayer.id))
+          if (found) {
+              // Only update if something changed to avoid infinity loops
+              if (found.health !== selectedPlayer.health ||
+                  found.armor !== selectedPlayer.armor ||
+                  JSON.stringify(found.metadata) !== JSON.stringify(selectedPlayer.metadata)) {
+                  setSelectedPlayer(found)
+              }
+          }
+      }
+  }, [players, selectedPlayer, setSelectedPlayer])
 
   const handlePageChange = (newPage: number) => {
       fetchPlayers(newPage, search)
@@ -394,8 +461,8 @@ export default function Players() {
             {viewMode === 'list' && (
                 <div className="h-full flex">
                     <div className="w-96 flex flex-col border-r border-border bg-card/10 h-full relative">
-                         <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('all_players')} ({pagination.total})</div>
-                         <div className="flex-1 min-h-0">
+                     <div className="px-4 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('all_players')} ({pagination.total})</div>
+                     <div className="flex-1 min-h-0 pt-1">
                              <Virtuoso
                                 style={{ height: '100%' }}
                                 data={players}
@@ -442,11 +509,53 @@ export default function Players() {
                         <div className="flex-1 pt-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <h2 className="text-3xl font-bold tracking-tight text-foreground">{selectedPlayer.name}</h2>
+                                <div className="flex items-center gap-2 pt-1">
+                                    {/* Alive/Dead Status */}
+                                    <span className={cn(
+                                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap",
+                                        selectedPlayer.health <= 101 ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-green-500/10 text-green-500 border-green-500/20"
+                                    )}>
+                                        {(selectedPlayer.health <= 101 || selectedPlayer.metadata?.isdead) ? t('vitals_status_dead') : t('vitals_status_alive')}
+                                    </span>
+
+                                    {/* Verified/Suspect Status */}
+                                    {selectedPlayer.metadata?.verified ? (
+                                        <span className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded border border-border font-bold uppercase tracking-wider whitespace-nowrap">
+                                            {t('status_verified')}
+                                        </span>
+                                    ) : (
+                                        <span className="bg-red-500/10 text-red-500 text-[10px] px-2 py-0.5 rounded border border-red-500/20 font-bold uppercase tracking-wider whitespace-nowrap">
+                                            {t('status_suspect')}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex items-center gap-4 text-muted-foreground text-sm mb-4">
-                                {selectedPlayer.id && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs">{t('id')}: {selectedPlayer.id}</span>}
-                                {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('ping')}: {selectedPlayer.ping || 0}ms</span>}
-                                {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('bucket')}: {selectedPlayer.bucket}</span>}
+                            <div className="flex gap-4 text-muted-foreground text-sm mb-4 flex-col">
+                                <div className="flex gap-2">
+                                    {selectedPlayer.id && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-foreground">{t('id')}: {selectedPlayer.id}</span>}
+                                    {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('ping')}: {selectedPlayer.ping || 0}ms</span>}
+                                    {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('bucket')}: {selectedPlayer.bucket}</span>}
+                                </div>
+                                {selectedPlayer.online && (
+                                    <div className="flex gap-3">
+                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_health')}>
+                                            <Heart className="w-3.5 h-3.5 text-red-500" />
+                                            <span>{Math.round((selectedPlayer.health / 200) * 100)}%</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_armor')}>
+                                            <Shield className="w-3.5 h-3.5 text-blue-500" />
+                                            <span>{Math.round(selectedPlayer.armor)}%</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_hunger')}>
+                                            <Beef className="w-3.5 h-3.5 text-orange-500" />
+                                            <span>{Math.round(selectedPlayer.metadata?.hunger || 0)}%</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_thirst')}>
+                                            <GlassWater className="w-3.5 h-3.5 text-cyan-500" />
+                                            <span>{Math.round(selectedPlayer.metadata?.thirst || 0)}%</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -457,6 +566,108 @@ export default function Players() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                        {selectedPlayer.online && (
+                            <section>
+                                <SectionHeader icon={Heart} title={t('vitals_section_title')} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                    {/* Health */}
+                                    <div
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        onClick={() => setShowVitalConfirm({ vital: 'health', label: t('vitals_health'), value: 200 })}
+                                    >
+                                        <div className="flex justify-between items-center text-xs font-medium">
+                                            <span className="flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-red-500" /> {t('vitals_health')}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span>{Math.round((selectedPlayer.health / 200) * 100)}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
+                                            <div
+                                                className="h-full bg-red-500 transition-all duration-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
+                                                style={{ width: `${Math.min(100, (selectedPlayer.health / 200) * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Armor */}
+                                    <div
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        onClick={() => setShowVitalConfirm({ vital: 'armor', label: t('vitals_armor'), value: 0 })}
+                                    >
+                                        <div className="flex justify-between items-center text-xs font-medium">
+                                            <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-blue-500" /> {t('vitals_armor')}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span>{Math.round(selectedPlayer.armor)}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
+                                            <div
+                                                className="h-full bg-blue-500 transition-all duration-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
+                                                style={{ width: `${Math.min(100, selectedPlayer.armor)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Hunger */}
+                                    <div
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        onClick={() => setShowVitalConfirm({ vital: 'hunger', label: t('vitals_hunger'), value: 100 })}
+                                    >
+                                        <div className="flex justify-between items-center text-xs font-medium">
+                                            <span className="flex items-center gap-1.5"><Beef className="w-3.5 h-3.5 text-orange-500" /> {t('vitals_hunger')}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span>{Math.round(selectedPlayer.metadata?.hunger || 0)}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
+                                            <div
+                                                className="h-full bg-orange-500 transition-all duration-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]"
+                                                style={{ width: `${Math.min(100, selectedPlayer.metadata?.hunger || 0)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Thirst */}
+                                    <div
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        onClick={() => setShowVitalConfirm({ vital: 'thirst', label: t('vitals_thirst'), value: 100 })}
+                                    >
+                                        <div className="flex justify-between items-center text-xs font-medium">
+                                            <span className="flex items-center gap-1.5"><GlassWater className="w-3.5 h-3.5 text-cyan-500" /> {t('vitals_thirst')}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span>{Math.round(selectedPlayer.metadata?.thirst || 0)}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
+                                            <div
+                                                className="h-full bg-cyan-500 transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.4)]"
+                                                style={{ width: `${Math.min(100, selectedPlayer.metadata?.thirst || 0)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Stress */}
+                                    <div
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        onClick={() => setShowVitalConfirm({ vital: 'stress', label: t('vitals_stress'), value: 0 })}
+                                    >
+                                        <div className="flex justify-between items-center text-xs font-medium">
+                                            <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5 text-purple-500" /> {t('vitals_stress')}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span>{Math.round(selectedPlayer.metadata?.stress || 0)}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
+                                            <div
+                                                className="h-full bg-purple-500 transition-all duration-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"
+                                                style={{ width: `${Math.min(100, selectedPlayer.metadata?.stress || 0)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+
                         <section>
                             <SectionHeader icon={Ban} title={t('actions_quick')} />
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -751,6 +962,17 @@ export default function Players() {
                     setShowDismissConfirm(null)
                     setTimeout(() => refreshPlayers(), 500)
                 }}
+            />
+        )}
+
+        {showVitalConfirm && (
+            <ConfirmAction
+                text={t('confirm_vital_action', [showVitalConfirm.label])}
+                onConfirm={() => {
+                    sendNui('mri_Qadmin:server:SetVital', { targetId: selectedPlayer?.id, vital: showVitalConfirm.vital, value: showVitalConfirm.value })
+                    setShowVitalConfirm(null)
+                }}
+                onCancel={() => setShowVitalConfirm(null)}
             />
         )}
     </div>

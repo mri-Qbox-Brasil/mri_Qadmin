@@ -203,6 +203,29 @@ RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
     -- Optional: Notify usually not needed for silent sync, but if user explicitly asked
     -- TriggerEvent('QBCore:Notify', 'Permissions synchronized', 'primary', 2000)
 end)
+
+RegisterNetEvent('mri_Qadmin:client:UpdatePlayerVitals', function(data)
+    Debug("Recebido UpdatePlayerVitals para ID: " .. tostring(data.id))
+    SendNUIMessage({
+        action = 'UpdatePlayerVitals',
+        data = data
+    })
+end)
+
+RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst)
+    Debug("HUD UpdateNeeds:", newHunger, newThirst)
+    TriggerServerEvent('mri_Qadmin:server:SyncVitals', { hunger = newHunger, thirst = newThirst })
+end)
+
+RegisterNetEvent('hud:client:UpdateStress', function(newStress)
+    Debug("HUD UpdateStress:", newStress)
+    TriggerServerEvent('mri_Qadmin:server:SyncVitals', { stress = newStress })
+end)
+
+RegisterNetEvent("ars_ambulancejob:updateDeathStatus", function(death)
+    TriggerServerEvent('mri_Qadmin:server:SyncDeathStatus', death.isDead)
+end)
+
 RegisterNUICallback("getData", function(data, cb)
     local results = GetCoreData()
     cb(results)
@@ -251,5 +274,10 @@ end)
 
 RegisterNUICallback("remove_ace", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:RemoveAce', data.id)
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:SetVital", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:SetVital', data.targetId, data.vital, data.value)
     cb('ok')
 end)

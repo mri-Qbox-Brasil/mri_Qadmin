@@ -378,12 +378,12 @@ Config.Actions = {
         label = "Reviver Todos",
         type = "server",
         event = "mri_Qadmin:server:ReviveAll",
-        perms = "qadmin.action.revive_all",
+        perms = "qadmin.action.revive",
     },
 
     ["revive_player"] = {
         label = "Reviver Jogador",
-        perms = "qadmin.action.revive_player",
+        perms = "qadmin.action.revive",
         dropdown = {
             { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
             { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:Revive" },
@@ -394,7 +394,7 @@ Config.Actions = {
         label = "Reviver Raio",
         type = "server",
         event = "mri_Qadmin:server:ReviveRadius",
-        perms = "qadmin.action.revive_radius",
+        perms = "qadmin.action.revive",
     },
 
     ["refuel_vehicle"] = {
@@ -750,7 +750,7 @@ Config.PlayerActions = {
     ["revivePlayer"] = {
         label = "Reviver",
         event = "mri_Qadmin:server:Revive",
-        perms = "qadmin.action.revive_player",
+        perms = "qadmin.action.revive",
         type = "server"
     },
     ["verifyPlayer"] = {

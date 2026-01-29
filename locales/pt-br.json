@@ -388,5 +388,15 @@
     "settings_wall_group_color": "Cor do Grupo",
     "restore_default": "Restaurar Padrão",
     "settings_wall_confirm_delete_group": "Tem certeza que deseja remover a cor personalizada para o grupo '%s'?",
-    "search_groups": "Procurar grupos..."
+    "search_groups": "Procurar grupos...",
+    "vitals_health": "Saúde",
+    "vitals_armor": "Colete",
+    "vitals_hunger": "Fome",
+    "vitals_thirst": "Sede",
+    "vitals_stress": "Estresse",
+    "vitals_status_alive": "Vivo",
+    "vitals_status_dead": "Morto",
+    "vitals_section_title": "Estado de Saúde e Vitais",
+    "vitals_set_success": "Vital %s definido para %s para o ID %s",
+    "confirm_vital_action": "Deseja realizar a ação para o vital: %s?"
 }

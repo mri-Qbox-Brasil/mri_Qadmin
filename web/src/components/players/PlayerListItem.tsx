@@ -11,9 +11,15 @@ interface Player {
   online: boolean
   ping?: number
   bucket?: number
+  health?: number
+  armor?: number
   last_loggedout?: number | string
   metadata?: {
     verified?: boolean
+    hunger?: number
+    thirst?: number
+    stress?: number
+    isdead?: boolean
   }
 }
 
@@ -54,8 +60,10 @@ export default function PlayerListItem({ player, isSelected, onClick, onAction }
     <div
         onClick={() => onClick(player)}
         className={cn(
-            "group flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all border border-transparent hover:bg-muted/50",
-            isSelected ? "bg-muted/80 border-primary/30 shadow-[0_0_15px_-5px_var(--primary)]" : "bg-card"
+            "group flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border mb-2 ml-2 mr-2",
+            isSelected
+                ? "bg-muted border-primary shadow-[0_0_15px_-5px_var(--primary)]"
+                : "bg-card border-border hover:border-primary/50 hover:bg-muted/30"
         )}
     >
         <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-primary font-bold border border-border text-sm shrink-0">
@@ -66,11 +74,21 @@ export default function PlayerListItem({ player, isSelected, onClick, onAction }
                 <div className={cn("font-medium truncate text-sm", isSelected ? "text-primary" : "text-foreground")}>
                     {player.name}
                 </div>
-                {player.metadata?.verified ? (
-                    <div className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 rounded border border-border font-bold tracking-wider">{t('status_verified')}</div>
-                ) : (
-                    <div className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('status_suspect')}</div>
-                )}
+                <div className="flex items-center gap-1">
+                    {player.online && player.health !== undefined && (
+                        <span className={cn(
+                            "text-[10px] px-2 py-0.5 rounded border font-bold tracking-wider",
+                            (player.health <= 101 || player.metadata?.isdead) ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-green-500/10 text-green-500 border-green-500/20"
+                        )}>
+                            {(player.health <= 101 || player.metadata?.isdead) ? t('vitals_status_dead') : t('vitals_status_alive')}
+                        </span>
+                    )}
+                    {player.metadata?.verified ? (
+                        <div className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 rounded border border-border font-bold tracking-wider">{t('status_verified')}</div>
+                    ) : (
+                        <div className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('status_suspect')}</div>
+                    )}
+                </div>
             </div>
 
             <div className="flex items-center justify-between">

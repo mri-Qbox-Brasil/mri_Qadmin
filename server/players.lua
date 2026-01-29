@@ -93,11 +93,9 @@ local function getPlayers(page, pageSize, search)
                 money = playerData.money.cash,
                 bank = playerData.money.bank,
                 crypto = playerData.money.crypto,
-                vehicles = {}, -- Load vehicles only if needed? For basic list we might not need them? Existing code loaded them. We'll skip for list view performance, load deep on detail?
-                -- Existing code loaded vehicles for ALL players. It's expensive (N+1).
-                -- Optimization: Return empty vehicles here, and load them on specific "GetPlayerDetails" or just skip for list.
-                -- User plan didn't explicitly remove vehicles, but "fetch specific data... only for ~20 players".
-                -- We will fetch vehicles for the 20 players we RETURN.
+                health = GetEntityHealth(GetPlayerPed(k)),
+                armor = GetPedArmour(GetPlayerPed(k)),
+                vehicles = {},
                 metadata = playerData.metadata,
                 last_loggedout = playerData.lastLoggedOut,
                 online = true
@@ -497,4 +495,115 @@ RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(data, selectedData)
     TriggerClientEvent('mri_Qadmin:client:removeStress', targetId)
 
     QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("removed_stress_player"), 'success', 5000)
+end)
+
+-- Set Vital (Unified event for Health, Armor, Hunger, Thirst, Stress)
+RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
+    if not CheckPerms(source, 'qadmin.action.revive') then return end
+    local src = source
+    local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
+
+    if not tPlayer then
+        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        return
+    end
+
+    if vital == "health" then
+        -- Always trigger revive command for consistency
+        TriggerClientEvent('mri_Qadmin:client:ExecuteCommand', src, ('revive %s'):format(targetId))
+    elseif vital == "armor" then
+        local ped = GetPlayerPed(tonumber(targetId))
+        SetPedArmour(ped, tonumber(value))
+    elseif vital == "hunger" or vital == "thirst" or vital == "stress" then
+        tPlayer.Functions.SetMetaData(vital, tonumber(value))
+    end
+
+    -- Broadcast update immediate (SetMetaData event will also trigger sync, but health/armor might not)
+    local ped = GetPlayerPed(tonumber(targetId))
+    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
+        id = tonumber(targetId),
+        health = GetEntityHealth(ped),
+        armor = GetPedArmour(ped),
+        metadata = tPlayer.PlayerData.metadata
+    })
+
+    -- Notify staff
+    QBCore.Functions.Notify(src, locale("vitals_set_success"):format(vital, value, targetId), "success")
+end)
+
+-- Helper to broadcast vitals/metadata updates to all admins
+local function broadcastVitalsUpdate(playerId)
+    local player = QBCore.Functions.GetPlayer(playerId)
+    if not player then return end
+
+    local ped = GetPlayerPed(playerId)
+    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
+        id = playerId,
+        health = GetEntityHealth(ped),
+        armor = GetPedArmour(ped),
+        metadata = player.PlayerData.metadata
+    })
+end
+
+-- Sync Vitals from Client (e.g., from HUD events)
+RegisterNetEvent("mri_Qadmin:server:SyncVitals", function(vitals)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    if not player then return end
+
+    -- This is now a simple broadcast bridge. We do NOT call SetMetaData here
+    -- to avoid infinite HUD update loops and persistent data overwrites.
+    -- Direct changes are only made via 'mri_Qadmin:server:SetVital' (buttons).
+
+    local metadataClone = {}
+    for k, v in pairs(player.PlayerData.metadata) do
+        metadataClone[k] = v
+    end
+    for k, v in pairs(vitals) do
+        metadataClone[k] = tonumber(v)
+    end
+
+    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
+        id = src,
+        health = GetEntityHealth(GetPlayerPed(src)),
+        armor = GetPedArmour(GetPlayerPed(src)),
+        metadata = metadataClone
+    })
+end)
+
+-- Sync Death Status from Client
+RegisterNetEvent('mri_Qadmin:server:SyncDeathStatus', function(isDead)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    if not player then return end
+
+    -- Sync to metadata for standard QBCore compatibility
+    player.Functions.SetMetaData("isdead", isDead)
+end)
+
+-- Real-time Metadata Sync
+AddEventHandler('QBCore:Server:SetMetaData', function(source, meta, value)
+    local src = source
+    if meta == 'hunger' or meta == 'thirst' or meta == 'stress' or meta == 'isdead' then
+        Debug("SetMetaData detectado para ID: " .. tostring(src), meta, value)
+        broadcastVitalsUpdate(src)
+    end
+end)
+
+-- StateBag handlers for universal death status coverage
+local function GetPlayerFromBagName(bagName)
+    local playerHandle = bagName:gsub('player:', '')
+    return tonumber(playerHandle)
+end
+
+AddStateBagChangeHandler("dead", nil, function(bagName, key, value, _unused, replicated)
+    local playerId = GetPlayerFromBagName(bagName)
+    if not playerId then return end
+    broadcastVitalsUpdate(playerId)
+end)
+
+AddStateBagChangeHandler("isdead", nil, function(bagName, key, value, _unused, replicated)
+    local playerId = GetPlayerFromBagName(bagName)
+    if not playerId then return end
+    broadcastVitalsUpdate(playerId)
 end)
