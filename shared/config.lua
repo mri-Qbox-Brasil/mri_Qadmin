@@ -21,7 +21,7 @@ Config.Debug = true -- Set to true to enable debug prints
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"
 Config.VehicleImages = "" -- Custom URL for vehicle images (e.g. "https://cdn.example.com/vehicles/")
-Config.LiveVideoMethod = "screenshot" -- "screenshot" (Chunked/Resize) or "webrtc" (External Server)
+Config.LiveVideoMethod = "webrtc" -- "screenshot" (Chunked/Resize) or "webrtc" (External Server)
 Config.WebRTCUrl = "ws://localhost:3000" -- URL for WebRTC Signaling Server if method is webrtc
 
 Config.Actions = {
