@@ -536,26 +536,6 @@ export default function Players() {
                                     {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('ping')}: {selectedPlayer.ping || 0}ms</span>}
                                     {selectedPlayer.online && <span className="bg-muted/50 border border-border px-2 py-0.5 rounded font-mono text-xs text-muted-foreground">{t('bucket')}: {selectedPlayer.bucket}</span>}
                                 </div>
-                                {selectedPlayer.online && (
-                                    <div className="flex gap-3">
-                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_health')}>
-                                            <Heart className="w-3.5 h-3.5 text-red-500" />
-                                            <span>{Math.round((selectedPlayer.health / 200) * 100)}%</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_armor')}>
-                                            <Shield className="w-3.5 h-3.5 text-blue-500" />
-                                            <span>{Math.round(selectedPlayer.armor)}%</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_hunger')}>
-                                            <Beef className="w-3.5 h-3.5 text-orange-500" />
-                                            <span>{Math.round(selectedPlayer.metadata?.hunger || 0)}%</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-xs" title={t('vitals_thirst')}>
-                                            <GlassWater className="w-3.5 h-3.5 text-cyan-500" />
-                                            <span>{Math.round(selectedPlayer.metadata?.thirst || 0)}%</span>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -572,7 +552,7 @@ export default function Players() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                                     {/* Health */}
                                     <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] transition-all cursor-pointer select-none group/vital"
                                         onClick={() => setShowVitalConfirm({ vital: 'health', label: t('vitals_health'), value: 200 })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
@@ -591,7 +571,7 @@ export default function Players() {
 
                                     {/* Armor */}
                                     <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all cursor-pointer select-none group/vital"
                                         onClick={() => setShowVitalConfirm({ vital: 'armor', label: t('vitals_armor'), value: 0 })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
@@ -610,7 +590,7 @@ export default function Players() {
 
                                     {/* Hunger */}
                                     <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all cursor-pointer select-none group/vital"
                                         onClick={() => setShowVitalConfirm({ vital: 'hunger', label: t('vitals_hunger'), value: 100 })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
@@ -629,7 +609,7 @@ export default function Players() {
 
                                     {/* Thirst */}
                                     <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all cursor-pointer select-none group/vital"
                                         onClick={() => setShowVitalConfirm({ vital: 'thirst', label: t('vitals_thirst'), value: 100 })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
@@ -648,7 +628,7 @@ export default function Players() {
 
                                     {/* Stress */}
                                     <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-xl bg-card border border-border/50 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all cursor-pointer select-none group/vital"
                                         onClick={() => setShowVitalConfirm({ vital: 'stress', label: t('vitals_stress'), value: 0 })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
@@ -703,27 +683,51 @@ export default function Players() {
                         <section>
                              <SectionHeader icon={Wallet} title={t('economy_groups')} />
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                 <EconomyCard
-                                    label={t('option_cash')}
-                                    amount={`$${(selectedPlayer.cash || 0).toLocaleString()}`}
-                                    amountColorClass="text-green-500"
-                                    onAdd={() => { setIsGivingMoney(true); setInitialMoneyType('cash'); setShowMoneyModal(true); }}
-                                    onRemove={() => { setIsGivingMoney(false); setInitialMoneyType('cash'); setShowMoneyModal(true); }}
-                                 />
-                                 <EconomyCard
-                                    label={t('option_bank')}
-                                    amount={`$${(selectedPlayer.bank || 0).toLocaleString()}`}
-                                    amountColorClass="text-blue-500"
-                                    onAdd={() => { setIsGivingMoney(true); setInitialMoneyType('bank'); setShowMoneyModal(true); }}
-                                    onRemove={() => { setIsGivingMoney(false); setInitialMoneyType('bank'); setShowMoneyModal(true); }}
-                                 />
-                                 <EconomyCard
-                                    label={t('option_crypto')}
-                                    amount={(selectedPlayer.crypto || 0).toLocaleString()}
-                                    amountColorClass="text-yellow-500"
-                                    onAdd={() => { setIsGivingMoney(true); setInitialMoneyType('crypto'); setShowMoneyModal(true); }}
-                                    onRemove={() => { setIsGivingMoney(false); setInitialMoneyType('crypto'); setShowMoneyModal(true); }}
-                                 />
+                                {Array.isArray(selectedPlayer.money) ? (
+                                    selectedPlayer.money.map((m: any, idx: number) => {
+                                        if (!m || typeof m !== 'object') return null;
+
+                                        const mName = String(m.name || 'unknown');
+                                        const mAmount = m.amount || 0;
+
+                                        let color = "text-muted-foreground";
+                                        if (mName === 'cash') color = "text-green-500";
+                                        else if (mName === 'bank') color = "text-blue-500";
+                                        else if (mName === 'crypto' || mName === 'bitcoin') color = "text-yellow-500";
+                                        else if (mName === 'black_money') color = "text-red-500";
+
+                                        const isCurrency = ['cash', 'bank', 'black_money'].includes(mName);
+                                        const labelKey = `option_${mName}`;
+                                        const translated = t(labelKey);
+                                        const label = translated !== labelKey ? translated : mName;
+
+                                        const displayAmount = isCurrency
+                                            ? `$${Number(mAmount).toLocaleString()}`
+                                            : Number(mAmount).toLocaleString();
+
+                                        return (
+                                            <EconomyCard
+                                                key={`${mName}-${idx}`}
+                                                label={String(label).charAt(0).toUpperCase() + String(label).slice(1)}
+                                                amount={displayAmount}
+                                                amountColorClass={color}
+                                                onAdd={() => { setIsGivingMoney(true); setInitialMoneyType(mName); setShowMoneyModal(true); }}
+                                                onRemove={() => { setIsGivingMoney(false); setInitialMoneyType(mName); setShowMoneyModal(true); }}
+                                            />
+                                        )
+                                    })
+                                ) : (
+                                    // Fallback for transition period or errors
+                                     <>
+                                         <EconomyCard
+                                            label={t('option_cash')}
+                                            amount={`$${(selectedPlayer.money?.cash || selectedPlayer.cash || 0).toLocaleString()}`}
+                                            amountColorClass="text-green-500"
+                                            onAdd={() => { setIsGivingMoney(true); setInitialMoneyType('cash'); setShowMoneyModal(true); }}
+                                            onRemove={() => { setIsGivingMoney(false); setInitialMoneyType('cash'); setShowMoneyModal(true); }}
+                                         />
+                                     </>
+                                 )}
                              </div>
 
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -849,10 +853,30 @@ export default function Players() {
 
         {/* Modals */}
         {showMoneyModal && selectedPlayer && (
-          <MoneyModal isGiving={isGivingMoney} defaultType={initialMoneyType} playerId={selectedPlayer.id} onClose={() => setShowMoneyModal(false)} onSubmit={(type, amount) => {
-            sendAction(isGivingMoney ? 'give_money' : 'remove_money', { Type: { value: type }, Amount: { value: amount } })
-            setShowMoneyModal(false)
-          }} />
+          <MoneyModal
+            isGiving={isGivingMoney}
+            playerId={selectedPlayer.cid || String(selectedPlayer.id)}
+            defaultType={initialMoneyType}
+            availableTypes={
+                Array.isArray(selectedPlayer.money)
+                ? selectedPlayer.money.map((m: any) => {
+                     const labelRaw = t(`option_${m.name}`) !== `option_${m.name}` ? t(`option_${m.name}`) : m.name;
+                     return {
+                         label: labelRaw.charAt(0).toUpperCase() + labelRaw.slice(1),
+                         value: m.name
+                     };
+                })
+                : []
+            }
+            onClose={() => setShowMoneyModal(false)}
+            onSubmit={(type, amount) => {
+                sendAction(isGivingMoney ? 'give_money' : 'remove_money', {
+                    Type: { value: type },
+                    Amount: { value: amount }
+                })
+                setShowMoneyModal(false)
+            }}
+          />
         )}
 
         {showGiveItemModal && selectedPlayer && (

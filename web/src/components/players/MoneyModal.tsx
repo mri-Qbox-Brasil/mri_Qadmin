@@ -4,10 +4,16 @@ import ActionModal from '@/components/ActionModal'
 import { Wallet } from 'lucide-react'
 import { useI18n } from '@/context/I18n'
 
-export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defaultType = 'cash' }: { isGiving: boolean; playerId: string; onClose: () => void; onSubmit: (type: string, amount: number) => void; defaultType?: 'cash'|'bank'|'crypto' }) {
-  const [moneyType, setMoneyType] = useState<'cash'|'bank'|'crypto'>(defaultType)
+export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defaultType = 'cash', availableTypes = [] }: { isGiving: boolean; playerId: string; onClose: () => void; onSubmit: (type: string, amount: number) => void; defaultType?: string, availableTypes?: { label: string, value: string }[] }) {
+  const [moneyType, setMoneyType] = useState<string>(defaultType)
   const [amount, setAmount] = useState<number>(0)
   const { t } = useI18n()
+
+  const typeOptions = availableTypes.length > 0 ? availableTypes : [
+      { label: t('option_cash'), value: 'cash' },
+      { label: t('option_bank'), value: 'bank' },
+      { label: t('option_crypto'), value: 'crypto' },
+  ]
 
   return (
     <ActionModal
@@ -20,11 +26,7 @@ export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defa
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_type')}</label>
       <div className="mb-4">
         <MriSelectSearch
-            options={[
-                { label: t('option_cash'), value: 'cash' },
-                { label: t('option_bank'), value: 'bank' },
-                { label: t('option_crypto'), value: 'crypto' },
-            ]}
+            options={typeOptions}
             value={moneyType}
             onChange={(val) => setMoneyType(val as any)}
             placeholder={t('select_placeholder')}

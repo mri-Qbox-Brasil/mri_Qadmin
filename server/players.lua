@@ -90,9 +90,15 @@ local function getPlayers(page, pageSize, search)
                 ip = QBCore.Functions.GetIdentifier(k, 'ip'),
                 job = playerData.job,
                 gang = playerData.gang,
-                money = playerData.money.cash,
-                bank = playerData.money.bank,
-                crypto = playerData.money.crypto,
+                job = playerData.job,
+                gang = playerData.gang,
+                money = (function()
+                    local m = {}
+                    for k, v in pairs(playerData.money) do
+                        table.insert(m, { name = k, amount = v })
+                    end
+                    return m
+                end)(),
                 health = GetEntityHealth(GetPlayerPed(k)),
                 armor = GetPedArmour(GetPlayerPed(k)),
                 vehicles = {},
@@ -246,9 +252,14 @@ local function getPlayers(page, pageSize, search)
                     job = job_obj,
                     gang = gang_obj,
                     dob = charinfo.birthdate or "Desconhecido",
-                    cash = moneyinfo.cash or 0,
-                    crypto = moneyinfo.crypto or 0,
-                    bank = moneyinfo.bank or 0,
+                    dob = charinfo.birthdate or "Desconhecido",
+                    money = (function()
+                        local m = {}
+                        for k, v in pairs(moneyinfo) do
+                            table.insert(m, { name = k, amount = v })
+                        end
+                        return m
+                    end)(),
                     phone = charinfo.phone or "Desconhecido",
                     vehicles = {}, -- Load later
                     metadata = player.metadata,

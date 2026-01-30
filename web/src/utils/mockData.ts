@@ -14,9 +14,11 @@ export const MOCK_PLAYERS = [
         metadata: { verified: true },
         job: { label: "Police", name: "police", grade: { name: "Officer", level: 1 } },
         gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },
-        cash: 5000,
-        bank: 150000,
-        crypto: 10,
+        money: [
+            { name: "cash", amount: 5000 },
+            { name: "bank", amount: 150000 },
+            { name: "crypto", amount: 10 }
+        ],
         vehicles: [
             { label: "Adder", model: "adder", plate: "XYZ 123", stock: 1 },
             { label: "Police Cruiser", model: "police", plate: "POL 911", stock: 1 }
@@ -34,9 +36,11 @@ export const MOCK_PLAYERS = [
         metadata: { verified: false },
         job: { label: "EMS", name: "ambulance", grade: { name: "Medic", level: 2 } },
         gang: { label: "Ballas", name: "ballas", grade: { name: "Member", level: 1 } },
-        cash: 200,
-        bank: 5000,
-        crypto: 0,
+        money: [
+            { name: "cash", amount: 200 },
+            { name: "bank", amount: 5000 },
+            { name: "crypto", amount: 0 }
+        ],
         vehicles: []
     },
     {

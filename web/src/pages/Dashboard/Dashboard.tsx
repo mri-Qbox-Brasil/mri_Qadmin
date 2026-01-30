@@ -350,9 +350,21 @@ export default function Dashboard() {
                         <>
                             <td className="px-6 py-4 font-medium text-foreground w-[30%] truncate">{p.name || p.cid || p.id}</td>
                             <td className="px-6 py-4 text-muted-foreground font-mono text-xs w-[15%] truncate">{p.cid ?? '-'}</td>
-                            <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">{p.cash ?? p.money ?? '-'} </td>
-                            <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">{p.bank ?? '-'} </td>
-                            <td className="px-6 py-4 text-foreground/80 w-[15%] truncate">{p.crypto ?? '-'} </td>
+                            <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">
+                                {Array.isArray(p.money)
+                                    ? (p.money.find((m: any) => m.name === 'cash')?.amount ?? 0)
+                                    : (p.cash ?? p.money ?? '-')}
+                            </td>
+                            <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">
+                                {Array.isArray(p.money)
+                                    ? (p.money.find((m: any) => m.name === 'bank')?.amount ?? 0)
+                                    : (p.bank ?? '-')}
+                            </td>
+                            <td className="px-6 py-4 text-foreground/80 w-[15%] truncate">
+                                {Array.isArray(p.money)
+                                    ? (p.money.find((m: any) => m.name === 'crypto' || m.name === 'bitcoin')?.amount ?? 0)
+                                    : (p.crypto ?? '-')}
+                            </td>
                         </>
                     )}
                 />
