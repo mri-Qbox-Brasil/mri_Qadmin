@@ -42,12 +42,42 @@ export default function Settings() {
     const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null)
     const [groupSearch, setGroupSearch] = React.useState('')
 
+    // Helper functions for color conversion
+    const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 0, 255';
+    }
+
+    const rgbToHex = (rgb: string) => {
+        if (!rgb) return '#0000FF';
+        if (rgb.startsWith('#')) return rgb; // Already hex
+        const parts = rgb.split(',').map(x => parseInt(x.trim()));
+        if (parts.length < 3) return '#0000FF';
+        const [r, g, b] = parts;
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+    }
+
     const fetchWallSettings = React.useCallback(async () => {
         try {
             const data = await sendNui('mri_Qadmin:callback:GetWallSettings', {}, {
-                colors: { 'group.admin': '#00FF00', 'group.mod': '#FF00FF' },
-                settings: { dead: '#FF0000', invisible: '#FFFF00', default: '#0000FF' }
+                colors: { 'group.admin': '0, 255, 0', 'group.mod': '255, 0, 255' },
+                settings: { dead: '255, 0, 0', invisible: '255, 255, 0', default: '0, 0, 255' }
             })
+
+            // Convert received RGB strings to HEX for the UI
+            if (data.settings) {
+                const settings = data.settings as Record<string, string>;
+                Object.keys(settings).forEach(key => {
+                    settings[key] = rgbToHex(settings[key])
+                })
+            }
+            if (data.colors) {
+                const colors = data.colors as Record<string, string>;
+                Object.keys(colors).forEach(key => {
+                    colors[key] = rgbToHex(colors[key])
+                })
+            }
+
             setWallSettings(data)
 
             // Fetch groups for the selector
@@ -68,7 +98,9 @@ export default function Settings() {
     }, [fetchWallSettings])
 
     const saveWallSetting = async (type: 'global' | 'principal', key: string, value: string) => {
-        await sendNui('mri_Qadmin:server:SaveWallSetting', { type, key, value })
+        // Convert HEX to RGB string before saving
+        const rgbValue = hexToRgb(value);
+        await sendNui('mri_Qadmin:server:SaveWallSetting', { type, key, value: rgbValue })
         fetchWallSettings()
     }
 

@@ -6,24 +6,32 @@ local encrypt = GlobalState["mri_wall"]
 local wall_infos = {}
 local principal_colors = {}
 local wall_settings = {
-    dead = "#FF0000",
-    invisible = "#FFFF00",
-    default = "#0000FF"
+    dead = "255, 0, 0",
+    invisible = "255, 255, 0",
+    default = "0, 0, 255"
 }
+
+local function toRGBString(col)
+    if type(col) == "string" and col:find("#") then
+        local hex = col:gsub("#", "")
+        return string.format("%d, %d, %d", tonumber("0x" .. hex:sub(1, 2)) or 0, tonumber("0x" .. hex:sub(3, 4)) or 0, tonumber("0x" .. hex:sub(5, 6)) or 0)
+    end
+    return col
+end
 
 local function LoadWallData()
     local success, colors = pcall(MySQL.query.await, 'SELECT * FROM mri_qadmin_wall_colors')
     colors = success and colors or {}
     principal_colors = {}
     for _, c in ipairs(colors) do
-        principal_colors[c.principal] = c.color
+        principal_colors[c.principal] = toRGBString(c.color)
     end
 
     local success2, settings = pcall(MySQL.query.await, 'SELECT * FROM mri_qadmin_settings WHERE name LIKE "wall_%"')
     settings = success2 and settings or {}
     for _, s in ipairs(settings) do
         local key = s.name:gsub("wall_", "")
-        wall_settings[key] = s.value
+        wall_settings[key] = toRGBString(s.value)
     end
     Debug('Wall Data Loaded:', #colors .. ' colors, ' .. #settings .. ' settings')
     for p, c in pairs(principal_colors) do
@@ -44,11 +52,12 @@ local function GetPlayerESPColor(src)
     -- We sort them to ensure consistent priority (e.g. group.admin > group.mod)
     local sortedPrincipals = {}
     for p, _ in pairs(principal_colors) do table.insert(sortedPrincipals, p) end
-    table.sort(sortedPrincipals) -- Lexicographical order as a simple priority
+    table.sort(sortedPrincipals, function(a, b) return a > b end) -- Reverse Lexicographical order to fix priority (e.g. Mod processed before Admin, so Admin overwrites)
 
     for _, principal in ipairs(sortedPrincipals) do
-        if IsPrincipalAceAllowed(identifier, principal) or IsPrincipalAceAllowed(license, principal) then
+        if IsPlayerInPrincipal(src, principal) then
             bestColor = principal_colors[principal]
+            -- Debug('Found Color for Principal:', principal, 'Color:', bestColor)
         end
     end
 
@@ -110,23 +119,18 @@ end)
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- CONNECT/DISCONNECT
 -----------------------------------------------------------------------------------------------------------------------------------------
-AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
-    updateWallInfos(Player.PlayerData.source)
+-- Player permissions ready event (replaces standard PlayerLoaded to avoid race conditions)
+RegisterNetEvent('mri_Qadmin:server:PlayerPermissionsReady', function(source)
+    updateWallInfos(source)
 end)
 
-AddEventHandler('onResourceStart', function(resourceName)
-    if GetCurrentResourceName() ~= resourceName then
-        return
-    end
-
+-- Global permissions loaded event (initialization)
+RegisterNetEvent('mri_Qadmin:server:PermissionsLoaded', function()
     local Players = QBCore.Functions.GetPlayers()
-    CreateThread(function()
-        Wait(500) -- Wait for DB
-        LoadWallData()
-        for _, PlayerId in pairs(Players) do
-            updateWallInfos(PlayerId)
-        end
-    end)
+    LoadWallData()
+    for _, PlayerId in pairs(Players) do
+        updateWallInfos(PlayerId)
+    end
 end)
 
 -----------------------------------------------------------------------------------------------------------------------------------------
@@ -142,7 +146,9 @@ end)
 
 RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
     local src = source
-    if not CheckPerms(src, 'admin') then return end
+    if not CheckPerms(src, 'qadmin.page.permissions') then return end
+
+    value = toRGBString(value) -- Ensure strictly RGB string
 
     if type == 'global' then
         wall_settings[key] = value
@@ -163,7 +169,7 @@ end)
 
 RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principal)
     local src = source
-    if not CheckPerms(src, 'admin') then return end
+    if not CheckPerms(src, 'qadmin.page.permissions') then return end
 
     principal_colors[principal] = nil
     MySQL.query.await('DELETE FROM mri_qadmin_wall_colors WHERE principal = ?', { principal })

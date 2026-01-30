@@ -74,6 +74,7 @@ local function LoadPermissions()
         ExecuteCommand(('add_ace %s %s %s'):format(a.principal, a.object, type))
     end
     Debug(('[mri_Qadmin] Loaded %d Aces from DB'):format(#aces))
+    TriggerEvent('mri_Qadmin:server:PermissionsLoaded')
 end
 
 -- ...
@@ -158,6 +159,8 @@ RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
         Debug(('[mri_Qadmin] Re-applying permissions for %s -> %s'):format(GetPlayerName(src), parent))
         ApplyPrincipalToAllIdentifiers(src, parent)
     end
+
+    TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', src)
 end)
 
 -- CALLBACKS: ACES

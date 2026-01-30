@@ -12,7 +12,7 @@ import {
 import { useNui } from "@/context/NuiContext";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
 import Spinner from "@/components/Spinner";
-import { isEnvBrowser } from "@/utils/misc";
+import { isEnvBrowser, rgbToHex, hexToRgb } from "@/utils/misc";
 import { MOCK_PRINCIPALS } from "@/utils/mockData";
 import ConfirmAction from "@/components/players/ConfirmAction";
 import CreatableCombobox from "@/components/shared/CreatableCombobox";
@@ -222,7 +222,12 @@ export default function PrincipalsList({
       // Fetch Wall Colors
       const wallData = await sendNui("mri_Qadmin:callback:GetWallSettings", {}, { colors: {} });
       if (wallData && wallData.colors) {
-          setPrincipalColors(wallData.colors);
+          const colorsHex: Record<string, string> = {};
+          // Convert RGB strings to Hex for UI
+          Object.entries(wallData.colors).forEach(([k, v]) => {
+              colorsHex[k] = rgbToHex(v as string);
+          });
+          setPrincipalColors(colorsHex);
       }
     } catch (e) {
       console.error(e);
@@ -302,7 +307,8 @@ export default function PrincipalsList({
 
   const handleColorChange = async (principal: string, color: string) => {
     setPrincipalColors(prev => ({ ...prev, [principal]: color }));
-    await sendNui('mri_Qadmin:server:SaveWallSetting', { type: 'principal', key: principal, value: color });
+    const rgb = hexToRgb(color); // Convert back to RGB string for storage
+    await sendNui('mri_Qadmin:server:SaveWallSetting', { type: 'principal', key: principal, value: rgb });
   };
 
   return (

@@ -40,6 +40,22 @@ function CheckPerms(source, perms)
     return noPerms(source)
 end
 
+--- Check if a player (any identifier) belongs to a specific principal (group)
+--- @param source number The player source ID
+--- @param principal string The principal to check (e.g., 'group.admin')
+--- @return boolean
+function IsPlayerInPrincipal(source, principal)
+    local num = GetNumPlayerIdentifiers(source)
+    for i = 0, num - 1 do
+        local id = GetPlayerIdentifier(source, i)
+        -- Check direct identifier mapping or identifier.id mapping
+        if IsPrincipalAceAllowed(id, principal) or IsPrincipalAceAllowed('identifier.' .. id, principal) then
+            return true
+        end
+    end
+    return false
+end
+
 --- Extract value from selectedData safely (handles both {value = x} and x)
 function GetValue(data, key)
     if not data or not key or not data[key] then return nil end

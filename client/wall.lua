@@ -89,9 +89,10 @@ Citizen.CreateThread(function()
     end
 end)
 
-local function HexToRGB(hex)
-    hex = hex:gsub("#", "")
-    return tonumber("0x" .. hex:sub(1, 2)), tonumber("0x" .. hex:sub(3, 4)), tonumber("0x" .. hex:sub(5, 6))
+local function ParseRGB(str)
+    if not str or type(str) ~= "string" then return 0, 0, 255 end
+    local r, g, b = str:match("(%d+),%s*(%d+),%s*(%d+)")
+    return tonumber(r) or 0, tonumber(g) or 0, tonumber(b) or 255
 end
 
 Citizen.CreateThread(
@@ -143,15 +144,14 @@ Citizen.CreateThread(
                                 local r, g, b = 0, 0, 255 -- Final fallback
 
                                 if wall_users[src].group_color then -- Cor de Permissão (Prioridade Máxima)
-                                    r, g, b = HexToRGB(wall_users[src].group_color)
-                                elseif health < 101 then -- Morto
-                                    r, g, b = HexToRGB(wall_users[src].dead_color or "#FF0000")
+                                    r, g, b = ParseRGB(wall_users[src].group_color)
                                 elseif inv then -- Invisivel
-                                    r, g, b = HexToRGB(wall_users[src].inv_color or "#FFFF00")
+                                    r, g, b = ParseRGB(wall_users[src].inv_color or "255, 255, 0")
+                                elseif health < 101 then -- Morto
+                                    r, g, b = ParseRGB(wall_users[src].dead_color or "255, 0, 0")
                                 else -- Vivo / Padrão
-                                    r, g, b = HexToRGB(wall_users[src].default_color or "#0000FF")
+                                    r, g, b = ParseRGB(wall_users[src].default_color or "0, 0, 255")
                                 end
-
                                 DrawLine(x2, y2, z2, x1, y1, z1, r, g, b, 255)
                             end
                         end
