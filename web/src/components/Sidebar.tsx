@@ -1,25 +1,7 @@
 import { useI18n } from '@/context/I18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
-import {
-    LayoutDashboard,
-    Users,
-    Terminal,
-    MessageSquare,
-    Box,
-    Wand2,
-    Ban,
-    Car,
-    Info,
-    Briefcase,
-    Settings,
-    Shield,
-    Container,
-    Sun,
-    Moon,
-    Monitor,
-    Map as MapIcon
-} from 'lucide-react'
+import { LayoutDashboard, Users, Box, Terminal, Zap, ShieldAlert, Car, Users2, DollarSign, Settings, ShieldCheck, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +30,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
   const items: MriSidebarItem[] = [
     { icon: LayoutDashboard, label: t('nav_dashboard'), route: 'dashboard' },
     { icon: MapIcon, label: 'Live Map', route: 'livemap' },
+    { icon: Monitor, label: 'Live Screens', route: 'livescreens' },
     { icon: Box, label: '', divider: true },
     { icon: Users, label: t('nav_players'), route: 'players' },
     { icon: Briefcase, label: t('nav_groups'), route: 'groups' },

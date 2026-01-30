@@ -18,7 +18,8 @@ local function setupMenu()
 			server = server,
 			vehicleImages = Config.VehicleImages,
             permissions = permissions,
-            supportedLanguages = Config.SupportedLanguages
+            supportedLanguages = Config.SupportedLanguages,
+            webrtcUrl = Config.WebRTCUrl
 		}
 	})
 end
@@ -176,6 +177,15 @@ end)
 RegisterNUICallback("GetAllPlayerCoords", function(data, cb)
     local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords', false)
     cb(coords)
+end)
+
+RegisterNUICallback("GetPlayerScreen", function(data, cb)
+    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerScreen', false, data.targetId)
+    cb(res)
+end)
+
+RegisterNUICallback("getSelfId", function(_, cb)
+    cb(GetPlayerServerId(PlayerId()))
 end)
 
 -- ExecuteCommand

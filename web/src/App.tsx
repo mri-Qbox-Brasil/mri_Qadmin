@@ -17,9 +17,11 @@ import Groups from '@/pages/Groups'
 import Credits from '@/pages/Credits'
 import Settings from '@/pages/Settings'
 import Permissions from '@/pages/Permissions/Permissions'
-import LiveMapPage from '@/pages/LiveMapPage'
+import LiveMapPage from './pages/LiveMapPage'
+import LiveScreensPage from './pages/LiveScreensPage'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
+import WebRTCStreamer from '@/components/WebRTCStreamer'
 import { isEnvBrowser } from '@/utils/misc'
 import { MOCK_GAME_DATA, MOCK_PLAYERS } from '@/utils/mockData'
 
@@ -28,7 +30,7 @@ import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
 // ... existing imports
 
 export default function App() {
-  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap'>('dashboard')
+  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
   const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions } = useAppState()
   const { on, off, sendNui } = useNui()
   const isDev = (import.meta as any)?.env?.DEV === true
@@ -173,6 +175,7 @@ export default function App() {
   return (
     <div className="app-shell bg-background text-foreground">
       <Listeners />
+      <WebRTCStreamer />
 
       {/* Overlays */}
       <VehicleDev />
@@ -195,6 +198,7 @@ export default function App() {
          route === 'dashboard' ? <Dashboard /> :
          route === 'permissions' ? <Permissions /> :
          route === 'livemap' ? <LiveMapPage /> :
+         route === 'livescreens' ? <LiveScreensPage /> :
          null}
       </div>
     </div>

@@ -599,3 +599,30 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
 
     return coordsList
 end)
+
+-- Screenshot Logic
+lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(source, targetId)
+    local target = tonumber(targetId)
+    local src = source
+    print('[DEBUG] GetPlayerScreen called. Source:', src, 'Target:', target)
+
+    if target and target ~= 0 then
+        -- Trigger client to capture
+        TriggerClientEvent('mri_Qadmin:client:CaptureScreen', target, src)
+        return { status = "requested" }
+    end
+    return { status = "error", message = "Invalid Target" }
+end)
+
+RegisterNetEvent('mri_Qadmin:server:ReceiveScreenChunk', function(requester, chunkData)
+    -- chunkData = { captureId, current, total, data }
+    if requester then
+        TriggerClientEvent('mri_Qadmin:client:ReceiveScreenChunk', requester, {
+             id = source, -- The player who sent the screen
+             captureId = chunkData.captureId,
+             current = chunkData.current,
+             total = chunkData.total,
+             data = chunkData.data
+        })
+    end
+end)

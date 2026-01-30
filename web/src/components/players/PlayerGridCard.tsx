@@ -1,6 +1,6 @@
 import { useI18n } from '@/context/I18n'
 import { MriButton } from '@mriqbox/ui-kit'
-import { Eye, Crosshair } from 'lucide-react'
+import { Eye, Crosshair, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Player {
@@ -108,6 +108,9 @@ export default function PlayerGridCard({ player, onClick, onAction }: PlayerGrid
                 )}
             </div>
             <div className="flex items-center gap-1">
+                <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('view_screen', {}, player); }} disabled={!player.online}>
+                    <Monitor className="w-3.5 h-3.5" />
+                </MriButton>
                 <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('spectate_player', {}, player); }} disabled={!player.online}>
                     <Eye className="w-3.5 h-3.5" />
                 </MriButton>

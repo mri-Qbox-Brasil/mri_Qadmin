@@ -35,6 +35,7 @@ export interface GameData {
   commands: any[]
   vehicleImages: string
   bans: any[]
+  webrtcUrl?: string
 }
 
 export interface EntityInfoData {

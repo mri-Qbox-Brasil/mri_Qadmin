@@ -14,6 +14,7 @@ import ChangeGroupModal from '@/components/players/ChangeGroupModal'
 import BanModal from '@/components/players/BanModal'
 import BucketModal from '@/components/players/BucketModal'
 import MapModal from '@/components/players/MapModal'
+import ScreenModal from '@/components/players/ScreenModal'
 import {
     Search,
     User,
@@ -107,6 +108,7 @@ export default function Players() {
   const [showMoneyModal, setShowMoneyModal] = useState(false)
   const [showBucketModal, setShowBucketModal] = useState(false)
   const [showMapModal, setShowMapModal] = useState(false)
+  const [viewingScreenPlayer, setViewingScreenPlayer] = useState<any>(null)
   const [isGivingMoney, setIsGivingMoney] = useState(true)
   const [initialMoneyType, setInitialMoneyType] = useState<'cash'|'bank'|'crypto'>('cash')
   const [showGiveItemModal, setShowGiveItemModal] = useState(false)
@@ -337,6 +339,12 @@ export default function Players() {
         if (!payload.license && p.license) payload.license = { value: p.license }
         if (!payload.discord && p.discord) payload.discord = { value: p.discord }
         if (!payload.name && p.name) payload.name = { value: p.name }
+    }
+
+    if (action === 'view_screen') {
+        setViewingScreenPlayer(p)
+        setIsProcessingAction(false)
+        return
     }
 
     if (!payload.Player && !payload.cid && !payload.Plate && !payload.VehiclePlate) {
@@ -732,8 +740,8 @@ export default function Players() {
                                                 label={String(label).charAt(0).toUpperCase() + String(label).slice(1)}
                                                 amount={displayAmount}
                                                 amountColorClass={color}
-                                                onAdd={() => { setIsGivingMoney(true); setInitialMoneyType(mName); setShowMoneyModal(true); }}
-                                                onRemove={() => { setIsGivingMoney(false); setInitialMoneyType(mName); setShowMoneyModal(true); }}
+                                                onAdd={() => { setIsGivingMoney(true); setInitialMoneyType(mName as any); setShowMoneyModal(true); }}
+                                                onRemove={() => { setIsGivingMoney(false); setInitialMoneyType(mName as any); setShowMoneyModal(true); }}
                                             />
                                         )
                                     })
@@ -944,13 +952,6 @@ export default function Players() {
           }} />
         )}
 
-        {showBucketModal && selectedPlayer && (
-          <BucketModal onClose={() => setShowBucketModal(false)} onSubmit={(bucket) => {
-            sendAction('set_bucket', { Bucket: { value: bucket } })
-            setShowBucketModal(false)
-          }} />
-        )}
-
         {showMapModal && selectedPlayer && (
           <MapModal
             isOpen={showMapModal}
@@ -1036,6 +1037,12 @@ export default function Players() {
                 onCancel={() => setShowVitalConfirm(null)}
             />
         )}
+
+        <ScreenModal
+            playerId={viewingScreenPlayer?.id}
+            playerName={viewingScreenPlayer?.name}
+            onClose={() => setViewingScreenPlayer(null)}
+        />
     </div>
   )
 }
