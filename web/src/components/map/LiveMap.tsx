@@ -27,6 +27,7 @@ interface MapMarker {
 interface LiveMapProps {
     markers: MapMarker[]
     centerOnMarkerId?: string | number | null
+    initialZoom?: number
 }
 
 // Helper to re-center map when target changes
@@ -37,8 +38,6 @@ function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: strin
         if (centerOnMarkerId && markers.length > 0) {
             const target = markers.find(m => String(m.id) === String(centerOnMarkerId))
             if (target) {
-                // GTA coords are usually (x, y) but Leaflet uses (lat, lng) -> (y, x)
-                // For Simple CRS, it's often mapped directly (y, x)
                 map.flyTo([target.y, target.x], 3)
             }
         }
@@ -47,11 +46,8 @@ function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: strin
     return null
 }
 
-const GTACenter = [0, 0] as L.LatLngExpression
-
-export default function LiveMap({ markers, centerOnMarkerId }: LiveMapProps) {
+export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3 }: LiveMapProps) {
     // GTA V Coordinate Configuration
-    // Using standard coefficients found in community GTA V map projects (like TGRHavoc/LiveMap)
     const center_x = 117.3;
     const center_y = 172.8;
     const scale_x = 0.02072;
@@ -65,7 +61,7 @@ export default function LiveMap({ markers, centerOnMarkerId }: LiveMapProps) {
     return (
         <MapContainer
             center={[0, 0]}
-            zoom={2}
+            zoom={initialZoom}
             scrollWheelZoom={true}
             maxZoom={5}
             minZoom={0}
