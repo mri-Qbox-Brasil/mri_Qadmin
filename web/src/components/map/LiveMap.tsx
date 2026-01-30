@@ -74,7 +74,7 @@ export default function LiveMap({ markers, centerOnMarkerId }: LiveMapProps) {
         >
             <TileLayer
                 attribution='&copy; GTA 5 Map'
-                url="./map/tiles/{z}/{x}/{y}.jpg"
+                url="./map/tiles/{z}/{x}/{y}.webp"
                 noWrap={true}
                 tileSize={256}
                 minZoom={0}
