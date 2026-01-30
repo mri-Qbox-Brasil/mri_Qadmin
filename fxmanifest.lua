@@ -63,6 +63,7 @@ dependencies {
 
 files {
     "web/build/**",
+    "web/build/map/tiles/**/*",
     "data/ped.lua",
     "data/object.lua",
     "locales/*.json",

@@ -17,7 +17,8 @@ import {
     Container,
     Sun,
     Moon,
-    Monitor
+    Monitor,
+    Map as MapIcon
 } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
@@ -46,6 +47,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
 
   const items: MriSidebarItem[] = [
     { icon: LayoutDashboard, label: t('nav_dashboard'), route: 'dashboard' },
+    { icon: MapIcon, label: 'Live Map', route: 'livemap' },
     { icon: Box, label: '', divider: true },
     { icon: Users, label: t('nav_players'), route: 'players' },
     { icon: Briefcase, label: t('nav_groups'), route: 'groups' },

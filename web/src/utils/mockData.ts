@@ -11,7 +11,13 @@ export const MOCK_PLAYERS = [
         online: true,
         health: 100,
         armor: 100,
-        metadata: { verified: true },
+        metadata: {
+            verified: true,
+            hunger: 80,
+            thirst: 90,
+            stress: 10,
+            coords: { x: -768.58, y: -2443.77, w: 14.52 } // Updated as requested
+        },
         job: { label: "Police", name: "police", grade: { name: "Officer", level: 1 } },
         gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },
         money: [

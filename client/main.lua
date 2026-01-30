@@ -167,6 +167,17 @@ RegisterNUICallback("getGroupsData", function(data, cb)
 	cb(groups)
 end)
 
+-- Get Player Coords
+RegisterNUICallback("GetPlayerCoords", function(data, cb)
+    local coords = lib.callback.await('mri_Qadmin:callback:GetPlayerCoords', false, data.targetIds)
+    cb(coords)
+end)
+
+RegisterNUICallback("GetAllPlayerCoords", function(data, cb)
+    local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords', false)
+    cb(coords)
+end)
+
 -- ExecuteCommand
 RegisterNetEvent('mri_Qadmin:client:ExecuteCommand', function(data)
 	ExecuteCommand(data)

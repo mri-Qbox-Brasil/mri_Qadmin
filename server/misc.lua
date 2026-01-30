@@ -547,3 +547,55 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(actionKey, selectedDat
         QBCore.Functions.Notify(src, locale("not_online"), 'error')
     end
 end)
+
+lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(source, targetIds)
+    local coordsList = {}
+    if not targetIds or type(targetIds) ~= 'table' then return coordsList end
+
+    for _, id in ipairs(targetIds) do
+        local ped = GetPlayerPed(id)
+        if ped and ped ~= 0 then
+            local coords = GetEntityCoords(ped)
+            local heading = GetEntityHeading(ped)
+            table.insert(coordsList, {
+                id = id,
+                x = coords.x,
+                y = coords.y,
+                heading = heading,
+                name = GetPlayerName(id) or "Unknown"
+            })
+        end
+    end
+    return coordsList
+end)
+
+lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
+    local players = QBCore.Functions.GetPlayers()
+    local coordsList = {}
+
+    for _, id in pairs(players) do
+        local src = tonumber(id)
+        local ped = GetPlayerPed(src)
+        if ped and ped ~= 0 then
+            local coords = GetEntityCoords(ped)
+            local heading = GetEntityHeading(ped)
+            local player = QBCore.Functions.GetPlayer(src)
+            local name = "Unknown"
+            if player then
+                name = player.PlayerData.charinfo.firstname .. ' ' .. player.PlayerData.charinfo.lastname
+            else
+                name = GetPlayerName(src)
+            end
+
+            table.insert(coordsList, {
+                id = src,
+                x = coords.x,
+                y = coords.y,
+                heading = heading,
+                name = name
+            })
+        end
+    end
+
+    return coordsList
+end)

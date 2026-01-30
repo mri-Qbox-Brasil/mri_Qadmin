@@ -13,6 +13,7 @@ import GiveItemModal from '@/components/players/GiveItemModal'
 import ChangeGroupModal from '@/components/players/ChangeGroupModal'
 import BanModal from '@/components/players/BanModal'
 import BucketModal from '@/components/players/BucketModal'
+import MapModal from '@/components/players/MapModal'
 import {
     Search,
     User,
@@ -44,7 +45,8 @@ import {
     Beef,
     GlassWater,
     Shield,
-    Brain
+    Brain,
+    Map as MapIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
@@ -104,6 +106,7 @@ export default function Players() {
   const [showWarnModal, setShowWarnModal] = useState(false)
   const [showMoneyModal, setShowMoneyModal] = useState(false)
   const [showBucketModal, setShowBucketModal] = useState(false)
+  const [showMapModal, setShowMapModal] = useState(false)
   const [isGivingMoney, setIsGivingMoney] = useState(true)
   const [initialMoneyType, setInitialMoneyType] = useState<'cash'|'bank'|'crypto'>('cash')
   const [showGiveItemModal, setShowGiveItemModal] = useState(false)
@@ -676,7 +679,9 @@ export default function Players() {
                                 <GridActionButton icon={Crosshair} label={`${t('go_to')}`} onClick={() => sendAction('teleportToPlayer')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Download} label={`${t('bring')}`} onClick={() => sendAction('bringPlayer')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction('sendPlayerBack')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction('sendPlayerBack')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Navigation} label={`${t('set_bucket')}`} onClick={() => setShowBucketModal(true)} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={MapIcon} label={`${t('track_player') || 'Map'}`} onClick={() => setShowMapModal(true)} disabled={!selectedPlayer.online} />
                             </div>
                         </section>
 
@@ -937,6 +942,22 @@ export default function Players() {
             sendAction('set_bucket', { Bucket: { value: bucket } })
             setShowBucketModal(false)
           }} />
+        )}
+
+        {showBucketModal && selectedPlayer && (
+          <BucketModal onClose={() => setShowBucketModal(false)} onSubmit={(bucket) => {
+            sendAction('set_bucket', { Bucket: { value: bucket } })
+            setShowBucketModal(false)
+          }} />
+        )}
+
+        {showMapModal && selectedPlayer && (
+          <MapModal
+            isOpen={showMapModal}
+            onClose={() => setShowMapModal(false)}
+            trackedPlayerId={selectedPlayer.id}
+            initialName={selectedPlayer.name}
+          />
         )}
 
         {showGroupModal && selectedPlayer && (
