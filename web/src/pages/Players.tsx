@@ -682,9 +682,25 @@ export default function Players() {
 
                         <section>
                              <SectionHeader icon={Wallet} title={t('economy_groups')} />
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                                 {Array.isArray(selectedPlayer.money) ? (
-                                    selectedPlayer.money.map((m: any, idx: number) => {
+                                    selectedPlayer.money
+                                    .slice() // Create a copy to sort
+                                    .sort((a: any, b: any) => {
+                                        const order = ['cash', 'bank', 'crypto', 'bitcoin', 'black_money'];
+                                        const indexA = order.indexOf(a.name);
+                                        const indexB = order.indexOf(b.name);
+
+                                        // Both are known types, sort by index
+                                        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                        // Only A is known, it comes first
+                                        if (indexA !== -1) return -1;
+                                        // Only B is known, it comes first
+                                        if (indexB !== -1) return 1;
+                                        // Both unknown, sort alphabetically
+                                        return String(a.name).localeCompare(String(b.name));
+                                    })
+                                    .map((m: any, idx: number) => {
                                         if (!m || typeof m !== 'object') return null;
 
                                         const mName = String(m.name || 'unknown');
