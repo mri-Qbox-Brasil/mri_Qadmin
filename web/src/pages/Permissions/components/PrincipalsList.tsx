@@ -54,7 +54,8 @@ function PrincipalGroup({
   const descriptions = items.map(p => p.description).filter(Boolean).join(', ')
 
   // Determine if this is a group and if it has a color
-  const isGroup = items.some(p => p.parent.startsWith('group.'))
+  // Any principal that is not a player identifier (does not contain ':') is considered a group/role
+  const canHaveColor = !child.includes(':') || items.some(p => !p.parent.includes(':'))
   const color = principalColors[child] || principalColors[items[0]?.parent] || null
 
   // Find first available description for a simpler header if preferred, but joined is nicer for summary
@@ -85,7 +86,7 @@ function PrincipalGroup({
         )}
 
         <div className="flex items-center gap-2 ml-auto">
-             {child.startsWith('group.') && (
+             {!child.includes(':') && (
                 <CustomColorPicker
                     color={color || '#0000FF'}
                     onChange={(val) => onColorChange(child, val)}
@@ -126,7 +127,7 @@ function PrincipalGroup({
                 )}
 
                 <div className="ml-auto flex items-center gap-3">
-                    {p.parent.startsWith('group.') && (
+                    {!p.parent.includes(':') && (
                         <CustomColorPicker
                             color={principalColors[p.parent] || '#0000FF'}
                             onChange={(val) => onColorChange(p.parent, val)}

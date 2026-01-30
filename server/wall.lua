@@ -20,11 +20,15 @@ local function toRGBString(col)
 end
 
 local function LoadWallData()
-    local success, colors = pcall(MySQL.query.await, 'SELECT * FROM mri_qadmin_wall_colors')
-    colors = success and colors or {}
+    -- Load Principal Colors
     principal_colors = {}
-    for _, c in ipairs(colors) do
-        principal_colors[c.principal] = toRGBString(c.color)
+    local colors = MySQL.query.await('SELECT * FROM mri_qadmin_wall_colors')
+    if colors then
+        for _, v in pairs(colors) do
+            principal_colors[v.principal] = toRGBString(v.color)
+            -- Ensure the principal itself is an allowed ACE so IsPlayerInPrincipal checks pass
+            ExecuteCommand(('add_ace %s %s allow'):format(v.principal, v.principal))
+        end
     end
 
     local success2, settings = pcall(MySQL.query.await, 'SELECT * FROM mri_qadmin_settings WHERE name LIKE "wall_%"')
@@ -47,6 +51,7 @@ local function GetPlayerESPColor(src)
     local identifier = 'identifier.' .. license
 
     local bestColor = nil
+    local matches = {}
 
     -- Check principals in principal_colors
     -- We sort them to ensure consistent priority (e.g. group.admin > group.mod)
@@ -57,46 +62,59 @@ local function GetPlayerESPColor(src)
     for _, principal in ipairs(sortedPrincipals) do
         if IsPlayerInPrincipal(src, principal) then
             bestColor = principal_colors[principal]
+            table.insert(matches, principal)
             -- Debug('Found Color for Principal:', principal, 'Color:', bestColor)
         end
     end
 
-    return bestColor
+    return bestColor, table.concat(matches, ", ")
 end
 
-local function updateWallInfos(source)
+local function updateWallInfos(source, silent)
     local Player = QBCore.Functions.GetPlayer(source)
     if Player then
-        wall_infos[source] = {}
-        wall_infos[source].citizenid = Player.PlayerData.citizenid
-        wall_infos[source].staff = Player.PlayerData.metadata['staff']
+        local srcStr = tostring(source)
+        wall_infos[srcStr] = {}
+        wall_infos[srcStr].citizenid = Player.PlayerData.citizenid
+        wall_infos[srcStr].staff = Player.PlayerData.metadata['staff']
         local charInfo = Player.PlayerData.charinfo
         local name = charInfo.firstname .. " " .. charInfo.lastname
         if name == nil or name == "" then
             name = "N/A"
         else
-            wall_infos[source].name = name
+            wall_infos[srcStr].name = name
         end
-        wall_infos[source].wallstats = false
-        wall_infos[source].group_color = GetPlayerESPColor(source)
-        wall_infos[source].dead_color = wall_settings.dead
-        wall_infos[source].inv_color = wall_settings.invisible
-        wall_infos[source].default_color = wall_settings.default
+        wall_infos[srcStr].wallstats = false
+        local gColor, gPrincipals = GetPlayerESPColor(source)
+        wall_infos[srcStr].group_color = gColor
+        wall_infos[srcStr].found_principals = gPrincipals -- Debug info (plural)
+        wall_infos[srcStr].dead_color = wall_settings.dead
+        wall_infos[srcStr].inv_color = wall_settings.invisible
+        wall_infos[srcStr].default_color = wall_settings.default
+
+        -- Broadcast update to all clients with wall enabled (or just all clients for simplicity/sync)
+        if not silent then
+            TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
+        end
     end
 end
 
 local function enableWall(source)
     local src = source
+    local srcStr = tostring(src)
     local Player = QBCore.Functions.GetPlayer(src)
 
-    if wall_infos[src] and wall_infos[src].wallstats == true then
-        wall_infos[src].wallstats = false
-        TriggerClientEvent(encrypt..":toggleWall", src, wall_infos[src].wallstats)
+    if wall_infos[srcStr] and wall_infos[srcStr].wallstats == true then
+        wall_infos[srcStr].wallstats = false
+        TriggerClientEvent(encrypt..":toggleWall", src, wall_infos[srcStr].wallstats)
     else
-        if not wall_infos[src] then updateWallInfos(src) end
-        wall_infos[src].wallstats = true
-        TriggerClientEvent(encrypt..":toggleWall", src, wall_infos[src].wallstats)
+        if not wall_infos[srcStr] then updateWallInfos(src, true) end
+        wall_infos[srcStr].wallstats = true
+        TriggerClientEvent(encrypt..":toggleWall", src, wall_infos[srcStr].wallstats)
     end
+
+    -- Broadcast update regarding wallstats change
+    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
 end
 
 QBCore.Commands.Add("wall", "Enable/Disable wall", {}, false, function(source, args)
@@ -125,12 +143,14 @@ RegisterNetEvent('mri_Qadmin:server:PlayerPermissionsReady', function(source)
 end)
 
 -- Global permissions loaded event (initialization)
+-- Global permissions loaded event (initialization)
 RegisterNetEvent('mri_Qadmin:server:PermissionsLoaded', function()
     local Players = QBCore.Functions.GetPlayers()
     LoadWallData()
     for _, PlayerId in pairs(Players) do
-        updateWallInfos(PlayerId)
+        updateWallInfos(PlayerId, true)
     end
+    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
 end)
 
 -----------------------------------------------------------------------------------------------------------------------------------------
@@ -156,13 +176,18 @@ RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
     elseif type == 'principal' then
         principal_colors[key] = value
         MySQL.query.await('INSERT INTO mri_qadmin_wall_colors (principal, color) VALUES (?, ?) ON DUPLICATE KEY UPDATE color = ?', { key, value, value })
+        -- Ensure the principal itself is an allowed ACE so IsPlayerInPrincipal checks pass
+        ExecuteCommand(('add_ace %s %s allow'):format(key, key))
     end
 
-    -- Refresh all online players colors
+    -- Refresh all online players colors silently
     local Players = QBCore.Functions.GetPlayers()
     for _, id in pairs(Players) do
-        updateWallInfos(id)
+        updateWallInfos(id, true)
     end
+
+    -- Single broadcast
+    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
 
     TriggerClientEvent('QBCore:Notify', src, 'Wall settings updated', 'success')
 end)
@@ -174,18 +199,23 @@ RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principa
     principal_colors[principal] = nil
     MySQL.query.await('DELETE FROM mri_qadmin_wall_colors WHERE principal = ?', { principal })
 
-    -- Refresh all online players colors
+    -- Refresh all online players colors silently
     local Players = QBCore.Functions.GetPlayers()
     for _, id in pairs(Players) do
-        updateWallInfos(id)
+        updateWallInfos(id, true)
     end
+
+    -- Single broadcast
+    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
 
     TriggerClientEvent('QBCore:Notify', src, 'Principal color removed', 'success')
 end)
 
 AddEventHandler('playerDropped', function()
     local src = source
-    if wall_infos[src] then
-        wall_infos[src] = nil
+    local srcStr = tostring(src)
+    if wall_infos[srcStr] then
+        wall_infos[srcStr] = nil
+        TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
     end
 end)

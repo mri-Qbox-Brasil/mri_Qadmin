@@ -1,5 +1,6 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+local wall_users = {}
 local wall = false
 local walldistance = 500 -- OneSync Infinity Max Distance
 local armas = {
@@ -43,13 +44,40 @@ local armas = {
 }
 
 RegisterNetEvent(GlobalState["mri_wall"]..":toggleWall")
+RegisterNetEvent('mri_wall:updateWallUsers')
+AddEventHandler('mri_wall:updateWallUsers', function(data)
+    if wall then
+        wall_users = data
+    end
+end)
+
+-- Initial fetch when wall is toggled
 AddEventHandler(GlobalState["mri_wall"]..":toggleWall",function(val)
     wall = val
     if wall then
         QBCore.Functions.Notify("Wall Ativado!", "success")
+        -- Initial Fetch
+        QBCore.Functions.TriggerCallback('mri_wall:getWallInfos', function(result)
+            wall_users = result
+        end)
     else
         QBCore.Functions.Notify("Wall Desativado!", "error")
+        wall_users = {}
     end
+end)
+
+RegisterCommand('debugwall', function()
+    local myId = GetPlayerServerId(PlayerId())
+    local myStr = tostring(myId)
+    print('--- DEBUG WALL ---')
+    print('My ID:', myId)
+    print('My Key:', myStr)
+    print('My Data:', json.encode(wall_users[myStr]))
+    print('All Keys inside wall_users:')
+    for k, v in pairs(wall_users) do
+        print('Key:', k, 'Type:', type(k))
+    end
+    print('------------------')
 end)
 
 function DrawText3D(x,y,z, text, r,g,b)
@@ -74,20 +102,6 @@ function DrawText3D(x,y,z, text, r,g,b)
     end
 end
 
-local wall_users = {}
-
-Citizen.CreateThread(function()
-    while true do
-        local time = 5000
-        if wall then
-            QBCore.Functions.TriggerCallback('mri_wall:getWallInfos', function(result)
-                wall_users = result
-            end)
-            time = 2000
-        end
-        Citizen.Wait(time)
-    end
-end)
 
 local function ParseRGB(str)
     if not str or type(str) ~= "string" then return 0, 0, 255 end
@@ -110,7 +124,11 @@ Citizen.CreateThread(
                         distance = math.floor(GetDistanceBetweenCoords(x1, y1, z1, x2, y2, z2, true))
                         px, py, pz = table.unpack(GetGameplayCamCoord())
 
-                        if nped_id ~= -1 and wall_users[src] ~= nil then
+                        -- Use string key for looku
+                        local srcStr = tostring(src)
+
+                        -- Removed src ~= myServerId to allow testing on self
+                        if nped_id ~= -1 and wall_users[srcStr] ~= nil then
                             if GetDistanceBetweenCoords(x2, y2, z2, px, py, pz, true) <= walldistance then
                                 local armour = GetPedArmour(nped_id)
                                 local health = math.floor(GetEntityHealth(nped_id))
@@ -118,7 +136,7 @@ Citizen.CreateThread(
                                 local skin = GetEntityModel(nped_id)
                                 local inv = not IsEntityVisible(nped_id)
 
-                                local defaultText = "~w~[" .. (wall_users[src].citizenid or "N/A") .. "] " .. src .. " - ~w~" .. (wall_users[src].name or "N/A") .. "\n~w~Health:~g~ " .. health .. " ~w~| Armour:~b~ " .. armour .. "~w~"
+                                local defaultText = "~w~[" .. (wall_users[srcStr].citizenid or "N/A") .. "] " .. src .. " - ~w~" .. (wall_users[srcStr].name or "N/A") .. "\n~w~Health:~g~ " .. health .. " ~w~| Armour:~b~ " .. armour .. "~w~"
                                 local extraText = "\n"
 
                                 if inv then
@@ -129,8 +147,13 @@ Citizen.CreateThread(
                                     extraText = extraText .. "\n~w~Model: ~r~" .. skin .. "~w~"
                                 end
 
-                                if wall_users[src].wallstats == true then
+                                if wall_users[srcStr].wallstats == true then
                                     extraText = extraText .. "\n~w~[~g~WALL ON~w~]"
+                                end
+
+                                -- Debug Principal Display
+                                if wall_users[srcStr].found_principals and wall_users[srcStr].found_principals ~= "" then
+                                    extraText = extraText .. "\n~w~[Princ: ~y~" .. wall_users[srcStr].found_principals .. "~w~]"
                                 end
 
                                 if armas[tostring(armahash)] then
@@ -143,14 +166,14 @@ Citizen.CreateThread(
                                 -- Dynamic Color Selection
                                 local r, g, b = 0, 0, 255 -- Final fallback
 
-                                if wall_users[src].group_color then -- Cor de Permissão (Prioridade Máxima)
-                                    r, g, b = ParseRGB(wall_users[src].group_color)
+                                if wall_users[srcStr].group_color then -- Cor de Permissão (Prioridade Máxima)
+                                    r, g, b = ParseRGB(wall_users[srcStr].group_color)
                                 elseif inv then -- Invisivel
-                                    r, g, b = ParseRGB(wall_users[src].inv_color or "255, 255, 0")
+                                    r, g, b = ParseRGB(wall_users[srcStr].inv_color or "255, 255, 0")
                                 elseif health < 101 then -- Morto
-                                    r, g, b = ParseRGB(wall_users[src].dead_color or "255, 0, 0")
+                                    r, g, b = ParseRGB(wall_users[srcStr].dead_color or "255, 0, 0")
                                 else -- Vivo / Padrão
-                                    r, g, b = ParseRGB(wall_users[src].default_color or "0, 0, 255")
+                                    r, g, b = ParseRGB(wall_users[srcStr].default_color or "0, 0, 255")
                                 end
                                 DrawLine(x2, y2, z2, x1, y1, z1, r, g, b, 255)
                             end
