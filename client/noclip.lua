@@ -90,8 +90,6 @@ local function ToggleBehavior(bool)
     SetLocalPlayerVisibleLocally(true)
     SetEveryoneIgnorePlayer(ped, bool)
     SetPoliceIgnorePlayer(ped, bool)
-    SetPedCanRagdoll(ped, not bool)
-    SetPedCanBeKnockedOffVehicle(ped, not bool)
 
     if bool then
         SetEntityInvincible(ped, true)
