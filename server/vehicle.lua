@@ -9,24 +9,31 @@ lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
     end
 
     local dbStocks = {}
-    local dbResult = MySQL.query.await('SELECT model, stock FROM vehicles_data')
-    if dbResult then
-        for _, v in pairs(dbResult) do
-            dbStocks[v.model] = v.stock
+    if Config.Dealership == 'mri' then
+        local dbResult = MySQL.query.await('SELECT model, stock FROM vehicles_data')
+        if dbResult then
+            for _, v in pairs(dbResult) do
+                dbStocks[v.model] = v.stock
+            end
         end
     end
 
     for model, data in pairs(baseVehicles) do
         local m = data.model or model
-        vehicles[#vehicles + 1] = {
+        local vehicle = {
             name = data.name,
             hash = data.hash,
             model = m,
             category = data.category,
             brand = data.brand,
-            price = data.price,
-            stock = dbStocks[m] or 0
+            price = data.price
         }
+        
+        if Config.Dealership == 'mri' then
+            vehicle.stock = dbStocks[m] or 0
+        end
+        
+        vehicles[#vehicles + 1] = vehicle
     end
 
     table.sort(vehicles, function(a, b) return (a.name or "") < (b.name or "") end)
@@ -218,6 +225,11 @@ end)
 lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(src, actionData.perms) then return false end
+
+    if Config.Dealership ~= 'mri' then
+        QBCore.Functions.Notify(src, "Stock management is only available for mri dealership system", "error")
+        return false
+    end
 
     local model = selectedData["model"].value
     local stock = tonumber(selectedData["stock"].value)
