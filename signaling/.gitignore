@@ -1,0 +1,17 @@
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / Local SSL
+*.pem
+*.key
+*.crt
+
+# Logs
+logs/
+*.log
+
+# Windows
+*.bat
