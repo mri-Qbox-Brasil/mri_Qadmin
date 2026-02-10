@@ -1,6 +1,7 @@
 Config = Config or {}
 
 Config.Fuel = "cdn-fuel"        -- "ps-fuel", "LegacyFuel", "ox_fuel"
+Config.Dealership = "mri"     -- "mri" (for qbx_vehicleshop with stock system) or "none" to disable
 Config.ResourcePerms = 'admin' -- permission to control resource(start stop restart)
 Config.ShowCommandsPerms = 'admin' -- permission to show all commands
 Config.OpenPanelPerms = { 'qadmin.open', 'admin' }
