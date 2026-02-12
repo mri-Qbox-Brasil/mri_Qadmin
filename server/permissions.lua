@@ -50,7 +50,11 @@ local function LoadPermissions()
 
         -- Expand for online players
         for src, data in pairs(onlinePlayers) do
-             if p.child == data.license or p.child == ('license:'..data.license) or p.child == data.name then
+             local license = data.license
+             local fullLicense = 'license:'..license
+             local fullLicense2 = 'license2:'..license
+             
+             if p.child == license or p.child == fullLicense or p.child == fullLicense2 or p.child == data.name then
                  ApplyPrincipalToAllIdentifiers(src, p.parent)
              else
                  -- Check secondary IDs if needed, but license is primary
@@ -289,11 +293,12 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
         if p then
             local pLicense = p.PlayerData.license
             local fullLicense = 'license:'..pLicense
-            -- Match loosely against license or exact string
+            local fullLicense2 = 'license2:'..pLicense  -- Support for license2 (new FiveM standard)
+            -- Match loosely against license, license2 or exact string
             -- Also check if child matches any identifier directly
 
             local match = false
-            if child == pLicense or child == fullLicense or child == p.PlayerData.name then
+            if child == pLicense or child == fullLicense or child == fullLicense2 or child == p.PlayerData.name then
                 match = true
             else
                 local num = GetNumPlayerIdentifiers(id)

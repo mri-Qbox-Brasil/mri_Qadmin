@@ -41,7 +41,13 @@ RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(data, selectedData)
         DeleteVehicle(cache.vehicle)
     end
 
-    local vehicle = CreateVehicle(hash, GetEntityCoords(cache.ped), GetEntityHeading(cache.ped), true, false)
+    local coords = GetEntityCoords(cache.ped)
+    local heading = GetEntityHeading(cache.ped)
+    
+    local groundFound, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z + 100.0, false)
+    local spawnZ = groundFound and groundZ + 0.5 or coords.z + 0.5
+    
+    local vehicle = CreateVehicle(hash, coords.x, coords.y, spawnZ, heading, true, false)
     TaskWarpPedIntoVehicle(cache.ped, vehicle, -1)
 
     Wait(100)
