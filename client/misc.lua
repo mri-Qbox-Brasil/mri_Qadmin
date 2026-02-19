@@ -223,98 +223,23 @@ RegisterNetEvent("mri_Qadmin:client:setPed", function(pedModels)
     SetModelAsNoLongerNeeded(pedModels)
 end)
 
--- Capture Screen
-RegisterNetEvent('mri_Qadmin:client:CaptureScreen', function(requester)
-    print('[DEBUG] CaptureScreen Event Received. Requester:', requester)
-    print('[DEBUG] Config.LiveVideoMethod:', Config.LiveVideoMethod)
-
-    if Config.LiveVideoMethod == "webrtc" then
-        TriggerEvent('mri_Qadmin:client:StartWebRTC', requester)
-        return
-    end
-
-    exports['screenshot-basic']:requestScreenshot({
-        encoding = 'jpg',
-        quality = 0.2
-    }, function(data)
-        if not data then return end
-
-        -- Chunking Logic
-        local chunkSize = 8 * 1024 -- 8KB chunks (Safe for reliable)
-        local dataLen = string.len(data)
-        local totalChunks = math.ceil(dataLen / chunkSize)
-        local captureId = math.random(100000, 999999)
-
-        for i = 1, totalChunks do
-            local start = ((i - 1) * chunkSize) + 1
-            local finish = math.min(i * chunkSize, dataLen)
-            local chunk = string.sub(data, start, finish)
-
-            TriggerServerEvent('mri_Qadmin:server:ReceiveScreenChunk', requester, {
-                captureId = captureId,
-                current = i,
-                total = totalChunks,
-                data = chunk
-            })
-            Wait(50) -- Throttle to prevent reliable overflow
-        end
-    end)
-end)
-
 -- WebRTC Streaming State
 local isWebRTCStreaming = false
 
--- Stub for WebRTC
 RegisterNetEvent('mri_Qadmin:client:StartWebRTC', function(requester)
-    print('[DEBUG] StartWebRTC Event Received. Requester:', requester)
-
-    if isWebRTCStreaming then return end -- Already streaming
+    print('[WebRTC] Starting Stream for requester:', requester)
     isWebRTCStreaming = true
 
-    print('[WebRTC] Starting Stream for:', requester)
-
-    -- Initialize NUI WebRTC (Handshake)
     SendNUIMessage({
         action = 'StartWebRTC',
         data = {
             targetId = requester,
-            selfId = cache.playerId
+            selfId = GetPlayerServerId(PlayerId())
         }
     })
-
-    -- Start Capture Loop
-    Citizen.CreateThread(function()
-        local lastFrame = 0
-        while isWebRTCStreaming do
-            -- Limit FPS to ~8-10 to prevent crash/lag
-            local time = GetGameTimer()
-            if time - lastFrame > 150 then
-                 lastFrame = time
-                 exports['screenshot-basic']:requestScreenshot({
-                    encoding = 'jpg',
-                    quality = 0.15
-                }, function(data)
-                    if not isWebRTCStreaming then return end
-                    SendNUIMessage({
-                        action = 'StreamFrame',
-                        data = { data = data }
-                    })
-                end)
-            end
-            Wait(50)
-        end
-    end)
 end)
 
 RegisterNetEvent('mri_Qadmin:client:StopWebRTC', function()
     isWebRTCStreaming = false
     SendNUIMessage({ action = 'StopWebRTC' })
-end)
-
-RegisterNetEvent('mri_Qadmin:client:ReceiveScreenChunk', function(data)
-    -- data = { id: source, captureId, current, total, data }
-    SendNUIMessage({
-        action = 'ReceiveScreenChunk',
-        data = data
-    })
 end)

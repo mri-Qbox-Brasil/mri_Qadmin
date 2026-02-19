@@ -1,4 +1,5 @@
 function GetCoreData()
+    print('[DEBUG] GetCoreData called. Config.WebRTCUrl:', Config.WebRTCUrl)
     local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData', false)
     if not groups then groups = { jobs = {}, gangs = {} } end
 

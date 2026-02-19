@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebRTC Standalone Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #222; color: #fff; }
+        .box { border: 1px solid #555; padding: 20px; margin-bottom: 20px; background: #333; }
+        input, button { padding: 8px; margin: 5px; }
+        #logs { height: 300px; overflow-y: scroll; background: #111; border: 1px solid #444; padding: 10px; }
+        video { width: 300px; height: 200px; background: #000; border: 1px solid #666; }
+    </style>
+</head>
+<body>
+    <h1>WebRTC Signaling Test 📡</h1>
+
+    <div class="box">
+        <h3>1. Configuration</h3>
+        <label>My ID:</label>
+        <input type="text" id="myId" value="user1">
+        <label>Signaling URL:</label>
+        <input type="text" id="wsUrl" value="wss://192.168.68.119:3000">
+        <button onclick="connect()">Connect to Server</button>
+        <span id="status">🔴 Disconnected</span>
+    </div>
+
+    <div class="box">
+        <h3>2. Actions</h3>
+        <div style="display: flex; gap: 20px;">
+            <div>
+                <h4>Sender (Streamer)</h4>
+                <p>Simulates the Player being watched.</p>
+                <video id="localVideo" autoplay playsinline muted></video><br>
+                <button onclick="startCamera()">1. Start Camera</button>
+            </div>
+            <div>
+                <h4>Receiver (Viewer)</h4>
+                <p>Simulates the Admin Panel.</p>
+                <video id="remoteVideo" autoplay playsinline controls></video><br>
+                <label>Target ID:</label>
+                <input type="text" id="targetId" value="user1">
+                <button onclick="startCall()">2. Request Stream (Call)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="logs"></div>
+
+    <script>
+        let ws;
+        let pc;
+        let myId;
+        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+        function log(msg) {
+            const d = document.getElementById('logs');
+            d.innerHTML += `<div>${new Date().toLocaleTimeString()} - ${msg}</div>`;
+            d.scrollTop = d.scrollHeight;
+            console.log(msg);
+        }
+
+        function connect() {
+            myId = document.getElementById('myId').value;
+            const url = document.getElementById('wsUrl').value;
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                document.getElementById('status').innerText = "🟢 Connected";
+                log(`Connected. Registering as ${myId}...`);
+                ws.send(JSON.stringify({ type: 'register', playerId: myId }));
+            };
+
+            ws.onmessage = async (event) => {
+                const msg = JSON.parse(event.data);
+                log(`RX: ${msg.type} from ${msg.sourceId}`);
+
+                if (!pc) createPeerConnection(msg.sourceId);
+
+                if (msg.type === 'offer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    send({ type: 'answer', targetId: msg.sourceId, data: answer });
+                }
+                else if (msg.type === 'answer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+                }
+                else if (msg.type === 'candidate') {
+                    await pc.addIceCandidate(new RTCIceCandidate(msg.data));
+                }
+            };
+        }
+
+        function send(msg) {
+            msg.sourceId = myId;
+            ws.send(JSON.stringify(msg));
+            log(`TX: ${msg.type} to ${msg.targetId}`);
+        }
+
+        function createPeerConnection(targetId) {
+            log(`Creating RTCPeerConnection for target: ${targetId}`);
+            pc = new RTCPeerConnection(config);
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    send({ type: 'candidate', targetId: targetId, data: event.candidate });
+                }
+            };
+
+            pc.ontrack = (event) => {
+                log("Track received! Showing video...");
+                document.getElementById('remoteVideo').srcObject = event.streams[0];
+            };
+
+            // Add local tracks if available (Sender mode)
+            const localStream = document.getElementById('localVideo').srcObject;
+            if (localStream) {
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+            }
+        }
+
+        async function startCamera() {
+            try {
+                // Get dummy video (canvas noise would be better but camera is easier for user if available,
+                // fallback to canvas if no camera?)
+                // Let's use a simple Canvas stream to avoid permissions if possible, or just webcam.
+                // Webcam is standard for webrtc tests.
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                document.getElementById('localVideo').srcObject = stream;
+                log("Camera started.");
+            } catch (e) {
+                log("Camera error: " + e.message + " (Try Canvas fallback)");
+                startCanvasStream();
+            }
+        }
+
+        function startCanvasStream() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 320; canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            function draw() {
+                ctx.fillStyle = '#' + Math.floor(Math.random()*16777215).toString(16);
+                ctx.fillRect(0, 0, 320, 240);
+                ctx.fillStyle = 'white';
+                ctx.font = '30px Arial';
+                ctx.fillText(new Date().toLocaleTimeString(), 50, 120);
+                requestAnimationFrame(draw);
+            }
+            draw();
+            const stream = canvas.captureStream(30);
+            document.getElementById('localVideo').srcObject = stream;
+            log("Canvas stream started (Test Mode).");
+        }
+
+        async function startCall() {
+            const targetId = document.getElementById('targetId').value;
+            createPeerConnection(targetId);
+
+            // Data Channel for compatibility with our text-based solution?
+            // Our 5M solution uses DataChannel for images, but standard WebRTC uses Tracks.
+            // Let's support both for this test?
+            // Actually, let's just test standard Video Track first to prove connection.
+            // If connection works, DataChannel will too.
+
+            const dc = pc.createDataChannel("test");
+            dc.onopen = () => log("DataChannel OPEN!");
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            send({ type: 'offer', targetId: targetId, data: offer });
+        }
+    </script>
+</body>
+</html>

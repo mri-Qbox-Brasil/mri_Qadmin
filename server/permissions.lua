@@ -45,15 +45,22 @@ local function LoadPermissions()
     end
 
     for _, p in ipairs(principals) do
-        Debug(('[mri_Qadmin] [DEBUG] Executing: add_principal %s %s'):format(p.child, p.parent))
-        ExecuteCommand(('add_principal %s %s'):format(p.child, p.parent))
+        local child = p.child
+        -- Fix: Ensure identifier prefix if missing for license-style strings that aren't already prefixed
+        -- This fixes the issue where permissions are lost on restart because "license:xxx" is not a valid principal, it must be "identifier.license:xxx"
+        if not string.find(child, 'identifier.') and (string.find(child, 'license:') or string.find(child, 'license2:')) then
+             child = 'identifier.' .. child
+        end
+
+        Debug(('[mri_Qadmin] [DEBUG] Executing: add_principal %s %s'):format(child, p.parent))
+        ExecuteCommand(('add_principal %s %s'):format(child, p.parent))
 
         -- Expand for online players
         for src, data in pairs(onlinePlayers) do
              local license = data.license
              local fullLicense = 'license:'..license
              local fullLicense2 = 'license2:'..license
-             
+
              if p.child == license or p.child == fullLicense or p.child == fullLicense2 or p.child == data.name then
                  ApplyPrincipalToAllIdentifiers(src, p.parent)
              else
@@ -84,7 +91,11 @@ end
 -- ...
 
 RegisterCommand('qadmin_check', function(source, args)
-    if source ~= 0 then return end -- Console only for safety
+    if source ~= 0 then
+        if not (QBCore.Functions.HasPermission(source, 'admin') or IsPlayerAceAllowed(source, 'qadmin.master')) then
+             return
+        end
+    end
     local target = tonumber(args[1])
     local extraGroup = args[2] -- Optional: Check a specific group name
     if not target then return Debug('Usage: qadmin_check [id] [optional_group_to_check]') end
@@ -559,24 +570,65 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     return allowed
 end)
 
-RegisterCommand('qadmin_check', function(source, args)
-    if source ~= 0 then return end -- Console only for safety
-    local target = tonumber(args[1])
-    if not target then return Debug('Usage: qadmin_check [id]') end
 
-    local Name = GetPlayerName(target)
-    if not Name then return Debug('Player not found') end
 
-    Debug(('--- Checking Permissions for %s (%d) ---'):format(Name, target))
-    local testNodes = {'qadmin.page.players', 'qadmin.page.dashboard', 'group.indy'}
-    for _, node in ipairs(testNodes) do
-        local allowed = IsPlayerAceAllowed(target, node)
-        Debug(('%s: %s'):format(node, tostring(allowed)))
+RegisterCommand('mri_qadmin.setmaster', function(source, args)
+    if source ~= 0 then return end -- Console only
+
+    local target = args[1]
+    if not target then
+        print('^1[mri_Qadmin] Usage: mri_qadmin.setmaster [id/license]^7')
+        return
     end
 
-    local num = GetNumPlayerIdentifiers(target)
-    for i = 0, num-1 do
-        Debug('Identifier: ' .. GetPlayerIdentifier(target, i))
+    local license = target
+    -- Check if it's a numeric ID (online player)
+    if tonumber(target) then
+        local p = QBCore.Functions.GetPlayer(tonumber(target))
+        if p then
+            license = 'license:' .. p.PlayerData.license
+            print(('[mri_Qadmin] Resolved ID %s to %s (%s)'):format(target, p.PlayerData.name, license))
+        else
+            print('^1[mri_Qadmin] Player ID not found online. If using license, provide full string (license:xxx)^7')
+            return
+        end
     end
-    Debug('-------------------------------------------')
+
+    if not string.find(license, 'license:') and not string.find(license, 'license2:') then
+        print('^3[mri_Qadmin] Warning: Target %s does not look like a license. Assuming it is valid.^7')
+    end
+
+    local parent = 'group.admin'
+
+    -- 1. Insert into DB
+    local function doInsert()
+        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {license, parent})
+        if exists then
+            print('^3[mri_Qadmin] Principal already exists in DB.^7')
+        else
+            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {license, parent, 'Master Admin (Console)'})
+            print('^2[mri_Qadmin] Added to database.^7')
+        end
+    end
+
+    -- Run async
+    CreateThread(function()
+        doInsert()
+
+        -- 2. Apply immediately
+        ExecuteCommand(('add_principal identifier.%s %s'):format(license, parent))
+        print(('^2[mri_Qadmin] Executed: add_principal identifier.%s %s^7'):format(license, parent))
+
+        -- 3. If online, notify and reload
+        local players = QBCore.Functions.GetPlayers()
+        for _, id in ipairs(players) do
+            local p = QBCore.Functions.GetPlayer(id)
+            if p and ('license:'..p.PlayerData.license == license or 'license2:'..p.PlayerData.license == license) then
+                print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
+                TriggerEvent('QBCore:Server:OnPlayerLoaded', id) -- Re-trigger load logic or just rely on add_principal
+                TriggerClientEvent('QBCore:Notify', id, 'Você agora é Master Admin!', 'success')
+                BroadcastPermissionUpdate()
+            end
+        end
+    end)
 end, true)

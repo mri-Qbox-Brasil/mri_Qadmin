@@ -170,37 +170,45 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [visible, sendNui])
 
-  if (!visible) return null
+  // if (!visible) return null // REMOVED: We need WebRTCStreamer to stay mounted!
 
   return (
-    <div className="app-shell bg-background text-foreground">
-      <Listeners />
-      <WebRTCStreamer />
+    <>
+      <div className="app-shell bg-background text-foreground" style={{ display: visible ? 'flex' : 'none' }}>
+          <Listeners />
+          {/* WebRTCStreamer works in background, but we keep it here.
+              Wait, if we hide app-shell, WebRTCStreamer is inside it.
+              Does display:none stop JS? No. It just hides it.
+              But let's move it out to be safe if app-shell has logic.
+          */}
 
-      {/* Overlays */}
-      <VehicleDev />
-      <ToggleCoords />
-      <EntityInformation />
+          {/* Overlays */}
+          <VehicleDev />
+          <ToggleCoords />
+          <EntityInformation />
 
-      <Sidebar onRoute={setRoute} currentRoute={route} />
-      <div className="flex-1 p-2 overflow-auto">
-        {route === 'resources' ? <Resources /> :
-         route === 'players' ? <Players /> :
-         route === 'actions' ? <Actions /> :
-         route === 'staffchat' ? <StaffChat /> :
-         route === 'commands' ? <Commands /> :
-         route === 'items' ? <Items /> :
-         route === 'bans' ? <Bans /> :
-         route === 'vehicles' ? <Vehicles /> :
-         route === 'groups' ? <Groups /> :
-         route === 'credits' ? <Credits /> :
-         route === 'settings' ? <Settings /> :
-         route === 'dashboard' ? <Dashboard /> :
-         route === 'permissions' ? <Permissions /> :
-         route === 'livemap' ? <LiveMapPage /> :
-         route === 'livescreens' ? <LiveScreensPage /> :
-         null}
+          <Sidebar onRoute={setRoute} currentRoute={route} />
+          <div className="flex-1 p-2 overflow-auto">
+            {route === 'resources' ? <Resources /> :
+             route === 'players' ? <Players /> :
+             route === 'actions' ? <Actions /> :
+             route === 'staffchat' ? <StaffChat /> :
+             route === 'commands' ? <Commands /> :
+             route === 'items' ? <Items /> :
+             route === 'bans' ? <Bans /> :
+             route === 'vehicles' ? <Vehicles /> :
+             route === 'groups' ? <Groups /> :
+             route === 'credits' ? <Credits /> :
+             route === 'settings' ? <Settings /> :
+             route === 'dashboard' ? <Dashboard /> :
+             route === 'permissions' ? <Permissions /> :
+             route === 'livemap' ? <LiveMapPage /> :
+             route === 'livescreens' ? <LiveScreensPage /> :
+             null}
+          </div>
       </div>
-    </div>
+      {/* LISTENERS MUST BE ALWAYS ACTIVE */}
+      <WebRTCStreamer />
+    </>
   )
 }

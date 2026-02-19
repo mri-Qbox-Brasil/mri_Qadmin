@@ -607,11 +607,41 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(source, ta
     print('[DEBUG] GetPlayerScreen called. Source:', src, 'Target:', target)
 
     if target and target ~= 0 then
-        -- Trigger client to capture
-        TriggerClientEvent('mri_Qadmin:client:CaptureScreen', target, src)
-        return { status = "requested" }
+        if Config.LiveVideoMethod == "webrtc" then
+            -- Trigger WebRTC Start on Target
+            -- Params: requesterSource (who wants to watch)
+            TriggerClientEvent('mri_Qadmin:client:StartWebRTC', target, src)
+            return { status = "webrtc_initiated" }
+        else
+            -- Trigger client to capture (Screenshot Mode)
+            TriggerClientEvent('mri_Qadmin:client:CaptureScreen', target, src)
+            return { status = "requested" }
+        end
     end
     return { status = "error", message = "Invalid Target" }
+end)
+
+-- Real-time vitals for ScreenModal
+lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(source, targetId)
+    local target = tonumber(targetId)
+    if not target or target == 0 then return { error = 'Invalid target' } end
+    local player = QBCore.Functions.GetPlayer(target)
+    if not player then return { error = 'Player not found' } end
+    local ped = GetPlayerPed(target)
+    return {
+        health   = GetEntityHealth(ped),
+        armor    = GetPedArmour(ped),
+        ping     = GetPlayerPing(target),
+        metadata = player.PlayerData.metadata or {}
+    }
+end)
+
+-- Stop WebRTC streaming on the target player
+RegisterServerEvent('mri_Qadmin:server:StopPlayerScreen', function(targetId)
+    local target = tonumber(targetId)
+    if target and target ~= 0 then
+        TriggerClientEvent('mri_Qadmin:client:StopWebRTC', target)
+    end
 end)
 
 RegisterNetEvent('mri_Qadmin:server:ReceiveScreenChunk', function(requester, chunkData)

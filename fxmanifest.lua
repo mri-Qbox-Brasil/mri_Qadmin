@@ -36,7 +36,6 @@ server_scripts {
     "server/trolls.lua",
     "server/vehicle.lua",
     "server/wall.lua",
-    "server/signaling.js",
 }
 
 client_scripts {
@@ -62,6 +61,7 @@ dependencies {
     "oxmysql",
     "screenshot-basic",
 }
+
 
 files {
     "web/build/**",

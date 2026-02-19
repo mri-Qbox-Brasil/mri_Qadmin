@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    image: ghcr.io/ggfto/mri-signaling:latest
+    container_name: mri-signaling-app
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+
+  caddy:
+    image: caddy:alpine
+    container_name: mri-signaling-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:

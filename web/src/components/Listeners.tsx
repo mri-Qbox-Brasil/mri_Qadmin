@@ -42,6 +42,7 @@ export default function Listeners() {
     }
 
     const onData = (data: any) => {
+      console.log('[Listeners] Received data from NUI:', data);
       // Helper to ensure array
       const asArray = (arr: any) => Array.isArray(arr) ? arr : []
 

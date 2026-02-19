@@ -184,6 +184,22 @@ RegisterNUICallback("GetPlayerScreen", function(data, cb)
     cb(res)
 end)
 
+RegisterNUICallback("StopPlayerScreen", function(data, cb)
+    -- Tell the target player to stop streaming
+    TriggerServerEvent('mri_Qadmin:server:StopPlayerScreen', data.targetId)
+    cb({ status = "ok" })
+end)
+
+RegisterNUICallback("GetPlayerVitals", function(data, cb)
+    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerVitals', false, data.targetId)
+    cb(res)
+end)
+
+RegisterNUICallback("SetPlayerVital", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:SetVital', data.targetId, data.vital, data.value)
+    cb({ status = "ok" })
+end)
+
 RegisterNUICallback("getSelfId", function(_, cb)
     cb(GetPlayerServerId(PlayerId()))
 end)
