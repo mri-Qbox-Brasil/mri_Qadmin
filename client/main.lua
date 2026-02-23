@@ -8,11 +8,21 @@ local function setupMenu()
 	local resources = lib.callback.await('mri_Qadmin:callback:GetResources', false)
 	local server = lib.callback.await('mri_Qadmin:callback:GetServerInfo', false)
     local permissions = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
+    local actions = lib.callback.await('mri_Qadmin:callback:GetActions', false)
+
+    if actions and type(actions) == 'table' then
+        Config.Actions = actions.Actions or Config.Actions
+        Config.PlayerActions = actions.PlayerActions or Config.PlayerActions
+        Config.OtherActions = actions.OtherActions or Config.OtherActions
+    end
+
 	GetData()
 	SendNUIMessage({
 		action = "setupUI",
 		data = {
 			actions = Config.Actions,
+			playerActions = Config.PlayerActions,
+			otherActions = Config.OtherActions,
 			resources = resources,
 			playerData = PlayerData,
 			server = server,
@@ -20,7 +30,9 @@ local function setupMenu()
             permissions = permissions,
             supportedLanguages = Config.SupportedLanguages,
             webrtcUrl = Config.WebRTCUrl,
-            signalingProvider = Config.SignalingProvider
+            signalingProvider = Config.SignalingProvider,
+            descriptions = Config.Descriptions,
+            settingOptions = Config.Options
 		}
 	})
 end
@@ -280,6 +292,35 @@ RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
     -- TriggerEvent('QBCore:Notify', 'Permissions synchronized', 'primary', 2000)
 end)
 
+RegisterNetEvent('mri_Qadmin:client:UpdateSettings', function(newSettings)
+    if type(newSettings) == 'table' then
+        for k, v in pairs(newSettings) do
+            Config[k] = v
+        end
+        Debug('[mri_Qadmin] Client Config updated dynamically from server')
+
+        SendNUIMessage({
+            action = "updateSettings",
+            data = newSettings
+        })
+    end
+end)
+
+RegisterNetEvent('mri_Qadmin:client:UpdateActions', function(newActions)
+    if type(newActions) == 'table' then
+        Config.Actions = newActions.Actions or Config.Actions
+        Config.PlayerActions = newActions.PlayerActions or Config.PlayerActions
+        Config.OtherActions = newActions.OtherActions or Config.OtherActions
+
+        Debug('[mri_Qadmin] Client Actions updated dynamically from server')
+
+        SendNUIMessage({
+            action = "updateActions",
+            data = newActions
+        })
+    end
+end)
+
 RegisterNetEvent('mri_Qadmin:client:UpdatePlayerVitals', function(data)
     Debug("Recebido UpdatePlayerVitals para ID: " .. tostring(data.id))
     SendNUIMessage({
@@ -355,5 +396,25 @@ end)
 
 RegisterNUICallback("mri_Qadmin:server:SetVital", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:SetVital', data.targetId, data.vital, data.value)
+    cb('ok')
+end)
+
+RegisterNUICallback("getSettings", function(data, cb)
+    local settings = lib.callback.await('mri_Qadmin:callback:GetSettings', false)
+    cb(settings or {})
+end)
+
+RegisterNUICallback("updateSetting", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:UpdateSetting', data.key, data.value)
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:SaveAction", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:SaveAction', data.id, data.category, data.data)
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:DeleteAction", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:DeleteAction', data.id, data.category)
     cb('ok')
 end)

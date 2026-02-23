@@ -28,6 +28,8 @@ server_scripts {
     "server/misc.lua",
     "server/peds.lua",
     "server/permissions.lua",
+    "server/settings.lua",
+    "server/actions.lua",
     "server/players.lua",
     "server/resources.lua",
     "server/server_data.lua",

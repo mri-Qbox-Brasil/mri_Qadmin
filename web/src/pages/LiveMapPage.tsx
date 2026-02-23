@@ -40,14 +40,14 @@ export default function LiveMapPage() {
 
     return (
         <div className="h-full flex flex-col bg-background">
-             <MriPageHeader title="Live Map" icon={MapIcon} />
+             <MriPageHeader title={t('nav_livemap') || "Live Map"} icon={MapIcon} />
              <div className="flex-1 p-4 overflow-hidden relative">
                  <div className="w-full h-full rounded-xl border border-border overflow-hidden relative shadow-sm">
                      <LiveMap markers={markers} />
 
                      {/* Overlay Stats */}
                      <div className="absolute top-4 right-4 bg-card/90 backdrop-blur border border-border p-3 rounded-lg shadow-lg z-[400] pointer-events-none flex flex-col items-center min-w-[100px]">
-                        <div className="text-[10px] font-bold text-muted-foreground uppercase mb-1 tracking-wider">Online Players</div>
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase mb-1 tracking-wider">{t('livemap_online') || "Online Players"}</div>
                         <div className="text-2xl font-black text-primary flex items-center gap-2">
                             {markers.length}
                             <span className="relative flex h-3 w-3">

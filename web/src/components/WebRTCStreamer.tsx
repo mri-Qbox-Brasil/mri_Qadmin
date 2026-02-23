@@ -16,8 +16,8 @@ export default function WebRTCStreamer() {
     const { on, off, sendNui } = useNui();
     const peerRef = useRef<RTCPeerConnection | null>(null);
 
-    const { gameData } = useAppState();
-    const webrtcUrl = gameData.webrtcUrl;
+    const { gameData, settings } = useAppState();
+    const webrtcUrl = settings?.WebRTCUrl || gameData.webrtcUrl;
 
     useEffect(() => {
 
@@ -26,7 +26,7 @@ export default function WebRTCStreamer() {
 
             // Init Signaling (for metadata exchange in all providers)
             const url = webrtcUrl || null;
-            const provider = (gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
+            const provider = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
             signaling.init(url, String(data.selfId), provider);
 
             // Close any previous peer
@@ -141,7 +141,7 @@ export default function WebRTCStreamer() {
             off('StartWebRTC', startHandler);
             off('StopWebRTC', stopHandler);
         };
-    }, [on, off, sendNui, webrtcUrl, gameData.signalingProvider]);
+    }, [on, off, sendNui, webrtcUrl, settings?.SignalingProvider, gameData.signalingProvider]);
 
     return null;
 }

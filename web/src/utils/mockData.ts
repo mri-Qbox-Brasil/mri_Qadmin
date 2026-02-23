@@ -170,6 +170,8 @@ export const MOCK_GAME_DATA = {
         "teleport_options": { label: "Teleport Options", dropdown: [] },
         "wealth_management": { label: "Wealth Management", dropdown: [] }
     },
+    playerActions: {},
+    otherActions: {},
     staffMessages: [
          { fullname: "John Doe", message: "Anyone seeing the report about ID 42?", time: Date.now() - 3600000 },
          { fullname: "Jane Smith", message: "Yeah, I'm checking it now. Seems like a VDM request.", time: Date.now() - 3500000 },

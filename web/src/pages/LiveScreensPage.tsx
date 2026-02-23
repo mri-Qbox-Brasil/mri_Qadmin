@@ -4,6 +4,7 @@ import { MriPageHeader, MriCard, MriButton } from '@mriqbox/ui-kit'
 import { Monitor, X, Video, Wifi } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
+import { useI18n } from '@/context/I18n'
 import Spinner from '@/components/Spinner'
 import { signaling } from '@/utils/signaling/index'
 
@@ -21,6 +22,7 @@ interface WatchedPlayer {
 function PlayerFeed({ player, myId, onClose }: { player: WatchedPlayer, myId: string | null, onClose: () => void }) {
     const { sendNui } = useNui()
     const { gameData } = useAppState()
+    const { t } = useI18n()
     const videoRef = useRef<HTMLVideoElement>(null)
     const peerRef  = useRef<RTCPeerConnection | null>(null)
     const [loading, setLoading] = useState(true)
@@ -35,7 +37,7 @@ function PlayerFeed({ player, myId, onClose }: { player: WatchedPlayer, myId: st
         // SELF-VIEW BYPASS: use renderer directly (no WebRTC round-trip needed)
         if (myId && String(player.id) === String(myId)) {
             import('@/utils/fivem-renderer').then(({ default: renderer }) => {
-                const stream = renderer.startStream();
+                const stream = (renderer as any).startStream();
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                     videoRef.current.play().catch(() => {});
@@ -109,7 +111,7 @@ function PlayerFeed({ player, myId, onClose }: { player: WatchedPlayer, myId: st
                 {loading && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground z-10">
                         <Spinner />
-                        <span className="text-[10px]">Connecting...</span>
+                        <span className="text-[10px]">{t('livescreens_connecting') || "Connecting..."}</span>
                     </div>
                 )}
                 <video
@@ -127,7 +129,8 @@ function PlayerFeed({ player, myId, onClose }: { player: WatchedPlayer, myId: st
 
 export default function LiveScreensPage() {
     const { sendNui } = useNui()
-    const { gameData } = useAppState()
+    const { gameData, settings } = useAppState()
+    const { t } = useI18n()
     const [players, setPlayers]   = useState<any[]>([])
     const [watching, setWatching] = useState<WatchedPlayer[]>([])
     const [myId, setMyId]         = useState<string | null>(null)
@@ -138,12 +141,12 @@ export default function LiveScreensPage() {
             if (id) {
                 const sid = String(id);
                 setMyId(sid);
-                const url = gameData.webrtcUrl || null;
-                const provider = (gameData.signalingProvider ?? 'fivem-native') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
+                const url = settings?.WebRTCUrl || gameData.webrtcUrl || null;
+                const provider = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'fivem-native') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
                 signaling.init(url, 'viewer-' + sid, provider);
             }
         })
-    }, [sendNui, gameData.webrtcUrl])
+    }, [sendNui, gameData.webrtcUrl, settings?.WebRTCUrl, settings?.SignalingProvider])
 
     // Fetch online-only player list
     useEffect(() => {
@@ -165,7 +168,7 @@ export default function LiveScreensPage() {
 
     return (
         <div className="h-full flex flex-col bg-background">
-            <MriPageHeader title="Live Screens Dashboard" icon={Monitor} />
+            <MriPageHeader title={t('livescreens_title') || "Live Screens Dashboard"} icon={Monitor} />
 
             <div className="flex-1 p-4 overflow-hidden flex flex-col gap-4">
                 {/* Active feeds grid */}
@@ -173,17 +176,17 @@ export default function LiveScreensPage() {
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-bold flex items-center gap-2">
                             <Video className="w-5 h-5 text-red-500" />
-                            Active Feeds ({watching.length})
+                            {t('livescreens_active') || "Active Feeds"} ({watching.length})
                         </h2>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Wifi className="w-3 h-3" />
-                            WebRTC Live
+                            {t('livescreens_webrtc') || "WebRTC Live"}
                         </div>
                     </div>
 
                     {watching.length === 0 ? (
                         <div className="h-40 flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
-                            Select players below to watch their screen
+                            {t('livescreens_empty') || "Select players below to watch their screen"}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -201,7 +204,7 @@ export default function LiveScreensPage() {
 
                 {/* Player selector */}
                 <div className="h-1/3 border rounded-xl p-4 overflow-hidden flex flex-col bg-card">
-                    <h3 className="font-semibold mb-2">Available Players</h3>
+                    <h3 className="font-semibold mb-2">{t('livescreens_available') || "Available Players"}</h3>
                     <div className="overflow-auto flex-1">
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                             {players.map(p => {

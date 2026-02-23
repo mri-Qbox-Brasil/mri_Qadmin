@@ -15,23 +15,11 @@ function CheckPerms(source, perms)
         local allowed = IsPlayerAceAllowed(source, perms)
         Debug(('[DEBUG] Checking String Ace [%s]: %s'):format(perms, tostring(allowed)))
         if allowed then return true end
-
-        -- QBCore Fallback (Check legacy groups if granular fails)
-        if QBCore.Functions.HasPermission(source, 'admin') or QBCore.Functions.HasPermission(source, 'god') then
-            Debug(('[DEBUG] QBCore Group Fallback: true'))
-            return true
-        end
     elseif type(perms) == 'table' then
         for _, p in pairs(perms) do
             local allowed = IsPlayerAceAllowed(source, p)
             -- print(('[DEBUG] Checking Table Ace [%s]: %s'):format(p, tostring(allowed)))
             if allowed then return true end
-        end
-
-        -- QBCore Fallback
-        if QBCore.Functions.HasPermission(source, 'admin') or QBCore.Functions.HasPermission(source, 'god') then
-            Debug(('[DEBUG] QBCore Group Fallback: true'))
-            return true
         end
     end
 

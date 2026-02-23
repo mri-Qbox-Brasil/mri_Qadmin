@@ -20,7 +20,7 @@ end)
 RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, fullname)
     local src = source
     -- Allow if admin OR has specific staffchat permission
-    if not (QBCore.Functions.HasPermission(src, "admin") or IsPlayerAceAllowed(src, 'qadmin.page.staffchat')) then
+    if not IsPlayerAceAllowed(src, 'qadmin.page.staffchat') then
         return QBCore.Functions.Notify(src, "Sem permissão para usar o chat.", "error")
     end
 
@@ -97,6 +97,6 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, f
 end)
 
 lib.callback.register("mri_Qadmin:callback:GetMessages", function(source)
-    if not (QBCore.Functions.HasPermission(source, "admin") or IsPlayerAceAllowed(source, 'qadmin.page.staffchat')) then return {} end
+    if not IsPlayerAceAllowed(source, 'qadmin.page.staffchat') then return {} end
     return messages
 end)

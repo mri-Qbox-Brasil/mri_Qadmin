@@ -79,7 +79,7 @@ function Badge({ children, color }: { children: React.ReactNode, color: string }
 
 export default function ScreenModal({ playerId, onClose, playerName }: ScreenModalProps) {
     const { sendNui, on, off } = useNui();
-    const { gameData } = useAppState();
+    const { gameData, settings } = useAppState();
     const [loading, setLoading]   = useState(true);
     const [error, setError]       = useState<string | null>(null);
     const [fps, setFps]           = useState<number | null>(null);
@@ -99,12 +99,12 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                const sid = String(id);
                myIdRef.current = sid;
                setMyId(sid);
-        const url = gameData.webrtcUrl || null;
-               const provider = (gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
+        const url = settings?.WebRTCUrl || gameData.webrtcUrl || null;
+               const provider = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
                signaling.init(url, 'viewer-' + sid, provider);
            }
        }).catch(err => console.error('[ScreenModal] getSelfId FAILED:', err));
-    }, [sendNui, gameData.webrtcUrl]);
+    }, [sendNui, gameData.webrtcUrl, settings?.WebRTCUrl, settings?.SignalingProvider]);
 
     // ── Vitals polling ──────────────────────────────────────────────────────
     const fetchVitals = useCallback(() => {
@@ -149,7 +149,7 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
             return;
         }
 
-        const provider = gameData.signalingProvider ?? 'websocket';
+        const provider = settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket';
 
         // ── CF SFU subscriber path ─────────────────────────────────────────
         if (provider === 'cloudflare-sfu') {
@@ -245,7 +245,7 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
             unsub();
             if (peerRef.current) { peerRef.current.close(); peerRef.current = null; }
         };
-    }, [playerId, myId, sendNui, gameData.signalingProvider]);
+    }, [playerId, myId, sendNui, gameData.signalingProvider, settings?.SignalingProvider]);
 
 
     // ── Actions ──────────────────────────────────────────────────────────────

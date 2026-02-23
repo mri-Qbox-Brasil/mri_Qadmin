@@ -8,7 +8,6 @@ import { TableVirtuoso } from 'react-virtuoso'
 import BansSkeleton from '@/components/skeletons/BansSkeleton'
 
 import { cn } from '@/lib/utils'
-import { MOCK_GAME_DATA } from '@/utils/mockData'
 
 import SearchInput from '@/components/shared/SearchInput'
 import BanListRow from '@/components/bans/BanListRow'

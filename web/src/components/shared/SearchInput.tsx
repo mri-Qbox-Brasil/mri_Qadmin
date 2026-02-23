@@ -2,9 +2,9 @@ import { Search } from 'lucide-react'
 import { MriInput } from '@mriqbox/ui-kit'
 import { cn } from '@/lib/utils'
 
-interface SearchInputProps {
+interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value: string
-  onChange: (value: string) => void
+  onChange: any // Overriding the default onChange to accept string
   placeholder?: string
   className?: string
   width?: string
@@ -15,7 +15,8 @@ export default function SearchInput({
   onChange,
   placeholder,
   className,
-  width = "w-80"
+  width = "w-80",
+  ...props
 }: SearchInputProps) {
   return (
     <div className={cn("relative", width, className)}>
@@ -25,6 +26,7 @@ export default function SearchInput({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="pl-9 bg-card border-border focus:border-primary/50 h-10 w-full transition-colors"
+            {...props}
         />
     </div>
   )

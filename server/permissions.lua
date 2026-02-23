@@ -4,19 +4,6 @@ local QBCore = exports['qb-core']:GetCoreObject()
 -- FUNCTIONS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
--- Helper: Apply principal to all identifiers of a source
--- [MODIFIED] Disabled expansion to prevent "sticky" permissions on Steam/Discord IDs that are hard to remove.
--- Relying on the primary database identifier (License) is sufficient for FiveM's IsPlayerAceAllowed.
-local function ApplyPrincipalToAllIdentifiers(src, parent)
-    -- local num = GetNumPlayerIdentifiers(src)
-    -- for i = 0, num-1 do
-    --     local id = GetPlayerIdentifier(src, i)
-    --     print(('[mri_Qadmin] Expanding Principal: identifier.%s -> %s'):format(id, parent))
-    --     ExecuteCommand(('add_principal identifier.%s %s'):format(id, parent))
-    -- end
-    Debug('[mri_Qadmin] ApplyPrincipalToAllIdentifiers called but DISABLED (using primary identifier only).')
-end
-
 local function LoadPermissions()
     -- Check/Add Description column for Aces
     local hasDesc = MySQL.scalar.await("SELECT count(*) FROM information_schema.columns WHERE table_name = 'mri_qadmin_aces' AND column_name = 'description' AND table_schema = DATABASE()")
@@ -62,13 +49,13 @@ local function LoadPermissions()
              local fullLicense2 = 'license2:'..license
 
              if p.child == license or p.child == fullLicense or p.child == fullLicense2 or p.child == data.name then
-                 ApplyPrincipalToAllIdentifiers(src, p.parent)
+                 -- Rely on the direct execute command above; this logic previously incorrectly called the disabled expansion
              else
                  -- Check secondary IDs if needed, but license is primary
                  local num = GetNumPlayerIdentifiers(src)
                  for i = 0, num-1 do
                     if GetPlayerIdentifier(src, i) == p.child then
-                        ApplyPrincipalToAllIdentifiers(src, p.parent)
+                        -- Primary matching handled the rest
                         break
                     end
                  end
@@ -92,7 +79,7 @@ end
 
 RegisterCommand('qadmin_check', function(source, args)
     if source ~= 0 then
-        if not (QBCore.Functions.HasPermission(source, 'admin') or IsPlayerAceAllowed(source, 'qadmin.master')) then
+        if not IsPlayerAceAllowed(source, 'qadmin.master') then
              return
         end
     end
@@ -170,9 +157,24 @@ RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
     for _, p in ipairs(principals) do found[p.parent] = true end
     for _, p in ipairs(principals2) do found[p.parent] = true end
 
+    -- Reverse Permission Sync (QBCore -> mri_Qadmin)
+    local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
+
+    if hasQBCoreAdmin and not found['group.admin'] then
+        Debug(('[mri_Qadmin] Auto-Sync: Jogador %s (%s) possui permissão de base (QBCore admin/god). Sincronizando com group.admin do painel...'):format(GetPlayerName(src), license))
+
+        local fullLicense = 'license:' .. license
+
+        -- Insert into the database to persist this link
+        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {fullLicense, 'group.admin', 'Auto-Sync (QBCore Admin)'})
+
+        -- Apply the principal to the runtime cache immediately
+        found['group.admin'] = true
+    end
+
     for parent, _ in pairs(found) do
-        Debug(('[mri_Qadmin] Re-applying permissions for %s -> %s'):format(GetPlayerName(src), parent))
-        ApplyPrincipalToAllIdentifiers(src, parent)
+        Debug(('[mri_Qadmin] Re-applying permissions natively for %s -> %s (Handled by LoadPermissions / AutoSync)'):format(GetPlayerName(src), parent))
+        -- Applying permissions dynamically handles natively via DB insertion / execute command.
     end
 
     TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', src)
@@ -180,7 +182,7 @@ end)
 
 -- CALLBACKS: ACES
 lib.callback.register('mri_Qadmin:callback:GetAces', function(source)
-    if not (QBCore.Functions.HasPermission(source, 'admin') or IsPlayerAceAllowed(source, 'qadmin.page.permissions')) then return {} end
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') then return {} end
     return MySQL.query.await('SELECT * FROM mri_qadmin_aces')
 end)
 
@@ -192,7 +194,7 @@ end
 -- Hook into existing events
 RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow, description)
     local src = source
-    if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
+    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
 
     Debug(('[mri_Qadmin] AddAce Request: %s %s %s Desc=%s'):format(principal, object, tostring(allow), tostring(description)))
 
@@ -214,7 +216,7 @@ end)
 
 RegisterNetEvent('mri_Qadmin:server:RemoveAce', function(id)
     local src = source
-    if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
+    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
 
     Debug(('[mri_Qadmin] RemoveAce Request ID: %s'):format(id))
     local ace = MySQL.single.await('SELECT * FROM mri_qadmin_aces WHERE id = ?', {id})
@@ -232,7 +234,7 @@ end)
 
 RegisterNetEvent('mri_Qadmin:server:ToggleAce', function(id)
     local src = source
-    if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
+    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
 
     Debug(('[mri_Qadmin] ToggleAce ID: %s'):format(id))
     local ace = MySQL.single.await('SELECT * FROM mri_qadmin_aces WHERE id = ?', {id})
@@ -256,13 +258,13 @@ end)
 
 -- CALLBACKS: PRINCIPALS
 lib.callback.register('mri_Qadmin:callback:GetPrincipals', function(source)
-    if not (QBCore.Functions.HasPermission(source, 'admin') or IsPlayerAceAllowed(source, 'qadmin.page.permissions')) then return {} end
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') then return {} end
     return MySQL.query.await('SELECT * FROM mri_qadmin_principals')
 end)
 
 RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, description)
     local src = source
-    if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then
+    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then
         Debug('[mri_Qadmin] AddPrincipal DENIED (Not Admin/Perms) for src: ' .. tostring(src))
         return
     end
@@ -323,7 +325,7 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
 
             if match then
                  Debug(('[mri_Qadmin] Found Online Player for Principal Add: %s (Src: %s)'):format(p.PlayerData.name, id))
-                 ApplyPrincipalToAllIdentifiers(id, parent)
+                 -- Player is online, Native FiveM takes care of principal propagation.
                  foundOnline = true
                  break
             end
@@ -340,7 +342,7 @@ end)
 
 RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
     local src = source
-    if not (QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
+    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
 
     Debug(('[mri_Qadmin] RemovePrincipal REQUEST from src %d. ID: %s (Type: %s)'):format(src, tostring(id), type(id)))
 
@@ -410,6 +412,7 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
 
                 if match then
                     Debug(('[mri_Qadmin] Found Online Player for Principal Remove: %s (Src: %s)'):format(p.PlayerData.name, id))
+                    -- Legacy loop to forcefully remove from all identifiers, just to be sure
                     local num = GetNumPlayerIdentifiers(id)
                     for i = 0, num-1 do
                         local ident = GetPlayerIdentifier(id, i)
@@ -458,7 +461,7 @@ end
 RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
-    if not (QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god') or IsPlayerAceAllowed(src, 'qadmin.page.permissions')) then return end
+    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
 
     -- Assign current admin to group.admin if they aren't master yet
     if not IsPlayerAceAllowed(src, 'qadmin.master') then
@@ -570,8 +573,6 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     return allowed
 end)
 
-
-
 RegisterCommand('mri_qadmin.setmaster', function(source, args)
     if source ~= 0 then return end -- Console only
 
@@ -627,6 +628,69 @@ RegisterCommand('mri_qadmin.setmaster', function(source, args)
                 print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
                 TriggerEvent('QBCore:Server:OnPlayerLoaded', id) -- Re-trigger load logic or just rely on add_principal
                 TriggerClientEvent('QBCore:Notify', id, 'Você agora é Master Admin!', 'success')
+                BroadcastPermissionUpdate()
+            end
+        end
+    end)
+end, true)
+
+RegisterCommand('mri_qadmin.addpermission', function(source, args)
+    if source ~= 0 then return end -- Console only
+
+    local target = args[1]
+    local permission = args[2]
+
+    if not target or not permission then
+        print('^1[mri_Qadmin] Usage: mri_qadmin.addpermission [id/license] [permission]^7')
+        print('^1[mri_Qadmin] Example: mri_qadmin.addpermission 1 group.admin^7')
+        print('^1[mri_Qadmin] Example: mri_qadmin.addpermission license:abcd... qadmin.action.ban_player^7')
+        return
+    end
+
+    local license = target
+    -- Check if it's a numeric ID (online player)
+    if tonumber(target) then
+        local p = QBCore.Functions.GetPlayer(tonumber(target))
+        if p then
+            license = 'license:' .. p.PlayerData.license
+            print(('[mri_Qadmin] Resolved ID %s to %s (%s)'):format(target, p.PlayerData.name, license))
+        else
+            print('^1[mri_Qadmin] Player ID not found online. If using license, provide full string (license:xxx)^7')
+            return
+        end
+    end
+
+    if not string.find(license, 'license:') and not string.find(license, 'license2:') then
+        print('^3[mri_Qadmin] Warning: Target '..license..' does not look like a license. Assuming it is valid.^7')
+    end
+
+    -- 1. Insert into DB
+    local function doInsert()
+        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {license, permission})
+        if exists then
+            print('^3[mri_Qadmin] Principal already exists in DB.^7')
+        else
+            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {license, permission, 'Added via Console'})
+            print('^2[mri_Qadmin] Added to database.^7')
+        end
+    end
+
+    -- Run async
+    CreateThread(function()
+        doInsert()
+
+        -- 2. Apply immediately
+        ExecuteCommand(('add_principal identifier.%s %s'):format(license, permission))
+        print(('^2[mri_Qadmin] Executed: add_principal identifier.%s %s^7'):format(license, permission))
+
+        -- 3. If online, notify and reload
+        local players = QBCore.Functions.GetPlayers()
+        for _, id in ipairs(players) do
+            local p = QBCore.Functions.GetPlayer(id)
+            if p and ('license:'..p.PlayerData.license == license or 'license2:'..p.PlayerData.license == license) then
+                print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
+                TriggerEvent('QBCore:Server:OnPlayerLoaded', id)
+                TriggerClientEvent('QBCore:Notify', id, 'Você recebeu uma nova permissão administrativa.', 'success')
                 BroadcastPermissionUpdate()
             end
         end

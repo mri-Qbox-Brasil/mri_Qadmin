@@ -14,6 +14,8 @@ function GetCoreData()
         pedlist = lib.callback.await('mri_Qadmin:callback:GetPedList', false) or {},
         locations = lib.callback.await('mri_Qadmin:callback:GetLocations', false) or {},
         actions = Config.Actions,
+        playerActions = Config.PlayerActions,
+        otherActions = Config.OtherActions,
         vehicleImages = Config.VehicleImages,
         webrtcUrl = Config.WebRTCUrl
     }

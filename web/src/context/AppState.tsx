@@ -30,13 +30,17 @@ export interface GameData {
   locations: any[]
   peds: any[]
   vehicles: any[]
-  actions: any[] | Record<string, any>
+  actions: Record<string, any>
+  playerActions: Record<string, any>
+  otherActions: Record<string, any>
   resources: any[]
   commands: any[]
   vehicleImages: string
   bans: any[]
   webrtcUrl?: string
   signalingProvider?: 'websocket' | 'fivem-native' | 'cloudflare-sfu'
+  descriptions?: Record<string, string>
+  settingOptions?: Record<string, { label: string, value: string }[]>
 }
 
 export interface EntityInfoData {
@@ -88,6 +92,10 @@ interface AppStateValue {
   setMyPermissions: (p: string[]) => void
   permissionRefreshTrigger: number
   setPermissionRefreshTrigger: React.Dispatch<React.SetStateAction<number>>
+
+  // Dynamic Settings
+  settings: Record<string, any>
+  setSettings: React.Dispatch<React.SetStateAction<Record<string, any>>>
 }
 
 const AppStateContext = createContext<AppStateValue | undefined>(undefined)
@@ -113,17 +121,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     locations: [],
     peds: [],
     vehicles: [],
-    actions: [],
+    actions: {},
+    playerActions: {},
+    otherActions: {},
     resources: [],
     commands: [],
     vehicleImages: '',
-    bans: []
+    bans: [],
+    descriptions: {},
+    settingOptions: {}
   })
 
   const [vehicleDev, setVehicleDev] = useState<VehicleDevData | null>(null)
   const [showCoords, setShowCoords] = useState<CoordsData | null>(null)
   const [entityInfo, setEntityInfo] = useState<EntityInfoData | null>(null)
   const [staffMessages, setStaffMessages] = useState<any[]>([])
+
+  const [settings, setSettings] = useState<Record<string, any>>({})
 
   return (
     <AppStateContext.Provider value={{
@@ -138,7 +152,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       showCoords, setShowCoords,
       entityInfo, setEntityInfo,
       myPermissions, setMyPermissions,
-      permissionRefreshTrigger, setPermissionRefreshTrigger
+      permissionRefreshTrigger, setPermissionRefreshTrigger,
+      settings, setSettings
     }}>
       {children}
     </AppStateContext.Provider>

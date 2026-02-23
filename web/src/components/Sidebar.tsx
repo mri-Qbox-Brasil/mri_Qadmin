@@ -29,8 +29,8 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
 
   const items: MriSidebarItem[] = [
     { icon: LayoutDashboard, label: t('nav_dashboard'), route: 'dashboard' },
-    { icon: MapIcon, label: 'Live Map', route: 'livemap' },
-    { icon: Monitor, label: 'Live Screens', route: 'livescreens' },
+    { icon: MapIcon, label: t('nav_livemap') || 'Live Map', route: 'livemap' },
+    { icon: Monitor, label: t('nav_livescreens') || 'Live Screens', route: 'livescreens' },
     { icon: Box, label: '', divider: true },
     { icon: Users, label: t('nav_players'), route: 'players' },
     { icon: Briefcase, label: t('nav_groups'), route: 'groups' },
@@ -40,10 +40,11 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     { icon: Car, label: t('nav_vehicles'), route: 'vehicles' },
     { icon: Terminal, label: t('nav_commands'), route: 'commands' },
     { icon: Wand2, label: t('nav_actions'), route: 'actions' },
-    { icon: Shield, label: 'Permissions', route: 'permissions' },
+    { icon: Shield, label: t('nav_permissions') || 'Permissions', route: 'permissions' },
     { icon: Container, label: t('nav_resources'), route: 'resources' },
     { icon: Box, label: '', divider: true },
     { icon: Settings, label: t('nav_settings'), route: 'settings' },
+    { icon: Zap, label: t('nav_action_manager'), route: 'action_manager' },
     { icon: Info, label: t('nav_credits'), route: 'credits' },
   ].filter(item => {
       if (item.divider) return true

@@ -10,7 +10,7 @@ interface VehicleImageProps {
 type ImageStatus = 'local-lowercase' | 'local-uppercase' | 'custom' | 'ox' | 'docs' | 'failed'
 
 export default function VehicleImage({ model, name, className }: VehicleImageProps) {
-  const { gameData } = useAppState()
+  const { gameData, settings } = useAppState()
   const [status, setStatus] = useState<ImageStatus>('local-lowercase')
   const [src, setSrc] = useState<string>('')
 
@@ -21,7 +21,7 @@ export default function VehicleImage({ model, name, className }: VehicleImagePro
       case 'local-uppercase':
         return `vehicles/${model}.PNG`
       case 'custom':
-        return gameData.vehicleImages ? `${gameData.vehicleImages}${model}.png` : ''
+        return settings?.VehicleImages || gameData.vehicleImages ? `${settings?.VehicleImages || gameData.vehicleImages}${model}.png` : ''
       case 'ox':
         return `https://cfx-nui-ox_inventory/web/images/${model}.png`
       case 'docs':
@@ -33,12 +33,13 @@ export default function VehicleImage({ model, name, className }: VehicleImagePro
 
   useEffect(() => {
     setSrc(getSrc(status))
-  }, [status, model, gameData.vehicleImages])
+  }, [status, model, gameData.vehicleImages, settings?.VehicleImages])
 
   const handleError = () => {
+    const hasCustomUrl = Boolean(settings?.VehicleImages || gameData.vehicleImages)
     const nextStatus: Record<ImageStatus, ImageStatus> = {
       'local-lowercase': 'local-uppercase',
-      'local-uppercase': gameData.vehicleImages ? 'custom' : 'ox',
+      'local-uppercase': hasCustomUrl ? 'custom' : 'ox',
       'custom': 'ox',
       'ox': 'docs',
       'docs': 'failed',

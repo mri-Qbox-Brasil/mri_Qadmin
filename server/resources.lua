@@ -42,7 +42,7 @@ end)
 
 lib.callback.register('mri_Qadmin:callback:ChangeResourceState', function(source, data, perms)
     Debug(json.encode(data))
-    if not CheckPerms(source, Config.ResourcePerms) then return end
+    if not CheckPerms(source, "qadmin.action.change_resource") then return end
 
     if data.state == "start" then
         StartResource(data.name)

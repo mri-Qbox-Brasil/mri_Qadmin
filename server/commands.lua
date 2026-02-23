@@ -15,7 +15,7 @@ local function isCommandBlacklisted(commandName)
 end
 
 lib.callback.register('mri_Qadmin:callback:GetCommands', function()
-    if not CheckPerms(source, Config.ShowCommandsPerms) then return {} end
+    if not CheckPerms(source, "qadmin.commands") then return {} end
 
     local allCommands = GetRegisteredCommands()
 

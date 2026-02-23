@@ -57,10 +57,20 @@ export default function Listeners() {
         vehicles: asArray(data.vehicles),
         commands: asArray(data.commands),
         bans: asArray(data.bans),
-        // Actions can be object or array, handled by component
-        actions: data.actions || prev.actions || []
+        actions: data.actions || prev.actions || {},
+        playerActions: data.playerActions || prev.playerActions || {},
+        otherActions: data.otherActions || prev.otherActions || {},
       }))
 
+    }
+
+    const updateActions = (data: any) => {
+      setGameData((prev: any) => ({
+        ...prev,
+        actions: data.Actions || prev.actions,
+        playerActions: data.PlayerActions || prev.playerActions,
+        otherActions: data.OtherActions || prev.otherActions,
+      }))
     }
 
     const showVehicleMenu = (data: any) => {
@@ -84,6 +94,7 @@ export default function Listeners() {
     }
 
     on('setupUI', setupUI)
+    on('updateActions', updateActions)
     on('setResourceData', setResourceData)
     on('setPlayersData', setPlayersData)
     on('data', onData)
@@ -98,6 +109,7 @@ export default function Listeners() {
 
     return () => {
       off('setupUI', setupUI)
+      off('updateActions', updateActions)
       off('setResourceData', setResourceData)
       off('setPlayersData', setPlayersData)
       off('data', onData)

@@ -16,6 +16,7 @@ import Vehicles from '@/pages/Vehicles'
 import Groups from '@/pages/Groups'
 import Credits from '@/pages/Credits'
 import Settings from '@/pages/Settings'
+import ActionManager from '@/pages/ActionManager/ActionManager'
 import Permissions from '@/pages/Permissions/Permissions'
 import LiveMapPage from './pages/LiveMapPage'
 import LiveScreensPage from './pages/LiveScreensPage'
@@ -30,8 +31,8 @@ import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
 // ... existing imports
 
 export default function App() {
-  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
-  const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions } = useAppState()
+  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'action_manager' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
+  const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings } = useAppState()
   const { on, off, sendNui } = useNui()
   const isDev = (import.meta as any)?.env?.DEV === true
   const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
@@ -89,14 +90,20 @@ export default function App() {
          setPermissionRefreshTrigger(prev => prev + 1)
     }
 
+    const onSettingsUpdate = (data: Record<string, any>) => {
+        setSettings(data)
+    }
+
     on('updatePermissions', onPerms)
     on('refreshPermissionsLists', onRefreshLists)
+    on('updateSettings', onSettingsUpdate)
 
     return () => {
         off('updatePermissions', onPerms)
         off('refreshPermissionsLists', onRefreshLists)
+        off('updateSettings', onSettingsUpdate)
     }
-  }, [on, off, setMyPermissions, setPermissionRefreshTrigger])
+  }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
 
   // Listen for NUI visibility messages from the client resource
   useEffect(() => {
@@ -108,6 +115,13 @@ export default function App() {
           // Fetch permissions
           sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
               if (Array.isArray(perms)) setMyPermissions(perms)
+          }).catch(console.error)
+
+          // Fetch Dynamic Settings
+          sendNui('getSettings').then((settingsData) => {
+              if (settingsData && typeof settingsData === 'object') {
+                  setSettings(settingsData)
+              }
           }).catch(console.error)
       }
 
@@ -192,6 +206,7 @@ export default function App() {
             {route === 'resources' ? <Resources /> :
              route === 'players' ? <Players /> :
              route === 'actions' ? <Actions /> :
+             route === 'action_manager' ? <ActionManager /> :
              route === 'staffchat' ? <StaffChat /> :
              route === 'commands' ? <Commands /> :
              route === 'items' ? <Items /> :
