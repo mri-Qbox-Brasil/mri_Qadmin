@@ -1,3 +1,0 @@
-ws.gf2.in {
-    reverse_proxy app:3000
-}

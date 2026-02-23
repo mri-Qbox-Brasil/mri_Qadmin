@@ -23,7 +23,9 @@ Config.Debug = true -- Set to true to enable debug prints
 Config.DefaultGarage = "Pillbox Garage Parking"
 Config.VehicleImages = "" -- Custom URL for vehicle images (e.g. "https://cdn.example.com/vehicles/")
 Config.LiveVideoMethod = "webrtc" -- "screenshot" (Chunked/Resize) or "webrtc" (External Server)
-Config.WebRTCUrl = "wss://ws.gf2.in" -- Set to "wss://ws.gf2.in" for Productiont
+-- Signaling backend: "fivem-native" | "websocket" (uses mri_Qsignaling / wss URL) | "cloudflare-sfu"
+Config.SignalingProvider = "fivem-native"
+Config.WebRTCUrl = "wss://YOUR_SERVER_IP:3002" -- used only when SignalingProvider = "websocket" (mri_Qsignaling port 3002)
 
 Config.Actions = {
     ["admin_car"] = {

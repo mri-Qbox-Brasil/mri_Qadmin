@@ -58,8 +58,7 @@ client_scripts {
 
 dependencies {
     "ox_lib",
-    "oxmysql",
-    "screenshot-basic",
+    "oxmysql"
 }
 
 

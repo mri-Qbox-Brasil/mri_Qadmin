@@ -19,7 +19,8 @@ local function setupMenu()
 			vehicleImages = Config.VehicleImages,
             permissions = permissions,
             supportedLanguages = Config.SupportedLanguages,
-            webrtcUrl = Config.WebRTCUrl
+            webrtcUrl = Config.WebRTCUrl,
+            signalingProvider = Config.SignalingProvider
 		}
 	})
 end
@@ -184,6 +185,17 @@ RegisterNUICallback("GetPlayerScreen", function(data, cb)
     cb(res)
 end)
 
+RegisterNUICallback("SignalRegister", function(data, cb)
+    -- No-op: identity is tracked by server ID, not a registration table
+    cb({ status = "ok" })
+end)
+
+RegisterNUICallback("Signal", function(data, cb)
+    -- Relay signaling message to targetId via server
+    TriggerServerEvent('mri_Qadmin:server:Signal', data)
+    cb({ status = "ok" })
+end)
+
 RegisterNUICallback("StopPlayerScreen", function(data, cb)
     -- Tell the target player to stop streaming
     TriggerServerEvent('mri_Qadmin:server:StopPlayerScreen', data.targetId)
@@ -197,6 +209,33 @@ end)
 
 RegisterNUICallback("SetPlayerVital", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:SetVital', data.targetId, data.vital, data.value)
+    cb({ status = "ok" })
+end)
+
+-- ── Cloudflare Realtime SFU ──────────────────────────────────────────────────
+RegisterNUICallback("CFCreateSession", function(_, cb)
+    local res = lib.callback.await('mri_Qadmin:callback:CFCreateSession', false)
+    cb(res)
+end)
+
+RegisterNUICallback("CFPublishTracks", function(data, cb)
+    local res = lib.callback.await('mri_Qadmin:callback:CFPublishTracks', false, data)
+    cb(res)
+end)
+
+RegisterNUICallback("CFSubscribe", function(data, cb)
+    local res = lib.callback.await('mri_Qadmin:callback:CFSubscribe', false, data)
+    cb(res)
+end)
+
+RegisterNUICallback("CFRenegotiate", function(data, cb)
+    local res = lib.callback.await('mri_Qadmin:callback:CFRenegotiate', false, data)
+    cb(res)
+end)
+
+-- P2 announces its CF track to the admin viewer
+RegisterNUICallback("CFAnnounceTrack", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:CFAnnounceTrack', data)
     cb({ status = "ok" })
 end)
 

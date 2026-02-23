@@ -10,7 +10,7 @@ export class GameRender {
     isAnimated: boolean;
 
     constructor();
-    resize(screenshot?: boolean): void;
+    resize(): void;
     animate(): void;
     startStream(): MediaStream;
     stop(): void;

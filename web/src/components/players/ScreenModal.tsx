@@ -7,7 +7,8 @@ import {
     RefreshCw, Camera, AlertCircle, Wifi,
     Heart, Shield, Utensils, Droplets, Brain
 } from 'lucide-react';
-import { signaling } from '@/utils/signaling';
+import { signaling } from '@/utils/signaling/index';
+import { subscribeFromCF } from '@/utils/cf-sfu';
 
 const RTC_CONFIG = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -77,7 +78,7 @@ function Badge({ children, color }: { children: React.ReactNode, color: string }
 }
 
 export default function ScreenModal({ playerId, onClose, playerName }: ScreenModalProps) {
-    const { sendNui } = useNui();
+    const { sendNui, on, off } = useNui();
     const { gameData } = useAppState();
     const [loading, setLoading]   = useState(true);
     const [error, setError]       = useState<string | null>(null);
@@ -98,8 +99,9 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                const sid = String(id);
                myIdRef.current = sid;
                setMyId(sid);
-               const url = gameData.webrtcUrl || 'wss://ws.gf2.in';
-               signaling.init(url, 'viewer-' + sid);
+        const url = gameData.webrtcUrl || null;
+               const provider = (gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
+               signaling.init(url, 'viewer-' + sid, provider);
            }
        }).catch(err => console.error('[ScreenModal] getSelfId FAILED:', err));
     }, [sendNui, gameData.webrtcUrl]);
@@ -147,6 +149,40 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
             return;
         }
 
+        const provider = gameData.signalingProvider ?? 'websocket';
+
+        // ── CF SFU subscriber path ─────────────────────────────────────────
+        if (provider === 'cloudflare-sfu') {
+            // Wait until signaling.init() has run (myId reflects getSelfId completion)
+            if (!myId) return;
+
+            const unsubSignal = signaling.onMessage(async (msg: any) => {
+                console.log('[ScreenModal] onMessage:', msg?.type, 'src:', msg?.sourceId, 'vs playerId:', playerId);
+                if (msg.type === 'cf-track-ready' && String(msg.sourceId) === String(playerId)) {
+                    console.log('[ScreenModal] CF SFU: got track info', msg.sessionId, msg.trackName);
+                    try {
+                        const { pc, stream } = await subscribeFromCF(msg.sessionId, msg.trackName);
+                        peerRef.current = pc;
+                        if (videoRef.current) {
+                            videoRef.current.srcObject = stream;
+                            videoRef.current.play().catch(e => console.error('[CF SFU] Autoplay:', e));
+                            setLoading(false);
+                        }
+                        pc.onconnectionstatechange = () =>
+                            console.log('[CF SFU Sub] Connection State:', pc.connectionState);
+                    } catch (err) {
+                        console.error('[ScreenModal] CF SFU subscribe failed:', err);
+                    }
+                }
+            });
+
+            // Trigger P2 to start publishing to CF SFU
+            sendNui('GetPlayerScreen', { targetId: playerId });
+
+            return () => { unsubSignal(); if (peerRef.current) { peerRef.current.close(); peerRef.current = null; } };
+        }
+
+        // ── P2P signaling path (fivem-native or websocket) ─────────────────
         const unsub = signaling.onMessage(async (msg: any) => {
             if (msg.type === 'offer' && String(msg.sourceId) === String(playerId)) {
                 const currentMyId = myIdRef.current;
@@ -209,7 +245,8 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
             unsub();
             if (peerRef.current) { peerRef.current.close(); peerRef.current = null; }
         };
-    }, [playerId, sendNui]);
+    }, [playerId, myId, sendNui, gameData.signalingProvider]);
+
 
     // ── Actions ──────────────────────────────────────────────────────────────
     const setVital = useCallback(async (vital: string, value: number) => {

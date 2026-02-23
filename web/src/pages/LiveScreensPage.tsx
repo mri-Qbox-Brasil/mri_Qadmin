@@ -5,7 +5,7 @@ import { Monitor, X, Video, Wifi } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import Spinner from '@/components/Spinner'
-import { signaling } from '@/utils/signaling'
+import { signaling } from '@/utils/signaling/index'
 
 const RTC_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
@@ -138,8 +138,9 @@ export default function LiveScreensPage() {
             if (id) {
                 const sid = String(id);
                 setMyId(sid);
-                const url = gameData.webrtcUrl || 'wss://ws.gf2.in';
-                signaling.init(url, 'viewer-' + sid);
+                const url = gameData.webrtcUrl || null;
+                const provider = (gameData.signalingProvider ?? 'fivem-native') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
+                signaling.init(url, 'viewer-' + sid, provider);
             }
         })
     }, [sendNui, gameData.webrtcUrl])

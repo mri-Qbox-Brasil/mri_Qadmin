@@ -36,6 +36,7 @@ export interface GameData {
   vehicleImages: string
   bans: any[]
   webrtcUrl?: string
+  signalingProvider?: 'websocket' | 'fivem-native' | 'cloudflare-sfu'
 }
 
 export interface EntityInfoData {
