@@ -110,8 +110,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1
       lucide-react:
-        specifier: ^0.269.0
-        version: 0.269.0(react@18.3.1)
+        specifier: ^0.575.0
+        version: 0.575.0(react@18.3.1)
       tailwind-merge:
         specifier: ^1.14.0
         version: 1.14.0
@@ -1571,15 +1571,15 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react@0.269.0:
-    resolution: {integrity: sha512-+ViEb/2eJJt43/CtxpTfvqu/8gzK49cSUdeuqRuFYiZmX9AvwfumtETM4plhXHymfHb6/mVbHg9uIlc13y+uew==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0
-
   lucide-react@0.344.0:
     resolution: {integrity: sha512-6YyBnn91GB45VuVT96bYCOKElbJzUHqp65vX8cDcu55MQL9T969v4dhGClpljamuI/+KMO9P6w9Acq1CVQGvIQ==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0
+
+  lucide-react@0.575.0:
+    resolution: {integrity: sha512-VuXgKZrk0uiDlWjGGXmKV6MSk9Yy4l10qgVvzGn2AWBx1Ylt0iBexKOAoA6I7JO3m+M9oeovJd3yYENfkUbOeg==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
@@ -3288,14 +3288,14 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react@0.269.0(react@18.3.1):
-    dependencies:
-      react: 18.3.1
-    optional: true
-
   lucide-react@0.344.0(react@18.3.1):
     dependencies:
       react: 18.3.1
+
+  lucide-react@0.575.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+    optional: true
 
   merge2@1.4.1: {}
 

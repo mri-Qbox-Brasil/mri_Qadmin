@@ -581,8 +581,17 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
             local heading = GetEntityHeading(ped)
             local player = QBCore.Functions.GetPlayer(src)
             local name = "Unknown"
+            local vitals = { health = 100, armor = 0, hunger = 100, thirst = 100 }
+            local inVehicle = IsPedInAnyVehicle(ped, false)
+            local isStaff = IsPlayerAceAllowed(src, 'qadmin.master')
+
             if player then
                 name = player.PlayerData.charinfo.firstname .. ' ' .. player.PlayerData.charinfo.lastname
+                vitals.health = GetEntityHealth(ped)
+                vitals.armor = GetPedArmour(ped)
+                vitals.hunger = player.PlayerData.metadata['hunger'] or 100
+                vitals.thirst = player.PlayerData.metadata['thirst'] or 100
+                vitals.isDead = player.PlayerData.metadata['isdead'] or player.PlayerData.metadata['inlaststand'] or false
             else
                 name = GetPlayerName(src)
             end
@@ -592,7 +601,10 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
                 x = coords.x,
                 y = coords.y,
                 heading = heading,
-                name = name
+                name = name,
+                vitals = vitals,
+                inVehicle = inVehicle,
+                isStaff = isStaff
             })
         end
     end

@@ -3,12 +3,10 @@ import { MriModal } from '@mriqbox/ui-kit';
 import { useNui } from '@/context/NuiContext';
 import { useAppState } from '@/context/AppState';
 import Spinner from '@/components/Spinner';
-import {
-    RefreshCw, Camera, AlertCircle, Wifi,
-    Heart, Shield, Utensils, Droplets, Brain
-} from 'lucide-react';
+import { Monitor, X, Video, Wifi, RefreshCw, Camera, AlertCircle, Heart, Shield, Beef, GlassWater, Brain } from 'lucide-react';
 import { signaling } from '@/utils/signaling/index';
 import { subscribeFromCF } from '@/utils/cf-sfu';
+import { isEnvBrowser } from '@/utils/misc';
 
 const RTC_CONFIG = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -87,10 +85,29 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
     const [actionLoading, setActionLoading] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
+    console.log('[ScreenModal] Render:', { playerId, playerName, loading, error, isMock: typeof playerId === 'number' && playerId <= 10 });
+
     // WebRTC
     const peerRef  = useRef<RTCPeerConnection | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
     const [myId, setMyId]         = useState<string|null>(null);
     const myIdRef  = useRef<string|null>(null);
+
+    // ── Mock Logic ──────────────────────────────────────────────────────────
+    // Only treat as mock if in browser environment
+    const isMock = isEnvBrowser();
+
+    useEffect(() => {
+        console.log('[ScreenModal] State Update:', {
+            playerId,
+            playerName,
+            loading,
+            error,
+            isMock,
+            myId,
+            videoRefReady: !!videoRef.current
+        });
+    }, [playerId, playerName, loading, error, isMock, myId]);
 
     // ── Init ────────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -135,21 +152,30 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
 
     // ── Signaling / WebRTC ───────────────────────────────────────────────────
     useEffect(() => {
-        if (!playerId) return;
+        if (playerId === null || isNaN(Number(playerId))) {
+            console.log('[ScreenModal] Invalid or missing playerId. ID:', playerId);
+            return;
+        }
 
         if (myId && String(playerId) === String(myId)) {
+            console.log('[ScreenModal] Self-view detected. Starting local stream.');
             import('@/utils/fivem-renderer').then(({ default: renderer }) => {
                 const stream = (renderer as any).startStream() as MediaStream;
+                streamRef.current = stream;
                 if (videoRef.current) {
+                    console.log('[ScreenModal] Local stream attached immediately.');
                     videoRef.current.srcObject = stream;
                     videoRef.current.play().catch(e => console.error('Autoplay error:', e));
                     setLoading(false);
+                } else {
+                    console.warn('[ScreenModal] videoRef.current is null! Stream stored for deferred attachment.');
                 }
             }).catch(e => console.error('[ScreenModal] Import failed:', e));
             return;
         }
 
         const provider = settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket';
+        console.log('[ScreenModal] Initializing WebRTC with provider:', provider, 'for playerId:', playerId);
 
         // ── CF SFU subscriber path ─────────────────────────────────────────
         if (provider === 'cloudflare-sfu') {
@@ -210,9 +236,14 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                 };
 
                 pc.ontrack = (event) => {
+                    console.log('[ScreenModal] ontrack received:', event.streams.length);
+                    const stream = event.streams[0];
+                    streamRef.current = stream;
                     if (videoRef.current) {
-                        videoRef.current.srcObject = event.streams[0];
+                        videoRef.current.srcObject = stream;
                         setLoading(false);
+                    } else {
+                        console.warn('[ScreenModal] videoRef.current is null! Stream stored.');
                     }
                 };
 
@@ -237,15 +268,55 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
         });
 
         setLoading(true);
-        signaling.onConnect(() => {
+        const trigger = () => {
+            console.log('[ScreenModal] Requesting player screen for ID:', playerId);
             sendNui('GetPlayerScreen', { targetId: playerId });
-        });
+        };
+
+        if ((signaling as any).isConnected?.()) {
+            trigger();
+        }
+        signaling.onConnect(trigger);
+
+        // Timeout as fallback safeguard
+        const timeoutId = setTimeout(trigger, 1000);
 
         return () => {
             unsub();
-            if (peerRef.current) { peerRef.current.close(); peerRef.current = null; }
+            clearTimeout(timeoutId);
+            if (peerRef.current) {
+                console.log('[ScreenModal] Closing peer connection.');
+                peerRef.current.close();
+                peerRef.current = null;
+            }
         };
     }, [playerId, myId, sendNui, gameData.signalingProvider, settings?.SignalingProvider]);
+
+    // ── Video Attachment Watcher ──────────────────────────────────────────
+    // This ensures that if the stream arrived before the video element was ready,
+    // it gets attached as soon as videoRef.current becomes available.
+    useEffect(() => {
+        if (videoRef.current && streamRef.current && !videoRef.current.srcObject) {
+            console.log('[ScreenModal] Deferred stream attachment triggered.');
+            videoRef.current.srcObject = streamRef.current;
+            videoRef.current.play().catch(console.error);
+            setLoading(false);
+        }
+    }); // Run on every render to check ref
+
+    // ── Mock Handling ──────────────────────────────────────────────────────
+    useEffect(() => {
+        if (isMock) {
+            console.log('[ScreenModal] Initializing Mock Vitals.');
+            setLoading(false);
+            setVitals({
+                health: 200,
+                armor: 100,
+                ping: 15,
+                metadata: { hunger: 90, thirst: 85, stress: 5 }
+            });
+        }
+    }, [isMock]);
 
 
     // ── Actions ──────────────────────────────────────────────────────────────
@@ -349,12 +420,24 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                             <span className="text-sm">{error}</span>
                         </div>
                     )}
-                    <video
-                        ref={videoRef}
-                        className="w-full h-full object-contain bg-black"
-                        autoPlay playsInline muted
-                        onLoadedMetadata={e => e.currentTarget.play().catch(console.error)}
-                    />
+                    {isMock ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/20">
+                            <Monitor className="w-20 h-20 text-muted-foreground opacity-20" />
+                            <div className="absolute bottom-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white">
+                                MOCK FEED (BROWSER TEST) - ID: {playerId}
+                            </div>
+                        </div>
+                    ) : (
+                        <video
+                            ref={videoRef}
+                            className="w-full h-full object-contain bg-black"
+                            autoPlay playsInline muted
+                            onLoadedMetadata={e => {
+                                console.log('[ScreenModal] video.onLoadedMetadata');
+                                e.currentTarget.play().catch(console.error);
+                            }}
+                        />
+                    )}
                 </div>
 
                 {/* Vitals panel */}
@@ -366,8 +449,8 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                             <>
                                 <StatBar icon={<Heart className="w-3 h-3" />}    label="Vida"   value={hp ?? 0}     color="bg-red-500"    onClick={() => setVital('health', 200)} actionLabel="Clique para reviver" />
                                 <StatBar icon={<Shield className="w-3 h-3" />}   label="Armor"  value={armor ?? 0}  color="bg-blue-500"   onClick={() => setVital('armor', 100)}  actionLabel="Clique para max armor" />
-                                <StatBar icon={<Utensils className="w-3 h-3" />} label="Fome"   value={hunger ?? 0} color="bg-orange-500" onClick={() => setVital('hunger', 100)} actionLabel="Clique para saciar fome" />
-                                <StatBar icon={<Droplets className="w-3 h-3" />} label="Sede"   value={thirst ?? 0} color="bg-cyan-500"   onClick={() => setVital('thirst', 100)} actionLabel="Clique para saciar sede" />
+                                <StatBar icon={<Beef className="w-3 h-3" />} label="Fome"   value={hunger ?? 0} color="bg-orange-500" onClick={() => setVital('hunger', 100)} actionLabel="Clique para saciar fome" />
+                                <StatBar icon={<GlassWater className="w-3 h-3" />} label="Sede"   value={thirst ?? 0} color="bg-cyan-500"   onClick={() => setVital('thirst', 100)} actionLabel="Clique para saciar sede" />
                                 <StatBar icon={<Brain className="w-3 h-3" />}    label="Stress" value={stress ?? 0}  color="bg-purple-500" onClick={() => setVital('stress', 0)}   actionLabel="Clique para zerar stress" inverted />
                             </>
                         ) : (
