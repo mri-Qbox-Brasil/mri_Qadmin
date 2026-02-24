@@ -432,5 +432,15 @@
     "livescreens_available": "Available Players",
     "category_actions": "General",
     "category_playeractions": "Players",
-    "category_otheractions": "Others"
+    "category_otheractions": "Others",
+    "livemap_legend": "Legend",
+    "livemap_search_placeholder": "Search...",
+    "livemap_search_input_placeholder": "Type name or ID...",
+    "livemap_map_brightness": "Map Brightness",
+    "livemap_show_interface": "Show Interface",
+    "livemap_hide_interface": "Hide Interface",
+    "livemap_view_screen": "View Screen",
+    "livemap_filter_staff": "Staff",
+    "livemap_filter_players": "Players",
+    "livemap_filter_dead": "Dead"
 }

@@ -433,5 +433,15 @@
     "livescreens_available": "Jugadores Disponibles",
     "category_actions": "General",
     "category_playeractions": "Jugadores",
-    "category_otheractions": "Otros"
+    "category_otheractions": "Otros",
+    "livemap_legend": "Leyenda",
+    "livemap_search_placeholder": "Buscar...",
+    "livemap_search_input_placeholder": "Escribe el nombre o ID...",
+    "livemap_map_brightness": "Brillo del Mapa",
+    "livemap_show_interface": "Mostrar Interfaz",
+    "livemap_hide_interface": "Ocultar Interfaz",
+    "livemap_view_screen": "Ver Pantalla",
+    "livemap_filter_staff": "Staff",
+    "livemap_filter_players": "Jugadores",
+    "livemap_filter_dead": "Muertos"
 }

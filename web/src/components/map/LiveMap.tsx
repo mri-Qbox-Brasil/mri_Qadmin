@@ -8,6 +8,7 @@ import { MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
 import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
 import VitalAdjustModal from '@/components/shared/VitalAdjustModal'
 import { useNui } from '@/context/NuiContext'
+import { useI18n } from '@/context/I18n'
 
 interface MapMarker {
     id: string | number
@@ -124,25 +125,28 @@ const CustomZoomControls = () => {
     )
 }
 
-const Legend = () => (
-    <div className="absolute bottom-6 left-6 z-[1000] bg-card/80 border border-border p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] pointer-events-auto">
-        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-2">
-            <Info size={12} /> Legenda
+const Legend = () => {
+    const { t } = useI18n()
+    return (
+        <div className="absolute bottom-6 left-6 z-[1000] bg-card/80 border border-border p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] pointer-events-auto">
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-2">
+                <Info size={12} /> {t('livemap_legend')}
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+                <div
+                    className="w-3 h-3 rounded-full"
+                    style={{
+                        backgroundColor: 'hsl(160, 100%, 45%)',
+                        boxShadow: '0 0 8px hsl(160, 100%, 45% / 0.4)'
+                    }}
+                /> {t('vitals_status_alive')}
+            </div>
+            <div className="flex items-center gap-3 text-xs opacity-50">
+                <div className="w-3 h-3 rounded-full bg-muted-foreground" /> {t('vitals_status_dead')}
+            </div>
         </div>
-        <div className="flex items-center gap-3 text-xs">
-            <div
-                className="w-3 h-3 rounded-full"
-                style={{
-                    backgroundColor: 'hsl(160, 100%, 45%)',
-                    boxShadow: '0 0 8px hsl(160, 100%, 45% / 0.4)'
-                }}
-            /> Vivo
-        </div>
-        <div className="flex items-center gap-3 text-xs opacity-50">
-            <div className="w-3 h-3 rounded-full bg-muted-foreground" /> Morto
-        </div>
-    </div>
-)
+    )
+}
 
 function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: string | number | null, markers: MapMarker[] }) {
     const map = useMap()
@@ -158,6 +162,7 @@ function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: strin
 }
 
 export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, onViewScreen }: LiveMapProps) {
+    const { t } = useI18n()
     const [search, setSearch] = useState('')
     const [filters, setFilters] = useState({ staff: true, players: true, dead: true })
     const [brightness, setBrightness] = useState(1.0)
@@ -232,7 +237,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                         variant="secondary"
                         className="h-10 w-10 shadow-xl border border-border bg-card/80"
                         onClick={() => setUiVisible(true)}
-                        title="Mostrar Interface"
+                        title={t('livemap_show_interface')}
                     >
                         <Eye className="w-5 h-5" />
                     </MriButton>
@@ -275,13 +280,13 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                             <div className="min-w-[180px] p-4 bg-background/95 rounded-xl shadow-2xl">
                                 <div className="flex justify-between items-center mb-3">
                                     <div className="font-bold text-lg text-primary">{marker.name}</div>
-                                    <div className="text-xs px-2 py-0.5 rounded bg-white/10 opacity-60">ID: {marker.id}</div>
+                                    <div className="text-xs px-2 py-0.5 rounded bg-white/10 opacity-60">{t('id')}: {marker.id}</div>
                                 </div>
                                 <div className="space-y-2">
-                                    <VitalBar val={marker.vitals?.health || 0} color="#ef4444" icon={Heart} onClick={() => setShowVital({ markerId: marker.id, vital: 'health', label: 'Vida', value: Math.round(((marker.vitals?.health || 0) / 200) * 100), playerName: marker.name })} />
-                                    <VitalBar val={marker.vitals?.armor || 0} color="#3b82f6" icon={Shield} onClick={() => setShowVital({ markerId: marker.id, vital: 'armor', label: 'Armor', value: marker.vitals?.armor || 0, playerName: marker.name })} />
-                                    <VitalBar val={marker.vitals?.hunger || 0} color="#f59e0b" icon={Beef} onClick={() => setShowVital({ markerId: marker.id, vital: 'hunger', label: 'Fome', value: marker.vitals?.hunger || 0, playerName: marker.name })} />
-                                    <VitalBar val={marker.vitals?.thirst || 0} color="#06b6d4" icon={GlassWater} onClick={() => setShowVital({ markerId: marker.id, vital: 'thirst', label: 'Sede', value: marker.vitals?.thirst || 0, playerName: marker.name })} />
+                                    <VitalBar val={marker.vitals?.health || 0} color="#ef4444" icon={Heart} onClick={() => setShowVital({ markerId: marker.id, vital: 'health', label: t('vitals_health'), value: Math.round(((marker.vitals?.health || 0) / 200) * 100), playerName: marker.name })} />
+                                    <VitalBar val={marker.vitals?.armor || 0} color="#3b82f6" icon={Shield} onClick={() => setShowVital({ markerId: marker.id, vital: 'armor', label: t('vitals_armor'), value: marker.vitals?.armor || 0, playerName: marker.name })} />
+                                    <VitalBar val={marker.vitals?.hunger || 0} color="#f59e0b" icon={Beef} onClick={() => setShowVital({ markerId: marker.id, vital: 'hunger', label: t('vitals_hunger'), value: marker.vitals?.hunger || 0, playerName: marker.name })} />
+                                    <VitalBar val={marker.vitals?.thirst || 0} color="#06b6d4" icon={GlassWater} onClick={() => setShowVital({ markerId: marker.id, vital: 'thirst', label: t('vitals_thirst'), value: marker.vitals?.thirst || 0, playerName: marker.name })} />
                                 </div>
                                 <div className="mt-4 pt-3 border-t border-white/10 flex flex-col gap-2">
                                     <div className="grid grid-cols-2 gap-2 text-[10px] font-mono opacity-50">
@@ -296,7 +301,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                             onViewScreen?.(marker.id, marker.name);
                                         }}
                                     >
-                                        <Monitor size={14} /> Ver Tela
+                                        <Monitor size={14} /> {t('livemap_view_screen')}
                                     </MriButton>
                                 </div>
                             </div>
@@ -318,11 +323,11 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                     <div className="absolute top-6 left-6 right-6 flex justify-between gap-4">
                         <div className="flex gap-2 pointer-events-auto relative z-[10000]">
                              <MriCompactSearch
-                                placeholder="Buscar..."
+                                placeholder={t('livemap_search_placeholder')}
                                 value={selectedPlayerId}
                                 onChange={handleSelectPlayer}
                                 options={searchOptions}
-                                searchPlaceholder="Digite o nome ou ID..."
+                                searchPlaceholder={t('livemap_search_input_placeholder')}
                                 className="w-10 h-10 border-border bg-card/60"
                             />
                         </div>
@@ -341,7 +346,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                     <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border p-4 rounded-xl shadow-2xl z-50 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
                                         <div className="flex flex-col gap-3">
                                             <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                                <span className="flex items-center gap-2"><Sun size={12} /> Brilho</span>
+                                                <span className="flex items-center gap-2"><Sun size={12} /> {t('livemap_map_brightness')}</span>
                                                 <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded">{Math.round(brightness * 100)}%</span>
                                             </div>
                                             <div className="flex items-center gap-3">
@@ -352,16 +357,16 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                         </div>
                                         <div className="h-px bg-border" />
                                         <MriButton variant="ghost" size="sm" className="w-full justify-start gap-2 h-9 text-xs" onClick={() => { setUiVisible(false); setShowSettings(false); }}>
-                                            <EyeOff size={14} /> Ocultar Interface
+                                            <EyeOff size={14} /> {t('livemap_hide_interface')}
                                         </MriButton>
                                     </div>
                                 )}
                             </div>
 
                             <div className="bg-card/60 border border-border p-1 rounded-lg flex gap-1 shadow-xl">
-                                <MriButton variant={filters.staff ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, staff: !f.staff }))}>Staff</MriButton>
-                                <MriButton variant={filters.players ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, players: !f.players }))}>Players</MriButton>
-                                <MriButton variant={filters.dead ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, dead: !f.dead }))}>Mortos</MriButton>
+                                <MriButton variant={filters.staff ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, staff: !f.staff }))}>{t('livemap_filter_staff')}</MriButton>
+                                <MriButton variant={filters.players ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, players: !f.players }))}>{t('livemap_filter_players')}</MriButton>
+                                <MriButton variant={filters.dead ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, dead: !f.dead }))}>{t('livemap_filter_dead')}</MriButton>
                             </div>
                         </div>
                     </div>
