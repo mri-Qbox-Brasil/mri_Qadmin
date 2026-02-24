@@ -2,13 +2,14 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-l
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { User, Car, ShieldCheck, Heart, Shield, Beef, GlassWater, Plus, Minus, Info, Monitor, Plane, Ship, Bike, Helicopter, Motorbike, X } from 'lucide-react'
+import { User, Car, ShieldCheck, Heart, Shield, Beef, GlassWater, Plus, Minus, Info, Monitor, Plane, Ship, Bike, Helicopter, Motorbike, X, RefreshCcw } from 'lucide-react'
 import ReactDOMServer from 'react-dom/server'
 import { MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
 import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
 import VitalAdjustModal from '@/components/shared/VitalAdjustModal'
 import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/context/I18n'
+import PlayerVitals from '@/components/shared/PlayerVitals'
 
 interface MapMarker {
     id: string | number
@@ -85,22 +86,6 @@ const PlayerIcon = ({ marker }: { marker: MapMarker }) => {
         </div>
     )
 }
-
-const VitalBar = ({ val, color, icon: Icon, onClick }: { val: number, color: string, icon: any, onClick?: () => void }) => (
-    <div
-        className={`flex items-center gap-2 w-full ${onClick ? 'cursor-pointer hover:bg-white/5 p-1 rounded transition-colors group/vbar' : ''}`}
-        onClick={onClick}
-    >
-        <Icon size={12} className="text-muted-foreground group-hover/vbar:text-foreground" />
-        <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div
-                className="h-full transition-all duration-500"
-                style={{ width: `${val}%`, backgroundColor: color }}
-            />
-        </div>
-        <span className="text-[10px] font-mono opacity-60 w-6 text-right group-hover/vbar:opacity-100">{Math.round(val)}</span>
-    </div>
-)
 
 const CustomZoomControls = () => {
     const map = useMap()
@@ -292,12 +277,13 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                     <div className="font-bold text-lg text-primary">{marker.name}</div>
                                     <div className="text-xs px-2 py-0.5 rounded bg-white/10 opacity-60">{t('id')}: {marker.id}</div>
                                 </div>
-                                <div className="space-y-2">
-                                    <VitalBar val={marker.vitals?.health || 0} color="#ef4444" icon={Heart} onClick={() => setShowVital({ markerId: marker.id, vital: 'health', label: t('vitals_health'), value: Math.round(((marker.vitals?.health || 0) / 200) * 100), playerName: marker.name })} />
-                                    <VitalBar val={marker.vitals?.armor || 0} color="#3b82f6" icon={Shield} onClick={() => setShowVital({ markerId: marker.id, vital: 'armor', label: t('vitals_armor'), value: marker.vitals?.armor || 0, playerName: marker.name })} />
-                                    <VitalBar val={marker.vitals?.hunger || 0} color="#f59e0b" icon={Beef} onClick={() => setShowVital({ markerId: marker.id, vital: 'hunger', label: t('vitals_hunger'), value: marker.vitals?.hunger || 0, playerName: marker.name })} />
-                                    <VitalBar val={marker.vitals?.thirst || 0} color="#06b6d4" icon={GlassWater} onClick={() => setShowVital({ markerId: marker.id, vital: 'thirst', label: t('vitals_thirst'), value: marker.vitals?.thirst || 0, playerName: marker.name })} />
-                                </div>
+
+                                <PlayerVitals
+                                    vitals={marker.vitals as any}
+                                    size="mini"
+                                    onAction={(vital, label, val) => setShowVital({ markerId: marker.id, vital, label, value: val, playerName: marker.name })}
+                                />
+
                                 <div className="mt-4 pt-3 border-t border-white/10 flex flex-col gap-2">
                                     <div className="grid grid-cols-2 gap-2 text-[10px] font-mono opacity-50">
                                         <div>X: {marker.x.toFixed(1)}</div>
@@ -359,6 +345,14 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                     variant="secondary"
                                     size="icon"
                                     className="h-10 w-10 border border-border bg-card/60 shadow-xl"
+                                    // onClick={() => setRefresh(!refresh)}
+                                >
+                                    <RefreshCcw className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
+                                </MriButton>
+                                <MriButton
+                                    variant="secondary"
+                                    size="icon"
+                                    className="h-10 w-10 border border-border bg-card/60 shadow-xl"
                                     onClick={() => setShowSettings(!showSettings)}
                                 >
                                     <SettingsIcon className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
@@ -405,7 +399,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                             onClose={() => setShowVital(null)}
                             onSubmit={(val) => {
                                 let serverVal = val;
-                                if (showVital.vital === 'health') serverVal = Math.round((val / 100) * 200);
+                                if (showVital.vital === 'health') serverVal = Math.round(val + 100);
                                 sendNui('mri_Qadmin:server:SetVital', { targetId: showVital.markerId, vital: showVital.vital, value: serverVal })
                                 setShowVital(null)
                             }}

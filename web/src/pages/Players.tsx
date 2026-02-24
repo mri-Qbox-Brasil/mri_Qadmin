@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '@/context/I18n'
+import PlayerVitals from '@/components/shared/PlayerVitals'
 import Spinner from '@/components/Spinner'
 import { useNui } from '@/context/NuiContext'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
@@ -68,7 +69,6 @@ export default function Players() {
   useEffect(() => {
     localStorage.setItem('mri_qadmin_view_mode', viewMode)
   }, [viewMode])
-  /* Removed legacy local filtering state */
 
   const { sendNui } = useNui()
   const { players, setPlayers, selectedPlayer, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch } = useAppState()
@@ -531,122 +531,11 @@ export default function Players() {
                         {selectedPlayer.online && (
                             <section>
                                 <SectionHeader icon={Heart} title={t('vitals_section_title')} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                    {/* Health */}
-                                    <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({
-                                            vital: 'health',
-                                            label: t('vitals_health'),
-                                            value: Math.round((selectedPlayer.health / 200) * 100)
-                                        })}
-                                    >
-                                        <div className="flex justify-between items-center text-xs font-medium">
-                                            <span className="flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-red-500" /> {t('vitals_health')}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span>{Math.round((selectedPlayer.health / 200) * 100)}%</span>
-                                            </div>
-                                        </div>
-                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
-                                            <div
-                                                className="h-full bg-red-500 transition-all duration-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
-                                                style={{ width: `${Math.min(100, (selectedPlayer.health / 200) * 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Armor */}
-                                    <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({
-                                            vital: 'armor',
-                                            label: t('vitals_armor'),
-                                            value: Math.round(selectedPlayer.armor)
-                                        })}
-                                    >
-                                        <div className="flex justify-between items-center text-xs font-medium">
-                                            <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-blue-500" /> {t('vitals_armor')}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span>{Math.round(selectedPlayer.armor)}%</span>
-                                            </div>
-                                        </div>
-                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
-                                            <div
-                                                className="h-full bg-blue-500 transition-all duration-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
-                                                style={{ width: `${Math.min(100, selectedPlayer.armor)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Hunger */}
-                                    <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({
-                                            vital: 'hunger',
-                                            label: t('vitals_hunger'),
-                                            value: Math.round(selectedPlayer.metadata?.hunger || 0)
-                                        })}
-                                    >
-                                        <div className="flex justify-between items-center text-xs font-medium">
-                                            <span className="flex items-center gap-1.5"><Beef className="w-3.5 h-3.5 text-orange-500" /> {t('vitals_hunger')}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span>{Math.round(selectedPlayer.metadata?.hunger || 0)}%</span>
-                                            </div>
-                                        </div>
-                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
-                                            <div
-                                                className="h-full bg-orange-500 transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
-                                                style={{ width: `${Math.min(100, selectedPlayer.metadata?.hunger || 0)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Thirst */}
-                                    <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({
-                                            vital: 'thirst',
-                                            label: t('vitals_thirst'),
-                                            value: Math.round(selectedPlayer.metadata?.thirst || 0)
-                                        })}
-                                    >
-                                        <div className="flex justify-between items-center text-xs font-medium">
-                                            <span className="flex items-center gap-1.5"><GlassWater className="w-3.5 h-3.5 text-cyan-500" /> {t('vitals_thirst')}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span>{Math.round(selectedPlayer.metadata?.thirst || 0)}%</span>
-                                            </div>
-                                        </div>
-                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
-                                            <div
-                                                className="h-full bg-cyan-500 transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.4)]"
-                                                style={{ width: `${Math.min(100, selectedPlayer.metadata?.thirst || 0)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Stress */}
-                                    <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({
-                                            vital: 'stress',
-                                            label: t('vitals_stress'),
-                                            value: Math.round(selectedPlayer.metadata?.stress || 0)
-                                        })}
-                                    >
-                                        <div className="flex justify-between items-center text-xs font-medium">
-                                            <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5 text-purple-500" /> {t('vitals_stress')}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span>{Math.round(selectedPlayer.metadata?.stress || 0)}%</span>
-                                            </div>
-                                        </div>
-                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
-                                            <div
-                                                className="h-full bg-purple-500 transition-all duration-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"
-                                                style={{ width: `${Math.min(100, selectedPlayer.metadata?.stress || 0)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                <PlayerVitals
+                                    vitals={selectedPlayer as any}
+                                    size="full"
+                                    onAction={(vital, label, val) => setShowVitalConfirm({ vital, label, value: val })}
+                                />
                             </section>
                         )}
 
@@ -1028,7 +917,7 @@ export default function Players() {
                 onSubmit={(val) => {
                     let serverVal = val;
                     if (showVitalConfirm.vital === 'health') {
-                        serverVal = Math.round((val / 100) * 200);
+                        serverVal = Math.round(val + 100);
                     }
                     sendNui('mri_Qadmin:server:SetVital', {
                         targetId: selectedPlayer?.id,

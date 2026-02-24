@@ -1,17 +1,12 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MriModal } from '@mriqbox/ui-kit';
 import { useNui } from '@/context/NuiContext';
-import { useAppState } from '@/context/AppState';
-import Spinner from '@/components/Spinner';
-import { Monitor, X, Video, Wifi, RefreshCw, Camera, AlertCircle, Heart, Shield, Beef, GlassWater, Brain } from 'lucide-react';
-import { signaling } from '@/utils/signaling/index';
-import { subscribeFromCF } from '@/utils/cf-sfu';
+import { Camera, Maximize2, Minimize2, RefreshCw, Wifi } from 'lucide-react';
 import { isEnvBrowser } from '@/utils/misc';
 import VitalAdjustModal from '@/components/shared/VitalAdjustModal';
-
-const RTC_CONFIG = {
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-};
+import { cn } from '@/lib/utils';
+import PlayerScreenStream from '@/components/shared/PlayerScreenStream';
+import PlayerVitals from '@/components/shared/PlayerVitals';
 
 interface ScreenModalProps {
     playerId: number | null
@@ -31,106 +26,24 @@ interface Vitals {
     }
 }
 
-// ─── Stat bar ────────────────────────────────────────────────────────────────
-function StatBar({
-    icon, label, value, max = 100, color, inverted = false, onClick, actionLabel
-}: {
-    icon: React.ReactNode, label: string, value: number, max?: number,
-    color: string, inverted?: boolean,
-    onClick?: () => void, actionLabel?: string
-}) {
-    const pct = Math.max(0, Math.min(100, (value / max) * 100));
-    const displayPct = inverted ? 100 - pct : pct;
-    const barColor = displayPct >= 60 ? color
-        : displayPct >= 30 ? 'bg-yellow-500'
-        : 'bg-red-500';
-
-    const El = onClick ? 'button' : 'div';
-    return (
-        <El
-            {...(onClick ? { onClick, title: actionLabel, type: 'button' } : {})}
-            className={`flex items-center gap-2 text-xs w-full text-left rounded px-1 -mx-1 py-0.5
-                ${onClick ? 'cursor-pointer hover:bg-white/5 active:bg-white/10 transition-colors ring-0 hover:ring-1 ring-white/10' : ''}`}
-        >
-            <span className="text-muted-foreground w-3.5 flex-shrink-0">{icon}</span>
-            <span className="text-muted-foreground w-10 flex-shrink-0">{label}</span>
-            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                    className={`h-full rounded-full transition-all ${barColor}`}
-                    style={{ width: `${pct}%` }}
-                />
-            </div>
-            <span className="w-7 text-right tabular-nums font-mono text-muted-foreground">
-                {inverted ? Math.round(value) : Math.round(pct)}%
-            </span>
-        </El>
-    );
-}
-
 // ─── Badge ───────────────────────────────────────────────────────────────────
 function Badge({ children, color }: { children: React.ReactNode, color: string }) {
     return (
-        <div className={`flex items-center gap-1 text-xs font-mono px-2 py-1 rounded border ${color}`}>
+        <div className={cn("flex items-center gap-1 text-xs font-mono px-2 py-1 rounded border", color)}>
             {children}
         </div>
     );
 }
 
 export default function ScreenModal({ playerId, onClose, playerName }: ScreenModalProps) {
-    const { sendNui, on, off } = useNui();
-    const { gameData, settings } = useAppState();
-    const [loading, setLoading]   = useState(true);
-    const [error, setError]       = useState<string | null>(null);
+    const { sendNui } = useNui();
     const [fps, setFps]           = useState<number | null>(null);
     const [vitals, setVitals]     = useState<Vitals | null>(null);
-    const [viewingActions, setViewingActions] = useState(false);
-    const [actionLoading, setActionLoading] = useState(false);
     const [showVital, setShowVital] = useState<{ vital: any, label: string, value: number } | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isMaximized, setIsMaximized] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    console.log('[ScreenModal] Render:', { playerId, playerName, loading, error, isMock: typeof playerId === 'number' && playerId <= 10 });
-
-    // WebRTC
-    const peerRef  = useRef<RTCPeerConnection | null>(null);
-    const streamRef = useRef<MediaStream | null>(null);
-    const [myId, setMyId]         = useState<string|null>(null);
-    const myIdRef  = useRef<string|null>(null);
-
-    // ── Mock Logic ──────────────────────────────────────────────────────────
-    // Only treat as mock if in browser environment
     const isMock = isEnvBrowser();
-
-    useEffect(() => {
-        console.log('[ScreenModal] State Update:', {
-            playerId,
-            playerName,
-            loading,
-            error,
-            isMock,
-            myId,
-            videoRefReady: !!videoRef.current
-        });
-    }, [playerId, playerName, loading, error, isMock, myId]);
-
-    // ── Init ────────────────────────────────────────────────────────────────
-    useEffect(() => {
-        if (!playerId) return;
-
-        sendNui('getSelfId').then(id => {
-            if (id) {
-                const sid = String(id);
-                myIdRef.current = sid;
-                setMyId(sid);
-                const url = settings?.WebRTCUrl || gameData.webrtcUrl || null;
-                const provider = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
-                signaling.init(url, 'viewer-' + sid, provider);
-            }
-        }).catch(err => console.error('[ScreenModal] getSelfId FAILED:', err));
-
-        return () => {
-            signaling.disconnect();
-        };
-    }, [sendNui, gameData.webrtcUrl, settings?.WebRTCUrl, settings?.SignalingProvider, playerId]);
 
     // ── Vitals polling ──────────────────────────────────────────────────────
     const fetchVitals = useCallback(() => {
@@ -147,223 +60,7 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
         return () => clearInterval(id);
     }, [playerId, fetchVitals]);
 
-    // ── FPS – self-view ──────────────────────────────────────────────────────
-    useEffect(() => {
-        if (!myId || !playerId || String(playerId) !== String(myId)) return;
-        const id = setInterval(() => {
-            import('@/utils/fivem-renderer').then(({ default: r }) => {
-                const f = (r as any).getFps();
-                if (f !== null) setFps(f);
-            });
-        }, 500);
-        return () => clearInterval(id);
-    }, [myId, playerId]);
-
-    // ── Signaling / WebRTC ───────────────────────────────────────────────────
-    useEffect(() => {
-        if (playerId === null || isNaN(Number(playerId))) {
-            console.log('[ScreenModal] Invalid or missing playerId. ID:', playerId);
-            return;
-        }
-
-        if (myId && String(playerId) === String(myId)) {
-            console.log('[ScreenModal] Self-view detected. Starting local stream.');
-            import('@/utils/fivem-renderer').then(({ default: renderer }) => {
-                const stream = (renderer as any).startStream() as MediaStream;
-                streamRef.current = stream;
-                if (videoRef.current) {
-                    console.log('[ScreenModal] Local stream attached immediately.');
-                    videoRef.current.srcObject = stream;
-                    videoRef.current.play().catch(e => console.error('Autoplay error:', e));
-                    setLoading(false);
-                } else {
-                    console.warn('[ScreenModal] videoRef.current is null! Stream stored for deferred attachment.');
-                }
-            }).catch(e => console.error('[ScreenModal] Import failed:', e));
-            return;
-        }
-
-        const provider = settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket';
-        console.log('[ScreenModal] Initializing WebRTC with provider:', provider, 'for playerId:', playerId);
-
-        // ── CF SFU subscriber path ─────────────────────────────────────────
-        if (provider === 'cloudflare-sfu') {
-            // Wait until signaling.init() has run (myId reflects getSelfId completion)
-            if (!myId) return;
-
-            const unsubSignal = signaling.onMessage(async (msg: any) => {
-                console.log('[ScreenModal] onMessage:', msg?.type, 'src:', msg?.sourceId, 'vs playerId:', playerId);
-                if (msg.type === 'cf-track-ready' && String(msg.sourceId) === String(playerId)) {
-                    console.log('[ScreenModal] CF SFU: got track info', msg.sessionId, msg.trackName);
-                    try {
-                        const { pc, stream } = await subscribeFromCF(msg.sessionId, msg.trackName);
-                        peerRef.current = pc;
-                        if (videoRef.current) {
-                            videoRef.current.srcObject = stream;
-                            videoRef.current.play().catch(e => console.error('[CF SFU] Autoplay:', e));
-                            setLoading(false);
-                        }
-                        pc.onconnectionstatechange = () =>
-                            console.log('[CF SFU Sub] Connection State:', pc.connectionState);
-                    } catch (err) {
-                        console.error('[ScreenModal] CF SFU subscribe failed:', err);
-                    }
-                }
-            });
-
-            // Trigger P2 to start publishing to CF SFU
-            sendNui('GetPlayerScreen', { targetId: playerId });
-
-            return () => { unsubSignal(); if (peerRef.current) { peerRef.current.close(); peerRef.current = null; } };
-        }
-
-        // ── P2P signaling path (fivem-native or websocket) ─────────────────
-        const unsub = signaling.onMessage(async (msg: any) => {
-            if (msg.type === 'offer' && String(msg.sourceId) === String(playerId)) {
-                const currentMyId = myIdRef.current;
-                if (!currentMyId) return;
-
-                const pc = new RTCPeerConnection(RTC_CONFIG);
-                peerRef.current = pc;
-                const q: any[] = [];
-                (pc as any)._queue = q;
-
-                pc.oniceconnectionstatechange = () => {
-                    if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-                        const statsId = setInterval(async () => {
-                            if (!peerRef.current) { clearInterval(statsId); return; }
-                            try {
-                                const stats = await peerRef.current.getStats();
-                                stats.forEach((report: any) => {
-                                    if (report.type === 'inbound-rtp' && report.kind === 'video' && report.framesPerSecond !== undefined) {
-                                        setFps(Math.round(report.framesPerSecond));
-                                    }
-                                });
-                            } catch (_) {}
-                        }, 1000);
-                    }
-                };
-
-                pc.ontrack = (event) => {
-                    console.log('[ScreenModal] ontrack received:', event.streams.length);
-                    const stream = event.streams[0];
-                    streamRef.current = stream;
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                        setLoading(false);
-                    } else {
-                        console.warn('[ScreenModal] videoRef.current is null! Stream stored.');
-                    }
-                };
-
-                await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
-                while (q.length > 0) await pc.addIceCandidate(new RTCIceCandidate(q.shift()));
-
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                signaling.send({ type: 'answer', targetId: String(playerId), sourceId: 'viewer-' + currentMyId, data: answer });
-
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        signaling.send({ type: 'candidate', targetId: String(playerId), sourceId: 'viewer-' + currentMyId, data: event.candidate });
-                    }
-                };
-            }
-            if (msg.type === 'candidate' && String(msg.sourceId) === String(playerId)) {
-                const pc = peerRef.current;
-                if (pc && pc.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(msg.data));
-                else if (pc) (pc as any)._queue.push(msg.data);
-            }
-        });
-
-        setLoading(true);
-        const trigger = () => {
-            console.log('[ScreenModal] Requesting player screen for ID:', playerId);
-            sendNui('GetPlayerScreen', { targetId: playerId });
-        };
-
-        if ((signaling as any).isConnected?.()) {
-            trigger();
-        }
-        signaling.onConnect(trigger);
-
-        // Timeout as fallback safeguard
-        const timeoutId = setTimeout(trigger, 1000);
-
-        return () => {
-            unsub();
-            clearTimeout(timeoutId);
-            if (peerRef.current) {
-                console.log('[ScreenModal] Closing peer connection.');
-                peerRef.current.close();
-                peerRef.current = null;
-            }
-        };
-    }, [playerId, myId, sendNui, gameData.signalingProvider, settings?.SignalingProvider]);
-
-    // ── Video Attachment Watcher ──────────────────────────────────────────
-    // This ensures that if the stream arrived before the video element was ready,
-    // it gets attached as soon as videoRef.current becomes available.
-    useEffect(() => {
-        if (videoRef.current && streamRef.current && !videoRef.current.srcObject) {
-            console.log('[ScreenModal] Deferred stream attachment triggered.');
-            videoRef.current.srcObject = streamRef.current;
-            videoRef.current.play().catch(console.error);
-            setLoading(false);
-        }
-    }); // Run on every render to check ref
-
-    // ── Mock Handling ──────────────────────────────────────────────────────
-    useEffect(() => {
-        if (isMock) {
-            console.log('[ScreenModal] Initializing Mock Vitals.');
-            setLoading(false);
-            setVitals({
-                health: 200,
-                armor: 100,
-                ping: 15,
-                metadata: { hunger: 90, thirst: 85, stress: 5 }
-            });
-        }
-    }, [isMock]);
-
-
-    // ── Actions ──────────────────────────────────────────────────────────────
-    const setVital = useCallback(async (vital: string, value: number) => {
-        if (!playerId) return;
-        setActionLoading(true);
-        await sendNui('SetPlayerVital', { targetId: playerId, vital, value });
-        setTimeout(() => { fetchVitals(); setActionLoading(false); }, 800);
-    }, [playerId, sendNui, fetchVitals]);
-
-    const handleRevive = () => setVital('health', 200);
-    const handleMaxStats = async () => {
-        if (!playerId) return;
-        setActionLoading(true);
-        await sendNui('SetPlayerVital', { targetId: playerId, vital: 'health',  value: 200 });
-        await sendNui('SetPlayerVital', { targetId: playerId, vital: 'armor',   value: 100 });
-        await sendNui('SetPlayerVital', { targetId: playerId, vital: 'hunger',  value: 100 });
-        await sendNui('SetPlayerVital', { targetId: playerId, vital: 'thirst',  value: 100 });
-        await sendNui('SetPlayerVital', { targetId: playerId, vital: 'stress',  value: 0   });
-        setTimeout(() => { fetchVitals(); setActionLoading(false); }, 800);
-    };
-
-    const handleRefresh = useCallback(() => {
-        if (!playerId) return;
-        setLoading(true);
-        setFps(null);
-        if (peerRef.current) { peerRef.current.close(); peerRef.current = null; }
-        signaling.onConnect(() => sendNui('GetPlayerScreen', { targetId: playerId }));
-    }, [playerId, sendNui]);
-
-    if (!playerId) return null;
-
-    // ── Derived vitals values ──────────────────────────────────────────────
-    const hp        = vitals ? Math.max(0, vitals.health - 100)   : null;  // 0-100
-    const armor     = vitals ? vitals.armor                         : null;
-    const hunger    = vitals ? (vitals.metadata?.hunger ?? 0)       : null;
-    const thirst    = vitals ? (vitals.metadata?.thirst ?? 0)       : null;
-    const stress    = vitals ? (vitals.metadata?.stress ?? 0)       : null;
+    // ── Derived values ──────────────────────────────────────────────
     const ping      = vitals ? vitals.ping                          : null;
     const isDead    = vitals ? vitals.health < 101                  : false;
 
@@ -377,15 +74,23 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
         ping < 150 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' :
                      'text-red-400    border-red-500/30    bg-red-500/10';
 
+    if (!playerId) return null;
+
     return (
-        <MriModal onClose={onClose} className="w-[900px] max-w-4xl flex flex-col p-5 bg-card border-border">
+        <MriModal
+            onClose={onClose}
+            className={cn(
+                "flex flex-col p-5 bg-card border-border transition-all duration-300 ease-in-out",
+                isMaximized ? "w-[98vw] max-w-none h-[95vh]" : "w-[900px] max-w-4xl min-h-[500px]"
+            )}
+        >
             {/* ── Header ─────────────────────────────────────────────── */}
             <div className="flex items-center gap-2 mb-4">
                 <Camera className="w-4 h-4 text-primary flex-shrink-0" />
-                <span className="font-bold text-base flex-1 truncate">
+                <div className="font-bold text-base flex-1 truncate">
                     {playerName || `Player #${playerId}`}
                     {isDead && <span className="ml-2 text-xs text-red-400 font-normal">💀 Morto</span>}
-                </span>
+                </div>
 
                 {/* Ping */}
                 {ping !== null && (
@@ -402,52 +107,37 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                     </Badge>
                 )}
 
-                {/* Refresh stream button */}
-                <button
-                    onClick={handleRefresh}
-                    disabled={loading}
-                    title="Atualizar stream"
-                    className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
-                >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </button>
+                {/* Actions */}
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => setIsMaximized(!isMaximized)}
+                        title={isMaximized ? "Minimizar" : "Maximizar"}
+                        className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    </button>
+
+                    <button
+                        onClick={() => { setRefreshKey(prev => prev + 1); setFps(null); }}
+                        title="Atualizar stream"
+                        className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                </div>
             </div>
 
             {/* ── Body: video + vitals ────────────────────────────────── */}
-            <div className="flex gap-3 flex-1 min-h-0">
-                {/* Video feed */}
-                <div className="flex-1 bg-black rounded-lg overflow-hidden flex items-center justify-center relative border border-input" style={{ aspectRatio: '16/9' }}>
-                    {loading && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground animate-pulse z-10 bg-black/80">
-                            <Spinner />
-                            <span className="text-xs">Conectando ao feed...</span>
-                        </div>
-                    )}
-                    {error && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-red-400 z-10 bg-black/80">
-                            <AlertCircle className="w-8 h-8" />
-                            <span className="text-sm">{error}</span>
-                        </div>
-                    )}
-                    {isMock ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/20">
-                            <Monitor className="w-20 h-20 text-muted-foreground opacity-20" />
-                            <div className="absolute bottom-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white">
-                                MOCK FEED (BROWSER TEST) - ID: {playerId}
-                            </div>
-                        </div>
-                    ) : (
-                        <video
-                            ref={videoRef}
-                            className="w-full h-full object-contain bg-black"
-                            autoPlay playsInline muted
-                            onLoadedMetadata={e => {
-                                console.log('[ScreenModal] video.onLoadedMetadata');
-                                e.currentTarget.play().catch(console.error);
-                            }}
-                        />
-                    )}
-                </div>
+            <div className={cn("flex gap-3 min-h-0", isMaximized ? "flex-1" : "flex-initial")}>
+                {/* Shared Stream Component */}
+                <PlayerScreenStream
+                    key={`${playerId}-${refreshKey}`}
+                    playerId={playerId}
+                    playerName={playerName}
+                    isMock={isMock}
+                    onFpsUpdate={setFps}
+                    className="flex-1 rounded-lg border border-input shadow-inner"
+                />
 
                 {/* Vitals panel */}
                 <div className="w-48 flex flex-col gap-3 flex-shrink-0">
@@ -455,18 +145,15 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">Vitais</p>
 
                         {vitals ? (
-                            <>
-                                <StatBar icon={<Heart className="w-3 h-3" />}    label="Vida"   value={hp ?? 0}     color="bg-red-500"    onClick={() => setShowVital({ vital: 'health', label: 'Vida', value: hp ?? 0 })} actionLabel="Clique para ajustar" />
-                                <StatBar icon={<Shield className="w-3 h-3" />}   label="Armor"  value={armor ?? 0}  color="bg-blue-500"   onClick={() => setShowVital({ vital: 'armor', label: 'Armor', value: armor ?? 0 })}  actionLabel="Clique para ajustar" />
-                                <StatBar icon={<Beef className="w-3 h-3" />} label="Fome"   value={hunger ?? 0} color="bg-orange-500" onClick={() => setShowVital({ vital: 'hunger', label: 'Fome', value: hunger ?? 0 })} actionLabel="Clique para ajustar" />
-                                <StatBar icon={<GlassWater className="w-3 h-3" />} label="Sede"   value={thirst ?? 0} color="bg-cyan-500"   onClick={() => setShowVital({ vital: 'thirst', label: 'Sede', value: thirst ?? 0 })} actionLabel="Clique para ajustar" />
-                                <StatBar icon={<Brain className="w-3 h-3" />}    label="Stress" value={stress ?? 0}  color="bg-purple-500" onClick={() => setShowVital({ vital: 'stress', label: 'Stress', value: stress ?? 0 })}   actionLabel="Clique para ajustar" inverted />
-                            </>
+                            <PlayerVitals
+                                vitals={vitals}
+                                size="compact"
+                                onAction={(vital, label, val) => setShowVital({ vital, label, value: val })}
+                            />
                         ) : (
                             <div className="text-xs text-muted-foreground italic">Carregando...</div>
                         )}
                     </div>
-
                 </div>
             </div>
 
@@ -479,7 +166,7 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                 onSubmit={(val) => {
                     let serverVal = val;
                     if (showVital?.vital === 'health') {
-                        serverVal = Math.round((val / 100) * 200);
+                        serverVal = Math.round(val + 100);
                     }
                     sendNui('mri_Qadmin:server:SetVital', {
                         targetId: playerId,
