@@ -57,7 +57,7 @@ export default function PlayerGridCard({ player, onClick, onAction }: PlayerGrid
 
   return (
     <div
-      className="bg-card border border-border rounded-xl p-4 flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-all group relative overflow-hidden min-h-[165px]"
+      className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:border-primary/50 transition-all group relative overflow-hidden min-h-[165px]"
       onClick={(e) => { e.stopPropagation(); onClick(player); }}
     >
         <div className="flex items-start justify-between">
@@ -91,7 +91,7 @@ export default function PlayerGridCard({ player, onClick, onAction }: PlayerGrid
             </div>
         </div>
 
-        <div className="flex items-center justify-between mt-auto pt-2">
+        <div className="flex items-end justify-between mt-auto">
             <div className="flex items-center gap-1 h-6">
                 {player.online && player.health !== undefined && (
                     <span className={cn(
@@ -107,14 +107,14 @@ export default function PlayerGridCard({ player, onClick, onAction }: PlayerGrid
                     <div className="bg-red-500/20 text-red-500 text-[10px] px-2 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('status_suspect')}</div>
                 )}
             </div>
-            <div className="flex items-center gap-1">
-                <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('view_screen', {}, player); }} disabled={!player.online}>
+            <div className="gap-1 flex pl-1">
+                <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('view_screen', {}, player); }} disabled={!player.online} title={t('view_screen')}>
                     <Monitor className="w-3.5 h-3.5" />
                 </MriButton>
-                <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('spectate_player', {}, player); }} disabled={!player.online}>
+                <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('spectate_player', {}, player); }} disabled={!player.online} title={t('spectate')}>
                     <Eye className="w-3.5 h-3.5" />
                 </MriButton>
-                <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('teleportToPlayer', {}, player); }} disabled={!player.online}>
+                <MriButton size="icon" variant="ghost" className="h-7 w-7 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20" onClick={(e: any) => { e.stopPropagation(); onAction('teleportToPlayer', {}, player); }} disabled={!player.online} title={t('teleport_to')}>
                     <Crosshair className="w-3.5 h-3.5" />
                 </MriButton>
             </div>

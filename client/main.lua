@@ -423,3 +423,44 @@ RegisterNUICallback("mri_Qadmin:server:DeleteAction", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:DeleteAction', data.id, data.category)
     cb('ok')
 end)
+
+-- Vehicle Type Sync Thread
+CreateThread(function()
+    local lastVeh = 0
+    local lastType = nil
+
+    while true do
+        local ped = PlayerPedId()
+        local veh = GetVehiclePedIsIn(ped, false)
+
+        if veh ~= 0 then
+            if veh ~= lastVeh then
+                local vt = GetVehicleType(veh)
+                local vClass = GetVehicleClass(veh)
+                local currentType = 'car'
+
+                if vt == 'heli' then currentType = 'heli'
+                elseif vt == 'plane' then currentType = 'plane'
+                elseif vt == 'boat' then currentType = 'boat'
+                elseif vt == 'bike' then
+                    if vClass == 13 then currentType = 'bike' -- Bicycle
+                    else currentType = 'motorcycle' end -- Motorcycle
+                end
+
+                if currentType ~= lastType then
+                    Entity(ped).state:set('vehicleType', currentType, true)
+                    lastType = currentType
+                end
+                lastVeh = veh
+            end
+            Wait(2000)
+        else
+            if lastVeh ~= 0 then
+                Entity(ped).state:set('vehicleType', nil, true)
+                lastVeh = 0
+                lastType = nil
+            end
+            Wait(5000)
+        end
+    end
+end)

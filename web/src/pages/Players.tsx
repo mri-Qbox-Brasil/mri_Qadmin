@@ -18,9 +18,9 @@ import MapModal from '@/components/players/MapModal'
 import ScreenModal from '@/components/players/ScreenModal'
 import {
     LayoutGrid, List, Search, RefreshCw, ChevronLeft, User, Heart, Shield, Beef, GlassWater,
-    ExternalLink, Gift, Trash2, Skull, Ban, MoreVertical, MapPin, Eye, Zap, MessageSquare,
-    Briefcase, Camera, Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
-    Users, Check, Navigation, RotateCcw, UserMinus, UserCog, Brain, Map as MapIcon
+    ExternalLink, Gift, Trash2, Skull, Ban, Eye,
+    Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
+    Users, Check, Navigation, UserMinus, UserCog, Brain, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
@@ -429,11 +429,9 @@ export default function Players() {
                          <VirtuosoGrid
                             style={{ height: '100%' }}
                             data={players}
-                            listClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"
+                            listClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
                             itemContent={(index, p) => (
-                                <div className="pb-2">
-                                    <PlayerGridCard key={getPlayerKey(p)} player={p} onClick={setSelectedPlayer} onAction={sendAction} />
-                                </div>
+                                <PlayerGridCard key={getPlayerKey(p)} player={p} onClick={setSelectedPlayer} onAction={sendAction} />
                             )}
                          />
                      </div>

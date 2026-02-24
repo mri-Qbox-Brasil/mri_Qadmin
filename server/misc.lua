@@ -613,7 +613,15 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
             local player = QBCore.Functions.GetPlayer(src)
             local name = "Unknown"
             local vitals = { health = 100, armor = 0, hunger = 100, thirst = 100 }
-            local inVehicle = IsPedInAnyVehicle(ped, false)
+            local inVehicle = false
+            local vehicleType = nil
+            local vehicle = GetVehiclePedIsIn(ped, false)
+            if vehicle and vehicle ~= 0 then
+                inVehicle = true
+                -- Read from client-synced state bag
+                vehicleType = Entity(ped).state.vehicleType or 'car'
+            end
+
             local isStaff = IsPlayerAceAllowed(src, 'qadmin.master')
             local staffColor = nil
             if isStaff then
@@ -642,6 +650,7 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
                 name = name,
                 vitals = vitals,
                 inVehicle = inVehicle,
+                vehicleType = vehicleType,
                 isStaff = isStaff,
                 staffColor = staffColor
             })

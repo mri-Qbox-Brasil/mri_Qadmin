@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-l
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { User, Car, ShieldCheck, Heart, Shield, Beef, GlassWater, Plus, Minus, Info, Monitor, Plane, Ship, Bike } from 'lucide-react'
+import { User, Car, ShieldCheck, Heart, Shield, Beef, GlassWater, Plus, Minus, Info, Monitor, Plane, Ship, Bike, Helicopter, Motorbike, X } from 'lucide-react'
 import ReactDOMServer from 'react-dom/server'
 import { MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
 import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
@@ -24,7 +24,7 @@ interface MapMarker {
         isDead?: boolean
     }
     inVehicle?: boolean
-    vehicleType?: 'car' | 'bike' | 'plane' | 'boat' | 'heli'
+    vehicleType?: 'car' | 'bike' | 'motorcycle' | 'plane' | 'boat' | 'heli'
     isStaff?: boolean
     group?: string
     staffColor?: string
@@ -47,9 +47,10 @@ const PlayerIcon = ({ marker }: { marker: MapMarker }) => {
     let Icon = (isStaff ? ShieldCheck : User)
     if (inVehicle) {
         if (vType === 'bike') Icon = Bike
+        else if (vType === 'motorcycle') Icon = Motorbike
         else if (vType === 'plane') Icon = Plane
         else if (vType === 'boat') Icon = Ship
-        else if (vType === 'heli') Icon = Plane
+        else if (vType === 'heli') Icon = Helicopter
         else Icon = Car
     }
 
@@ -190,6 +191,15 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
     })), [markers]);
 
     const handleSelectPlayer = (id: string | number) => {
+        if (!id || id === selectedPlayerId) {
+            setSelectedPlayerId('')
+            setCenterMarker(null)
+            // Close all popups
+            Object.values(markerRefs.current).forEach(marker => {
+                if (marker && marker.closePopup) marker.closePopup()
+            })
+            return
+        }
         setSelectedPlayerId(id)
         setCenterMarker(id)
         setTimeout(() => {
@@ -322,7 +332,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                 <div className="absolute inset-0 pointer-events-none z-[9999]" style={{ overflow: 'visible' }}>
                     <div className="absolute top-6 left-6 right-6 flex justify-between gap-4">
                         <div className="flex gap-2 pointer-events-auto relative z-[10000]">
-                             <MriCompactSearch
+                              <MriCompactSearch
                                 placeholder={t('livemap_search_placeholder')}
                                 value={selectedPlayerId}
                                 onChange={handleSelectPlayer}
@@ -330,6 +340,17 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                 searchPlaceholder={t('livemap_search_input_placeholder')}
                                 className="w-10 h-10 border-border bg-card/60"
                             />
+                            {selectedPlayerId && (
+                                <MriButton
+                                    size="icon"
+                                    variant="secondary"
+                                    className="h-10 w-10 border border-border bg-card/60 shadow-xl animate-in fade-in zoom-in"
+                                    onClick={() => handleSelectPlayer('')}
+                                    title={t('common_clear')}
+                                >
+                                    <X size={16} />
+                                </MriButton>
+                            )}
                         </div>
 
                         <div className="flex gap-2 pointer-events-auto shrink-0">

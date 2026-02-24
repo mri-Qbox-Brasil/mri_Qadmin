@@ -1,6 +1,6 @@
 import { useI18n } from '@/context/I18n'
 import { MriButton } from '@mriqbox/ui-kit'
-import { Eye, Crosshair } from 'lucide-react'
+import { Eye, Crosshair, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Player {
@@ -118,6 +118,16 @@ export default function PlayerListItem({ player, isSelected, onClick, onAction }
 
                 {player.online && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <MriButton
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 rounded bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 top-0.5 relative"
+                            onClick={(e: any) => { e.stopPropagation(); onAction('view_screen', {}, player); }}
+                            disabled={!player.online}
+                            title={t('view_screen')}
+                        >
+                            <Monitor className="w-3.5 h-3.5" />
+                        </MriButton>
                         <MriButton
                             size="icon"
                             variant="ghost"
