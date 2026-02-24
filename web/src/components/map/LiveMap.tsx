@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-l
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { User, Car, ShieldCheck, Heart, Shield, Beef, GlassWater, Plus, Minus, Info, Monitor, Plane, Ship, Bike, Helicopter, Motorbike, X, RefreshCcw } from 'lucide-react'
+import { User, Car, ShieldCheck, Plus, Minus, Info, Monitor, Plane, Ship, Bike, Helicopter, Motorbike, X, RefreshCcw } from 'lucide-react'
 import ReactDOMServer from 'react-dom/server'
 import { MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
 import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
@@ -341,14 +341,14 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
 
                         <div className="flex gap-2 pointer-events-auto shrink-0">
                             <div className="relative">
-                                <MriButton
+                                {/* <MriButton
                                     variant="secondary"
                                     size="icon"
                                     className="h-10 w-10 border border-border bg-card/60 shadow-xl"
                                     // onClick={() => setRefresh(!refresh)}
                                 >
                                     <RefreshCcw className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
-                                </MriButton>
+                                </MriButton> */}
                                 <MriButton
                                     variant="secondary"
                                     size="icon"

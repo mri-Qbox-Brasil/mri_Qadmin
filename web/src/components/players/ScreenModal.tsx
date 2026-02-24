@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { MriModal } from '@mriqbox/ui-kit';
 import { useNui } from '@/context/NuiContext';
-import { Camera, Maximize2, Minimize2, RefreshCw, Wifi } from 'lucide-react';
+import { Camera, Maximize2, Minimize2, RefreshCw, Wifi, Keyboard } from 'lucide-react';
 import { isEnvBrowser } from '@/utils/misc';
 import VitalAdjustModal from '@/components/shared/VitalAdjustModal';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,7 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
     const [showVital, setShowVital] = useState<{ vital: any, label: string, value: number } | null>(null);
     const [isMaximized, setIsMaximized] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [showKeyboard, setShowKeyboard] = useState(false);
 
     const isMock = isEnvBrowser();
 
@@ -81,11 +82,11 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
             onClose={onClose}
             className={cn(
                 "flex flex-col p-5 bg-card border-border transition-all duration-300 ease-in-out",
-                isMaximized ? "w-[98vw] max-w-none h-[95vh]" : "w-[900px] max-w-4xl min-h-[500px]"
+                isMaximized ? "w-[98vw] max-w-none h-[95vh]" : "w-[1100px] max-w-6xl h-[700px]"
             )}
         >
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 shrink-0">
                 <Camera className="w-4 h-4 text-primary flex-shrink-0" />
                 <div className="font-bold text-base flex-1 truncate">
                     {playerName || `Player #${playerId}`}
@@ -110,6 +111,17 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                 {/* Actions */}
                 <div className="flex items-center gap-1">
                     <button
+                        onClick={() => setShowKeyboard(!showKeyboard)}
+                        title={showKeyboard ? "Ocultar teclado" : "Mostrar teclado"}
+                        className={cn(
+                            "p-1.5 rounded transition-colors",
+                            showKeyboard ? "bg-primary text-primary-foreground" : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <Keyboard className="w-4 h-4" />
+                    </button>
+
+                    <button
                         onClick={() => setIsMaximized(!isMaximized)}
                         title={isMaximized ? "Minimizar" : "Maximizar"}
                         className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
@@ -128,7 +140,7 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
             </div>
 
             {/* ── Body: video + vitals ────────────────────────────────── */}
-            <div className={cn("flex gap-3 min-h-0", isMaximized ? "flex-1" : "flex-initial")}>
+            <div className="flex flex-1 gap-3 min-h-0">
                 {/* Shared Stream Component */}
                 <PlayerScreenStream
                     key={`${playerId}-${refreshKey}`}
@@ -136,7 +148,8 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                     playerName={playerName}
                     isMock={isMock}
                     onFpsUpdate={setFps}
-                    className="flex-1 rounded-lg border border-input shadow-inner"
+                    showKeyboard={showKeyboard}
+                    className="flex-1 rounded-lg border border-input shadow-inner bg-black"
                 />
 
                 {/* Vitals panel */}

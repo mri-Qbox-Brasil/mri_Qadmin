@@ -18,10 +18,10 @@ import BucketModal from '@/components/players/BucketModal'
 import MapModal from '@/components/players/MapModal'
 import ScreenModal from '@/components/players/ScreenModal'
 import {
-    LayoutGrid, List, Search, RefreshCw, ChevronLeft, User, Heart, Shield, Beef, GlassWater,
+    LayoutGrid, List, Search, RefreshCw, ChevronLeft, User, Heart,
     ExternalLink, Gift, Trash2, Skull, Ban, Eye,
     Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
-    Users, Check, Navigation, UserMinus, UserCog, Brain, Map as MapIcon
+    Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'

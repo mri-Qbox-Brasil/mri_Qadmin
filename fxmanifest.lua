@@ -38,6 +38,7 @@ server_scripts {
     "server/trolls.lua",
     "server/vehicle.lua",
     "server/wall.lua",
+    "server/key_manager.lua",
 }
 
 client_scripts {
@@ -56,6 +57,7 @@ client_scripts {
     "client/vehicles.lua",
     "client/wall.lua",
     "client/world.lua",
+    "client/key_capture.lua",
 }
 
 dependencies {

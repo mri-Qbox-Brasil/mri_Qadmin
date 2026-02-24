@@ -3,10 +3,11 @@ import { useNui } from '@/context/NuiContext';
 import { useAppState } from '@/context/AppState';
 import { useI18n } from '@/context/I18n';
 import Spinner from '@/components/Spinner';
-import { AlertCircle, Wifi, Monitor as MonitorIcon } from 'lucide-react';
+import { AlertCircle, Wifi, Monitor as MonitorIcon, Keyboard } from 'lucide-react';
 import { signaling } from '@/utils/signaling/index';
 import { subscribeFromCF } from '@/utils/cf-sfu';
 import { cn } from '@/lib/utils';
+import KeyboardVisualizer from './KeyboardVisualizer';
 
 const RTC_CONFIG = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -20,6 +21,7 @@ interface PlayerScreenStreamProps {
     autoPlay?: boolean;
     muted?: boolean;
     isMock?: boolean;
+    showKeyboard?: boolean;
 }
 
 export default function PlayerScreenStream({
@@ -29,9 +31,10 @@ export default function PlayerScreenStream({
     onFpsUpdate,
     autoPlay = true,
     muted = true,
-    isMock = false
+    isMock = false,
+    showKeyboard = false
 }: PlayerScreenStreamProps) {
-    const { sendNui } = useNui();
+    const { sendNui, on, off } = useNui();
     const { gameData, settings } = useAppState();
     const { t } = useI18n();
     const [loading, setLoading] = useState(true);
@@ -41,6 +44,95 @@ export default function PlayerScreenStream({
     const streamRef = useRef<MediaStream | null>(null);
     const [myId, setMyId] = useState<string | null>(null);
     const myIdRef = useRef<string | null>(null);
+
+    // ── Key Visualization ──
+    const [pressedKeys, setPressedKeys] = useState<string[]>([]);
+
+    useEffect(() => {
+        // Real NUI Events
+        const handleKeys = (data: any) => {
+            if (String(data.id) === String(playerId)) {
+                setPressedKeys(data.keys);
+            }
+        };
+
+        // Browser Event Simulator (for testing without game)
+        const handleBrowserKeys = (e: KeyboardEvent) => {
+            if (!isMock) return;
+
+            const keyMap: Record<string, string> = {
+                'w': 'W', 'a': 'A', 's': 'S', 'd': 'D',
+                ' ': 'SPACE', 'Shift': 'SHIFT', 'Control': 'CTRL', 'Alt': 'ALT',
+                'Tab': 'TAB', 'Enter': 'ENTER', 'Escape': 'ESC', 'Backspace': 'BACK',
+                'ArrowUp': 'UP', 'ArrowDown': 'DWN', 'ArrowLeft': 'LFT', 'ArrowRight': 'RGT',
+                // Numpad Support
+                'numpad/': 'NUM /', 'numpad*': 'NUM *', 'numpad-': 'NUM -',
+                'numpad+': 'NUM +', 'numpad.': 'NUM .', 'numpad0': 'NUM 0', 'numpad1': 'NUM 1',
+                'numpad2': 'NUM 2', 'numpad3': 'NUM 3', 'numpad4': 'NUM 4', 'numpad5': 'NUM 5',
+                'numpad6': 'NUM 6', 'numpad7': 'NUM 7', 'numpad8': 'NUM 8', 'numpad9': 'NUM 9'
+            };
+
+            let label = keyMap[e.key] || e.key.toUpperCase();
+
+            // Browser Numpad Code handling
+            if (e.code.startsWith('Numpad')) {
+                const numKey = e.code.replace('Numpad', 'NUM ');
+                if (keyMap[e.code.toLowerCase()]) label = keyMap[e.code.toLowerCase()];
+                else label = numKey;
+
+                // Specific fix for NumpadEnter vs Enter
+                if (e.code === 'NumpadEnter') label = 'NUM ENTER';
+            }
+
+            setPressedKeys(prev => {
+                if (e.type === 'keydown') {
+                    return prev.includes(label) ? prev : [...prev, label];
+                } else {
+                    return prev.filter(k => k !== label);
+                }
+            });
+        };
+
+        const handleMouse = (e: MouseEvent) => {
+            if (!isMock) return;
+            const label = e.button === 0 ? 'LMB' : e.button === 2 ? 'RMB' : null;
+            if (!label) return;
+
+            setPressedKeys(prev => {
+                if (e.type === 'mousedown') {
+                    return prev.includes(label) ? prev : [...prev, label];
+                } else {
+                    return prev.filter(k => k !== label);
+                }
+            });
+        };
+
+        on('ReceivePlayerKeys', handleKeys);
+        if (isMock) {
+            window.addEventListener('keydown', handleBrowserKeys);
+            window.addEventListener('keyup', handleBrowserKeys);
+            window.addEventListener('mousedown', handleMouse);
+            window.addEventListener('mouseup', handleMouse);
+        }
+
+        return () => {
+            off('ReceivePlayerKeys', handleKeys);
+            if (isMock) {
+                window.removeEventListener('keydown', handleBrowserKeys);
+                window.removeEventListener('keyup', handleBrowserKeys);
+                window.removeEventListener('mousedown', handleMouse);
+                window.removeEventListener('mouseup', handleMouse);
+            }
+        };
+    }, [playerId, on, off, isMock]);
+
+    useEffect(() => {
+        if (!playerId || isMock) return;
+        sendNui('StartWatchingPlayer', { targetId: playerId }).catch(() => {});
+        return () => {
+            sendNui('StopWatchingPlayer', { targetId: playerId }).catch(() => {});
+        };
+    }, [playerId, sendNui, isMock]);
 
     // ── Init Signaling ──
     useEffect(() => {
@@ -196,7 +288,7 @@ export default function PlayerScreenStream({
     });
 
     return (
-        <div className={cn("relative bg-black flex items-center justify-center overflow-hidden", className)}>
+        <div className={cn("relative bg-black flex items-center justify-center overflow-hidden group", className)}>
             {loading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground animate-pulse z-10 bg-black/80">
                     <Spinner />
@@ -211,9 +303,22 @@ export default function PlayerScreenStream({
             )}
             {isMock ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/20">
-                    <MonitorIcon className="w-20 h-20 text-muted-foreground opacity-20" />
-                    <div className="absolute bottom-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white">
-                        MOCK FEED (BROWSER TEST) - ID: {playerId}
+                    {/* Placeholder Background Video for Testing */}
+                    <div className="absolute inset-0 opacity-40 grayscale blur-[2px]">
+                        <video
+                            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                            autoPlay
+                            loop
+                            muted
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                    <MonitorIcon className="w-20 h-20 text-muted-foreground opacity-20 relative z-10" />
+                    <div className="absolute bottom-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white z-10 backdrop-blur-sm border border-white/10 uppercase tracking-widest font-bold">
+                        Mock Feed (Simulator Active) • ID: {playerId}
+                    </div>
+                    <div className="absolute top-4 left-4 bg-primary/20 text-primary text-[9px] px-2 py-0.5 rounded border border-primary/30 z-10 animate-pulse">
+                        LIVE TESTING
                     </div>
                 </div>
             ) : (
@@ -224,6 +329,16 @@ export default function PlayerScreenStream({
                     playsInline
                     muted={muted}
                 />
+            )}
+
+            {/* Keyboard Overlay */}
+            {showKeyboard && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-[900px] px-4 pointer-events-none z-20 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <KeyboardVisualizer
+                        pressedKeys={pressedKeys}
+                        className="scale-[0.6] lg:scale-[0.7] origin-bottom shadow-2xl pointer-events-auto"
+                    />
+                </div>
             )}
         </div>
     );

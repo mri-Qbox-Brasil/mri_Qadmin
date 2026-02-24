@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { MriPageHeader, MriCard, MriButton } from '@mriqbox/ui-kit'
-import { Monitor, X, Video, Wifi, Maximize2, Minimize2 } from 'lucide-react'
+import { Monitor, X, Video, Wifi, Maximize2, Minimize2, Keyboard } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/context/I18n'
@@ -11,6 +11,7 @@ interface WatchedPlayer {
     id: number
     name: string
     loading: boolean
+    showKeyboard?: boolean
     error?: string
 }
 
@@ -44,12 +45,16 @@ export default function LiveScreensPage() {
                 if (maximizedId === player.id) setMaximizedId(null)
                 return prev.filter(w => w.id !== player.id);
             }
-            return [...prev, { id: player.id, name: player.name, loading: true }];
+            return [...prev, { id: player.id, name: player.name, loading: true, showKeyboard: false }];
         });
     }, [maximizedId]);
 
     const toggleMaximize = (id: number) => {
         setMaximizedId(prev => prev === id ? null : id)
+    }
+
+    const toggleKeyboard = (id: number) => {
+        setWatching(prev => prev.map(w => w.id === id ? { ...w, showKeyboard: !w.showKeyboard } : w))
     }
 
     return (
@@ -99,6 +104,16 @@ export default function LiveScreensPage() {
                                             </span>
                                             <div className="flex items-center gap-1">
                                                 <button
+                                                    onClick={() => toggleKeyboard(p.id)}
+                                                    className={cn(
+                                                        "p-1 rounded transition-colors",
+                                                        p.showKeyboard ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                                    )}
+                                                    title={p.showKeyboard ? "Ocultar teclado" : "Mostrar teclado"}
+                                                >
+                                                    <Keyboard className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
                                                     onClick={() => toggleMaximize(p.id)}
                                                     className="p-1 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                                                     title={isMax ? "Minimizar" : "Maximizar"}
@@ -117,6 +132,7 @@ export default function LiveScreensPage() {
                                         <PlayerScreenStream
                                             playerId={p.id}
                                             playerName={p.name}
+                                            showKeyboard={p.showKeyboard}
                                             className="flex-1"
                                         />
                                     </MriCard>
