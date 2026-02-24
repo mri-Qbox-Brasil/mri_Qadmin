@@ -115,3 +115,13 @@ function CheckRoutingbucket(source, target)
     SetPlayerRoutingBucket(source, targetBucket)
     QBCore.Functions.Notify(source, locale("bucket_set", targetBucket), 'error', 7500)
 end
+
+--- Convert "R, G, B" string to "#RRGGBB" hex
+--- @param rgbStr string
+--- @return string | nil
+function RGBToHex(rgbStr)
+    if not rgbStr or type(rgbStr) ~= "string" then return nil end
+    local r, g, b = rgbStr:match("(%d+),%s*(%d+),%s*(%d+)")
+    if not r or not g or not b then return nil end
+    return string.format("#%02x%02x%02x", tonumber(r), tonumber(g), tonumber(b))
+end

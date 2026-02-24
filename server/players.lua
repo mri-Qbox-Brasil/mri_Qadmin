@@ -519,22 +519,21 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
         return
     end
 
+    local ped = GetPlayerPed(tonumber(targetId))
     if vital == "health" then
-        -- Always trigger revive command for consistency
-        TriggerClientEvent('mri_Qadmin:client:ExecuteCommand', src, ('revive %s'):format(targetId))
+        TriggerClientEvent("mri_Qadmin:client:SetHealth", tonumber(targetId), tonumber(value))
     elseif vital == "armor" then
-        local ped = GetPlayerPed(tonumber(targetId))
         SetPedArmour(ped, tonumber(value))
     elseif vital == "hunger" or vital == "thirst" or vital == "stress" then
         tPlayer.Functions.SetMetaData(vital, tonumber(value))
     end
 
-    -- Broadcast update immediate (SetMetaData event will also trigger sync, but health/armor might not)
+    -- Broadcast update immediate
     local ped = GetPlayerPed(tonumber(targetId))
     TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
         id = tonumber(targetId),
-        health = GetEntityHealth(ped),
-        armor = GetPedArmour(ped),
+        health = (vital == "health") and tonumber(value) or GetEntityHealth(ped),
+        armor = (vital == "armor") and tonumber(value) or GetPedArmour(ped),
         metadata = tPlayer.PlayerData.metadata
     })
 

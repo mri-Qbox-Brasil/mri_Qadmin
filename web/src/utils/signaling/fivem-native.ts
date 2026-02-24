@@ -15,11 +15,25 @@ export class FiveMNativeProvider implements SignalingProvider {
 
     private playerId: string | null = null;
     private handlers: SignalHandler[] = [];
+    private registerTimeout: any = null;
     private connectCallbacks: Array<() => void> = [];
     private _connected = false;
     private _listener: ((e: MessageEvent) => void) | null = null;
 
     get connected() { return this._connected; }
+
+    disconnect() {
+        if (this.registerTimeout) {
+            clearTimeout(this.registerTimeout);
+            this.registerTimeout = null;
+        }
+        if (this._listener) {
+            window.removeEventListener('message', this._listener);
+            this._listener = null;
+        }
+        this._connected = false;
+        console.log('[Signaling/Native] Disconnected.');
+    }
 
     connect(_url: string | null, playerId: string) {
         this.playerId = playerId;
@@ -54,7 +68,7 @@ export class FiveMNativeProvider implements SignalingProvider {
             })
             .catch(err => {
                 console.error('[Signaling/Native] Register failed — retrying in 3s', err);
-                setTimeout(() => this._register(), 3000);
+                this.registerTimeout = setTimeout(() => this._register(), 3000);
             });
     }
 

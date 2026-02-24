@@ -1,11 +1,13 @@
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useMemo, useState } from 'react'
-import { User, Car, ShieldCheck, Heart, Shield, Beef, GlassWater, Plus, Minus, Search, Info, X, Monitor, Plane, Ship, Bike, Helicopter } from 'lucide-react'
+import { useEffect, useMemo, useState, useRef } from 'react'
+import { User, Car, ShieldCheck, Heart, Shield, Beef, GlassWater, Plus, Minus, Info, Monitor, Plane, Ship, Bike } from 'lucide-react'
 import ReactDOMServer from 'react-dom/server'
-import { MriInput, MriButton } from '@mriqbox/ui-kit'
+import { MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
 import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
+import VitalAdjustModal from '@/components/shared/VitalAdjustModal'
+import { useNui } from '@/context/NuiContext'
 
 interface MapMarker {
     id: string | number
@@ -34,20 +36,19 @@ interface LiveMapProps {
     onViewScreen?: (playerId: string | number, playerName: string) => void
 }
 
-// Custom Marker Component to generate SVG icons
 const PlayerIcon = ({ marker }: { marker: MapMarker }) => {
     const isStaff = marker.isStaff
     const inVehicle = marker.inVehicle
     const isDead = marker.vitals?.isDead
     const vType = marker.vehicleType || 'car'
-    const color = marker.staffColor || (isStaff ? '#FACC15' : (isDead ? '#9ca3af' : '#22c55e'))
+    const color = marker.staffColor || (isStaff ? '#FACC15' : (isDead ? '#9ca3af' : 'hsl(160, 100%, 45%)'))
 
     let Icon = (isStaff ? ShieldCheck : User)
     if (inVehicle) {
         if (vType === 'bike') Icon = Bike
         else if (vType === 'plane') Icon = Plane
         else if (vType === 'boat') Icon = Ship
-        else if (vType === 'heli') Icon = Helicopter
+        else if (vType === 'heli') Icon = Plane
         else Icon = Car
     }
 
@@ -83,20 +84,22 @@ const PlayerIcon = ({ marker }: { marker: MapMarker }) => {
     )
 }
 
-const VitalBar = ({ val, color, icon: Icon }: { val: number, color: string, icon: any }) => (
-    <div className="flex items-center gap-2 w-full">
-        <Icon size={12} className="text-muted-foreground" />
+const VitalBar = ({ val, color, icon: Icon, onClick }: { val: number, color: string, icon: any, onClick?: () => void }) => (
+    <div
+        className={`flex items-center gap-2 w-full ${onClick ? 'cursor-pointer hover:bg-white/5 p-1 rounded transition-colors group/vbar' : ''}`}
+        onClick={onClick}
+    >
+        <Icon size={12} className="text-muted-foreground group-hover/vbar:text-foreground" />
         <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div
                 className="h-full transition-all duration-500"
                 style={{ width: `${val}%`, backgroundColor: color }}
             />
         </div>
-        <span className="text-[10px] font-mono opacity-60 w-6 text-right">{Math.round(val)}</span>
+        <span className="text-[10px] font-mono opacity-60 w-6 text-right group-hover/vbar:opacity-100">{Math.round(val)}</span>
     </div>
 )
 
-// Zoom Controls Component
 const CustomZoomControls = () => {
     const map = useMap()
     return (
@@ -121,28 +124,28 @@ const CustomZoomControls = () => {
     )
 }
 
-// Legend Component
 const Legend = () => (
     <div className="absolute bottom-6 left-6 z-[1000] bg-card/80 border border-border p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] pointer-events-auto">
         <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-2">
             <Info size={12} /> Legenda
         </div>
         <div className="flex items-center gap-3 text-xs">
-            <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" /> Player
-        </div>
-        <div className="flex items-center gap-3 text-xs">
-            <div className="w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.4)]" /> Staff
+            <div
+                className="w-3 h-3 rounded-full"
+                style={{
+                    backgroundColor: 'hsl(160, 100%, 45%)',
+                    boxShadow: '0 0 8px hsl(160, 100%, 45% / 0.4)'
+                }}
+            /> Vivo
         </div>
         <div className="flex items-center gap-3 text-xs opacity-50">
-            <div className="w-3 h-3 rounded-full bg-gray-400" /> Morto
+            <div className="w-3 h-3 rounded-full bg-muted-foreground" /> Morto
         </div>
     </div>
 )
 
-// Helper to re-center map when target changes
 function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: string | number | null, markers: MapMarker[] }) {
     const map = useMap()
-
     useEffect(() => {
         if (centerOnMarkerId && markers.length > 0) {
             const target = markers.find(m => String(m.id) === String(centerOnMarkerId))
@@ -151,7 +154,6 @@ function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: strin
             }
         }
     }, [centerOnMarkerId, markers, map])
-
     return null
 }
 
@@ -161,6 +163,12 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
     const [brightness, setBrightness] = useState(1.0)
     const [uiVisible, setUiVisible] = useState(true)
     const [showSettings, setShowSettings] = useState(false)
+    const [showVital, setShowVital] = useState<{ markerId: any, vital: any, label: string, value: number, playerName: string } | null>(null)
+    const [selectedPlayerId, setSelectedPlayerId] = useState<string | number>('')
+    const [centerMarker, setCenterMarker] = useState<string | number | null>(null)
+    const { sendNui } = useNui()
+
+    const markerRefs = useRef<Record<string, any>>({})
 
     const filteredMarkers = markers.filter((m: MapMarker) => {
         const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) || String(m.id).includes(search)
@@ -171,13 +179,25 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
         return matchesSearch
     })
 
-    // GTA V Coordinate Configuration
+    const searchOptions = useMemo(() => markers.map(m => ({
+        value: String(m.id),
+        label: `${m.name} (#${m.id})`,
+    })), [markers]);
+
+    const handleSelectPlayer = (id: string | number) => {
+        setSelectedPlayerId(id)
+        setCenterMarker(id)
+        setTimeout(() => {
+            const marker = markerRefs.current[id]
+            if (marker) marker.openPopup()
+        }, 300)
+    }
+
     const center_x = 117.3;
     const center_y = 172.8;
     const scale_x = 0.02072;
     const scale_y = 0.0205;
 
-    // Custom CRS for GTA V
     const GtaVCrs = useMemo(() => L.Util.extend({}, L.CRS.Simple, {
         transformation: new L.Transformation(scale_x, center_x, -scale_y, center_y)
     }), []);
@@ -192,54 +212,19 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
     }
 
     return (
-        <div className="w-full h-full relative group">
+        <div className="w-full h-full relative group overflow-hidden">
             <style>{`
-                .leaflet-container { background: #09090b !important; }
+                .leaflet-container { background: #09090b !important; overflow: visible !important; }
                 .leaflet-tile-pane { filter: brightness(${brightness}); transition: filter 0.3s ease; }
                 .leaflet-popup-content-wrapper { background: rgba(15, 15, 20, 0.9) !important; color: white !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
                 .leaflet-popup-tip { background: rgba(15, 15, 20, 0.9) !important; }
                 .leaflet-popup-content { margin: 0 !important; width: auto !important; }
                 .leaflet-tooltip { background: rgba(0,0,0,0.8) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: white !important; border-radius: 6px !important; font-weight: 600 !important; }
                 .custom-player-marker { border: none !important; background: none !important; }
-
-                /* Custom Slider Styling */
-                .map-brightness-slider {
-                    -webkit-appearance: none;
-                    width: 100%;
-                    height: 6px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border-radius: 5px;
-                    outline: none;
-                }
-                .map-brightness-slider::-webkit-slider-thumb {
-                    -webkit-appearance: none;
-                    appearance: none;
-                    width: 16px;
-                    height: 16px;
-                    background: #00E396;
-                    cursor: pointer;
-                    border-radius: 50%;
-                    border: 2px solid #09090b;
-                    box-shadow: 0 0 10px rgba(0, 227, 150, 0.4);
-                    transition: all 0.2s ease;
-                }
-                .map-brightness-slider::-webkit-slider-thumb:hover {
-                    transform: scale(1.1);
-                    background: #00fba6;
-                    box-shadow: 0 0 15px rgba(0, 227, 150, 0.6);
-                }
-                .map-brightness-slider::-moz-range-thumb {
-                    width: 16px;
-                    height: 16px;
-                    background: #00E396;
-                    cursor: pointer;
-                    border-radius: 50%;
-                    border: 2px solid #09090b;
-                    box-shadow: 0 0 10px rgba(0, 227, 150, 0.4);
-                }
+                .map-brightness-slider { -webkit-appearance: none; width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; outline: none; }
+                .map-brightness-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: #00E396; cursor: pointer; border-radius: 50%; border: 2px solid #09090b; box-shadow: 0 0 10px rgba(0, 227, 150, 0.4); transition: all 0.2s ease; }
             `}</style>
 
-            {/* UI Toggle Button (Always visible if UI is hidden) */}
             {!uiVisible && (
                 <div className="absolute top-6 right-6 z-[1001] pointer-events-auto">
                     <MriButton
@@ -254,113 +239,6 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                 </div>
             )}
 
-            {/* Top Controls: Search & Filters */}
-            {uiVisible && (
-                <div className="absolute top-6 left-6 right-6 z-[1000] flex justify-between pointer-events-none gap-4">
-                    <div className="flex gap-2 pointer-events-auto max-w-sm w-full">
-                        <div className="relative flex-1 group/search">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 group-focus-within/search:text-primary transition-colors" />
-                            <MriInput
-                                placeholder="Buscar player ou ID..."
-                                className="bg-card/60 border-border focus:bg-card/90 pl-10"
-                                value={search}
-                                onChange={(e: any) => setSearch(e.target.value)}
-                            />
-                            {search && (
-                                <X
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 cursor-pointer hover:text-foreground"
-                                    onClick={() => setSearch('')}
-                                />
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2 pointer-events-auto shrink-0">
-                        <div className="flex gap-2 mr-2">
-                             <div className="relative">
-                                <MriButton
-                                    variant="secondary"
-                                    size="icon"
-                                    className="h-10 w-10 border border-border bg-card/60 shadow-xl"
-                                    onClick={() => setShowSettings(!showSettings)}
-                                >
-                                    <SettingsIcon className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
-                                </MriButton>
-
-                                {showSettings && (
-                                    <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border p-4 rounded-xl shadow-2xl z-50 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                                    <Sun size={12} /> Brilho do Mapa
-                                                </span>
-                                                <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                                                    {Math.round(brightness * 100)}%
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <Moon size={14} className="text-muted-foreground" />
-                                                <input
-                                                    type="range"
-                                                    min="20"
-                                                    max="100"
-                                                    step="1"
-                                                    value={brightness * 100}
-                                                    onChange={(e) => setBrightness(Number(e.target.value) / 100)}
-                                                    className="map-brightness-slider flex-1"
-                                                />
-                                                <Sun size={14} className="text-muted-foreground" />
-                                            </div>
-                                        </div>
-
-                                        <div className="h-px bg-border" />
-
-                                        <MriButton
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full justify-start gap-2 h-9 text-xs"
-                                            onClick={() => {
-                                                setUiVisible(false);
-                                                setShowSettings(false);
-                                            }}
-                                        >
-                                            <EyeOff size={14} /> Ocultar Interface
-                                        </MriButton>
-                                    </div>
-                                )}
-                             </div>
-                        </div>
-
-                        <div className="bg-card/60 border border-border p-1 rounded-lg flex gap-1 shadow-xl">
-                            <MriButton
-                                variant={filters.staff ? "default" : "ghost"}
-                                size="sm"
-                                className="h-8 text-[10px] px-3 font-bold"
-                                onClick={() => setFilters(f => ({ ...f, staff: !f.staff }))}
-                            >
-                                Staff
-                            </MriButton>
-                            <MriButton
-                                variant={filters.players ? "default" : "ghost"}
-                                size="sm"
-                                className="h-8 text-[10px] px-3 font-bold"
-                                onClick={() => setFilters(f => ({ ...f, players: !f.players }))}
-                            >
-                                Players
-                            </MriButton>
-                            <MriButton
-                                variant={filters.dead ? "default" : "ghost"}
-                                size="sm"
-                                className="h-8 text-[10px] px-3 font-bold"
-                                onClick={() => setFilters(f => ({ ...f, dead: !f.dead }))}
-                            >
-                                Mortos
-                            </MriButton>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <MapContainer
                 center={[0, 0]}
                 zoom={initialZoom}
@@ -369,7 +247,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                 minZoom={0}
                 crs={GtaVCrs}
                 zoomControl={false}
-                style={{ height: '100%', width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}
+                style={{ height: '100%', width: '100%', borderRadius: '0.75rem', zIndex: 0, overflow: 'hidden' }}
             >
                 <TileLayer
                     url="./map/tiles/{z}/{x}/{y}.webp"
@@ -384,6 +262,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                         key={marker.id}
                         position={[marker.y, marker.x]}
                         icon={createCustomIcon(marker)}
+                        ref={(ref) => { if (ref) markerRefs.current[marker.id] = ref }}
                     >
                         <Tooltip direction="top" offset={[0, -20]} opacity={1}>
                             <div className="flex items-center gap-2">
@@ -398,14 +277,12 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                     <div className="font-bold text-lg text-primary">{marker.name}</div>
                                     <div className="text-xs px-2 py-0.5 rounded bg-white/10 opacity-60">ID: {marker.id}</div>
                                 </div>
-
                                 <div className="space-y-2">
-                                    <VitalBar val={marker.vitals?.health || 0} color="#ef4444" icon={Heart} />
-                                    <VitalBar val={marker.vitals?.armor || 0} color="#3b82f6" icon={Shield} />
-                                    <VitalBar val={marker.vitals?.hunger || 0} color="#f59e0b" icon={Beef} />
-                                    <VitalBar val={marker.vitals?.thirst || 0} color="#06b6d4" icon={GlassWater} />
+                                    <VitalBar val={marker.vitals?.health || 0} color="#ef4444" icon={Heart} onClick={() => setShowVital({ markerId: marker.id, vital: 'health', label: 'Vida', value: Math.round(((marker.vitals?.health || 0) / 200) * 100), playerName: marker.name })} />
+                                    <VitalBar val={marker.vitals?.armor || 0} color="#3b82f6" icon={Shield} onClick={() => setShowVital({ markerId: marker.id, vital: 'armor', label: 'Armor', value: marker.vitals?.armor || 0, playerName: marker.name })} />
+                                    <VitalBar val={marker.vitals?.hunger || 0} color="#f59e0b" icon={Beef} onClick={() => setShowVital({ markerId: marker.id, vital: 'hunger', label: 'Fome', value: marker.vitals?.hunger || 0, playerName: marker.name })} />
+                                    <VitalBar val={marker.vitals?.thirst || 0} color="#06b6d4" icon={GlassWater} onClick={() => setShowVital({ markerId: marker.id, vital: 'thirst', label: 'Sede', value: marker.vitals?.thirst || 0, playerName: marker.name })} />
                                 </div>
-
                                 <div className="mt-4 pt-3 border-t border-white/10 flex flex-col gap-2">
                                     <div className="grid grid-cols-2 gap-2 text-[10px] font-mono opacity-50">
                                         <div>X: {marker.x.toFixed(1)}</div>
@@ -427,7 +304,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                     </Marker>
                 ))}
 
-                <MapController centerOnMarkerId={centerOnMarkerId} markers={markers} />
+                <MapController centerOnMarkerId={centerMarker || centerOnMarkerId} markers={markers} />
                 {uiVisible && (
                     <>
                         <CustomZoomControls />
@@ -435,6 +312,81 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                     </>
                 )}
             </MapContainer>
+
+            {uiVisible && (
+                <div className="absolute inset-0 pointer-events-none z-[9999]" style={{ overflow: 'visible' }}>
+                    <div className="absolute top-6 left-6 right-6 flex justify-between gap-4">
+                        <div className="flex gap-2 pointer-events-auto relative z-[10000]">
+                             <MriCompactSearch
+                                placeholder="Buscar..."
+                                value={selectedPlayerId}
+                                onChange={handleSelectPlayer}
+                                options={searchOptions}
+                                searchPlaceholder="Digite o nome ou ID..."
+                                className="w-10 h-10 border-border bg-card/60"
+                            />
+                        </div>
+
+                        <div className="flex gap-2 pointer-events-auto shrink-0">
+                            <div className="relative">
+                                <MriButton
+                                    variant="secondary"
+                                    size="icon"
+                                    className="h-10 w-10 border border-border bg-card/60 shadow-xl"
+                                    onClick={() => setShowSettings(!showSettings)}
+                                >
+                                    <SettingsIcon className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
+                                </MriButton>
+                                {showSettings && (
+                                    <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border p-4 rounded-xl shadow-2xl z-50 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                <span className="flex items-center gap-2"><Sun size={12} /> Brilho</span>
+                                                <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded">{Math.round(brightness * 100)}%</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Moon size={14} className="text-muted-foreground" />
+                                                <input type="range" min="20" max="100" step="1" value={brightness * 100} onChange={(e) => setBrightness(Number(e.target.value) / 100)} className="map-brightness-slider flex-1" />
+                                                <Sun size={14} className="text-muted-foreground" />
+                                            </div>
+                                        </div>
+                                        <div className="h-px bg-border" />
+                                        <MriButton variant="ghost" size="sm" className="w-full justify-start gap-2 h-9 text-xs" onClick={() => { setUiVisible(false); setShowSettings(false); }}>
+                                            <EyeOff size={14} /> Ocultar Interface
+                                        </MriButton>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-card/60 border border-border p-1 rounded-lg flex gap-1 shadow-xl">
+                                <MriButton variant={filters.staff ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, staff: !f.staff }))}>Staff</MriButton>
+                                <MriButton variant={filters.players ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, players: !f.players }))}>Players</MriButton>
+                                <MriButton variant={filters.dead ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, dead: !f.dead }))}>Mortos</MriButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showVital && (
+                <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 100000 }}>
+                    <div className="pointer-events-auto contents">
+                        <VitalAdjustModal
+                            isOpen={!!showVital}
+                            playerName={showVital.playerName}
+                            vital={showVital.vital}
+                            currentValue={showVital.value}
+                            onClose={() => setShowVital(null)}
+                            onSubmit={(val) => {
+                                let serverVal = val;
+                                if (showVital.vital === 'health') serverVal = Math.round((val / 100) * 200);
+                                sendNui('mri_Qadmin:server:SetVital', { targetId: showVital.markerId, vital: showVital.vital, value: serverVal })
+                                setShowVital(null)
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

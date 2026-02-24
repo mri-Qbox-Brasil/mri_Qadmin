@@ -208,10 +208,25 @@ end)
 
 -- Verify Player
 RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedData)
+	local src = source
 	local actionData = CheckDataFromKey(actionKey)
-	if not actionData or not CheckPerms(source, actionData.perms) then return end
 
-	local playerId = tonumber(GetValue(selectedData, "Player"))
+	Debug(('[DEBUG] verifyPlayer event received. ActionKey: %s'):format(tostring(actionKey)))
+
+	if not actionData then
+		Debug('[DEBUG] actionData not found for key: ' .. tostring(actionKey))
+		return
+	end
+
+	if not CheckPerms(src, actionData.perms) then
+		Debug('[DEBUG] Permission denied for verifyPlayer')
+		return
+	end
+
+	local val = GetValue(selectedData, "Player")
+	local playerId = tonumber(val)
+	Debug(('[DEBUG] Attempting to verify player. ID Raw: %s | ID Number: %s'):format(tostring(val), tostring(playerId)))
+
 	local Player = QBCore.Functions.GetPlayer(playerId)
 
 	if Player then
@@ -222,16 +237,32 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
 		Player.Functions.SetMetaData("verified", newState)
 
 		if newState then
-			local admin = QBCore.Functions.GetPlayer(source)
-			local adminName = admin and admin.PlayerData.charinfo and (admin.PlayerData.charinfo.firstname .. ' ' .. admin.PlayerData.charinfo.lastname) or GetPlayerName(source)
+			local admin = QBCore.Functions.GetPlayer(src)
+			local adminName = admin and admin.PlayerData.charinfo and (admin.PlayerData.charinfo.firstname .. ' ' .. admin.PlayerData.charinfo.lastname) or GetPlayerName(src)
 			Player.Functions.SetMetaData("verified_by", adminName)
 		else
 			Player.Functions.SetMetaData("verified_by", nil)
 		end
 
 		local message = newState and "Jogador marcado como verificado." or "Verificação removida do jogador."
-		TriggerClientEvent('QBCore:Notify', source, message, newState and "success" or "error")
-        TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
+		TriggerClientEvent('QBCore:Notify', src, message, newState and "success" or "error", 5000)
+
+		-- Also notify the target player
+		TriggerClientEvent('QBCore:Notify', playerId, newState and "Você foi verificado pela staff." or "Sua verificação de staff foi removida.", "primary", 5000)
+
+		-- Broadcast update to everyone so all admins see it immediately
+		local ped = GetPlayerPed(playerId)
+		TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
+			id = playerId,
+			health = GetEntityHealth(ped),
+			armor = GetPedArmour(ped),
+			metadata = Player.PlayerData.metadata
+		})
+
+        TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
+	else
+		Debug('[DEBUG] Player not found for ID: ' .. tostring(playerId))
+		QBCore.Functions.Notify(src, locale("not_online"), "error")
 	end
 end)
 
@@ -584,6 +615,13 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
             local vitals = { health = 100, armor = 0, hunger = 100, thirst = 100 }
             local inVehicle = IsPedInAnyVehicle(ped, false)
             local isStaff = IsPlayerAceAllowed(src, 'qadmin.master')
+            local staffColor = nil
+            if isStaff then
+                local rgb, _ = GetPlayerESPColor(src)
+                if rgb then
+                    staffColor = RGBToHex(rgb)
+                end
+            end
 
             if player then
                 name = player.PlayerData.charinfo.firstname .. ' ' .. player.PlayerData.charinfo.lastname
@@ -604,7 +642,8 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
                 name = name,
                 vitals = vitals,
                 inVehicle = inVehicle,
-                isStaff = isStaff
+                isStaff = isStaff,
+                staffColor = staffColor
             })
         end
     end

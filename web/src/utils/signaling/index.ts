@@ -38,6 +38,7 @@ export const signaling = {
     send:      (msg: import('./types').SignalMessage)                   => _provider.send(msg),
     onMessage: (fn: import('./types').SignalHandler): (() => void)      => _provider.onMessage(fn),
     onConnect: (fn: () => void)                                         => _provider.onConnect(fn),
+    disconnect: ()                                                      => _provider.disconnect(),
 
     get connected() { return _provider.connected; },
     get type()      { return _provider.type; },

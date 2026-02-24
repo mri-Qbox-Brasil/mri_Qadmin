@@ -7,6 +7,7 @@ import { Monitor, X, Video, Wifi, RefreshCw, Camera, AlertCircle, Heart, Shield,
 import { signaling } from '@/utils/signaling/index';
 import { subscribeFromCF } from '@/utils/cf-sfu';
 import { isEnvBrowser } from '@/utils/misc';
+import VitalAdjustModal from '@/components/shared/VitalAdjustModal';
 
 const RTC_CONFIG = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -82,7 +83,9 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
     const [error, setError]       = useState<string | null>(null);
     const [fps, setFps]           = useState<number | null>(null);
     const [vitals, setVitals]     = useState<Vitals | null>(null);
+    const [viewingActions, setViewingActions] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
+    const [showVital, setShowVital] = useState<{ vital: any, label: string, value: number } | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     console.log('[ScreenModal] Render:', { playerId, playerName, loading, error, isMock: typeof playerId === 'number' && playerId <= 10 });
@@ -111,17 +114,23 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
 
     // ── Init ────────────────────────────────────────────────────────────────
     useEffect(() => {
-       sendNui('getSelfId').then(id => {
-           if (id) {
-               const sid = String(id);
-               myIdRef.current = sid;
-               setMyId(sid);
-        const url = settings?.WebRTCUrl || gameData.webrtcUrl || null;
-               const provider = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
-               signaling.init(url, 'viewer-' + sid, provider);
-           }
-       }).catch(err => console.error('[ScreenModal] getSelfId FAILED:', err));
-    }, [sendNui, gameData.webrtcUrl, settings?.WebRTCUrl, settings?.SignalingProvider]);
+        if (!playerId) return;
+
+        sendNui('getSelfId').then(id => {
+            if (id) {
+                const sid = String(id);
+                myIdRef.current = sid;
+                setMyId(sid);
+                const url = settings?.WebRTCUrl || gameData.webrtcUrl || null;
+                const provider = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
+                signaling.init(url, 'viewer-' + sid, provider);
+            }
+        }).catch(err => console.error('[ScreenModal] getSelfId FAILED:', err));
+
+        return () => {
+            signaling.disconnect();
+        };
+    }, [sendNui, gameData.webrtcUrl, settings?.WebRTCUrl, settings?.SignalingProvider, playerId]);
 
     // ── Vitals polling ──────────────────────────────────────────────────────
     const fetchVitals = useCallback(() => {
@@ -447,11 +456,11 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
 
                         {vitals ? (
                             <>
-                                <StatBar icon={<Heart className="w-3 h-3" />}    label="Vida"   value={hp ?? 0}     color="bg-red-500"    onClick={() => setVital('health', 200)} actionLabel="Clique para reviver" />
-                                <StatBar icon={<Shield className="w-3 h-3" />}   label="Armor"  value={armor ?? 0}  color="bg-blue-500"   onClick={() => setVital('armor', 100)}  actionLabel="Clique para max armor" />
-                                <StatBar icon={<Beef className="w-3 h-3" />} label="Fome"   value={hunger ?? 0} color="bg-orange-500" onClick={() => setVital('hunger', 100)} actionLabel="Clique para saciar fome" />
-                                <StatBar icon={<GlassWater className="w-3 h-3" />} label="Sede"   value={thirst ?? 0} color="bg-cyan-500"   onClick={() => setVital('thirst', 100)} actionLabel="Clique para saciar sede" />
-                                <StatBar icon={<Brain className="w-3 h-3" />}    label="Stress" value={stress ?? 0}  color="bg-purple-500" onClick={() => setVital('stress', 0)}   actionLabel="Clique para zerar stress" inverted />
+                                <StatBar icon={<Heart className="w-3 h-3" />}    label="Vida"   value={hp ?? 0}     color="bg-red-500"    onClick={() => setShowVital({ vital: 'health', label: 'Vida', value: hp ?? 0 })} actionLabel="Clique para ajustar" />
+                                <StatBar icon={<Shield className="w-3 h-3" />}   label="Armor"  value={armor ?? 0}  color="bg-blue-500"   onClick={() => setShowVital({ vital: 'armor', label: 'Armor', value: armor ?? 0 })}  actionLabel="Clique para ajustar" />
+                                <StatBar icon={<Beef className="w-3 h-3" />} label="Fome"   value={hunger ?? 0} color="bg-orange-500" onClick={() => setShowVital({ vital: 'hunger', label: 'Fome', value: hunger ?? 0 })} actionLabel="Clique para ajustar" />
+                                <StatBar icon={<GlassWater className="w-3 h-3" />} label="Sede"   value={thirst ?? 0} color="bg-cyan-500"   onClick={() => setShowVital({ vital: 'thirst', label: 'Sede', value: thirst ?? 0 })} actionLabel="Clique para ajustar" />
+                                <StatBar icon={<Brain className="w-3 h-3" />}    label="Stress" value={stress ?? 0}  color="bg-purple-500" onClick={() => setShowVital({ vital: 'stress', label: 'Stress', value: stress ?? 0 })}   actionLabel="Clique para ajustar" inverted />
                             </>
                         ) : (
                             <div className="text-xs text-muted-foreground italic">Carregando...</div>
@@ -460,6 +469,26 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
 
                 </div>
             </div>
+
+            <VitalAdjustModal
+                isOpen={!!showVital}
+                playerName={playerName || `Player #${playerId}`}
+                vital={showVital?.vital}
+                currentValue={showVital?.value || 0}
+                onClose={() => setShowVital(null)}
+                onSubmit={(val) => {
+                    let serverVal = val;
+                    if (showVital?.vital === 'health') {
+                        serverVal = Math.round((val / 100) * 200);
+                    }
+                    sendNui('mri_Qadmin:server:SetVital', {
+                        targetId: playerId,
+                        vital: showVital?.vital,
+                        value: serverVal
+                    });
+                    setShowVital(null);
+                }}
+            />
         </MriModal>
     );
 }

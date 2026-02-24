@@ -4,7 +4,7 @@ GlobalState["mri_wall"] = "mri_wall:"..math.random(100000000,200000000)
 local encrypt = GlobalState["mri_wall"]
 
 local wall_infos = {}
-local principal_colors = {}
+principal_colors = {}
 local wall_settings = {
     dead = "255, 0, 0",
     invisible = "255, 255, 0",
@@ -43,7 +43,7 @@ local function LoadWallData()
     end
 end
 
-local function GetPlayerESPColor(src)
+function GetPlayerESPColor(src)
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return nil end
 

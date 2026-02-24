@@ -5,6 +5,7 @@ import { useNui } from '@/context/NuiContext'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso'
 import PlayersSkeleton from '@/components/skeletons/PlayersSkeleton'
+import VitalAdjustModal from '@/components/shared/VitalAdjustModal'
 
 import { useAppState } from '@/context/AppState'
 import ConfirmAction from '@/components/players/ConfirmAction'
@@ -16,38 +17,10 @@ import BucketModal from '@/components/players/BucketModal'
 import MapModal from '@/components/players/MapModal'
 import ScreenModal from '@/components/players/ScreenModal'
 import {
-    Search,
-    User,
-    Wallet,
-    Ban,
-    Trash2,
-    Heart,
-    Skull,
-    Car,
-    AlertTriangle,
-    Eye,
-    Crosshair,
-    Download,
-    Undo,
-    Lock,
-    LogOut,
-    ExternalLink,
-    Gift,
-    LayoutGrid,
-    List,
-    ChevronLeft,
-    Users,
-    RefreshCw,
-    Check,
-    Navigation,
-    RotateCcw,
-    UserMinus,
-    UserCog,
-    Beef,
-    GlassWater,
-    Shield,
-    Brain,
-    Map as MapIcon
+    LayoutGrid, List, Search, RefreshCw, ChevronLeft, User, Heart, Shield, Beef, GlassWater,
+    ExternalLink, Gift, Trash2, Skull, Ban, MoreVertical, MapPin, Eye, Zap, MessageSquare,
+    Briefcase, Camera, Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
+    Users, Check, Navigation, RotateCcw, UserMinus, UserCog, Brain, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
@@ -360,9 +333,9 @@ export default function Players() {
         else delete newMeta.verified_by
         const updated = { ...p, metadata: newMeta }
 
-        if (selectedPlayer && selectedPlayer.id === p.id) setSelectedPlayer(updated)
+        if (selectedPlayer && String(selectedPlayer.id) === String(p.id)) setSelectedPlayer(updated)
         // Update local list optimistic
-        setPlayers(prev => prev.map(x => x.id === updated.id ? updated : x))
+        setPlayers(prev => prev.map(x => String(x.id) === String(updated.id) ? updated : x))
     }
 
     try {
@@ -564,7 +537,11 @@ export default function Players() {
                                     {/* Health */}
                                     <div
                                         className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({ vital: 'health', label: t('vitals_health'), value: 200 })}
+                                        onClick={() => setShowVitalConfirm({
+                                            vital: 'health',
+                                            label: t('vitals_health'),
+                                            value: Math.round((selectedPlayer.health / 200) * 100)
+                                        })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
                                             <span className="flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-red-500" /> {t('vitals_health')}</span>
@@ -583,7 +560,11 @@ export default function Players() {
                                     {/* Armor */}
                                     <div
                                         className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({ vital: 'armor', label: t('vitals_armor'), value: 0 })}
+                                        onClick={() => setShowVitalConfirm({
+                                            vital: 'armor',
+                                            label: t('vitals_armor'),
+                                            value: Math.round(selectedPlayer.armor)
+                                        })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
                                             <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-blue-500" /> {t('vitals_armor')}</span>
@@ -601,8 +582,12 @@ export default function Players() {
 
                                     {/* Hunger */}
                                     <div
-                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({ vital: 'hunger', label: t('vitals_hunger'), value: 100 })}
+                                        className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.1)] transition-all cursor-pointer select-none group/vital"
+                                        onClick={() => setShowVitalConfirm({
+                                            vital: 'hunger',
+                                            label: t('vitals_hunger'),
+                                            value: Math.round(selectedPlayer.metadata?.hunger || 0)
+                                        })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
                                             <span className="flex items-center gap-1.5"><Beef className="w-3.5 h-3.5 text-orange-500" /> {t('vitals_hunger')}</span>
@@ -612,7 +597,7 @@ export default function Players() {
                                         </div>
                                         <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
                                             <div
-                                                className="h-full bg-orange-500 transition-all duration-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]"
+                                                className="h-full bg-orange-500 transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
                                                 style={{ width: `${Math.min(100, selectedPlayer.metadata?.hunger || 0)}%` }}
                                             />
                                         </div>
@@ -621,7 +606,11 @@ export default function Players() {
                                     {/* Thirst */}
                                     <div
                                         className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({ vital: 'thirst', label: t('vitals_thirst'), value: 100 })}
+                                        onClick={() => setShowVitalConfirm({
+                                            vital: 'thirst',
+                                            label: t('vitals_thirst'),
+                                            value: Math.round(selectedPlayer.metadata?.thirst || 0)
+                                        })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
                                             <span className="flex items-center gap-1.5"><GlassWater className="w-3.5 h-3.5 text-cyan-500" /> {t('vitals_thirst')}</span>
@@ -640,7 +629,11 @@ export default function Players() {
                                     {/* Stress */}
                                     <div
                                         className="space-y-2 lg:col-span-1 p-3 rounded-lg bg-card border border-border/50 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all cursor-pointer select-none group/vital"
-                                        onClick={() => setShowVitalConfirm({ vital: 'stress', label: t('vitals_stress'), value: 0 })}
+                                        onClick={() => setShowVitalConfirm({
+                                            vital: 'stress',
+                                            label: t('vitals_stress'),
+                                            value: Math.round(selectedPlayer.metadata?.stress || 0)
+                                        })}
                                     >
                                         <div className="flex justify-between items-center text-xs font-medium">
                                             <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5 text-purple-500" /> {t('vitals_stress')}</span>
@@ -1027,16 +1020,27 @@ export default function Players() {
             />
         )}
 
-        {showVitalConfirm && (
-            <ConfirmAction
-                text={t('confirm_vital_action', [showVitalConfirm.label])}
-                onConfirm={() => {
-                    sendNui('mri_Qadmin:server:SetVital', { targetId: selectedPlayer?.id, vital: showVitalConfirm.vital, value: showVitalConfirm.value })
+         {showVitalConfirm && (
+            <VitalAdjustModal
+                isOpen={!!showVitalConfirm}
+                playerName={selectedPlayer?.name || ""}
+                vital={showVitalConfirm.vital as any}
+                currentValue={showVitalConfirm.value}
+                onClose={() => setShowVitalConfirm(null)}
+                onSubmit={(val) => {
+                    let serverVal = val;
+                    if (showVitalConfirm.vital === 'health') {
+                        serverVal = Math.round((val / 100) * 200);
+                    }
+                    sendNui('mri_Qadmin:server:SetVital', {
+                        targetId: selectedPlayer?.id,
+                        vital: showVitalConfirm.vital,
+                        value: serverVal
+                    })
                     setShowVitalConfirm(null)
                 }}
-                onCancel={() => setShowVitalConfirm(null)}
             />
-        )}
+         )}
 
         <ScreenModal
             playerId={viewingScreenPlayer?.id}

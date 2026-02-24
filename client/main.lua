@@ -260,6 +260,11 @@ RegisterNetEvent('mri_Qadmin:client:ExecuteCommand', function(data)
 	ExecuteCommand(data)
 end)
 
+RegisterNetEvent('mri_Qadmin:client:SetHealth', function(health)
+    local ped = PlayerPedId()
+    SetEntityHealth(ped, tonumber(health))
+end)
+
 RegisterNUICallback("executeCommand", function(data, cb)
 	local command = data.command
 	local args = data.args

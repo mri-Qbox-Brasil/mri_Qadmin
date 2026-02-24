@@ -56,11 +56,12 @@ export default function LiveMapPage() {
         }
     }, [sendNui])
 
+
     return (
         <div className="h-full flex flex-col bg-background">
              <MriPageHeader title={t('nav_livemap') || "Live Map"} icon={MapIcon} />
-             <div className="flex-1 p-4 overflow-hidden relative">
-                 <div className="w-full h-full rounded-xl border border-border overflow-hidden relative shadow-sm bg-card">
+             <div className="flex-1 p-4 relative overflow-hidden">
+                 <div className="w-full h-full rounded-xl border border-border relative shadow-sm bg-card overflow-hidden">
                      <LiveMap
                         markers={markers.map(m => {
                             // Apply wall color if staff
@@ -85,11 +86,13 @@ export default function LiveMapPage() {
 
              <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 99999 }}>
                 <div className="pointer-events-auto contents">
-                    <ScreenModal
-                        playerId={viewingPlayer?.id || null}
-                        playerName={viewingPlayer?.name}
-                        onClose={() => setViewingPlayer(null)}
-                    />
+                    {viewingPlayer && (
+                        <ScreenModal
+                            playerId={viewingPlayer?.id}
+                            playerName={viewingPlayer?.name}
+                            onClose={() => setViewingPlayer(null)}
+                        />
+                    )}
                 </div>
              </div>
         </div>

@@ -10,6 +10,7 @@ export class WebSocketProvider implements SignalingProvider {
     private ws: WebSocket | null = null;
     private url: string = 'wss://ws.gf2.in';
     private playerId: string | null = null;
+    private reconnectTimeout: any = null;
     private handlers: SignalHandler[] = [];
     private queue: SignalMessage[] = [];
     private connectCallbacks: Array<() => void> = [];
@@ -23,6 +24,21 @@ export class WebSocketProvider implements SignalingProvider {
         this.url = raw.startsWith('ws://') ? raw.replace('ws://', 'wss://') : raw;
         this.playerId = playerId;
         this._open();
+    }
+
+    disconnect() {
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+        }
+        if (this.ws) {
+            // Remove the onclose handler so it doesn't try to reconnect
+            this.ws.onclose = null;
+            this.ws.close();
+            this.ws = null;
+        }
+        this._connected = false;
+        console.log('[Signaling/WS] Disconnected manually.');
     }
 
     private _open() {
@@ -49,7 +65,7 @@ export class WebSocketProvider implements SignalingProvider {
             console.log('[Signaling/WS] Disconnected — reconnecting in 5s...');
             this._connected = false;
             this.ws = null;
-            setTimeout(() => this._open(), 5000);
+            this.reconnectTimeout = setTimeout(() => this._open(), 5000);
         };
 
         this.ws.onerror = (err) => {

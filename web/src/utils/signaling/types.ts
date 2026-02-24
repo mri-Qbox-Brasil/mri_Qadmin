@@ -18,6 +18,7 @@ export type ProviderType = 'websocket' | 'fivem-native' | 'cloudflare-sfu';
 export interface SignalingProvider {
     readonly type: ProviderType;
     connect(url: string | null, playerId: string): void;
+    disconnect(): void;
     send(msg: SignalMessage): void;
     /** Subscribe to incoming messages. Returns an unsubscribe function. */
     onMessage(fn: SignalHandler): () => void;
