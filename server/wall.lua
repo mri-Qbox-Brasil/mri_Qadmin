@@ -1,7 +1,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
-GlobalState["mri_wall"] = "mri_wall:"..math.random(100000000,200000000)
-local encrypt = GlobalState["mri_wall"]
+local encrypt = "mri_wall:"..math.random(100000000,200000000)
+GlobalState["mri_wall"] = encrypt
 
 local wall_infos = {}
 principal_colors = {}
