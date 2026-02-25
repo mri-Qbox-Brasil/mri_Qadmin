@@ -25,16 +25,15 @@ local function LoadActions()
 
         if func then
             local defaults = func()
-            local queries = {}
-            local params = {}
+            local count = 0
 
             local function prepareInserts(categoryName, actionsTable)
                 if not actionsTable then return end
                 for id, data in pairs(actionsTable) do
                     local jsonString = json.encode(data)
-                    -- Use INSERT IGNORE to never overwrite existing ones or duplicate
-                    table.insert(queries, 'INSERT IGNORE INTO mri_qadmin_actions (`id`, `category`, `data`) VALUES (?, ?, ?)')
-                    table.insert(params, {id, categoryName, jsonString})
+                    -- Linha por linha via INSERT IGNORE
+                    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_actions (`id`, `category`, `data`) VALUES (?, ?, ?)', {id, categoryName, jsonString})
+                    count = count + 1
                 end
             end
 
@@ -42,9 +41,10 @@ local function LoadActions()
             prepareInserts('PlayerActions', defaults.PlayerActions)
             prepareInserts('OtherActions', defaults.OtherActions)
 
-            if #queries > 0 then
-                MySQL.transaction.await(queries, params)
-                print(('^2[mri_Qadmin] Sincronização Automágica concluída: %d ações padrão verificadas via INSERT IGNORE.^7'):format(#queries))
+            if count > 0 then
+                print(('^2[mri_Qadmin] Sincronização Automágica concluída: %d ações padrão verificadas via INSERT IGNORE.^7'):format(count))
+            else
+                print('^3[mri_Qadmin] default_actions.lua não retornou nenhuma action para sincronizar.^7')
             end
         else
             print('^1[mri_Qadmin] Erro ao compilar default_actions.lua: ' .. tostring(err) .. '^7')
