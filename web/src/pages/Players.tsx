@@ -567,7 +567,6 @@ export default function Players() {
                                 <GridActionButton icon={Crosshair} label={`${t('go_to')}`} onClick={() => sendAction('teleportToPlayer')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Download} label={`${t('bring')}`} onClick={() => sendAction('bringPlayer')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction('sendPlayerBack')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction('sendPlayerBack')} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Navigation} label={`${t('set_bucket')}`} onClick={() => setShowBucketModal(true)} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={MapIcon} label={`${t('track_player') || 'Map'}`} onClick={() => setShowMapModal(true)} disabled={!selectedPlayer.online} />
                             </div>
