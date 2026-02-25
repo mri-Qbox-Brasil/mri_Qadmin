@@ -4,28 +4,44 @@ end
 
 --- @param perms string | table
 function CheckPerms(source, perms)
-    local isMaster = IsPlayerAceAllowed(source, 'qadmin.master')
-    Debug(('[DEBUG] CheckPerms Source: %s | Master: %s'):format(source, tostring(isMaster)))
+    local function checkNode(node)
+        -- Primary check against the source directly
+        if IsPlayerAceAllowed(source, node) then return true end
+
+        -- Fallback: Check explicitly against identifiers (solves native FiveM cache lag after adding principal via console)
+        local num = GetNumPlayerIdentifiers(source)
+        for i = 0, num - 1 do
+            local id = GetPlayerIdentifier(source, i)
+            if IsPrincipalAceAllowed('identifier.' .. id, node) or IsPrincipalAceAllowed(id, node) then
+                return true
+            end
+        end
+        return false
+    end
 
     -- Master Bypass
-    if isMaster then return true end
+    if checkNode('qadmin.master') then
+        Debug(('[DEBUG] CheckPerms Source: %s | Bypass Master (Allowed)'):format(source))
+        return true
+    end
 
-    -- Check Native ACEs (Granular)
+    -- Check Native ACEs
     if type(perms) == 'string' then
-        local allowed = IsPlayerAceAllowed(source, perms)
-        Debug(('[DEBUG] Checking String Ace [%s]: %s'):format(perms, tostring(allowed)))
+        local allowed = checkNode(perms)
+        Debug(('[DEBUG] Checking String Ace [%s] for %s: %s'):format(perms, source, tostring(allowed)))
         if allowed then return true end
     elseif type(perms) == 'table' then
         for _, p in pairs(perms) do
-            local allowed = IsPlayerAceAllowed(source, p)
-            -- print(('[DEBUG] Checking Table Ace [%s]: %s'):format(p, tostring(allowed)))
+            local allowed = checkNode(p)
+            Debug(('[DEBUG] Checking Table Ace [%s] for %s: %s'):format(p, source, tostring(allowed)))
             if allowed then return true end
         end
     end
 
     -- Fail
-    Debug('[DEBUG] CheckPerms FAILED')
-    return noPerms(source)
+    Debug(('[DEBUG] CheckPerms FAILED for source %s'):format(source))
+    noPerms(source)
+    return false
 end
 
 --- Check if a player (any identifier) belongs to a specific principal (group)

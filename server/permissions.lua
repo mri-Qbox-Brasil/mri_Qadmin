@@ -39,8 +39,8 @@ local function LoadPermissions()
              child = 'identifier.' .. child
         end
 
-        Debug(('[mri_Qadmin] [DEBUG] Executing: add_principal %s %s'):format(child, p.parent))
-        ExecuteCommand(('add_principal %s %s'):format(child, p.parent))
+        Debug(('[mri_Qadmin] [DEBUG] Executing: lib.addPrincipal %s %s'):format(child, p.parent))
+        lib.addPrincipal(child, p.parent)
 
         -- Expand for online players
         for src, data in pairs(onlinePlayers) do
@@ -67,9 +67,9 @@ local function LoadPermissions()
     -- Load Aces (Permissions)
     local aces = MySQL.query.await('SELECT * FROM mri_qadmin_aces') or {}
     for _, a in ipairs(aces) do
-        local type = a.allow == 1 and 'allow' or 'deny'
-        Debug(('[mri_Qadmin] [DEBUG] Executing: add_ace %s %s %s'):format(a.principal, a.object, type))
-        ExecuteCommand(('add_ace %s %s %s'):format(a.principal, a.object, type))
+        local allow = a.allow == 1
+        Debug(('[mri_Qadmin] [DEBUG] Executing: lib.addAce %s %s %s'):format(a.principal, a.object, tostring(allow)))
+        lib.addAce(a.principal, a.object, allow)
     end
     Debug(('[mri_Qadmin] Loaded %d Aces from DB'):format(#aces))
     TriggerEvent('mri_Qadmin:server:PermissionsLoaded')
@@ -128,16 +128,6 @@ end, true)
 
 RegisterNetEvent('onResourceStart', function(resourceName)
     if GetCurrentResourceName() == resourceName then
-        local myRes = 'resource.' .. resourceName
-        if not IsPrincipalAceAllowed(myRes, 'command.add_principal') then
-             Debug('^1[mri_Qadmin] [CRITICAL WARNING] Resource does not have permission to execute "add_principal"!^7')
-             Debug('^1[mri_Qadmin] Please add the following to your server.cfg:^7')
-             Debug(('^3add_ace %s command.add_principal allow^7'):format(myRes))
-             Debug(('^3add_ace %s command.remove_principal allow^7'):format(myRes))
-             Debug(('^3add_ace %s command.add_ace allow^7'):format(myRes))
-             Debug(('^3add_ace %s command.remove_ace allow^7'):format(myRes))
-        end
-
         LoadPermissions()
     end
 end)
@@ -170,11 +160,12 @@ RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
 
         -- Apply the principal to the runtime cache immediately
         found['group.admin'] = true
+        lib.addPrincipal('identifier.' .. fullLicense, 'group.admin')
     end
 
     for parent, _ in pairs(found) do
         Debug(('[mri_Qadmin] Re-applying permissions natively for %s -> %s (Handled by LoadPermissions / AutoSync)'):format(GetPlayerName(src), parent))
-        -- Applying permissions dynamically handles natively via DB insertion / execute command.
+        -- Applying permissions dynamically handles natively via DB insertion / lib functions.
     end
 
     TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', src)
@@ -207,8 +198,8 @@ RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow, 
         MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {principal, object, allow and 1 or 0, description})
     end
 
-    local type = allow and 'allow' or 'deny'
-    ExecuteCommand(('add_ace %s %s %s'):format(principal, object, type))
+    local allowState = allow and true or false
+    lib.addAce(principal, object, allowState)
 
     TriggerClientEvent('QBCore:Notify', src, 'Ace Added/Updated successfully', 'success')
     BroadcastPermissionUpdate()
@@ -223,8 +214,8 @@ RegisterNetEvent('mri_Qadmin:server:RemoveAce', function(id)
     if ace then
         Debug(('[mri_Qadmin] Removing Ace: %s %s'):format(ace.principal, ace.object))
         MySQL.query.await('DELETE FROM mri_qadmin_aces WHERE id = ?', {id})
-        local type = ace.allow == 1 and 'allow' or 'deny'
-        ExecuteCommand(('remove_ace %s %s %s'):format(ace.principal, ace.object, type))
+        local allow = ace.allow == 1
+        lib.removeAce(ace.principal, ace.object, allow)
         TriggerClientEvent('QBCore:Notify', src, 'Ace Removed successfully', 'success')
         BroadcastPermissionUpdate()
     else
@@ -240,16 +231,16 @@ RegisterNetEvent('mri_Qadmin:server:ToggleAce', function(id)
     local ace = MySQL.single.await('SELECT * FROM mri_qadmin_aces WHERE id = ?', {id})
     if ace then
         -- Remove old
-        local oldType = ace.allow == 1 and 'allow' or 'deny'
-        ExecuteCommand(('remove_ace %s %s %s'):format(ace.principal, ace.object, oldType))
+        local oldAllow = ace.allow == 1
+        lib.removeAce(ace.principal, ace.object, oldAllow)
 
         -- Toggle
-        local newAllow = ace.allow == 1 and 0 or 1
-        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ? WHERE id = ?', {newAllow, id})
+        local newAllowVal = ace.allow == 1 and 0 or 1
+        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ? WHERE id = ?', {newAllowVal, id})
 
         -- Add new
-        local newType = newAllow == 1 and 'allow' or 'deny'
-        ExecuteCommand(('add_ace %s %s %s'):format(ace.principal, ace.object, newType))
+        local newAllow = newAllowVal == 1
+        lib.addAce(ace.principal, ace.object, newAllow)
 
         TriggerClientEvent('QBCore:Notify', src, 'Ace Updated successfully', 'success')
         BroadcastPermissionUpdate()
@@ -289,13 +280,13 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
     end
 
     -- Execute for the specific child string provided
-    ExecuteCommand(('add_principal %s %s'):format(child, parent))
+    lib.addPrincipal(child, parent)
 
     -- SAFETY: If child looks like an identifier (e.g., license:...), add it as identifier.child too
     -- This ensures it works even if the online player check below fails or if player is offline
     if string.find(child, ':') and not string.find(child, 'identifier%.') then
-        Debug(('[mri_Qadmin] Executing Safety Command: add_principal identifier.%s %s'):format(child, parent))
-        ExecuteCommand(('add_principal identifier.%s %s'):format(child, parent))
+        Debug(('[mri_Qadmin] Executing Safety Command: lib.addPrincipal identifier.%s %s'):format(child, parent))
+        lib.addPrincipal('identifier.' .. child, parent)
     end
 
     -- Try to find if 'child' is an online player and expand to all their identifiers
@@ -355,14 +346,12 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
         Debug(('[mri_Qadmin] RemovePrincipal: Data Child: "%s" Parent: "%s"'):format(data.child, data.parent))
 
         -- Remove "identifier.license:xxx"
-        local cmd1 = ('remove_principal identifier.%s %s'):format(data.child, data.parent)
-        Debug(('[mri_Qadmin] Executing: %s'):format(cmd1))
-        ExecuteCommand(cmd1)
+        Debug(('[mri_Qadmin] Executing: lib.removePrincipal identifier.%s %s'):format(data.child, data.parent))
+        lib.removePrincipal('identifier.' .. data.child, data.parent)
 
         -- Remove "license:xxx"
-        local cmd2 = ('remove_principal %s %s'):format(data.child, data.parent)
-        Debug(('[mri_Qadmin] Executing: %s'):format(cmd2))
-        ExecuteCommand(cmd2)
+        Debug(('[mri_Qadmin] Executing: lib.removePrincipal %s %s'):format(data.child, data.parent))
+        lib.removePrincipal(data.child, data.parent)
 
         -- Force refresh for the specific client if they are online to be sure
         local players = QBCore.Functions.GetPlayers()
@@ -381,7 +370,7 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
                      local num = GetNumPlayerIdentifiers(id)
                      for i = 0, num-1 do
                         local ident = GetPlayerIdentifier(id, i)
-                        ExecuteCommand(('remove_principal identifier.%s %s'):format(ident, data.parent))
+                        lib.removePrincipal('identifier.' .. ident, data.parent)
                      end
                  end
              end
@@ -417,7 +406,7 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
                     for i = 0, num-1 do
                         local ident = GetPlayerIdentifier(id, i)
                         Debug(('[mri_Qadmin] Removing Principal: identifier.%s -> %s'):format(ident, parent))
-                        ExecuteCommand(('remove_principal identifier.%s %s'):format(ident, parent))
+                        lib.removePrincipal('identifier.' .. ident, parent)
                     end
                     break
                 end
@@ -449,11 +438,17 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
 end)
 
 local function verifyAndAdd(group, ace, allow, description)
+    local allowInt = (allow == 1 or allow == true) and 1 or 0
+    local allowState = (allowInt == 1)
+
     local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {group, ace})
     if not exists then
-         MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {group, ace, allow, description})
-         ExecuteCommand(('add_ace %s %s %s'):format(group, ace, allow))
+         MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {group, ace, allowInt, description})
+         lib.addAce(group, ace, allowState)
          return true
+    else
+         -- Re-apply in lib natively just in case it exists in DB but not ACL
+         lib.addAce(group, ace, allowState)
     end
     return false
 end
@@ -461,22 +456,36 @@ end
 RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
+
+    local hasPerms = IsPlayerAceAllowed(src, 'qadmin.page.permissions')
+    local isMaster = IsPlayerAceAllowed(src, 'qadmin.master')
+
+    if not hasPerms and not isMaster then
+        local num = GetNumPlayerIdentifiers(src)
+        local foundFallback = false
+        for i = 0, num - 1 do
+            local id = GetPlayerIdentifier(src, i)
+            if IsPrincipalAceAllowed('identifier.' .. id, 'qadmin.master') or IsPrincipalAceAllowed(id, 'qadmin.master') then
+                foundFallback = true
+                break
+            end
+        end
+        if not foundFallback then return end
+    end
 
     -- Assign current admin to group.admin if they aren't master yet
     if not IsPlayerAceAllowed(src, 'qadmin.master') then
         local license = Player.PlayerData.license
-        ExecuteCommand(('add_principal identifier.license:%s group.admin'):format(license))
+        lib.addPrincipal('identifier.license:' .. license, 'group.admin')
         Debug(('[DEBUG] Assigned identifier.license:%s to group.admin'):format(license))
     end
 
-    -- List of pages to protect
+    local count = 0
     local pages = {
         'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
         'commands', 'actions', 'permissions', 'resources', 'settings', 'credits'
     }
 
-    local count = 0
     for _, page in ipairs(pages) do
         local ace = 'qadmin.page.' .. page
         -- Check if exists for group.admin
@@ -536,9 +545,21 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     -- Debug list
     local debugResults = {}
 
+    local function checkNode(node)
+        if IsPlayerAceAllowed(src, node) then return true end
+        local num = GetNumPlayerIdentifiers(src)
+        for i = 0, num - 1 do
+            local id = GetPlayerIdentifier(src, i)
+            if IsPrincipalAceAllowed('identifier.' .. id, node) or IsPrincipalAceAllowed(id, node) then
+                return true
+            end
+        end
+        return false
+    end
+
     for _, page in ipairs(pages) do
         local node = 'qadmin.page.' .. page
-        if IsPlayerAceAllowed(src, node) then
+        if checkNode(node) then
             table.insert(allowed, node)
         end
     end
@@ -562,7 +583,7 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     end
 
     -- Also check for master bypass
-    if IsPlayerAceAllowed(src, 'qadmin.master') then
+    if checkNode('qadmin.master') then
         table.insert(allowed, 'qadmin.master')
         debugResults['qadmin.master'] = true
     end
@@ -587,7 +608,7 @@ RegisterCommand('mri_qadmin.setmaster', function(source, args)
     if tonumber(target) then
         local p = QBCore.Functions.GetPlayer(tonumber(target))
         if p then
-            license = 'license:' .. p.PlayerData.license
+            license = p.PlayerData.license
             print(('[mri_Qadmin] Resolved ID %s to %s (%s)'):format(target, p.PlayerData.name, license))
         else
             print('^1[mri_Qadmin] Player ID not found online. If using license, provide full string (license:xxx)^7')
@@ -599,16 +620,20 @@ RegisterCommand('mri_qadmin.setmaster', function(source, args)
         print('^3[mri_Qadmin] Warning: Target %s does not look like a license. Assuming it is valid.^7')
     end
 
-    local parent = 'group.admin'
-
-    -- 1. Insert into DB
+    -- 1. Insert into DB (As an Ace for Master bypass, and also add them to group.admin)
     local function doInsert()
-        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {license, parent})
-        if exists then
-            print('^3[mri_Qadmin] Principal already exists in DB.^7')
+        -- Add to group.admin just in case
+        local existsGrp = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {license, 'group.admin'})
+        if not existsGrp then
+            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {license, 'group.admin', 'Master Admin (Console)'})
+        end
+
+        local existsAce = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {'identifier.'..license, 'qadmin.master'})
+        if existsAce then
+            print('^3[mri_Qadmin] Master Ace already exists in DB.^7')
         else
-            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {license, parent, 'Master Admin (Console)'})
-            print('^2[mri_Qadmin] Added to database.^7')
+            MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {'identifier.'..license, 'qadmin.master', 1, 'Master Admin (Console)'})
+            print('^2[mri_Qadmin] Added Master to database.^7')
         end
     end
 
@@ -617,14 +642,15 @@ RegisterCommand('mri_qadmin.setmaster', function(source, args)
         doInsert()
 
         -- 2. Apply immediately
-        ExecuteCommand(('add_principal identifier.%s %s'):format(license, parent))
-        print(('^2[mri_Qadmin] Executed: add_principal identifier.%s %s^7'):format(license, parent))
+        lib.addPrincipal('identifier.' .. license, 'group.admin')
+        lib.addAce('identifier.' .. license, 'qadmin.master', true)
+        print(('^2[mri_Qadmin] Executed: lib.addAce identifier.%s qadmin.master true^7'):format(license))
 
         -- 3. If online, notify and reload
         local players = QBCore.Functions.GetPlayers()
         for _, id in ipairs(players) do
             local p = QBCore.Functions.GetPlayer(id)
-            if p and ('license:'..p.PlayerData.license == license or 'license2:'..p.PlayerData.license == license) then
+            if p and (p.PlayerData.license == license) then
                 print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
                 TriggerEvent('QBCore:Server:OnPlayerLoaded', id) -- Re-trigger load logic or just rely on add_principal
                 TriggerClientEvent('QBCore:Notify', id, 'Você agora é Master Admin!', 'success')
@@ -652,7 +678,7 @@ RegisterCommand('mri_qadmin.addpermission', function(source, args)
     if tonumber(target) then
         local p = QBCore.Functions.GetPlayer(tonumber(target))
         if p then
-            license = 'license:' .. p.PlayerData.license
+            license = p.PlayerData.license
             print(('[mri_Qadmin] Resolved ID %s to %s (%s)'):format(target, p.PlayerData.name, license))
         else
             print('^1[mri_Qadmin] Player ID not found online. If using license, provide full string (license:xxx)^7')
@@ -680,14 +706,14 @@ RegisterCommand('mri_qadmin.addpermission', function(source, args)
         doInsert()
 
         -- 2. Apply immediately
-        ExecuteCommand(('add_principal identifier.%s %s'):format(license, permission))
-        print(('^2[mri_Qadmin] Executed: add_principal identifier.%s %s^7'):format(license, permission))
+        lib.addPrincipal('identifier.' .. license, permission)
+        print(('^2[mri_Qadmin] Executed: lib.addPrincipal identifier.%s %s^7'):format(license, permission))
 
         -- 3. If online, notify and reload
         local players = QBCore.Functions.GetPlayers()
         for _, id in ipairs(players) do
             local p = QBCore.Functions.GetPlayer(id)
-            if p and ('license:'..p.PlayerData.license == license or 'license2:'..p.PlayerData.license == license) then
+            if p and (p.PlayerData.license == license) then
                 print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
                 TriggerEvent('QBCore:Server:OnPlayerLoaded', id)
                 TriggerClientEvent('QBCore:Notify', id, 'Você recebeu uma nova permissão administrativa.', 'success')

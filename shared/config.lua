@@ -76,5 +76,12 @@ end)
 
 function Debug(...)
     if not Config.Debug then return end
-    print('[mri_Qadmin DEBUG]', ...)
+
+    if IsDuplicityVersion() then
+        -- Server Side Print (TxAdmin / Console)
+        lib.print.info(...)
+    else
+        -- Client Side Print (F8)
+        print('[mri_Qadmin DEBUG]', ...)
+    end
 end
