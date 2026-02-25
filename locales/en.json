@@ -444,5 +444,10 @@
     "livemap_view_screen": "View Screen",
     "livemap_filter_staff": "Staff",
     "livemap_filter_players": "Players",
-    "livemap_filter_dead": "Dead"
+    "livemap_filter_dead": "Dead",
+    "livemap_style": "Map Style",
+    "livemap_style_atlas": "Atlas",
+    "livemap_style_grid": "Grid",
+    "livemap_style_satellite": "Satellite",
+    "livemap_style_roadmap": "Roadmap"
 }

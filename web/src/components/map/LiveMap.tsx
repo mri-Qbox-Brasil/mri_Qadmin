@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { User, Car, ShieldCheck, Plus, Minus, Info, Monitor, Plane, Ship, Bike, Helicopter, Motorbike, X, RefreshCcw } from 'lucide-react'
 import ReactDOMServer from 'react-dom/server'
 import { MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
-import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
+import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon, Grid, Globe, Map as MapIcon, Compass } from 'lucide-react'
 import VitalAdjustModal from '@/components/shared/VitalAdjustModal'
 import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/hooks/useI18n'
@@ -168,6 +168,14 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | number>('')
     const [centerMarker, setCenterMarker] = useState<string | number | null>(null)
     const [resetTrigger, setResetTrigger] = useState(0)
+    const [mapType, setMapType] = useState<'atlas' | 'grid' | 'satellite'>(() => {
+        return (localStorage.getItem('mri_qadmin_map_style') as any) || 'atlas'
+    })
+
+    useEffect(() => {
+        localStorage.setItem('mri_qadmin_map_style', mapType)
+    }, [mapType])
+
     const { sendNui } = useNui()
 
     const markerRefs = useRef<Record<string, any>>({})
@@ -273,7 +281,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                 style={{ height: '100%', width: '100%', borderRadius: '0.75rem', zIndex: 0, overflow: 'hidden' }}
             >
                 <TileLayer
-                    url="./map/tiles/{z}/{x}/{y}.webp"
+                    url={`./map/${mapType === 'atlas' ? 'tiles' : 'tiles_' + mapType}/{z}/{x}/{y}.webp`}
                     noWrap={true}
                     tileSize={256}
                     minZoom={0}
@@ -392,6 +400,38 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                                     <Moon size={14} className="text-muted-foreground" />
                                                     <input type="range" min="20" max="100" step="1" value={brightness * 100} onChange={(e) => setBrightness(Number(e.target.value) / 100)} className="map-brightness-slider flex-1" />
                                                     <Sun size={14} className="text-muted-foreground" />
+                                                </div>
+                                            </div>
+                                            <div className="h-px bg-border" />
+                                            <div className="flex flex-col gap-3">
+                                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                                    <MapIcon size={12} /> {t('livemap_style')}
+                                                </div>
+                                                <div className="flex bg-black/40 p-1 rounded-lg border border-white/5">
+                                                    <MriButton
+                                                        variant={mapType === 'atlas' ? 'default' : 'ghost'}
+                                                        size="sm"
+                                                        className="flex-1 h-8 text-[10px] font-bold gap-1.5"
+                                                        onClick={() => setMapType('atlas')}
+                                                    >
+                                                        <MapIcon size={12} /> {t('livemap_style_atlas')}
+                                                    </MriButton>
+                                                    <MriButton
+                                                        variant={mapType === 'grid' ? 'default' : 'ghost'}
+                                                        size="sm"
+                                                        className="flex-1 h-8 text-[10px] font-bold gap-1.5"
+                                                        onClick={() => setMapType('grid')}
+                                                    >
+                                                        <Grid size={12} /> {t('livemap_style_grid')}
+                                                    </MriButton>
+                                                    <MriButton
+                                                        variant={mapType === 'satellite' ? 'default' : 'ghost'}
+                                                        size="sm"
+                                                        className="flex-1 h-8 text-[10px] font-bold gap-1.5"
+                                                        onClick={() => setMapType('satellite')}
+                                                    >
+                                                        <Globe size={12} /> {t('livemap_style_satellite')}
+                                                    </MriButton>
                                                 </div>
                                             </div>
                                             <div className="h-px bg-border" />
