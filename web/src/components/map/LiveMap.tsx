@@ -281,7 +281,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                 style={{ height: '100%', width: '100%', borderRadius: '0.75rem', zIndex: 0, overflow: 'hidden' }}
             >
                 <TileLayer
-                    url={`./map/${mapType === 'atlas' ? 'tiles' : 'tiles_' + mapType}/{z}/{x}/{y}.webp`}
+                    url={`./map/tiles_${mapType}/{z}/{x}/{y}.webp`}
                     noWrap={true}
                     tileSize={256}
                     minZoom={0}
@@ -338,6 +338,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
 
                 <MapController centerOnMarkerId={centerMarker || centerOnMarkerId} markers={markers} />
                 <MapResetter resetTrigger={resetTrigger} initialZoom={initialZoom} />
+
                 {uiVisible && (
                     <>
                         <CustomZoomControls />
