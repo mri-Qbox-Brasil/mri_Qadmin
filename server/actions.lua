@@ -12,10 +12,49 @@ end
 local function LoadActions()
     print('^2[mri_Qadmin] Iniciando o carregamento de Actions do DB...^7')
 
+    -- Initialize Config tables if not done
+    Config.Actions = Config.Actions or {}
+    Config.PlayerActions = Config.PlayerActions or {}
+    Config.OtherActions = Config.OtherActions or {}
+
+    -- 1. Automagically Seed/Synchronize Default Actions
+    local fileContent = LoadResourceFile(GetCurrentResourceName(), 'server/default_actions.lua')
+    if fileContent then
+        if fileContent:sub(1, 3) == "\239\187\191" then fileContent = fileContent:sub(4) end
+        local func, err = load(fileContent)
+
+        if func then
+            local defaults = func()
+            local queries = {}
+            local params = {}
+
+            local function prepareInserts(categoryName, actionsTable)
+                if not actionsTable then return end
+                for id, data in pairs(actionsTable) do
+                    local jsonString = json.encode(data)
+                    -- Use INSERT IGNORE to never overwrite existing ones or duplicate
+                    table.insert(queries, 'INSERT IGNORE INTO mri_qadmin_actions (`id`, `category`, `data`) VALUES (?, ?, ?)')
+                    table.insert(params, {id, categoryName, jsonString})
+                end
+            end
+
+            prepareInserts('Actions', defaults.Actions)
+            prepareInserts('PlayerActions', defaults.PlayerActions)
+            prepareInserts('OtherActions', defaults.OtherActions)
+
+            if #queries > 0 then
+                MySQL.transaction.await(queries, params)
+                print(('^2[mri_Qadmin] Sincronização Automágica concluída: %d ações padrão verificadas via INSERT IGNORE.^7'):format(#queries))
+            end
+        else
+            print('^1[mri_Qadmin] Erro ao compilar default_actions.lua: ' .. tostring(err) .. '^7')
+        end
+    end
+
+    -- 2. Load the actual state from DB into memory
     local dbActions = MySQL.query.await('SELECT * FROM mri_qadmin_actions')
 
     if dbActions and #dbActions > 0 then
-        -- Load from DB
         for _, row in ipairs(dbActions) do
             local id = row.id
             local category = row.category
@@ -29,52 +68,7 @@ local function LoadActions()
                 Config.OtherActions[id] = data
             end
         end
-        print(('^2[mri_Qadmin] Actions carregadas do DB: %s^7'):format(#dbActions))
-    else
-        -- DB is empty, seed from default_actions.lua
-        print('^3[mri_Qadmin] Banco de dados de Actions vazio. Semeando (Seed) ações padrão...^7')
-
-        local fileContent = LoadResourceFile(GetCurrentResourceName(), 'server/default_actions.lua')
-        if not fileContent then
-            print('^1[mri_Qadmin] Erro: server/default_actions.lua não encontrado!^7')
-            return
-        end
-
-        -- Strip UTF-8 BOM if present
-        if fileContent:sub(1, 3) == "\239\187\191" then
-            fileContent = fileContent:sub(4)
-        end
-
-        local func, err = load(fileContent)
-        if not func then
-            print('^1[mri_Qadmin] Erro ao compilar default_actions.lua: ' .. tostring(err) .. '^7')
-            return
-        end
-
-        local defaults = func()
-
-        local seedCount = 0
-        local function insertActions(categoryName, actionsTable)
-            if not actionsTable then return end
-            for id, data in pairs(actionsTable) do
-                local jsonString = json.encode(data)
-                MySQL.insert.await('INSERT INTO mri_qadmin_actions (`id`, `category`, `data`) VALUES (?, ?, ?)', {id, categoryName, jsonString})
-
-                -- Load into memory
-                if categoryName == 'Actions' then Config.Actions[id] = data
-                elseif categoryName == 'PlayerActions' then Config.PlayerActions[id] = data
-                elseif categoryName == 'OtherActions' then Config.OtherActions[id] = data
-                end
-
-                seedCount = seedCount + 1
-            end
-        end
-
-        insertActions('Actions', defaults.Actions)
-        insertActions('PlayerActions', defaults.PlayerActions)
-        insertActions('OtherActions', defaults.OtherActions)
-
-        print(('^2[mri_Qadmin] Sincronização de Actions concluída. Total Semeado: %s^7'):format(seedCount))
+        print(('^2[mri_Qadmin] Actions carregadas do DB para a memória: %s^7'):format(#dbActions))
     end
 end
 
