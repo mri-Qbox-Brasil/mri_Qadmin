@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
 import ActionModal from '@/components/ActionModal'
 import { Wallet } from 'lucide-react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 
 export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defaultType = 'cash', availableTypes = [] }: { isGiving: boolean; playerId: string; onClose: () => void; onSubmit: (type: string, amount: number) => void; defaultType?: string, availableTypes?: { label: string, value: string }[] }) {
   const [moneyType, setMoneyType] = useState<string>(defaultType)

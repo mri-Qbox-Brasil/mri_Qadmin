@@ -4,7 +4,7 @@ import { MriButton, MriInput, MriPopover, MriPopoverContent, MriPopoverTrigger, 
 import { Check, ChevronsUpDown, Star, ChevronDown, ChevronRight, MousePointerClick } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppState } from "@/context/AppState";
-import { useI18n } from "@/context/I18n";
+import { useI18n } from "@/hooks/useI18n";
 
 interface ActionDropdownProps {
   id: string;

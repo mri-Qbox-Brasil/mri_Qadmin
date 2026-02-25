@@ -1,4 +1,4 @@
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
 import { LayoutDashboard, Users, Box, Terminal, Zap, ShieldAlert, Car, Users2, DollarSign, Settings, ShieldCheck, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon } from 'lucide-react'

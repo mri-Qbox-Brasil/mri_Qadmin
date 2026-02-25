@@ -1,21 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import en from '../../../locales/en.json'
 import { useNui } from './NuiContext'
-
-type Translations = Record<string, string>
-
-interface I18nContextValue {
-  t: (key: string, vars?: Record<string, any> | any[]) => string
-  locale: string
-  setLocale: (l: string) => void
-  translations: Translations
-  preferredLocale: string | null
-  setPreferredLocale: (l: string | null) => void
-  supportedLanguages: { id: string, label: string, flag: string }[]
-  setSupportedLanguages: (langs: { id: string, label: string, flag: string }[]) => void
-}
-
-const I18nContext = createContext<I18nContextValue | undefined>(undefined)
+import { I18nContext, Translations } from '../hooks/useI18n'
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const { sendNui, on, off } = useNui()
@@ -99,10 +85,4 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       {children}
     </I18nContext.Provider>
   )
-}
-
-export function useI18n() {
-  const ctx = useContext(I18nContext)
-  if (!ctx) throw new Error('useI18n must be used within I18nProvider')
-  return ctx
 }

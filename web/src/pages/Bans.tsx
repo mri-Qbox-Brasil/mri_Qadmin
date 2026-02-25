@@ -1,5 +1,5 @@
 import React from 'react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
 import { RefreshCw, Gavel } from 'lucide-react'

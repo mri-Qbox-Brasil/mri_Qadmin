@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNui } from '@/context/NuiContext'
 import { Maximize, Minimize, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 
 interface MapModalProps {
     isOpen: boolean

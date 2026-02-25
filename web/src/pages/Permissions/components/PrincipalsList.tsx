@@ -17,7 +17,7 @@ import { MOCK_PRINCIPALS } from "@/utils/mockData";
 import ConfirmAction from "@/components/players/ConfirmAction";
 import CreatableCombobox from "@/components/shared/CreatableCombobox";
 import { useAppState } from "@/context/AppState";
-import { useI18n } from "@/context/I18n";
+import { useI18n } from "@/hooks/useI18n";
 import { Virtuoso } from "react-virtuoso";
 import PermissionsSkeleton from "@/components/skeletons/PermissionsSkeleton";
 

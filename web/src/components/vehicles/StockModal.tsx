@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { MriModal, MriButton, MriInput } from '@mriqbox/ui-kit'
 import { Car } from 'lucide-react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 
 interface StockModalProps {
   vehicle: any

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import PlayerVitals from '@/components/shared/PlayerVitals'
 import Spinner from '@/components/Spinner'
 import { useNui } from '@/context/NuiContext'

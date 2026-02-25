@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import ActionButton from './components/ActionButton'
 import ActionDropdown from './components/ActionDropdown'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'

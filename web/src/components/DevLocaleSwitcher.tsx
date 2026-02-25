@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { MriSelectSearch } from '@mriqbox/ui-kit'
 import { cn } from '@/lib/utils'
 

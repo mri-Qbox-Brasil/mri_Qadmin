@@ -1,4 +1,4 @@
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { MriButton } from '@mriqbox/ui-kit'
 import { Eye, Crosshair, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'

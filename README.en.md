@@ -29,6 +29,9 @@ Professional and modern Admin Panel for Qbox and QbCore servers.
   - Entity information, routing buckets management.
   - Copy Coordinates directly.
   - **Dynamic Wall (ESP)**: Player visualization (Custom colors for dead, invisible, or through ACE Principal Ranks).
+- **Advanced Live Visualization**:
+  - **Live Keyboard Visualizer**: See player key presses in real-time while spectating (Numpad and Mouse support).
+  - **Dynamic Map**: Smart view reset, advanced player filters, and live screen integration.
 - **Highly Customizable**:
   - Light/Dark themes.
   - Dynamic colors (Hex, RGB, HSL support for panel accent).

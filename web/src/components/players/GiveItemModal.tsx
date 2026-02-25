@@ -3,7 +3,7 @@ import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
 import ActionModal from '@/components/ActionModal'
 import { Gift } from 'lucide-react'
 
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 
 export default function GiveItemModal({

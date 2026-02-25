@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import Spinner from '@/components/Spinner'
 import { Github, ExternalLink, User, Calendar, History, GitCommit } from 'lucide-react'
 

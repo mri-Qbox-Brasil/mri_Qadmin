@@ -333,6 +333,8 @@
     "moderation_section": "Moderation",
     "teleportation_section": "Teleportation",
     "player_management": "Player Management",
+    "common_clear": "Clear",
+    "common_refresh": "Refresh",
     "refresh": "Refresh",
     "no_personal_vehicles_found": "No personal vehicles found.",
     "unban": "Unban",

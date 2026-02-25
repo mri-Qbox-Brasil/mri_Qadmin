@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { MriModal, MriButton } from '@mriqbox/ui-kit'
 import { Heart, Shield, Beef, GlassWater, Brain, Save, X } from 'lucide-react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 
 interface VitalAdjustModalProps {
     isOpen: boolean

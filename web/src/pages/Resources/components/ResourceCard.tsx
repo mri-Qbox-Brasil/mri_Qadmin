@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import ButtonState from './ButtonState'
 import { cn } from '@/lib/utils'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 
 interface ResourceCardProps {
   label: string

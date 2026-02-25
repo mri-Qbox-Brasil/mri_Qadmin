@@ -3,7 +3,7 @@ import LiveMap from '@/components/map/LiveMap'
 import { useNui } from '@/context/NuiContext'
 import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
 import { Map as MapIcon } from 'lucide-react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import ScreenModal from '@/components/players/ScreenModal'
 
 export default function LiveMapPage() {

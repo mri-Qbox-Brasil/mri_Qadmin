@@ -3,7 +3,7 @@ import { MriPageHeader, MriCard, MriButton } from '@mriqbox/ui-kit'
 import { Monitor, X, Video, Wifi, Maximize2, Minimize2, Keyboard } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import PlayerScreenStream from '@/components/shared/PlayerScreenStream'
 import { cn } from '@/lib/utils'
 

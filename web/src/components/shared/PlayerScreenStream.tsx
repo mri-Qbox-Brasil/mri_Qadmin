@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNui } from '@/context/NuiContext';
 import { useAppState } from '@/context/AppState';
-import { useI18n } from '@/context/I18n';
+import { useI18n } from '@/hooks/useI18n';
 import Spinner from '@/components/Spinner';
 import { AlertCircle, Wifi, Monitor as MonitorIcon, Keyboard } from 'lucide-react';
 import { signaling } from '@/utils/signaling/index';

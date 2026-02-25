@@ -29,6 +29,9 @@ Painel Administrativo Profissional e Moderno para servidores Qbox e QbCore.
   - Informações de entidades, gerenciamento de buckets de roteamento.
   - Copiar Coordenadas diretamente.
   - **Wall (ESP) Dinâmico**: Visualização de jogadores (Cores personalizadas para mortos, invisíveis, ou através de Cargos ACE).
+- **Visualização ao Vivo Avançada**:
+  - **Live Keyboard Visualizer**: Veja as teclas pressionadas pelo jogador em tempo real durante a observação (Suporte a Numpad e Mouse).
+  - **Mapa Dinâmico**: Reset inteligente de visão, filtros avançados de jogadores e integração com live screens.
 - **Altamente Customizável**:
   - Temas Claro/Escuro.
   - Cores dinâmicas (Suporte a Hex, RGB, HSL para destaque do painel).

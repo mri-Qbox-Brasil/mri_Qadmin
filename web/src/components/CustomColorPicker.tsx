@@ -5,7 +5,7 @@ import namesPlugin from "colord/plugins/names";
 import { cn } from "@/lib/utils";
 import * as Popover from "@radix-ui/react-popover";
 import { Check, Plus, SlidersHorizontal } from "lucide-react";
-import { useI18n } from "@/context/I18n";
+import { useI18n } from "@/hooks/useI18n";
 
 extend([namesPlugin]);
 

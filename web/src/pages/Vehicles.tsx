@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { VirtuosoGrid } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'

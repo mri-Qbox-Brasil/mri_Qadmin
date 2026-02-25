@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { MriPageHeader, MriButton, MriInput } from '@mriqbox/ui-kit'
 import { Shield, Key, Users, Search, RefreshCw, Wand2 } from 'lucide-react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import AcesList from './components/AcesList'
 import PrincipalsList from './components/PrincipalsList'
 import { cn } from '@/lib/utils'

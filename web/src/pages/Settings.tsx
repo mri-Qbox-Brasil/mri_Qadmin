@@ -5,7 +5,7 @@ import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 
 import { cn } from '@/lib/utils'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { useTheme } from '@/context/ThemeContext'
 import { CustomColorPicker } from '@/components/CustomColorPicker'
 import ConfirmAction from '@/components/players/ConfirmAction'

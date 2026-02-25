@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
 import ActionModal from '@/components/ActionModal'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { Gavel } from 'lucide-react'
 
 type Props = {

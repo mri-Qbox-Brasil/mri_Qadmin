@@ -8,7 +8,7 @@ import { MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
 import { Eye, EyeOff, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
 import VitalAdjustModal from '@/components/shared/VitalAdjustModal'
 import { useNui } from '@/context/NuiContext'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import PlayerVitals from '@/components/shared/PlayerVitals'
 
 interface MapMarker {
@@ -134,6 +134,16 @@ const Legend = () => {
     )
 }
 
+function MapResetter({ resetTrigger, initialZoom }: { resetTrigger: number, initialZoom: number }) {
+    const map = useMap()
+    useEffect(() => {
+        if (resetTrigger > 0) {
+            map.flyTo([0, 0], initialZoom)
+        }
+    }, [resetTrigger, map, initialZoom])
+    return null
+}
+
 function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: string | number | null, markers: MapMarker[] }) {
     const map = useMap()
     useEffect(() => {
@@ -157,6 +167,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
     const [showVital, setShowVital] = useState<{ markerId: any, vital: any, label: string, value: number, playerName: string } | null>(null)
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | number>('')
     const [centerMarker, setCenterMarker] = useState<string | number | null>(null)
+    const [resetTrigger, setResetTrigger] = useState(0)
     const { sendNui } = useNui()
 
     const markerRefs = useRef<Record<string, any>>({})
@@ -174,6 +185,18 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
         value: String(m.id),
         label: `${m.name} (#${m.id})`,
     })), [markers]);
+
+    const handleResetMap = () => {
+        setSearch('')
+        setFilters({ staff: true, players: true, dead: true })
+        setSelectedPlayerId('')
+        setCenterMarker(null)
+        setResetTrigger(prev => prev + 1)
+        // Close all popups
+        Object.values(markerRefs.current).forEach(marker => {
+            if (marker && marker.closePopup) marker.closePopup()
+        })
+    }
 
     const handleSelectPlayer = (id: string | number) => {
         if (!id || id === selectedPlayerId) {
@@ -306,6 +329,7 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                 ))}
 
                 <MapController centerOnMarkerId={centerMarker || centerOnMarkerId} markers={markers} />
+                <MapResetter resetTrigger={resetTrigger} initialZoom={initialZoom} />
                 {uiVisible && (
                     <>
                         <CustomZoomControls />
@@ -317,67 +341,69 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
             {uiVisible && (
                 <div className="absolute inset-0 pointer-events-none z-[9999]" style={{ overflow: 'visible' }}>
                     <div className="absolute top-6 left-6 right-6 flex justify-between gap-4">
-                        <div className="flex gap-2 pointer-events-auto relative z-[10000]">
-                              <MriCompactSearch
-                                placeholder={t('livemap_search_placeholder')}
-                                value={selectedPlayerId}
-                                onChange={handleSelectPlayer}
-                                options={searchOptions}
-                                searchPlaceholder={t('livemap_search_input_placeholder')}
-                                className="w-10 h-10 border-border bg-card/60"
-                            />
-                            {selectedPlayerId && (
-                                <MriButton
-                                    size="icon"
-                                    variant="secondary"
-                                    className="h-10 w-10 border border-border bg-card/60 shadow-xl animate-in fade-in zoom-in"
-                                    onClick={() => handleSelectPlayer('')}
-                                    title={t('common_clear')}
-                                >
-                                    <X size={16} />
-                                </MriButton>
-                            )}
-                        </div>
-
-                        <div className="flex gap-2 pointer-events-auto shrink-0">
-                            <div className="relative">
-                                {/* <MriButton
-                                    variant="secondary"
-                                    size="icon"
-                                    className="h-10 w-10 border border-border bg-card/60 shadow-xl"
-                                    // onClick={() => setRefresh(!refresh)}
-                                >
-                                    <RefreshCcw className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
-                                </MriButton> */}
-                                <MriButton
-                                    variant="secondary"
-                                    size="icon"
-                                    className="h-10 w-10 border border-border bg-card/60 shadow-xl"
-                                    onClick={() => setShowSettings(!showSettings)}
-                                >
-                                    <SettingsIcon className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
-                                </MriButton>
-                                {showSettings && (
-                                    <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border p-4 rounded-xl shadow-2xl z-50 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                                <span className="flex items-center gap-2"><Sun size={12} /> {t('livemap_map_brightness')}</span>
-                                                <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded">{Math.round(brightness * 100)}%</span>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <Moon size={14} className="text-muted-foreground" />
-                                                <input type="range" min="20" max="100" step="1" value={brightness * 100} onChange={(e) => setBrightness(Number(e.target.value) / 100)} className="map-brightness-slider flex-1" />
-                                                <Sun size={14} className="text-muted-foreground" />
-                                            </div>
-                                        </div>
-                                        <div className="h-px bg-border" />
-                                        <MriButton variant="ghost" size="sm" className="w-full justify-start gap-2 h-9 text-xs" onClick={() => { setUiVisible(false); setShowSettings(false); }}>
-                                            <EyeOff size={14} /> {t('livemap_hide_interface')}
-                                        </MriButton>
-                                    </div>
+                        <div className="flex gap-2 items-center bg-card/60 border border-border p-1 rounded-lg shadow-xl shrink-0 pointer-events-auto">
+                                <MriCompactSearch
+                                    placeholder={t('livemap_search_placeholder')}
+                                    value={selectedPlayerId}
+                                    onChange={handleSelectPlayer}
+                                    options={searchOptions}
+                                    searchPlaceholder={t('livemap_search_input_placeholder')}
+                                    className="w-8 h-8 border-border bg-card/60"
+                                />
+                                {selectedPlayerId && (
+                                    <MriButton
+                                        size="icon"
+                                        variant="secondary"
+                                        className="h-8 w-8 border border-border bg-card/60 shadow-xl animate-in fade-in zoom-in"
+                                        onClick={() => handleSelectPlayer('')}
+                                        title={t('common_clear')}
+                                    >
+                                        <X size={16} />
+                                    </MriButton>
                                 )}
+                                <div className="w-px h-4 bg-border mx-1" />
+                                <MriButton
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-white"
+                                    onClick={handleResetMap}
+                                    title={t('common_refresh') || 'Reset Map'}
+                                >
+                                    <RefreshCcw className="w-4 h-4" />
+                                </MriButton>
+                                <div className="w-px h-4 bg-border mx-1" />
+                                <div className="relative">
+                                    <MriButton
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-white"
+                                        onClick={() => setShowSettings(!showSettings)}
+                                    >
+                                        <SettingsIcon className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90' : ''}`} />
+                                    </MriButton>
+                                    {showSettings && (
+                                        <div className="absolute top-full mt-2 left-0 w-64 bg-card border border-border p-4 rounded-xl shadow-2xl z-50 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                    <span className="flex items-center gap-2"><Sun size={12} /> {t('livemap_map_brightness')}</span>
+                                                    <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded">{Math.round(brightness * 100)}%</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <Moon size={14} className="text-muted-foreground" />
+                                                    <input type="range" min="20" max="100" step="1" value={brightness * 100} onChange={(e) => setBrightness(Number(e.target.value) / 100)} className="map-brightness-slider flex-1" />
+                                                    <Sun size={14} className="text-muted-foreground" />
+                                                </div>
+                                            </div>
+                                            <div className="h-px bg-border" />
+                                            <MriButton variant="ghost" size="sm" className="w-full justify-start gap-2 h-9 text-xs" onClick={() => { setUiVisible(false); setShowSettings(false); }}>
+                                                <EyeOff size={14} /> {t('livemap_hide_interface')}
+                                            </MriButton>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
+                        <div className="flex gap-2 pointer-events-auto shrink-0">
                             <div className="bg-card/60 border border-border p-1 rounded-lg flex gap-1 shadow-xl">
                                 <MriButton variant={filters.staff ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, staff: !f.staff }))}>{t('livemap_filter_staff')}</MriButton>
                                 <MriButton variant={filters.players ? "default" : "ghost"} size="sm" className="h-8 text-[10px] px-3 font-bold" onClick={() => setFilters(f => ({ ...f, players: !f.players }))}>{t('livemap_filter_players')}</MriButton>

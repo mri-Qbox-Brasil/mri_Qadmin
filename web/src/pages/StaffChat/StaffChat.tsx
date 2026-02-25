@@ -3,7 +3,7 @@ import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
 import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
 import { Send, MessageSquare } from 'lucide-react'
-import { useI18n } from '@/context/I18n'
+import { useI18n } from '@/hooks/useI18n'
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import StaffChatSkeleton from '@/components/skeletons/StaffChatSkeleton'
 
