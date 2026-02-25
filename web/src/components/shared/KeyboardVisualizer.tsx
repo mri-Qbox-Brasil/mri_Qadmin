@@ -117,11 +117,11 @@ export default function KeyboardVisualizer({ pressedKeys, className }: KeyboardV
 
                 <div className="grid grid-cols-3 gap-1 w-[124px] mt-auto">
                     <div />
-                    <Key label="UP" code="W" className="h-8" />
+                    <Key label="UP" code="UP" className="h-8" />
                     <div />
-                    <Key label="LFT" code="A" className="h-8" />
-                    <Key label="DWN" code="S" className="h-8" />
-                    <Key label="RGT" code="D" className="h-8" />
+                    <Key label="LFT" code="LEFT" className="h-8" />
+                    <Key label="DWN" code="DOWN" className="h-8" />
+                    <Key label="RGT" code="RIGHT" className="h-8" />
                 </div>
             </div>
 

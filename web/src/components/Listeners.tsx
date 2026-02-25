@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNui } from '../context/NuiContext'
 import { useAppState } from '../context/AppState'
-import { useI18n } from '../context/I18n'
+import { useI18n } from '../hooks/useI18n'
 
 export default function Listeners() {
   const { on, off, sendNui } = useNui()
