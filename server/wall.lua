@@ -27,7 +27,7 @@ local function LoadWallData()
         for _, v in pairs(colors) do
             principal_colors[v.principal] = toRGBString(v.color)
             -- Ensure the principal itself is an allowed ACE so IsPlayerInPrincipal checks pass
-            ExecuteCommand(('add_ace %s %s allow'):format(v.principal, v.principal))
+            lib.addAce(v.principal, v.principal, true)
         end
     end
 
@@ -177,7 +177,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
         principal_colors[key] = value
         MySQL.query.await('INSERT INTO mri_qadmin_wall_colors (principal, color) VALUES (?, ?) ON DUPLICATE KEY UPDATE color = ?', { key, value, value })
         -- Ensure the principal itself is an allowed ACE so IsPlayerInPrincipal checks pass
-        ExecuteCommand(('add_ace %s %s allow'):format(key, key))
+        lib.addAce(key, key, true)
     end
 
     -- Refresh all online players colors silently
