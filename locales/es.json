@@ -205,6 +205,8 @@
     "nav_actions": "Acciones",
     "nav_credits": "Créditos",
     "nav_devmode": "Modo Dev",
+    "track_player": "Rastrear Jugador",
+    "live_map_tracking": "Rastreo de Mapa",
     "btn_spawn": "Spawnear",
     "btn_update": "Actualizar",
     "none_found": "No se encontraron resultados.",
