@@ -43,7 +43,12 @@ const PlayerIcon = ({ marker }: { marker: MapMarker }) => {
     const inVehicle = marker.inVehicle
     const isDead = marker.vitals?.isDead
     const vType = marker.vehicleType || 'car'
-    const color = marker.staffColor || (isStaff ? '#FACC15' : (isDead ? '#9ca3af' : 'hsl(160, 100%, 45%)'))
+    const color = marker.staffColor || (isStaff ? '#FACC15' : (isDead ? '#9ca3af' : 'bg-primary'))
+
+    const isPrimary = color === 'bg-primary'
+    const baseColor = isPrimary ? 'hsl(var(--primary))' : color
+    const shadowColor = isPrimary ? 'hsl(var(--primary) / 0.27)' : `${color}44`
+    const fillColor = isPrimary ? 'hsl(var(--primary) / 0.2)' : `${color}33`
 
     let Icon = (isStaff ? ShieldCheck : User)
     if (inVehicle) {
@@ -64,12 +69,12 @@ const PlayerIcon = ({ marker }: { marker: MapMarker }) => {
             height: '32px',
             background: 'rgba(0,0,0,0.6)',
             borderRadius: '50%',
-            border: `2px solid ${color}`,
-            boxShadow: `0 0 10px ${color}44`,
+            border: `2px solid ${baseColor}`,
+            boxShadow: `0 0 10px ${shadowColor}`,
             transition: 'all 0.3s ease',
             filter: isDead ? 'grayscale(1)' : 'none'
         }}>
-            <Icon size={18} color={color} fill={isStaff ? `${color}33` : 'none'} />
+            <Icon size={18} color={baseColor} fill={isStaff ? fillColor : 'none'} />
             {!inVehicle && marker.heading !== undefined && (
                 <div style={{
                     position: 'absolute',
@@ -78,7 +83,7 @@ const PlayerIcon = ({ marker }: { marker: MapMarker }) => {
                     height: '0',
                     borderLeft: '5px solid transparent',
                     borderRight: '5px solid transparent',
-                    borderBottom: `8px solid ${color}`,
+                    borderBottom: `8px solid ${baseColor}`,
                     transform: `rotate(${marker.heading}deg)`,
                     transformOrigin: '50% 21px'
                 }} />
@@ -119,13 +124,7 @@ const Legend = () => {
                 <Info size={12} /> {t('livemap_legend')}
             </div>
             <div className="flex items-center gap-3 text-xs">
-                <div
-                    className="w-3 h-3 rounded-full"
-                    style={{
-                        backgroundColor: 'hsl(160, 100%, 45%)',
-                        boxShadow: '0 0 8px hsl(160, 100%, 45% / 0.4)'
-                    }}
-                /> {t('vitals_status_alive')}
+                <div className="w-3 h-3 rounded-full bg-primary"/> {t('vitals_status_alive')}
             </div>
             <div className="flex items-center gap-3 text-xs opacity-50">
                 <div className="w-3 h-3 rounded-full bg-muted-foreground" /> {t('vitals_status_dead')}
