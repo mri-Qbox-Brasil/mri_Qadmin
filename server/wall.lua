@@ -4,7 +4,7 @@ local encrypt = "mri_wall:"..math.random(100000000,200000000)
 GlobalState["mri_wall"] = encrypt
 
 local wall_infos = {}
-principal_colors = {}
+local principal_colors = {}
 local wall_settings = {
     dead = "255, 0, 0",
     invisible = "255, 255, 0",

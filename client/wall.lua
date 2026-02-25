@@ -115,21 +115,20 @@ Citizen.CreateThread(
             local time = 2000
             if wall then
                 local ped_id = PlayerPedId()
+                local c1 = GetEntityCoords(ped_id, true)
+                local cam = GetGameplayCamCoord()
+
                 for k, id in ipairs(GetActivePlayers()) do
-                    local src = GetPlayerServerId(id)
-                    local nped_id = GetPlayerPed(id)
-                    if ((NetworkIsPlayerActive(id))) then
-                        x1, y1, z1 = table.unpack(GetEntityCoords(ped_id, true))
-                        x2, y2, z2 = table.unpack(GetEntityCoords(nped_id, true))
-                        distance = math.floor(GetDistanceBetweenCoords(x1, y1, z1, x2, y2, z2, true))
-                        px, py, pz = table.unpack(GetGameplayCamCoord())
+                    if NetworkIsPlayerActive(id) then
+                        local src = GetPlayerServerId(id)
+                        local nped_id = GetPlayerPed(id)
 
                         -- Use string key for looku
                         local srcStr = tostring(src)
 
-                        -- Removed src ~= myServerId to allow testing on self
                         if nped_id ~= -1 and wall_users[srcStr] ~= nil then
-                            if GetDistanceBetweenCoords(x2, y2, z2, px, py, pz, true) <= walldistance then
+                            local c2 = GetEntityCoords(nped_id, true)
+                            if #(c2 - cam) <= walldistance then
                                 local armour = GetPedArmour(nped_id)
                                 local health = math.floor(GetEntityHealth(nped_id))
                                 local armahash = GetSelectedPedWeapon(nped_id)
@@ -160,29 +159,29 @@ Citizen.CreateThread(
                                     extraText = extraText .. "\n~w~ " .. (armas[tostring(armahash)] or "Arma Desconhecida"):upper()
                                 end
 
-                                DrawText3D(x2, y2, z2 + 1.2, defaultText)
-                                DrawText3D(x2, y2, z2 + 0.8, extraText)
+                                DrawText3D(c2.x, c2.y, c2.z + 1.2, defaultText)
+                                DrawText3D(c2.x, c2.y, c2.z + 0.8, extraText)
 
                                 -- Dynamic Color Selection
                                 local r, g, b = 0, 0, 255 -- Final fallback
 
-                                if wall_users[srcStr].group_color then -- Cor de Permissão (Prioridade Máxima)
-                                    r, g, b = ParseRGB(wall_users[srcStr].group_color)
-                                elseif inv then -- Invisivel
+                                if inv then -- Invisivel (Prioridade Máxima)
                                     r, g, b = ParseRGB(wall_users[srcStr].inv_color or "255, 255, 0")
                                 elseif health < 101 then -- Morto
                                     r, g, b = ParseRGB(wall_users[srcStr].dead_color or "255, 0, 0")
+                                elseif wall_users[srcStr].group_color then -- Cor de Permissão
+                                    r, g, b = ParseRGB(wall_users[srcStr].group_color)
                                 else -- Vivo / Padrão
                                     r, g, b = ParseRGB(wall_users[srcStr].default_color or "0, 0, 255")
                                 end
-                                DrawLine(x2, y2, z2, x1, y1, z1, r, g, b, 255)
+                                DrawLine(c2.x, c2.y, c2.z, c1.x, c1.y, c1.z, r, g, b, 255)
                             end
                         end
                     end
                 end
                 time = 2
             end
-            Citizen.Wait(time)
+            Wait(time)
         end
     end
 )
