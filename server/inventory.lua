@@ -41,16 +41,13 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(actionKey, 
             locale("invcleared", Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname),
             'success', 7500)
     else
-        MySQL.Async.fetchAll("SELECT * FROM players WHERE citizenid = @citizenid", { ['@citizenid'] = citizenId },
-            function(result)
-                if result and result[1] then
-                    MySQL.Async.execute("UPDATE players SET inventory = '{}' WHERE citizenid = @citizenid",
-                        { ['@citizenid'] = citizenId })
-                    QBCore.Functions.Notify(src, "Player's inventory cleared", 'success', 7500)
-                else
-                    QBCore.Functions.Notify(src, locale("player_not_found"), 'error', 7500)
-                end
-            end)
+        local result = MySQL.query.await("SELECT * FROM players WHERE citizenid = ?", { citizenId })
+        if result and result[1] then
+            MySQL.update.await("UPDATE players SET inventory = '{}' WHERE citizenid = ?", { citizenId })
+            QBCore.Functions.Notify(src, "Player's inventory cleared", 'success', 7500)
+        else
+            QBCore.Functions.Notify(src, locale("player_not_found"), 'error', 7500)
+        end
     end
 end)
 

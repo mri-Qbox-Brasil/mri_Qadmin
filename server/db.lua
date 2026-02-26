@@ -13,28 +13,11 @@ local function splitStr(inputstr, sep)
 end
 
 local function executeQueries(queries, callback)
-    local index = 1
-
-    local function executeNextQuery()
-        if index > #queries then
-            if callback then
-                callback()
-            end
-            return
-        end
-
-        MySQL.Async.execute(
-            queries[index],
-            {},
-            function()
-                Debug("Tabela verificada/criada: " .. index)
-                index = index + 1
-                executeNextQuery()
-            end
-        )
+    for index, query in ipairs(queries) do
+        MySQL.query.await(query)
+        Debug("Tabela verificada/criada: " .. index)
     end
-
-    executeNextQuery()
+    if callback then callback() end
 end
 
 local function createTables()

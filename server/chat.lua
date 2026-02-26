@@ -13,7 +13,7 @@ end
 
 RegisterNetEvent("onResourceStart", function(resourceName)
     if GetCurrentResourceName() == resourceName then
-        messages = MySQL.Sync.fetchAll("SELECT * FROM mri_qadmin_chat", {}) or {}
+        messages = MySQL.query.await("SELECT * FROM mri_qadmin_chat", {}) or {}
     end
 end)
 
@@ -43,14 +43,14 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, f
         -- Query to find description from ANY of the player's identifiers
         local query = ('SELECT a.description FROM mri_qadmin_principals p JOIN mri_qadmin_aces a ON a.principal = p.parent WHERE p.child IN (%s) AND a.description IS NOT NULL AND a.description != "" LIMIT 1'):format(placeholders)
 
-        local rows = MySQL.Sync.fetchAll(query, identifiers)
+        local rows = MySQL.query.await(query, identifiers)
 
         if rows and #rows > 0 then
              fullname = ('%s (%s)'):format(fullname, rows[1].description)
         else
              -- Fallback: Permissions fallback
              -- Fetch all Ace definitions that have a description
-             local aces = MySQL.Sync.fetchAll('SELECT principal, object, description FROM mri_qadmin_aces WHERE description IS NOT NULL AND description != ""')
+             local aces = MySQL.query.await('SELECT principal, object, description FROM mri_qadmin_aces WHERE description IS NOT NULL AND description != ""')
 
              local candidates = {}
 
@@ -89,7 +89,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, f
 
     messages[#messages + 1] = { message = message, citizenid = citizenid, fullname = fullname, createdAt = createdAt }
 
-    MySQL.Async.insert("INSERT INTO mri_qadmin_chat (message, citizenid, fullname) VALUES (?, ?, ?)", {
+    MySQL.insert.await("INSERT INTO mri_qadmin_chat (message, citizenid, fullname) VALUES (?, ?, ?)", {
         message,
         citizenid,
         fullname

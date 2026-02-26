@@ -48,7 +48,7 @@ local function getGroups()
         end
     end
 
-    local result = MySQL.Sync.fetchAll("SELECT * FROM players")
+    local result = MySQL.query.await("SELECT * FROM players")
     for _, player in ipairs(result) do
         local isOnline = false
         for _, onlinePlayer in pairs(onlinePlayers) do
