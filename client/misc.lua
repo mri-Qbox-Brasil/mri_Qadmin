@@ -195,7 +195,7 @@ local toogleAdmin = lib.addKeybind({
 
 --noclip
 RegisterCommand('nc', function()
-    TriggerEvent(Config.Actions["noclip"].event)
+    TriggerEvent("mri_Qadmin:client:ToggleNoClip")
 end, false)
 
 local toogleNoclip = lib.addKeybind({
