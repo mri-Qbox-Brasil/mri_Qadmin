@@ -17,32 +17,53 @@ local function LoadActions()
     Config.PlayerActions = Config.PlayerActions or {}
     Config.OtherActions = Config.OtherActions or {}
 
+    -- 0. Ensure Table Exists
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS mri_qadmin_actions (
+            id VARCHAR(50) PRIMARY KEY,
+            category VARCHAR(20) NOT NULL,
+            data LONGTEXT NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    ]])
+
     -- 1. Automagically Seed/Synchronize Default Actions
-    local fileContent = LoadResourceFile(GetCurrentResourceName(), 'server/default_actions.lua')
+    local resName = GetCurrentResourceName()
+    local seedFile = 'server/default_actions.lua'
+    local fileContent = LoadResourceFile(resName, seedFile)
+
     if fileContent then
         if fileContent:sub(1, 3) == "\239\187\191" then fileContent = fileContent:sub(4) end
         local func, err = load(fileContent)
 
         if func then
             local defaults = func()
-            local count = 0
+            local parameters = {}
 
-            local function prepareInserts(categoryName, actionsTable)
+            local function extractInserts(categoryName, actionsTable)
                 if not actionsTable then return end
                 for id, data in pairs(actionsTable) do
                     local jsonString = json.encode(data)
-                    -- Linha por linha via INSERT IGNORE
-                    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_actions (`id`, `category`, `data`) VALUES (?, ?, ?)', {id, categoryName, jsonString})
-                    count = count + 1
+                    parameters[#parameters + 1] = {id, categoryName, jsonString}
                 end
             end
 
-            prepareInserts('Actions', defaults.Actions)
-            prepareInserts('PlayerActions', defaults.PlayerActions)
-            prepareInserts('OtherActions', defaults.OtherActions)
+            extractInserts('Actions', defaults.Actions)
+            extractInserts('PlayerActions', defaults.PlayerActions)
+            extractInserts('OtherActions', defaults.OtherActions)
 
-            if count > 0 then
-                print(('^2[mri_Qadmin] Sincronização Automágica concluída: %d ações padrão verificadas via INSERT IGNORE.^7'):format(count))
+            if #parameters > 0 then
+                -- Bulk Insert
+                MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_actions (`id`, `category`, `data`) VALUES ?', {parameters})
+                print(('^2[mri_Qadmin] Sincronização Automágica concluída: %d ações padrão plantadas no banco.^7'):format(#parameters))
+
+                -- Rename the file via native Lua file os system
+                local basePath = GetResourcePath(resName)
+                if basePath then
+                    local oldPath = basePath .. '/' .. seedFile
+                    local newPath = basePath .. '/server/default_actions_seeded.lua.bkp'
+                    os.rename(oldPath, newPath)
+                    print('^3[mri_Qadmin] Arquivo "default_actions.lua" renomeado para ".bkp" para não rodar novamente.^7')
+                end
             else
                 print('^3[mri_Qadmin] default_actions.lua não retornou nenhuma action para sincronizar.^7')
             end
@@ -75,16 +96,13 @@ end
 -- Load settings on startup
 AddEventHandler('onResourceStart', function(resourceName)
     if GetCurrentResourceName() == resourceName then
-        CreateThread(function()
-            Wait(1500) -- Small delay to ensure oxmysql is fully connected
-            LoadActions()
-        end)
+        LoadActions()
     end
 end)
 
 -- API Callbacks for NUI (CRUD operations for future UI tab)
 lib.callback.register('mri_Qadmin:callback:GetActions', function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.settings') then return {} end
+    if not IsPlayerAceAllowed(source, 'qadmin.open') then return {} end
     return GetAllDynamicActions()
 end)
 
