@@ -16,6 +16,7 @@ export default function SearchInput({
   placeholder,
   className,
   width = "w-80",
+  size, // extract size so it doesn't spread into MriInput
   ...props
 }: SearchInputProps) {
   return (

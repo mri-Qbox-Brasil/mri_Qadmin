@@ -10,25 +10,23 @@ RegisterNetEvent('mri_Qadmin:server:unban_cid', function(actionKey, selectedData
     end
 
     -- Busca o license (pode estar com prefixo license2:)
-    MySQL.scalar('SELECT license FROM players WHERE citizenid = ?', { citizenid }, function(license)
-        if not license then
-            TriggerClientEvent('QBCore:Notify', src, ("❌ Nenhum jogador encontrado com CID %s."):format(citizenid), "error", 5000)
-            return
-        end
+    local license = MySQL.scalar.await('SELECT license FROM players WHERE citizenid = ?', { citizenid })
+    if not license then
+        TriggerClientEvent('QBCore:Notify', src, ("❌ Nenhum jogador encontrado com CID %s."):format(citizenid), "error", 5000)
+        return
+    end
 
-        -- Gera as duas versões possíveis de license
-        local license1 = license:gsub("^license2:", "license:")
-        local license2 = license:gsub("^license:", "license2:")
+    -- Gera as duas versões possíveis de license
+    local license1 = license:gsub("^license2:", "license:")
+    local license2 = license:gsub("^license:", "license2:")
 
-        -- Deleta qualquer ban que use license:xxx ou license2:xxx
-        MySQL.update('DELETE FROM bans WHERE license = ? OR license = ?', { license1, license2 }, function(affectedRows)
-            if affectedRows and affectedRows > 0 then
-                TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi desbanido."):format(citizenid), "success", 5000)
-            else
-                TriggerClientEvent('QBCore:Notify', src, ("⚠️ Nenhum banimento encontrado com as licenças associadas ao CID %s."):format(citizenid), "error", 5000)
-            end
-        end)
-    end)
+    -- Deleta qualquer ban que use license:xxx ou license2:xxx
+    local affectedRows = MySQL.update.await('DELETE FROM bans WHERE license = ? OR license = ?', { license1, license2 })
+    if affectedRows and affectedRows > 0 then
+        TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi desbanido."):format(citizenid), "success", 5000)
+    else
+        TriggerClientEvent('QBCore:Notify', src, ("⚠️ Nenhum banimento encontrado com as licenças associadas ao CID %s."):format(citizenid), "error", 5000)
+    end
 end)
 
 RegisterNetEvent('mri_Qadmin:server:delete_cid', function(actionKey, selectedData)
@@ -42,16 +40,15 @@ RegisterNetEvent('mri_Qadmin:server:delete_cid', function(actionKey, selectedDat
         return
     end
 
-    -- Deleta o jogador usando oxmysql com callback garantido
-    MySQL.update('DELETE FROM players WHERE citizenid = ?', { citizenid }, function(affectedRows)
+    -- Deleta o jogador usando oxmysql com await
+    local affectedRows = MySQL.update.await('DELETE FROM players WHERE citizenid = ?', { citizenid })
 
-        if affectedRows and affectedRows > 0 then
-            TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi deletado."):format(citizenid), "success", 5000)
-            TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
-        else
-            TriggerClientEvent('QBCore:Notify', src, ("❌ Nenhum jogador encontrado com CID %s."):format(citizenid), "error", 5000)
-        end
-    end)
+    if affectedRows and affectedRows > 0 then
+        TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi deletado."):format(citizenid), "success", 5000)
+        TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
+    else
+        TriggerClientEvent('QBCore:Notify', src, ("❌ Nenhum jogador encontrado com CID %s."):format(citizenid), "error", 5000)
+    end
 end)
 
 
@@ -74,7 +71,7 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
 
     if targetPlayer then
         -- ONLINE BAN
-        MySQL.insert('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
             { GetPlayerName(player), QBCore.Functions.GetIdentifier(player, 'license'), QBCore.Functions.GetIdentifier(
                 player, 'discord'), QBCore.Functions.GetIdentifier(player, 'ip'), reason, banTime, GetPlayerName(source) })
 
@@ -111,7 +108,7 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
             return
         end
 
-        MySQL.insert('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
             { name, license, discord or "", "0.0.0.0", reason, banTime, GetPlayerName(source) })
 
         QBCore.Functions.Notify(source, locale("playerbanned", name, banTime, reason), 'success', 7500)
@@ -177,7 +174,7 @@ RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(actionKey, selectedDat
             locale("warned") .. ", por: " .. locale("reason") .. " " .. reason, 'inform', 60000)
         QBCore.Functions.Notify(source,
             locale("warngiven") .. GetPlayerName(target.PlayerData.source) .. ", por: " .. reason)
-        MySQL.insert('INSERT INTO player_warns (senderIdentifier, targetIdentifier, reason, warnId) VALUES (?, ?, ?, ?)',
+        MySQL.insert.await('INSERT INTO player_warns (senderIdentifier, targetIdentifier, reason, warnId) VALUES (?, ?, ?, ?)',
             {
                 sender.PlayerData.license,
                 target.PlayerData.license,

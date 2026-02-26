@@ -28,11 +28,11 @@ lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
             brand = data.brand,
             price = data.price
         }
-        
+
         if Config.Dealership == 'mri' then
             vehicle.stock = dbStocks[m] or 0
         end
-        
+
         vehicles[#vehicles + 1] = vehicle
     end
 
@@ -47,7 +47,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
     local result = MySQL.query.await('SELECT plate FROM player_vehicles WHERE plate = ?', { plate })
 
     if result[1] == nil then
-        MySQL.insert(
+        MySQL.insert.await(
         'INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, state) VALUES (?, ?, ?, ?, ?, ?, ?)',
             {
                 Player.PlayerData.license,
@@ -109,7 +109,7 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(actionKey, selectedData)
         return
     end
 
-    MySQL.insert(
+    MySQL.insert.await(
     'INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, garage, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         {
             Player.PlayerData.license,
@@ -152,7 +152,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(actionKey, select
         return
     end
 
-    MySQL.update('UPDATE player_vehicles SET state = ?, depotprice = ? WHERE plate = ?', { state, 0, plate })
+    MySQL.update.await('UPDATE player_vehicles SET state = ?, depotprice = ? WHERE plate = ?', { state, 0, plate })
 
     QBCore.Functions.Notify(src, locale("state_changed"), "success", 5000)
 end)
@@ -165,9 +165,9 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
         exports.ox_inventory:UpdateVehicle(currentPlate, newPlate)
     end
 
-    MySQL.Sync.execute('UPDATE player_vehicles SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    MySQL.Sync.execute('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    MySQL.Sync.execute('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
+    MySQL.update.await('UPDATE player_vehicles SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
+    MySQL.update.await('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
+    MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
 end)
 
 lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(source, plate)
