@@ -483,7 +483,7 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
     local count = 0
     local pages = {
         'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits'
+        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
     }
 
     for _, page in ipairs(pages) do
@@ -535,7 +535,7 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     local src = source
     local pages = {
         'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits'
+        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
     }
 
     local allowed = {}
