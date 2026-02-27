@@ -42,10 +42,13 @@ export default function GiveItemModal({
     value: i.item || i.value || i.name,
   })).sort((a, b) => a.label.localeCompare(b.label))
 
-  const playerOptions = (players || []).map(p => ({
-      label: `${p.name || 'Unknown'} (${p.id})`,
-      value: p.id
-  }))
+  const playerOptions = (players || []).map(p => {
+      const pId = p.id ?? p.cid;
+      return {
+          label: `${p.name || 'Unknown'} (${pId})`,
+          value: pId
+      };
+  })
 
   return (
     <MriActionModal
