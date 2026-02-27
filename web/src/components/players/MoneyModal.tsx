@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
-import ActionModal from '@/components/ActionModal'
+import { MriInput, MriSelectSearch, MriActionModal } from '@mriqbox/ui-kit'
 import { Wallet } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 
@@ -16,7 +15,7 @@ export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defa
   ]
 
   return (
-    <ActionModal
+    <MriActionModal
       title={isGiving ? t('money_modal_give') : t('money_modal_remove')}
       icon={Wallet}
       onClose={onClose}
@@ -35,6 +34,6 @@ export default function MoneyModal({ isGiving, playerId, onClose, onSubmit, defa
 
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_amount')}</label>
       <MriInput type="number" value={amount} onChange={(e) => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
-    </ActionModal>
+    </MriActionModal>
   )
 }

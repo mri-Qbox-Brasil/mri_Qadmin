@@ -8,7 +8,6 @@ import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import { Car, RefreshCw } from 'lucide-react'
-import Spinner from '@/components/Spinner'
 
 import SearchInput from '@/components/shared/SearchInput'
 import VehicleGridCard from '@/components/vehicles/VehicleGridCard'

@@ -6,7 +6,7 @@ import Spinner from '@/components/Spinner'
 import { isEnvBrowser } from '@/utils/misc'
 import { MOCK_ACES } from '@/utils/mockData'
 import ConfirmAction from '@/components/players/ConfirmAction'
-import CreatableCombobox from '@/components/shared/CreatableCombobox'
+import { MriCreatableCombobox } from '@mriqbox/ui-kit'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
 import { Virtuoso } from 'react-virtuoso'
@@ -210,7 +210,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
       <div className="bg-card p-4 rounded-lg border border-border shrink-0 grid grid-cols-12 gap-3 items-end">
           <div className="col-span-6">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_principal_label')}</label>
-              <CreatableCombobox
+              <MriCreatableCombobox
                  options={[
                      { label: 'group.admin', value: 'group.admin' },
                      { label: 'group.mod', value: 'group.mod' },
@@ -224,7 +224,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
           </div>
           <div className="col-span-6">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_object_label')}</label>
-              <CreatableCombobox
+              <MriCreatableCombobox
                  options={[
                      ...aces.map(a => ({ label: a.object, value: a.object }))
                  ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)}

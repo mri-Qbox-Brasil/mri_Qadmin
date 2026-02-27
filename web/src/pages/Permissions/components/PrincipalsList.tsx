@@ -10,12 +10,12 @@ import {
   Palette,
 } from "lucide-react";
 import { useNui } from "@/context/NuiContext";
-import { CustomColorPicker } from "@/components/CustomColorPicker";
+import { MriColorPicker } from "@mriqbox/ui-kit";
 import Spinner from "@/components/Spinner";
 import { isEnvBrowser, rgbToHex, hexToRgb } from "@/utils/misc";
 import { MOCK_PRINCIPALS } from "@/utils/mockData";
 import ConfirmAction from "@/components/players/ConfirmAction";
-import CreatableCombobox from "@/components/shared/CreatableCombobox";
+import { MriCreatableCombobox } from "@mriqbox/ui-kit";
 import { useAppState } from "@/context/AppState";
 import { useI18n } from "@/hooks/useI18n";
 import { Virtuoso } from "react-virtuoso";
@@ -87,7 +87,7 @@ function PrincipalGroup({
 
         <div className="flex items-center gap-2 ml-auto">
              {!child.includes(':') && (
-                <CustomColorPicker
+                <MriColorPicker
                     color={color || '#0000FF'}
                     onChange={(val) => onColorChange(child, val)}
                     active={!!color}
@@ -128,7 +128,7 @@ function PrincipalGroup({
 
                 <div className="ml-auto flex items-center gap-3">
                     {!p.parent.includes(':') && (
-                        <CustomColorPicker
+                        <MriColorPicker
                             color={principalColors[p.parent] || '#0000FF'}
                             onChange={(val) => onColorChange(p.parent, val)}
                             active={!!principalColors[p.parent]}
@@ -319,7 +319,7 @@ export default function PrincipalsList({
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
             {t("permissions_child_label")}
           </label>
-          <CreatableCombobox
+          <MriCreatableCombobox
             options={[
               ...players.map((p) => ({
                 label: `${p.name} (${p.license})`,
@@ -339,7 +339,7 @@ export default function PrincipalsList({
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
             {t("permissions_parent_label")}
           </label>
-          <CreatableCombobox
+          <MriCreatableCombobox
             options={[
               { label: "group.admin", value: "group.admin" },
               { label: "group.mod", value: "group.mod" },

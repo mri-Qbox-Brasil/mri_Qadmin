@@ -75,7 +75,7 @@ export default function App() {
     if (isEnvBrowser()) {
       setGameData(MOCK_GAME_DATA)
       setPlayers(MOCK_PLAYERS)
-      setMyPermissions(['qadmin.page.*']) // Full access in dev
+      setMyPermissions(['qadmin.page.*', 'action.*']) // Full access to pages and actions in dev
     }
   }, [setGameData, setPlayers, setMyPermissions])
 

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { MriInput } from '@mriqbox/ui-kit'
-import ActionModal from '@/components/ActionModal'
+import { MriInput, MriActionModal } from '@mriqbox/ui-kit'
 import { useI18n } from '@/hooks/useI18n'
 import { Navigation } from 'lucide-react'
 
@@ -14,7 +13,7 @@ export default function BucketModal({ onClose, onSubmit }: Props) {
   const [bucket, setBucket] = useState('0')
 
   return (
-    <ActionModal
+    <MriActionModal
       title={t('set_bucket')}
       icon={Navigation}
       variant="default"
@@ -32,6 +31,6 @@ export default function BucketModal({ onClose, onSubmit }: Props) {
             min={0}
             />
         </div>
-    </ActionModal>
+    </MriActionModal>
   )
 }

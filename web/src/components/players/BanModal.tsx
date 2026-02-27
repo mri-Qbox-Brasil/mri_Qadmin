@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
-import ActionModal from '@/components/ActionModal'
+import { MriActionModal, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
 import { useI18n } from '@/hooks/useI18n'
 import { Gavel } from 'lucide-react'
 
@@ -29,7 +28,7 @@ export default function BanModal({ onClose, onSubmit }: Props) {
   const [reason, setReason] = useState(t('ban_reason_placeholder'))
 
   return (
-    <ActionModal
+    <MriActionModal
       title={t('ban_title')}
       icon={Gavel}
       variant="destructive"
@@ -56,6 +55,6 @@ export default function BanModal({ onClose, onSubmit }: Props) {
             className="bg-background border-border h-10"
             />
         </div>
-    </ActionModal>
+    </MriActionModal>
   )
 }

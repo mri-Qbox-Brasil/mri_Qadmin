@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '@/hooks/useI18n'
 import PlayerVitals from '@/components/shared/PlayerVitals'
-import Spinner from '@/components/Spinner'
 import { useNui } from '@/context/NuiContext'
-import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriInput, MriPageHeader, MriSpinner } from '@mriqbox/ui-kit'
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso'
 import PlayersSkeleton from '@/components/skeletons/PlayersSkeleton'
 import VitalAdjustModal from '@/components/shared/VitalAdjustModal'
@@ -359,7 +358,7 @@ export default function Players() {
        if (!loading && !isSyncing) return null
        return (
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2">
-                {loading && <div className="bg-background p-2 rounded-full shadow-lg border border-border"><Spinner /></div>}
+                {loading && <div className="bg-background p-2 rounded-full shadow-lg border border-border"><MriSpinner size="lg" /></div>}
                 {isSyncing && !loading && (
                     <div className="flex items-center gap-2 text-xs bg-card px-4 py-2 rounded-full shadow-lg border border-primary/20 text-primary animate-pulse">
                         <RefreshCw className="w-3 h-3 animate-spin"/>
