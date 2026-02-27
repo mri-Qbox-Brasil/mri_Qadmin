@@ -652,7 +652,7 @@ RegisterCommand('mri_qadmin.setmaster', function(source, args)
             local p = QBCore.Functions.GetPlayer(id)
             if p and (p.PlayerData.license == license) then
                 print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
-                TriggerEvent('QBCore:Server:OnPlayerLoaded', id) -- Re-trigger load logic or just rely on add_principal
+                TriggerEvent('mri_Qadmin:server:Reload', id) -- Re-trigger load logic or just rely on add_principal
                 TriggerClientEvent('QBCore:Notify', id, 'Você agora é Master Admin!', 'success')
                 BroadcastPermissionUpdate()
             end
@@ -715,7 +715,7 @@ RegisterCommand('mri_qadmin.addpermission', function(source, args)
             local p = QBCore.Functions.GetPlayer(id)
             if p and (p.PlayerData.license == license) then
                 print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
-                TriggerEvent('QBCore:Server:OnPlayerLoaded', id)
+                TriggerEvent('mri_Qadmin:server:Reload', id)
                 TriggerClientEvent('QBCore:Notify', id, 'Você recebeu uma nova permissão administrativa.', 'success')
                 BroadcastPermissionUpdate()
             end
