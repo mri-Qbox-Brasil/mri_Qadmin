@@ -73,6 +73,74 @@ export const MOCK_PRINCIPALS = [
     { id: 3, child: 'group.admin', parent: 'group.mod' },
 ];
 
+export const MOCK_REPORTS = [
+    {
+        id: 1,
+        player_id: "license:1234567890abcdef",
+        player_name: "John Doe",
+        admin_id: "license:admin123",
+        admin_name: "Jane Smith",
+        subject: "RDM na praça",
+        category: "player",
+        description: "Um cara com máscara de macaco me matou sem motivo na praça principal.",
+        status: "open",
+        created_at: Date.now() - 3600000,
+        messages: [
+            {
+                id: 1,
+                report_id: 1,
+                sender_type: "player",
+                sender_name: "John Doe",
+                message: "Por favor, me ajudem rápido, perdi meus itens.",
+                created_at: Date.now() - 3000000
+            },
+            {
+                id: 2,
+                report_id: 1,
+                sender_type: "admin",
+                sender_name: "Jane Smith",
+                message: "Estamos analisando os logs da área, aguarde um minuto.",
+                created_at: Date.now() - 2800000
+            }
+        ]
+    },
+    {
+        id: 2,
+        player_id: "license:0987654321fedcba",
+        player_name: "Jane Smith",
+        admin_id: null,
+        admin_name: null,
+        subject: "Bug no inventário",
+        category: "bug",
+        description: "Meus itens estão duplicando toda vez que relogo.",
+        status: "open",
+        created_at: Date.now() - 1000000,
+        messages: []
+    },
+    {
+        id: 3,
+        player_id: "license:offlineuser123",
+        player_name: "Offline User",
+        admin_id: "license:admin123",
+        admin_name: "Admin User",
+        subject: "Dúvida sobre vip",
+        category: "question",
+        description: "Como faço para resgatar meu VIP comprado hoje?",
+        status: "resolved",
+        created_at: Date.now() - 86400000,
+        messages: [
+            {
+                id: 3,
+                report_id: 3,
+                sender_type: "admin",
+                sender_name: "Admin User",
+                message: "Oi, basta usar o comando /resgatar no chat. Mais dúvidas acesse o discord.",
+                created_at: Date.now() - 86000000
+            }
+        ]
+    }
+];
+
 export const MOCK_GAME_DATA = {
     items: [
         { name: "water", label: "Water Bottle", description: "A refreshing bottle of water.", weight: 100, type: 'item', image: "water.png" },
@@ -162,7 +230,7 @@ export const MOCK_GAME_DATA = {
         { name: "stopped-resource", version: "0.0.1", author: "Unknown", description: "Buggy resource", resourceState: "stopped" }
     ],
     bans: [
-         { id: "1", name: "Banned User", reason: "Cheating", expire: Date.now() + 100000000, bannedby: "Admin", license: "license:banned", discord: "discord:12345", ip: "127.0.0.1" }
+        { id: "1", name: "Banned User", reason: "Cheating", expire: Date.now() + 100000000, bannedby: "Admin", license: "license:banned", discord: "discord:12345", ip: "127.0.0.1" }
     ],
     commands: [
         { name: "noclip", description: "Toggle noclip" },
@@ -210,14 +278,14 @@ export const MOCK_GAME_DATA = {
         "spawn_vehicle": { label: "Spawn Vehicle", dropdown: [{ id: "vehicle", label: "Vehicle Model", option: "dropdown", data: "vehicles" }] }
     },
     staffMessages: [
-         { fullname: "John Doe", message: "Anyone seeing the report about ID 42?", time: Date.now() - 3600000 },
-         { fullname: "Jane Smith", message: "Yeah, I'm checking it now. Seems like a VDM request.", time: Date.now() - 3500000 },
-         { fullname: "John Doe", message: "Copy that. Let me know if you need help.", time: Date.now() - 3400000 },
-         { fullname: "Admin User", message: "Guys, don't forget the community meeting at 8 PM.", time: Date.now() - 1800000 },
-         { fullname: "Jane Smith", message: "I'll be there.", time: Date.now() - 1750000 },
-         { fullname: "Moderator One", message: "Can someone key me for the pd garage?", time: Date.now() - 600000 },
-         { fullname: "Admin User", message: "Done.", time: Date.now() - 500000 },
-         { fullname: "Moderator One", message: "Thanks!", time: Date.now() - 450000 }
+        { fullname: "John Doe", message: "Anyone seeing the report about ID 42?", time: Date.now() - 3600000 },
+        { fullname: "Jane Smith", message: "Yeah, I'm checking it now. Seems like a VDM request.", time: Date.now() - 3500000 },
+        { fullname: "John Doe", message: "Copy that. Let me know if you need help.", time: Date.now() - 3400000 },
+        { fullname: "Admin User", message: "Guys, don't forget the community meeting at 8 PM.", time: Date.now() - 1800000 },
+        { fullname: "Jane Smith", message: "I'll be there.", time: Date.now() - 1750000 },
+        { fullname: "Moderator One", message: "Can someone key me for the pd garage?", time: Date.now() - 600000 },
+        { fullname: "Admin User", message: "Done.", time: Date.now() - 500000 },
+        { fullname: "Moderator One", message: "Thanks!", time: Date.now() - 450000 }
     ],
     vehicleImages: "https://docs.fivem.net/vehicles/",
     locations: [],

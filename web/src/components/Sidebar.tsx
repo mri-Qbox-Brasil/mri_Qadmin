@@ -1,13 +1,13 @@
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
-import { LayoutDashboard, Users, Box, Terminal, Zap, ShieldAlert, Car, Users2, DollarSign, Settings, ShieldCheck, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon } from 'lucide-react'
+import { LayoutDashboard, Users, Box, Terminal, Zap, ShieldAlert, Car, Users2, DollarSign, Settings, ShieldCheck, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon, Ticket } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
-    onRoute: (r: any) => void
-    currentRoute: string
+  onRoute: (r: any) => void
+  currentRoute: string
 }
 
 import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
@@ -36,6 +36,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     { icon: Briefcase, label: t('nav_groups'), route: 'groups' },
     { icon: Ban, label: t('nav_bans'), route: 'bans' },
     { icon: MessageSquare, label: t('nav_staffchat'), route: 'staffchat' },
+    { icon: Ticket, label: t('nav_tickets') || 'Tickets', route: 'tickets' },
     { icon: Box, label: t('nav_items'), route: 'items' },
     { icon: Car, label: t('nav_vehicles'), route: 'vehicles' },
     { icon: Terminal, label: t('nav_commands'), route: 'commands' },
@@ -47,13 +48,13 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     { icon: Zap, label: t('nav_action_manager'), route: 'action_manager' },
     { icon: Info, label: t('nav_credits'), route: 'credits' },
   ].filter(item => {
-      if (item.divider) return true
-      if (!item.route) return true
-      // Check if permission exists for route
-      if (item.route in PAGE_PERMISSIONS) {
-          return hasPermission(myPermissions, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
-      }
-      return true
+    if (item.divider) return true
+    if (!item.route) return true
+    // Check if permission exists for route
+    if (item.route in PAGE_PERMISSIONS) {
+      return hasPermission(myPermissions, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
+    }
+    return true
   })
 
   return (

@@ -11,6 +11,7 @@ export const PAGE_PERMISSIONS = {
     actions: 'qadmin.page.actions',
     permissions: 'qadmin.page.permissions',
     resources: 'qadmin.page.resources',
+    tickets: 'qadmin.page.tickets',
     settings: 'qadmin.page.settings',
     action_manager: 'qadmin.page.settings',
     credits: 'qadmin.page.credits',

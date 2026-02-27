@@ -20,6 +20,7 @@ import ActionManager from '@/pages/ActionManager/ActionManager'
 import Permissions from '@/pages/Permissions/Permissions'
 import LiveMapPage from './pages/LiveMapPage'
 import LiveScreensPage from './pages/LiveScreensPage'
+import Tickets from '@/pages/Tickets/Tickets'
 import { useAppState } from '@/context/AppState'
 import { useTheme } from '@/context/ThemeContext'
 import { useNui } from '@/context/NuiContext'
@@ -32,7 +33,9 @@ import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
 // ... existing imports
 
 export default function App() {
-  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'action_manager' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
+  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'action_manager' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens' | 'tickets'>('dashboard')
+  const [playerMode, setPlayerMode] = useState<boolean>(false)
+
   const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings } = useAppState()
   const { on, off, sendNui } = useNui()
   const { theme, accent, scale } = useTheme()
@@ -50,10 +53,10 @@ export default function App() {
 
       // Permission Check for navigation
       if (r in PAGE_PERMISSIONS) {
-          const perm = PAGE_PERMISSIONS[r as keyof typeof PAGE_PERMISSIONS]
-          if (!hasPermission(myPermissions, perm)) {
-              return
-          }
+        const perm = PAGE_PERMISSIONS[r as keyof typeof PAGE_PERMISSIONS]
+        if (!hasPermission(myPermissions, perm)) {
+          return
+        }
       }
 
       if (r === 'players') {
@@ -86,14 +89,14 @@ export default function App() {
 
   useEffect(() => {
     const onPerms = (perms: string[]) => {
-        setMyPermissions(Array.isArray(perms) ? perms : [])
+      setMyPermissions(Array.isArray(perms) ? perms : [])
     }
     const onRefreshLists = () => {
-         setPermissionRefreshTrigger(prev => prev + 1)
+      setPermissionRefreshTrigger(prev => prev + 1)
     }
 
     const onSettingsUpdate = (data: Record<string, any>) => {
-        setSettings(data)
+      setSettings(data)
     }
 
     on('updatePermissions', onPerms)
@@ -101,30 +104,29 @@ export default function App() {
     on('updateSettings', onSettingsUpdate)
 
     return () => {
-        off('updatePermissions', onPerms)
-        off('refreshPermissionsLists', onRefreshLists)
-        off('updateSettings', onSettingsUpdate)
+      off('updatePermissions', onPerms)
+      off('refreshPermissionsLists', onRefreshLists)
+      off('updateSettings', onSettingsUpdate)
     }
   }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
-
   // Listen for NUI visibility messages from the client resource
   useEffect(() => {
     const onVisible = (data: any) => {
       const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.data) : Boolean(data)
       setVisible(newVis)
 
-      if (newVis && !isEnvBrowser()) {
-          // Fetch permissions
-          sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
-              if (Array.isArray(perms)) setMyPermissions(perms)
-          }).catch(console.error)
+      if (newVis && !isEnvBrowser() && !playerMode) {
+        // Fetch permissions
+        sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
+          if (Array.isArray(perms)) setMyPermissions(perms)
+        }).catch(console.error)
 
-          // Fetch Dynamic Settings
-          sendNui('getSettings').then((settingsData) => {
-              if (settingsData && typeof settingsData === 'object') {
-                  setSettings(settingsData)
-              }
-          }).catch(console.error)
+        // Fetch Dynamic Settings
+        sendNui('getSettings').then((settingsData) => {
+          if (settingsData && typeof settingsData === 'object') {
+            setSettings(settingsData)
+          }
+        }).catch(console.error)
       }
 
       try {
@@ -134,26 +136,41 @@ export default function App() {
         // ignore in non-browser environments
       }
     }
+
+    // Listen for regular player mode (only sees tickets)
+    const onTicketsPlayerMode = (data: any) => {
+      const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.visible) : false
+      setPlayerMode(newVis)
+      setVisible(newVis)
+      if (newVis) {
+        setRoute('tickets')
+      }
+    }
+
     on('setVisible', onVisible)
-    return () => off('setVisible', onVisible)
-  }, [on, off, sendNui, setMyPermissions])
+    on('openTicketsPlayerMode', onTicketsPlayerMode)
+    return () => {
+      off('setVisible', onVisible)
+      off('openTicketsPlayerMode', onTicketsPlayerMode)
+    }
+  }, [on, off, sendNui, setMyPermissions, playerMode])
 
   // ensure root display follows `visible` (covers initial dev mode)
   useEffect(() => {
     try {
       const root = document.getElementById('root')
       if (root) root.style.display = visible ? '' : 'none'
-    } catch (e) {}
+    } catch (e) { }
   }, [visible])
 
   // expose helper in dev so user can toggle persistent dev-open state
   useEffect(() => {
     if (!isDev) return
-    ;(window as any).psToggleDevPanel = (persist?: boolean) => {
-      const newVis = !(document.getElementById('root')?.style.display === '' )
-      if (persist) window.localStorage.setItem('ps:devOpen', newVis ? '1' : '0')
-      setVisible(newVis)
-    }
+      ; (window as any).psToggleDevPanel = (persist?: boolean) => {
+        const newVis = !(document.getElementById('root')?.style.display === '')
+        if (persist) window.localStorage.setItem('ps:devOpen', newVis ? '1' : '0')
+        setVisible(newVis)
+      }
   }, [isDev])
 
   // Close the entire UI when Escape is pressed (mimic previous Svelte behaviour)
@@ -165,18 +182,21 @@ export default function App() {
           if ((document.body as any).dataset && (document.body as any).dataset.psModalOpen === 'true') {
             return
           }
-        } catch (err) {}
+        } catch (err) { }
         if (visible) {
           try {
-            // notify client to hide UI (client may also call SetNuiFocus(false))
-            sendNui && sendNui('hideUI')
+            if (playerMode) {
+              sendNui && sendNui('hideTicketsPlayerMode')
+            } else {
+              sendNui && sendNui('hideUI')
+            }
           } catch (err) {
             // ignore
             setVisible(false)
             try {
               const root = document.getElementById('root')
               if (root) root.style.display = 'none'
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       }
@@ -205,31 +225,32 @@ export default function App() {
               But let's move it out to be safe if app-shell has logic.
           */}
 
-          {/* Overlays */}
-          <VehicleDev />
-          <ToggleCoords />
-          <EntityInformation />
+        {/* Overlays */}
+        <VehicleDev />
+        <ToggleCoords />
+        <EntityInformation />
 
-          <Sidebar onRoute={setRoute} currentRoute={route} />
-          <div className="flex-1 p-2 overflow-auto">
-            {route === 'resources' ? <Resources /> :
-             route === 'players' ? <Players /> :
-             route === 'actions' ? <Actions /> :
-             route === 'action_manager' ? <ActionManager /> :
-             route === 'staffchat' ? <StaffChat /> :
-             route === 'commands' ? <Commands /> :
-             route === 'items' ? <Items /> :
-             route === 'bans' ? <Bans /> :
-             route === 'vehicles' ? <Vehicles /> :
-             route === 'groups' ? <Groups /> :
-             route === 'credits' ? <Credits /> :
-             route === 'settings' ? <Settings /> :
-             route === 'dashboard' ? <Dashboard /> :
-             route === 'permissions' ? <Permissions /> :
-             route === 'livemap' ? <LiveMapPage /> :
-             route === 'livescreens' ? <LiveScreensPage /> :
-             null}
-          </div>
+        {!playerMode && <Sidebar onRoute={setRoute} currentRoute={route} />}
+        <div className="flex-1 p-2 overflow-auto">
+          {route === 'resources' ? <Resources /> :
+            route === 'players' ? <Players /> :
+              route === 'actions' ? <Actions /> :
+                route === 'action_manager' ? <ActionManager /> :
+                  route === 'staffchat' ? <StaffChat /> :
+                    route === 'commands' ? <Commands /> :
+                      route === 'items' ? <Items /> :
+                        route === 'bans' ? <Bans /> :
+                          route === 'vehicles' ? <Vehicles /> :
+                            route === 'groups' ? <Groups /> :
+                              route === 'credits' ? <Credits /> :
+                                route === 'settings' ? <Settings /> :
+                                  route === 'dashboard' ? <Dashboard /> :
+                                    route === 'permissions' ? <Permissions /> :
+                                      route === 'livemap' ? <LiveMapPage /> :
+                                        route === 'livescreens' ? <LiveScreensPage /> :
+                                          route === 'tickets' ? <Tickets isPlayerMode={playerMode} /> :
+                                            null}
+        </div>
       </div>
       {/* LISTENERS MUST BE ALWAYS ACTIVE */}
       <WebRTCStreamer />
