@@ -78,6 +78,10 @@ AddEventHandler("QBCore:Client:OnPlayerLoaded", function()
 	setupMenu()
 end)
 
+RegisterNetEvent("mri_Qadmin:server:Reload", function()
+	setupMenu()
+end)
+
 AddEventHandler("onResourceStart", function(resourceName)
 	if (GetCurrentResourceName() == resourceName) then
 		setupMenu()
