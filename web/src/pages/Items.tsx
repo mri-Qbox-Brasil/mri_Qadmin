@@ -3,10 +3,9 @@ import { VirtuosoGrid } from 'react-virtuoso'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriCard, MriPageHeader, MriButton, MriSpinner } from '@mriqbox/ui-kit'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
-import Spinner from '@/components/Spinner'
 import { Package, Box, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

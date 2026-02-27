@@ -74,22 +74,25 @@ export const MOCK_PRINCIPALS = [
 ];
 
 export const MOCK_GAME_DATA = {
-    items: Array.from({ length: 20 }).map((_, i) => ({
-        name: `item_${i}`,
-        label: `Item ${i}`,
-        description: `This is a description for Item ${i}`,
-        weight: 100,
-        type: 'item',
-        image: `item_${i}.png`
-    })),
-    vehicles: Array.from({ length: 20 }).map((_, i) => ({
-        name: `Vehicle ${i}`,
-        model: `vehicle${i}`,
-        price: 50000 + (i * 1000),
-        category: 'sport',
-        stock: 5,
-        image: `vehicle${i}.png`
-    })),
+    items: [
+        { name: "water", label: "Water Bottle", description: "A refreshing bottle of water.", weight: 100, type: 'item', image: "water.png" },
+        { name: "sandwich", label: "Sandwich", description: "A tasty sandwich.", weight: 200, type: 'item', image: "sandwich.png" },
+        { name: "weapon_pistol", label: "Pistol", description: "Standard issue 9mm.", weight: 1000, type: 'weapon', image: "weapon_pistol.png" },
+        { name: "phone", label: "Mobile Phone", description: "A smartphone.", weight: 150, type: 'item', image: "phone.png" },
+        { name: "radio", label: "Radio", description: "Communication device.", weight: 500, type: 'item', image: "radio.png" },
+        { name: "bandage", label: "Bandage", description: "Basic first aid.", weight: 50, type: 'item', image: "bandage.png" },
+        { name: "lockpick", label: "Lockpick", description: "Used for picking locks.", weight: 20, type: 'item', image: "lockpick.png" },
+        { name: "repairkit", label: "Repair Kit", description: "Fixes vehicles.", weight: 2000, type: 'item', image: "repairkit.png" }
+    ],
+    vehicles: [
+        { name: "Adder", model: "adder", price: 1000000, category: 'super', stock: 2, image: "adder.png" },
+        { name: "Zentorno", model: "zentorno", price: 725000, category: 'super', stock: 5, image: "zentorno.png" },
+        { name: "Sanchez", model: "sanchez", price: 8000, category: 'motorcycles', stock: 15, image: "sanchez.png" },
+        { name: "BMX", model: "bmx", price: 500, category: 'bicycles', stock: 50, image: "bmx.png" },
+        { name: "Police Cruiser", model: "police", price: 50000, category: 'emergency', stock: 10, image: "police.png" },
+        { name: "Ambulance", model: "ambulance", price: 65000, category: 'emergency', stock: 5, image: "ambulance.png" },
+        { name: "Mule", model: "mule", price: 35000, category: 'commercial', stock: 8, image: "mule.png" }
+    ],
     jobs: [
         {
             label: "Police",
@@ -164,14 +167,48 @@ export const MOCK_GAME_DATA = {
     commands: [
         { name: "noclip", description: "Toggle noclip" },
         { name: "god", description: "Toggle godmode" },
-        { name: "tp", description: "Teleport to coords" }
+        { name: "tp", description: "Teleport to coords" },
+        { name: "tpm", description: "Teleport to waypoint" },
+        { name: "dv", description: "Delete vehicle" },
+        { name: "car", description: "Spawn a vehicle" },
+        { name: "giveitem", description: "Give item to player" },
+        { name: "setjob", description: "Set player job" },
+        { name: "setgang", description: "Set player gang" },
+        { name: "revive", description: "Revive a player" },
+        { name: "heal", description: "Heal a player" },
+        { name: "announce", description: "Send an announcement" },
+        { name: "kick", description: "Kick a player" },
+        { name: "ban", description: "Ban a player" }
     ],
     actions: {
-        "teleport_options": { label: "Teleport Options", dropdown: [] },
-        "wealth_management": { label: "Wealth Management", dropdown: [] }
+        "teleport_options": {
+            label: "Teleport Options",
+            dropdown: [
+                { id: "tp_waypoint", label: "Teleport to Waypoint", option: "button" },
+                { id: "tp_coords", label: "Teleport to Coords", option: "text", placeholder: "x, y, z" },
+                { id: "tp_location", label: "Teleport to Location", option: "dropdown", data: "locations" }
+            ]
+        },
+        "wealth_management": {
+            label: "Wealth Management",
+            dropdown: [
+                { id: "give_cash", label: "Give Cash", option: "text", placeholder: "Amount" },
+                { id: "give_bank", label: "Give Bank", option: "text", placeholder: "Amount" },
+                { id: "remove_cash", label: "Remove Cash", option: "text", placeholder: "Amount" }
+            ]
+        }
     },
-    playerActions: {},
-    otherActions: {},
+    playerActions: {
+        "kill_player": { label: "Kill Player", dropdown: [{ id: "kill", label: "Execute", option: "button" }] },
+        "revive_player": { label: "Revive Player", dropdown: [{ id: "revive", label: "Execute", option: "button" }] },
+        "freeze_player": { label: "Freeze Player", dropdown: [{ id: "freeze", label: "Execute", option: "button" }] },
+        "spectate_player": { label: "Spectate", dropdown: [{ id: "spectate", label: "Execute", option: "button" }] },
+        "open_inventory": { label: "Open Inventory", dropdown: [{ id: "inventory", label: "Execute", option: "button" }] }
+    },
+    otherActions: {
+        "clear_area": { label: "Clear Area", dropdown: [{ id: "radius", label: "Radius", option: "text", placeholder: "e.g. 100" }] },
+        "spawn_vehicle": { label: "Spawn Vehicle", dropdown: [{ id: "vehicle", label: "Vehicle Model", option: "dropdown", data: "vehicles" }] }
+    },
     staffMessages: [
          { fullname: "John Doe", message: "Anyone seeing the report about ID 42?", time: Date.now() - 3600000 },
          { fullname: "Jane Smith", message: "Yeah, I'm checking it now. Seems like a VDM request.", time: Date.now() - 3500000 },

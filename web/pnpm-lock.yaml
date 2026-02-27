@@ -12,8 +12,8 @@ importers:
         specifier: ^0.100.0
         version: 0.100.0
       '@mriqbox/ui-kit':
-        specifier: ^3.1.0
-        version: 3.1.0(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)
+        specifier: ^3.2.0
+        version: 3.2.0(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@18.3.27)(react@18.3.1)
@@ -524,8 +524,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mriqbox/ui-kit@3.1.0':
-    resolution: {integrity: sha512-iS9StNTvzi/qBXUYEI9oaEnAK7YOv5mC3lw89hihBvAj+Y3jQ2QcAYyB+KsmhMLyu0MESQLskM+bFswx5GeKbA==}
+  '@mriqbox/ui-kit@3.2.0':
+    resolution: {integrity: sha512-mpuFPyhhVsPo6kcpeTRXpgUQTn/+HF97xTpuoNNPWb4ZNgr8bIT/WZXCACj8w25j+9sCvgfcqSjU+71JCTeztA==}
     hasBin: true
 
   '@nodelib/fs.scandir@2.1.5':
@@ -2271,7 +2271,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mriqbox/ui-kit@3.1.0(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)':
+  '@mriqbox/ui-kit@3.2.0(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)':
     dependencies:
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-popover': 1.1.15(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2281,12 +2281,14 @@ snapshots:
       class-variance-authority: 0.7.1
       clsx: 2.1.1
       cmdk: 1.1.1(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      colord: 2.9.3
       commander: 14.0.2
       date-fns: 4.1.0
       lucide-react: 0.344.0(react@18.3.1)
       next-themes: 0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       prompts: 2.4.2
       react: 18.3.1
+      react-colorful: 5.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-day-picker: 8.10.1(date-fns@4.1.0)(react@18.3.1)
       react-dom: 18.3.1(react@18.3.1)
       tailwind-merge: 2.6.0

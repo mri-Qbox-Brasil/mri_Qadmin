@@ -9,6 +9,7 @@ import { Search, Zap, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { VirtuosoGrid } from 'react-virtuoso'
 import ActionsSkeleton from '@/components/skeletons/ActionsSkeleton'
+import { hasPermission } from '@/utils/permissions'
 
 export default function Actions() {
   const { gameData, setGameData, myPermissions } = useAppState()
@@ -64,9 +65,8 @@ export default function Actions() {
 
   const filteredActions = actionList.filter((action: any) => {
     // Permission Check
-    const permKey = `action.${action.id}`
-    const hasPerm = myPermissions.includes('qadmin.master') || myPermissions.includes(permKey)
-    if (!hasPerm) return false
+    const permKey = action.perms || `action.${action.id}`
+    if (!hasPermission(myPermissions, permKey)) return false
 
     const matchesSearch = action.label.toLowerCase().includes(search.toLowerCase())
     if (!matchesSearch) return false

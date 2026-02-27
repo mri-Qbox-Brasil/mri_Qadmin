@@ -200,7 +200,7 @@ export default function ActionManager() {
 
             {/* Create Modal */}
             {showCreateModal && (
-                <ActionModal
+                <MriActionModal
                     title={t('action_manager_new_action')}
                     icon={Zap}
                     onClose={() => setShowCreateModal(false)}
@@ -219,7 +219,7 @@ export default function ActionManager() {
                             autoFocus
                         />
                     </div>
-                </ActionModal>
+                </MriActionModal>
             )}
 
             {/* Delete Modal */}

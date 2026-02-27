@@ -4,11 +4,10 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriButton, MriPageHeader, MriSpinner } from '@mriqbox/ui-kit'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import { Car, RefreshCw } from 'lucide-react'
-import Spinner from '@/components/Spinner'
 
 import SearchInput from '@/components/shared/SearchInput'
 import VehicleGridCard from '@/components/vehicles/VehicleGridCard'

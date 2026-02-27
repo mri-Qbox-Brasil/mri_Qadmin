@@ -7,7 +7,7 @@ import { AlertCircle, Wifi, Monitor as MonitorIcon, Keyboard } from 'lucide-reac
 import { signaling } from '@/utils/signaling/index';
 import { subscribeFromCF } from '@/utils/cf-sfu';
 import { cn } from '@/lib/utils';
-import KeyboardVisualizer from './KeyboardVisualizer';
+import { MriKeyboardVisualizer } from '@mriqbox/ui-kit';
 
 const RTC_CONFIG = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -334,7 +334,7 @@ export default function PlayerScreenStream({
             {/* Keyboard Overlay */}
             {showKeyboard && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-[900px] px-4 pointer-events-none z-20 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                    <KeyboardVisualizer
+                    <MriKeyboardVisualizer
                         pressedKeys={pressedKeys}
                         className="scale-[0.6] lg:scale-[0.7] origin-bottom shadow-2xl pointer-events-auto"
                     />

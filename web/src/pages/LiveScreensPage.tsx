@@ -6,6 +6,7 @@ import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
 import PlayerScreenStream from '@/components/shared/PlayerScreenStream'
 import { cn } from '@/lib/utils'
+import { MOCK_PLAYERS } from '@/utils/mockData'
 
 interface WatchedPlayer {
     id: number
@@ -33,7 +34,7 @@ export default function LiveScreensPage() {
 
     // Fetch online-only player list
     useEffect(() => {
-        sendNui('getPlayers', { page: 1, limit: 200, search: '' }).then((res: any) => {
+        sendNui('getPlayers', { page: 1, limit: 200, search: '' }, { data: MOCK_PLAYERS }).then((res: any) => {
             const list = res.data || (Array.isArray(res) ? res : [])
             if (list) setPlayers(list.filter((p: any) => p.online === true))
         })

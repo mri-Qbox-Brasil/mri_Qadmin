@@ -7,7 +7,7 @@ import { useAppState } from '@/context/AppState'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useTheme } from '@/context/ThemeContext'
-import { CustomColorPicker } from '@/components/CustomColorPicker'
+import { MriColorPicker } from '@mriqbox/ui-kit'
 import ConfirmAction from '@/components/players/ConfirmAction'
 
 const THEMES = [
@@ -221,7 +221,7 @@ export default function Settings() {
                                                 {accent === color.id && <Check className="w-5 h-5 text-white stroke-[3px]" />}
                                             </button>
                                         ))}
-                                        <CustomColorPicker
+                                        <MriColorPicker
                                             color={accent}
                                             onChange={setAccent}
                                             active={!COLORS.some(c => c.id === accent)}
@@ -344,7 +344,7 @@ export default function Settings() {
                                                     <Ghost className="w-3.5 h-3.5 text-red-500" /> {t('settings_wall_dead')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                    <CustomColorPicker
+                                                    <MriColorPicker
                                                         color={wallSettings.settings.dead}
                                                         onChange={(val) => saveWallSetting('global', 'dead', val)}
                                                         active={true}
@@ -368,7 +368,7 @@ export default function Settings() {
                                                     <Sun className="w-3.5 h-3.5 text-yellow-500" /> {t('settings_wall_invisible')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                    <CustomColorPicker
+                                                    <MriColorPicker
                                                         color={wallSettings.settings.invisible}
                                                         onChange={(val) => saveWallSetting('global', 'invisible', val)}
                                                         active={true}
@@ -392,7 +392,7 @@ export default function Settings() {
                                                     <User className="w-3.5 h-3.5 text-blue-500" /> {t('settings_wall_default')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                    <CustomColorPicker
+                                                    <MriColorPicker
                                                         color={wallSettings.settings.default}
                                                         onChange={(val) => saveWallSetting('global', 'default', val)}
                                                         active={true}
@@ -440,7 +440,7 @@ export default function Settings() {
                                                                     <span className="font-mono text-xs font-bold truncate max-w-[120px]" title={principal}>{principal}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
-                                                                    <CustomColorPicker
+                                                                    <MriColorPicker
                                                                         color={color}
                                                                         onChange={(val) => saveWallSetting('principal', principal, val)}
                                                                         active={true}
@@ -480,7 +480,7 @@ export default function Settings() {
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-3 h-10">
-                                                    <CustomColorPicker
+                                                    <MriColorPicker
                                                         color={newGroupColor.color}
                                                         onChange={(val) => setNewGroupColor(prev => ({ ...prev, color: val }))}
                                                         active={true}

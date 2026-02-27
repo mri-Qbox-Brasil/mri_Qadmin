@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
-import ActionModal from '@/components/ActionModal'
+import { MriActionModal, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
 import { Gift } from 'lucide-react'
 
 import { useI18n } from '@/hooks/useI18n'
@@ -49,7 +48,7 @@ export default function GiveItemModal({
   }))
 
   return (
-    <ActionModal
+    <MriActionModal
       title={t('modal_give_item_title').replace('%s', '')}
       icon={Gift}
       onClose={onClose}
@@ -92,6 +91,6 @@ export default function GiveItemModal({
 
       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('quantity_label')}</label>
       <MriInput type="number" value={amount} onChange={e => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
-    </ActionModal>
+    </MriActionModal>
   )
 }

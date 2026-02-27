@@ -19,10 +19,20 @@ export const PAGE_PERMISSIONS = {
 }
 
 export function hasPermission(userAces: string[], permission: string): boolean {
-    if (!userAces) return false
+    if (!userAces || !Array.isArray(userAces)) return false
     // Admin bypass (optional, but good for testing)
     if (userAces.includes('qadmin.master')) return true
 
-    // Check exact match or wildcard * (basic implementation)
-    return userAces.includes(permission) || userAces.includes('qadmin.page.*')
+    // Check exact match
+    if (userAces.includes(permission)) return true
+
+    // Check wildcards: split permission by dot and build up to check for .*
+    const parts = permission.split('.')
+    let current = parts[0]
+    for (let i = 1; i < parts.length; i++) {
+        if (userAces.includes(`${current}.*`)) return true
+        current += `.${parts[i]}`
+    }
+
+    return false
 }
