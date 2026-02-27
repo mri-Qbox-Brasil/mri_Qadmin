@@ -116,6 +116,7 @@ export default function Items() {
             onSubmit={async (playerId, item, amount) => {
                 try {
                   await sendNui('clickButton', { data: 'give_item', selectedData: { Player: { value: playerId }, Item: { value: item }, Amount: { value: amount } } })
+                  closeModal()
                 } catch (e) {
                   console.error('give item', e)
                 }
