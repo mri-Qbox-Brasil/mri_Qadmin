@@ -88,10 +88,14 @@ export default function ActionDropdown({
         options = gameData.peds || [];
       }
 
-      baseItem.options = options.map((opt: any) => ({
-         value: opt[valueField],
-         label: opt[labelField]
-      }));
+      baseItem.options = options.map((opt: any) => {
+         const val = opt[valueField] ?? opt.cid ?? opt.id;
+         const lbl = opt[labelField] || 'Unknown';
+         return {
+            value: val,
+            label: `${lbl} (${val})`
+         };
+      });
       baseItem.selectedValue = selectedData[subKey]?.value;
       baseItem.selectedLabel = selectedData[subKey]?.label;
       baseItem.searchPlaceholder = t("actions_search_placeholder");
