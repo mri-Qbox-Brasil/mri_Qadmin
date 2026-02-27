@@ -99,7 +99,7 @@ export default function ActionDropdown({
       baseItem.selectPlaceholder = t("select_placeholder");
       baseItem.onDropdownSelect = (fieldId, val) => {
         handleSelectData(fieldId, { id: fieldId, value: val.value, label: val.label }, false);
-      }
+      };
     } else if (item.option === "button") {
       baseItem.onButtonClick = () => handleSubClick(item);
     }

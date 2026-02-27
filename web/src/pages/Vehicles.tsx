@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { MriButton, MriPageHeader, MriSpinner } from '@mriqbox/ui-kit'
+import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import { Car, RefreshCw } from 'lucide-react'
