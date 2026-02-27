@@ -74,6 +74,16 @@ RegisterNUICallback("mri_Qadmin:callback:SendReportMessage", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("mri_Qadmin:callback:SendReportVoice", function(data, cb)
+    TriggerServerEvent("mri_Qadmin:server:SendReportVoice", data.reportId, data.audioBase64, data.duration)
+    cb("ok")
+end)
+
+RegisterNUICallback("mri_Qadmin:callback:SetReportPriority", function(data, cb)
+    TriggerServerEvent("mri_Qadmin:server:SetReportPriority", data.reportId, data.priority)
+    cb("ok")
+end)
+
 RegisterNUICallback("mri_Qadmin:callback:GetReportNotes", function(data, cb)
     local notes = lib.callback.await("mri_Qadmin:callback:GetReportNotes", false, data.reportId)
     cb(notes or {})
@@ -92,6 +102,16 @@ end)
 RegisterNUICallback("mri_Qadmin:callback:AddPlayerNote", function(data, cb)
     TriggerServerEvent("mri_Qadmin:server:AddPlayerNote", data.playerId, data.note)
     cb("ok")
+end)
+
+RegisterNUICallback("mri_Qadmin:callback:GetPlayerHistory", function(data, cb)
+    local history = lib.callback.await("mri_Qadmin:callback:GetPlayerHistory", false, data.playerId)
+    cb(history or {})
+end)
+
+RegisterNUICallback("mri_Qadmin:callback:GetReportStatistics", function(data, cb)
+    local stats = lib.callback.await("mri_Qadmin:callback:GetReportStatistics", false)
+    cb(stats or {})
 end)
 
 -- Ticket Server Events catchers to route to NUI
@@ -147,5 +167,12 @@ RegisterNetEvent("mri_Qadmin:client:PlayerNotesUpdated", function(playerId, note
     SendNUIMessage({
         action = "PlayerNotesUpdated",
         data = { playerId = playerId, notes = notes }
+    })
+end)
+
+RegisterNetEvent("mri_Qadmin:client:ReportPriorityUpdated", function(reportId, priority)
+    SendNUIMessage({
+        action = "ReportPriorityUpdated",
+        data = { reportId = reportId, priority = priority }
     })
 end)

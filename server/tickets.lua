@@ -194,6 +194,63 @@ RegisterNetEvent("mri_Qadmin:server:SendReportMessage", function(reportId, messa
     TriggerClientEvent("mri_Qadmin:client:NewReportMessage", -1, newMessage)
 end)
 
+RegisterNetEvent("mri_Qadmin:server:SetReportPriority", function(reportId, priority)
+    local src = source
+    if not CheckPerms('qadmin.page.tickets') then return end
+
+    MySQL.update.await('UPDATE mri_reports SET priority = ? WHERE id = ?', {priority, reportId})
+
+    TriggerClientEvent("mri_Qadmin:client:ReportPriorityUpdated", -1, reportId, priority)
+end)
+
+RegisterNetEvent("mri_Qadmin:server:SendReportVoice", function(reportId, audioBase64, duration)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+    
+    local name = GetPlayerName(src)
+    local identifier = Player.PlayerData.citizenid
+    local senderType = 'player'
+    
+    if CheckPermsOffline(src, 'qadmin.page.tickets') then
+        senderType = 'admin'
+    end
+
+    -- Attempt to read webhook from sws-report if possible
+    local webhookUrl = ""
+    local swsConfigStr = LoadResourceFile("sws-report", "config/main.lua")
+    if swsConfigStr then
+        local match = swsConfigStr:match('webhook%s*=%s*"([^"]+)"')
+        if match then webhookUrl = match end
+    end
+
+    if webhookUrl == "" then
+        QBCore.Functions.Notify(src, "Discord webhook não configurado no sws-report.", "error")
+        return
+    end
+
+    exports['sws-report']:uploadVoiceToDiscord({
+        webhookUrl = webhookUrl,
+        base64Audio = audioBase64,
+        reportId = reportId,
+        senderName = name,
+        botName = "mri_Qadmin"
+    }, function(success, url, errorMsg)
+        if not success or not url then
+            QBCore.Functions.Notify(src, "Falha ao enviar áudio: " .. tostring(errorMsg), "error")
+            return
+        end
+
+        local messageId = MySQL.insert.await([[
+            INSERT INTO mri_report_messages (report_id, sender_id, sender_name, sender_type, message, message_type, audio_url, audio_duration)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ]], {reportId, identifier, name, senderType, "[Voice Message]", "voice", url, math.ceil(duration)})
+
+        local newMessage = MySQL.query.await('SELECT * FROM mri_report_messages WHERE id = ?', {messageId})[1]
+        TriggerClientEvent("mri_Qadmin:client:NewReportMessage", -1, newMessage)
+    end)
+end)
+
 lib.callback.register("mri_Qadmin:callback:GetReportNotes", function(source, reportId)
     if not CheckPerms('qadmin.page.tickets') then return {} end
     return MySQL.query.await('SELECT * FROM mri_report_notes WHERE report_id = ? ORDER BY created_at DESC', {reportId})
@@ -216,6 +273,28 @@ end)
 lib.callback.register("mri_Qadmin:callback:GetPlayerNotes", function(source, playerId)
     if not CheckPerms('qadmin.page.tickets') then return {} end
     return MySQL.query.await('SELECT * FROM mri_player_notes WHERE player_id = ? ORDER BY created_at DESC', {playerId})
+end)
+
+lib.callback.register("mri_Qadmin:callback:GetPlayerHistory", function(source, targetCitizenId)
+    if not CheckPerms('qadmin.page.tickets') then return {} end
+    
+    local reports = MySQL.query.await([[
+        SELECT 
+            id, subject, category, status, priority, created_at, resolved_at, claimed_by_name
+        FROM mri_reports 
+        WHERE player_id = ? 
+        ORDER BY created_at DESC
+    ]], {targetCitizenId})
+    
+    local notes = MySQL.query.await('SELECT * FROM mri_player_notes WHERE player_id = ? ORDER BY created_at DESC', {targetCitizenId})
+    
+    local identifiers = MySQL.query.await('SELECT * FROM mri_player_identifiers WHERE player_id = ?', {targetCitizenId})[1] or {}
+    
+    return {
+        reports = reports or {},
+        notes = notes or {},
+        identifiers = identifiers or {}
+    }
 end)
 
 RegisterNetEvent("mri_Qadmin:server:AddPlayerNote", function(playerId, note)

@@ -84,6 +84,7 @@ export const MOCK_REPORTS = [
         category: "player",
         description: "Um cara com máscara de macaco me matou sem motivo na praça principal.",
         status: "open",
+        priority: 2,
         created_at: Date.now() - 3600000,
         messages: [
             {
@@ -113,7 +114,9 @@ export const MOCK_REPORTS = [
         subject: "Bug no inventário",
         category: "bug",
         description: "Meus itens estão duplicando toda vez que relogo.",
-        status: "open",
+        status: "claimed",
+        priority: 3,
+        claimed_by_name: "Dev Admin",
         created_at: Date.now() - 1000000,
         messages: []
     },
@@ -127,6 +130,8 @@ export const MOCK_REPORTS = [
         category: "question",
         description: "Como faço para resgatar meu VIP comprado hoje?",
         status: "resolved",
+        priority: 1,
+        claimed_by_name: "Admin User",
         created_at: Date.now() - 86400000,
         messages: [
             {
