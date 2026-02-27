@@ -147,6 +147,17 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
         await sendNui('mri_Qadmin:callback:ClaimReport', { id })
     }
 
+    const handleUnclaim = async (id: number) => {
+        if (isEnvBrowser()) {
+            setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'open' } : r))
+            if (selectedReport?.id === id) {
+                setSelectedReport({ ...selectedReport, status: 'open' })
+            }
+            return
+        }
+        await sendNui('mri_Qadmin:callback:UnclaimReport', { id })
+    }
+
     const handleResolve = async (id: number) => {
         if (isEnvBrowser()) {
             setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'resolved' } : r))
@@ -206,19 +217,19 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
             {/* Left Col - List */}
             <MriCard className="w-1/3 flex flex-col h-full overflow-hidden">
                 <div className="p-4 border-b border-border flex justify-between items-center">
-                    <h2 className="text-xl font-bold">{isPlayerMode ? 'Meus Tickets' : 'Tickets Ativos'}</h2>
+                    <h2 className="text-xl font-bold">{isPlayerMode ? t('tickets_my_tickets') : t('tickets_active')}</h2>
                     {isPlayerMode && (
                         <MriButton size="sm" onClick={() => setIsCreating(true)}>
-                            <Plus className="w-4 h-4 mr-2" /> Novo Ticket
+                            <Plus className="w-4 h-4 mr-2" /> {t('tickets_new_ticket')}
                         </MriButton>
                     )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-2">
                     {loading ? (
-                        <div className="p-4 text-center text-muted-foreground">Carregando...</div>
+                        <div className="p-4 text-center text-muted-foreground">{t('tickets_loading')}</div>
                     ) : reports.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground">Nenhum ticket encontrado.</div>
+                        <div className="p-4 text-center text-muted-foreground">{t('tickets_not_found')}</div>
                     ) : (
                         reports.map(r => (
                             <div
@@ -236,12 +247,12 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
                                 <div className="flex justify-between items-center text-xs text-muted-foreground">
                                     <span>{r.player_name}</span>
                                     <span className={cn(
-                                        "px-2 py-0.5 rounded-full",
+                                        "px-2 py-0.5 rounded-full text-[10px] font-bold",
                                         r.status === 'open' ? "bg-green-500/20 text-green-500" :
                                             r.status === 'claimed' ? "bg-yellow-500/20 text-yellow-500" :
                                                 "bg-gray-500/20 text-gray-500"
                                     )}>
-                                        {r.status.toUpperCase()}
+                                        {t(`tickets_status_${r.status}`)}
                                     </span>
                                 </div>
                             </div>
@@ -254,42 +265,42 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
             <MriCard className="flex-1 flex flex-col h-full overflow-hidden">
                 {isCreating ? (
                     <div className="p-6 flex flex-col h-full">
-                        <h2 className="text-2xl font-bold mb-6">Criar Novo Ticket</h2>
+                        <h2 className="text-2xl font-bold mb-6">{t('tickets_create_title')}</h2>
                         <div className="space-y-4 flex-1">
                             <div>
-                                <label className="text-sm text-muted-foreground mb-1 block">Assunto</label>
+                                <label className="text-sm text-muted-foreground mb-1 block">{t('tickets_subject')}</label>
                                 <MriInput
                                     value={newSubject}
                                     onChange={(e) => setNewSubject(e.target.value)}
-                                    placeholder="Ex: Fui VDM"
+                                    placeholder={t('tickets_subject_placeholder')}
                                 />
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground mb-1 block">Categoria</label>
+                                <label className="text-sm text-muted-foreground mb-1 block">{t('tickets_category')}</label>
                                 <select
                                     className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                     value={newCategory}
                                     onChange={(e) => setNewCategory(e.target.value)}
                                 >
-                                    <option value="general">Geral</option>
-                                    <option value="bug">Reportar Bug</option>
-                                    <option value="player">Denunciar Jogador</option>
-                                    <option value="question">Dúvida</option>
+                                    <option value="general">{t('tickets_category_general')}</option>
+                                    <option value="bug">{t('tickets_category_bug')}</option>
+                                    <option value="player">{t('tickets_category_player')}</option>
+                                    <option value="question">{t('tickets_category_question')}</option>
                                 </select>
                             </div>
                             <div className="flex-1 flex flex-col">
-                                <label className="text-sm text-muted-foreground mb-1 block">Descrição</label>
+                                <label className="text-sm text-muted-foreground mb-1 block">{t('tickets_description')}</label>
                                 <textarea
                                     className="w-full flex-1 bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                                     value={newDescription}
                                     onChange={(e) => setNewDescription(e.target.value)}
-                                    placeholder="Descreva detalhadamente o que ocorreu..."
+                                    placeholder={t('tickets_description_placeholder')}
                                 />
                             </div>
                         </div>
                         <div className="mt-4 flex justify-end gap-2">
-                            <MriButton variant="outline" onClick={() => setIsCreating(false)}>Cancelar</MriButton>
-                            <MriButton onClick={handleCreateReport}>Enviar Ticket</MriButton>
+                            <MriButton variant="outline" onClick={() => setIsCreating(false)}>{t('tickets_cancel')}</MriButton>
+                            <MriButton onClick={handleCreateReport}>{t('tickets_submit')}</MriButton>
                         </div>
                     </div>
                 ) : selectedReport ? (
@@ -301,17 +312,20 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
                                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                     <span>#{selectedReport.id}</span>
                                     <span>•</span>
-                                    <span>Por: {selectedReport.player_name}</span>
+                                    <span>{t('tickets_by')} {selectedReport.player_name}</span>
                                     <span>•</span>
-                                    <span>Categoria: {selectedReport.category}</span>
+                                    <span>{t('tickets_category')}: {t(`tickets_category_${selectedReport.category}`)}</span>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 {!isPlayerMode && selectedReport.status === 'open' && (
-                                    <MriButton size="sm" onClick={() => handleClaim(selectedReport.id)}>Assumir</MriButton>
+                                    <MriButton size="sm" onClick={() => handleClaim(selectedReport.id)}>{t('tickets_btn_claim')}</MriButton>
                                 )}
                                 {!isPlayerMode && selectedReport.status === 'claimed' && (
-                                    <MriButton size="sm" variant="success" onClick={() => handleResolve(selectedReport.id)}>Resolver</MriButton>
+                                    <>
+                                        <MriButton size="sm" variant="warning" onClick={() => handleUnclaim(selectedReport.id)}>{t('tickets_btn_unclaim')}</MriButton>
+                                        <MriButton size="sm" variant="success" onClick={() => handleResolve(selectedReport.id)}>{t('tickets_btn_resolve')}</MriButton>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -320,16 +334,16 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
                         {!isPlayerMode && (
                             <div className="px-4 py-2 border-b border-border bg-card/50 flex gap-2 overflow-x-auto">
                                 <MriButton size="sm" variant="outline" onClick={() => handleAdminAction('spectate_player')}>
-                                    <Eye className="w-3.5 h-3.5 mr-1" /> Spectar
+                                    <Eye className="w-3.5 h-3.5 mr-1" /> {t('tickets_btn_spectate')}
                                 </MriButton>
                                 <MriButton size="sm" variant="outline" onClick={() => handleAdminAction('teleportToPlayer')}>
-                                    <Crosshair className="w-3.5 h-3.5 mr-1" /> Ir Até
+                                    <Crosshair className="w-3.5 h-3.5 mr-1" /> {t('tickets_btn_goto')}
                                 </MriButton>
                                 <MriButton size="sm" variant="outline" onClick={() => handleAdminAction('bringPlayer')}>
-                                    <Download className="w-3.5 h-3.5 mr-1" /> Trazer
+                                    <Download className="w-3.5 h-3.5 mr-1" /> {t('tickets_btn_bring')}
                                 </MriButton>
                                 <MriButton size="sm" variant="outline" onClick={() => handleAdminAction('revivePlayer')}>
-                                    <Heart className="w-3.5 h-3.5 mr-1" /> Reviver
+                                    <Heart className="w-3.5 h-3.5 mr-1" /> {t('tickets_btn_revive')}
                                 </MriButton>
                             </div>
                         )}
@@ -338,8 +352,8 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/30">
                             {/* Initial Description */}
                             <div className="flex flex-col items-start">
-                                <span className="text-xs text-muted-foreground mb-1">{selectedReport.player_name} (Autor)</span>
-                                <div className="bg-card border border-border p-3 rounded-lg rounded-tl-none max-w-[80%]">
+                                <span className="text-xs text-muted-foreground mb-1">{selectedReport.player_name}{t('tickets_author')}</span>
+                                <div className="bg-card border border-border p-3 rounded-lg rounded-tl-none max-w-[80%] break-words">
                                     {selectedReport.description}
                                 </div>
                             </div>
@@ -350,10 +364,10 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
                                 return (
                                     <div key={msg.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
                                         <span className="text-xs text-muted-foreground mb-1">
-                                            {msg.sender_name} {msg.sender_type === 'admin' ? '(Staff)' : ''}
+                                            {msg.sender_name} {msg.sender_type === 'admin' ? t('tickets_staff') : ''}
                                         </span>
                                         <div className={cn(
-                                            "p-3 rounded-lg max-w-[80%]",
+                                            "p-3 rounded-lg max-w-[80%] break-words",
                                             isMe ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card border border-border rounded-tl-none"
                                         )}>
                                             {msg.message}
@@ -368,24 +382,24 @@ export default function Tickets({ isPlayerMode }: TicketsProps) {
                             <div className="p-4 border-t border-border flex gap-2">
                                 <MriInput
                                     className="flex-1"
-                                    placeholder="Digite sua mensagem..."
+                                    placeholder={t('tickets_placeholder_reply')}
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleReply() }}
                                 />
-                                <MriButton onClick={handleReply}>Enviar</MriButton>
+                                <MriButton onClick={handleReply}>{t('tickets_btn_send')}</MriButton>
                             </div>
                         )}
                         {selectedReport.status === 'resolved' && (
                             <div className="p-4 border-t border-border text-center text-muted-foreground bg-muted/50">
-                                Este ticket foi resolvido e fechado para novas mensagens.
+                                {t('tickets_closed_message')}
                             </div>
                         )}
                     </div>
                 ) : (
                     <div className="flex-1 flex items-center justify-center text-muted-foreground flex-col gap-4">
                         <MessageSquare className="w-16 h-16 opacity-20" />
-                        <p>Selecione um ticket para visualizar os detalhes</p>
+                        <p>{t('tickets_select_message')}</p>
                     </div>
                 )}
             </MriCard>

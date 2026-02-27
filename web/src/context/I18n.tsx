@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import en from '../../../locales/en.json'
+import ptBr from '../../../locales/pt-br.json'
 import { useNui } from './NuiContext'
 import { I18nContext, Translations } from '../hooks/useI18n'
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const { sendNui, on, off } = useNui()
-  const [locale, setLocale] = useState<string>('en')
-  const [translations, setTranslations] = useState<Translations>(en as Translations)
+  const [locale, setLocale] = useState<string>('pt-br')
+  const [translations, setTranslations] = useState<Translations>(ptBr as Translations)
   const [preferredLocale, setPreferredLocaleState] = useState<string | null>(localStorage.getItem('mri_qadmin_locale'))
   const [supportedLanguages, setSupportedLanguages] = useState<{ id: string, label: string, flag: string }[]>([
     { id: 'pt-br', label: 'Português (BR)', flag: '🇧🇷' },
@@ -29,16 +29,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return
         if (resp) {
           if (resp.translations && typeof resp.translations === 'object') {
-            setTranslations({ ...(en as Translations), ...resp.translations })
+            setTranslations({ ...(ptBr as Translations), ...resp.translations })
           } else if (typeof resp === 'object') {
-            setTranslations({ ...(en as Translations), ...resp })
+            setTranslations({ ...(ptBr as Translations), ...resp })
           }
 
           const serverLocale = resp.locale || 'pt-br'
           setLocale(preferredLocale || serverLocale)
         }
       } catch (e) {
-        // fallback to en
+        // fallback to pt-br
       }
     }
 
@@ -46,8 +46,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
     const handler = (data: any) => {
       if (!data) return
-      if (data.translations) setTranslations({ ...(en as Translations), ...data.translations })
-      else if (typeof data === 'object') setTranslations({ ...(en as Translations), ...data })
+      if (data.translations) setTranslations({ ...(ptBr as Translations), ...data.translations })
+      else if (typeof data === 'object') setTranslations({ ...(ptBr as Translations), ...data })
 
       const serverLocale = data.locale || 'pt-br'
       setLocale(preferredLocale || serverLocale)
@@ -72,7 +72,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }
 
   function t(key: string, vars?: Record<string, any> | any[]) {
-    const raw = translations[key] ?? (en as Translations)[key] ?? key
+    const raw = translations[key] ?? (ptBr as Translations)[key] ?? key
     try {
       return interpolate(raw, vars)
     } catch (e) {
