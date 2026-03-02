@@ -65,6 +65,21 @@ export default function MapModal({ isOpen, onClose, trackedPlayerId, initialName
              "flex flex-col p-0 gap-0 border-border bg-background shadow-2xl transition-all duration-300 overflow-hidden",
              isExpanded ? "w-[95vw] h-[90vh] max-w-none" : "w-[800px] h-[600px] max-w-2xl"
         )}>
+            {/* Accessibility elements for Radix UI Dialog */}
+            <div style={{
+                position: 'absolute',
+                width: '1px',
+                height: '1px',
+                padding: '0',
+                margin: '-1px',
+                overflow: 'hidden',
+                clip: 'rect(0, 0, 0, 0)',
+                whiteSpace: 'nowrap',
+                borderWidth: '0'
+            }}>
+                <h2>{t('live_map_tracking') || 'Live Map Tracking'}</h2>
+                <p>{t('live_map_description') || 'Tracking player position on the map'}</p>
+            </div>
                 <div className="flex items-center justify-between p-4 border-b border-border bg-card">
                     <div className="flex items-center gap-2 font-bold text-lg">
                         {t('live_map_tracking') || 'Live Map Tracking'}
