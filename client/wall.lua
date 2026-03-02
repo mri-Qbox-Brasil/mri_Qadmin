@@ -66,20 +66,6 @@ AddEventHandler(GlobalState["mri_wall"]..":toggleWall",function(val)
     end
 end)
 
-RegisterCommand('debugwall', function()
-    local myId = GetPlayerServerId(PlayerId())
-    local myStr = tostring(myId)
-    print('--- DEBUG WALL ---')
-    print('My ID:', myId)
-    print('My Key:', myStr)
-    print('My Data:', json.encode(wall_users[myStr]))
-    print('All Keys inside wall_users:')
-    for k, v in pairs(wall_users) do
-        print('Key:', k, 'Type:', type(k))
-    end
-    print('------------------')
-end)
-
 function DrawText3D(x,y,z, text, r,g,b)
     local onScreen,_x,_y=World3dToScreen2d(x,y,z)
     local px,py,pz=table.unpack(GetGameplayCamCoords())

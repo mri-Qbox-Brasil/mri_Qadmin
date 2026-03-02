@@ -46,46 +46,33 @@ RegisterNetEvent('mri_Qadmin:client:ToggleCuffs', function(player)
 end)
 
 -- Copy Coordinates
-local function CopyCoords(data)
+local function CopyCoords(dataType)
     local coords = GetEntityCoords(cache.ped)
     local heading = GetEntityHeading(cache.ped)
     local formats = { vector2 = "%.2f, %.2f", vector3 = "%.2f, %.2f, %.2f", vector4 = "%.2f, %.2f, %.2f, %.2f", heading =
     "%.2f" }
-    local format = formats[data]
+    local format = formats[dataType]
 
     local clipboardText = ""
-    if data == "vector2" then
+    local message = locale('success.coords_copied')
+    if dataType == "vector2" then
         clipboardText = string.format(format, coords.x, coords.y)
-    elseif data == "vector3" then
+    elseif dataType == "vector3" then
         clipboardText = string.format(format, coords.x, coords.y, coords.z)
-    elseif data == "vector4" then
+    elseif dataType == "vector4" then
         clipboardText = string.format(format, coords.x, coords.y, coords.z, heading)
-    elseif data == "heading" then
+    elseif dataType == "heading" then
         clipboardText = string.format(format, heading)
+        message = locale('success.heading_copied')
     end
 
     lib.setClipboard(clipboardText)
+    exports.qbx_core:Notify(message, 'success')
 end
 
-RegisterCommand("vector2", function()
-    if not CheckPerms('mod') then return end
-    CopyCoords("vector2")
-end, false)
-
-RegisterCommand("vector3", function()
-    if not CheckPerms('mod') then return end
-    CopyCoords("vector3")
-end, false)
-
-RegisterCommand("vector4", function()
-    if not CheckPerms('mod') then return end
-    CopyCoords("vector4")
-end, false)
-
-RegisterCommand("heading", function()
-    if not CheckPerms('mod') then return end
-    CopyCoords("heading")
-end, false)
+RegisterNetEvent('mri_Qadmin:client:CopyCoords', function(type)
+    CopyCoords(type)
+end)
 
 -- Infinite Ammo
 local InfiniteAmmo = false
@@ -155,8 +142,7 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
     end
 end)
 
-RegisterCommand("setammo", function(source)
-    if not CheckPerms('mod') then return end
+RegisterNetEvent('mri_Qadmin:client:SetAmmoAdmin', function()
     local weapon = GetSelectedPedWeapon(cache.ped)
     local ammo = 999
     if weapon ~= nil then
@@ -165,7 +151,7 @@ RegisterCommand("setammo", function(source)
     else
         QBCore.Functions.Notify(locale("no_weapon"), 'error')
     end
-end, false)
+end)
 
 --Toggle Dev
 local ToggleDev = false
@@ -194,9 +180,7 @@ local toogleAdmin = lib.addKeybind({
 })
 
 --noclip
-RegisterCommand('nc', function()
-    TriggerEvent("mri_Qadmin:client:ToggleNoClip")
-end, false)
+-- noclip command moved to server-side
 
 local toogleNoclip = lib.addKeybind({
     name = 'mri:toogleNoclip',

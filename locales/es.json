@@ -452,5 +452,7 @@
     "livemap_style_atlas": "Atlas",
     "livemap_style_grid": "Grid",
     "livemap_style_satellite": "Satélite",
-    "livemap_style_roadmap": "Roadmap"
+    "livemap_style_roadmap": "Roadmap",
+    "success.coords_copied": "Coordenadas copiadas para la transferencia",
+    "success.heading_copied": "Cabeçalho copiado para a transferência"
 }
