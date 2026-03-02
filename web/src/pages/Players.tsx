@@ -226,7 +226,7 @@ export default function Players() {
       setPagination(prev => ({ ...prev, page: pageToFetch, total, totalPages: pages, search: searchQuery }))
 
       if (selectedPlayer) {
-          const found = data.find((x: any) => String(x.id) === String(selectedPlayer.id))
+          const found = data.find((x: any) => getPlayerKey(x) === getPlayerKey(selectedPlayer))
           if (found) setSelectedPlayer(found)
       }
 
@@ -261,7 +261,7 @@ export default function Players() {
         }))
 
         setSelectedPlayer((prev: any) => {
-            if (prev && String(prev.id) === String(data.id)) {
+            if (prev && getPlayerKey(prev) === getPlayerKey(data)) {
                 console.log('[DEBUG] Updating selected player directly')
                 return { ...prev, health: data.health, armor: data.armor, metadata: data.metadata }
             }
@@ -280,7 +280,7 @@ export default function Players() {
   // Sync selected player when list updates
   useEffect(() => {
       if (selectedPlayer) {
-          const found = players.find(p => String(p.id) === String(selectedPlayer.id))
+          const found = players.find(p => getPlayerKey(p) === getPlayerKey(selectedPlayer))
           if (found) {
               // Only update if something changed to avoid infinity loops
               if (found.health !== selectedPlayer.health ||
@@ -349,8 +349,9 @@ export default function Players() {
 
   const getPlayerKey = (p: any) => {
       if (!p) return t('unknown')
-      if (p.license) return p.license
-      if (p.citizenid) return p.citizenid
+      if (p.citizenid) return String(p.citizenid)
+      if (p.cid) return String(p.cid)
+      if (p.license) return String(p.license)
       return String(p.id)
   }
 
@@ -468,7 +469,7 @@ export default function Players() {
             {selectedPlayer && (
                  <div className={cn(
                      "bg-background flex flex-col overflow-hidden transition-all duration-300",
-                     viewMode === 'list' ? "absolute inset-0 left-96 z-10" : "absolute inset-0 z-20"
+                     viewMode === 'list' ? "absolute top-0 bottom-0 right-0 left-96 z-10" : "absolute inset-0 z-20"
                  )}>
                      {viewMode === 'grid' && (
                          <div className="p-4 border-b border-border flex items-center">
