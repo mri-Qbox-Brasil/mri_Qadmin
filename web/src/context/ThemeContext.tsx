@@ -81,12 +81,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('ps:accent', accent)
 
         // Apply Scale
-        // Apply to clean root div if possible, utilizing transform
-        const appRoot = document.getElementById('root')
-        if (appRoot) {
-            appRoot.style.zoom = `${scale / 100}`
-            appRoot.style.removeProperty('transform') // Ensure transform is cleared if it existed
-        }
+        // Scale is now handled in App.tsx via the scale value from context
         localStorage.setItem('ps:scale', String(scale))
 
     }, [theme, accent, scale])

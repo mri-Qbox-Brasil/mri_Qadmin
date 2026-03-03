@@ -34,6 +34,7 @@ function PrincipalGroup({
   onRemove,
   players,
   principalColors,
+  localPrincipalColors,
   onColorChange,
 }: {
   child: string;
@@ -41,6 +42,7 @@ function PrincipalGroup({
   onRemove: (p: Principal) => void;
   players: any[];
   principalColors: Record<string, string>;
+  localPrincipalColors: Record<string, string>;
   onColorChange: (p: string, c: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -87,12 +89,12 @@ function PrincipalGroup({
 
         <div className="flex items-center gap-2 ml-auto">
              {!child.includes(':') && (
-                <MriColorPicker
-                    color={color || '#0000FF'}
-                    onChange={(val) => onColorChange(child, val)}
-                    active={!!color}
-                    format="hex"
-                />
+                    <MriColorPicker
+                        color={localPrincipalColors[child] || '#0000FF'}
+                        onChange={(val) => onColorChange(child, val)}
+                        active={true}
+                        format="hex"
+                    />
             )}
             <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
                 {items.length} {t("groups")}
@@ -128,12 +130,12 @@ function PrincipalGroup({
 
                 <div className="ml-auto flex items-center gap-3">
                     {!p.parent.includes(':') && (
-                        <MriColorPicker
-                            color={principalColors[p.parent] || '#0000FF'}
-                            onChange={(val) => onColorChange(p.parent, val)}
-                            active={!!principalColors[p.parent]}
-                            format="hex"
-                        />
+                            <MriColorPicker
+                                color={localPrincipalColors[p.parent] || '#0000FF'}
+                                onChange={(val) => onColorChange(p.parent, val)}
+                                active={true}
+                                format="hex"
+                            />
                     )}
                     <button
                         onClick={(e) => {
@@ -180,6 +182,8 @@ export default function PrincipalsList({
     description: "",
   });
   const [principalColors, setPrincipalColors] = useState<Record<string, string>>({});
+  const [localPrincipalColors, setLocalPrincipalColors] = useState<Record<string, string>>({});
+  const timeoutRef = React.useRef<Record<string, any>>({})
   const [confirm, setConfirm] = useState<{
     type: "add" | "remove";
     principal?: Principal;
@@ -229,6 +233,7 @@ export default function PrincipalsList({
               colorsHex[k] = rgbToHex(v as string);
           });
           setPrincipalColors(colorsHex);
+      setLocalPrincipalColors(JSON.parse(JSON.stringify(colorsHex)));
       }
     } catch (e) {
       console.error(e);
@@ -310,6 +315,16 @@ export default function PrincipalsList({
     setPrincipalColors(prev => ({ ...prev, [principal]: color }));
     const rgb = hexToRgb(color); // Convert back to RGB string for storage
     await sendNui('mri_Qadmin:server:SaveWallSetting', { type: 'principal', key: principal, value: rgb });
+  };
+
+  const handleLocalColorChange = (principal: string, color: string) => {
+    setLocalPrincipalColors(prev => ({ ...prev, [principal]: color }));
+
+    if (timeoutRef.current[principal]) clearTimeout(timeoutRef.current[principal]);
+    timeoutRef.current[principal] = setTimeout(() => {
+        handleColorChange(principal, color);
+        delete timeoutRef.current[principal];
+    }, 500);
   };
 
   return (
@@ -434,8 +449,9 @@ export default function PrincipalsList({
                                   items={items}
                                   onRemove={handleRemove}
                                   players={players}
-                                  principalColors={principalColors}
-                                  onColorChange={handleColorChange}
+                               principalColors={principalColors}
+                               localPrincipalColors={localPrincipalColors}
+                               onColorChange={handleLocalColorChange}
                               />
                           </div>
                       )}

@@ -39,6 +39,7 @@ export default function Settings() {
     const { settings, setSettings, gameData } = useAppState()
 
     const [wallSettings, setWallSettings] = React.useState<any>(null)
+    const [localWallSettings, setLocalWallSettings] = React.useState<any>(null)
     const [availableGroups, setAvailableGroups] = React.useState<string[]>([])
     const [newGroupColor, setNewGroupColor] = React.useState({ group: '', color: '#0000FF' })
     const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null)
@@ -52,11 +53,29 @@ export default function Settings() {
 
     const rgbToHex = (rgb: string) => {
         if (!rgb) return '#0000FF';
-        if (rgb.startsWith('#')) return rgb; // Already hex
+        if (rgb.startsWith('#')) return rgb;
         const parts = rgb.split(',').map(x => parseInt(x.trim()));
         if (parts.length < 3) return '#0000FF';
         const [r, g, b] = parts;
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+    }
+
+    // Debounce save function
+    const timeoutRef = React.useRef<Record<string, any>>({})
+    const handleLocalWallChange = (type: 'global' | 'principal', key: string, value: string) => {
+        setLocalWallSettings((prev: any) => {
+            const next = { ...prev }
+            if (type === 'global') next.settings = { ...next.settings, [key]: value }
+            else next.colors = { ...next.colors, [key]: value }
+            return next
+        })
+
+        // Debounce actual save
+        if (timeoutRef.current[key]) clearTimeout(timeoutRef.current[key])
+        timeoutRef.current[key] = setTimeout(() => {
+            saveWallSetting(type, key, value)
+            delete timeoutRef.current[key]
+        }, 200)
     }
 
     const fetchWallSettings = React.useCallback(async () => {
@@ -66,7 +85,7 @@ export default function Settings() {
                 settings: { dead: '255, 0, 0', invisible: '255, 255, 0', default: '0, 0, 255' }
             })
 
-            // Convert received RGB strings to HEX for the UI
+            // ... conversion logic ...
             if (data.settings) {
                 const settings = data.settings as Record<string, string>;
                 Object.keys(settings).forEach(key => {
@@ -81,8 +100,9 @@ export default function Settings() {
             }
 
             setWallSettings(data)
+            setLocalWallSettings(JSON.parse(JSON.stringify(data))) // Deep copy for local state
 
-            // Fetch groups for the selector
+            // ... groups fetch ...
             const aces = await sendNui("mri_Qadmin:callback:GetAces", {}, [])
             if (Array.isArray(aces)) {
                 const uniqueGroups = Array.from(
@@ -100,10 +120,10 @@ export default function Settings() {
     }, [fetchWallSettings])
 
     const saveWallSetting = async (type: 'global' | 'principal', key: string, value: string) => {
-        // Convert HEX to RGB string before saving
         const rgbValue = hexToRgb(value);
         await sendNui('mri_Qadmin:server:SaveWallSetting', { type, key, value: rgbValue })
-        fetchWallSettings()
+        // Don't refetch fully to avoid stutter, just assume it's saved.
+        // fetchWallSettings()
     }
 
     const deleteGroupColor = async (principal: string) => {
@@ -222,9 +242,9 @@ export default function Settings() {
                                             </button>
                                         ))}
                                         <MriColorPicker
-                                            color={accent}
+                                            color={COLORS.some(c => c.id === accent) ? '#00E396' : accent}
                                             onChange={setAccent}
-                                            active={!COLORS.some(c => c.id === accent)}
+                                            active={true}
                                         />
                                     </div>
                                 </div>
@@ -335,7 +355,7 @@ export default function Settings() {
                             <MriCard className="p-6 space-y-8 bg-card border-border">
                                 <p className="text-sm text-muted-foreground">{t('settings_wall_esp_desc')}</p>
 
-                                {wallSettings && wallSettings.settings && (
+                                {localWallSettings && localWallSettings.settings && (
                                     <>
                                         {/* Global Wall Colors */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -344,12 +364,12 @@ export default function Settings() {
                                                     <Ghost className="w-3.5 h-3.5 text-red-500" /> {t('settings_wall_dead')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                    <MriColorPicker
-                                                        color={wallSettings.settings.dead}
-                                                        onChange={(val) => saveWallSetting('global', 'dead', val)}
-                                                        active={true}
-                                                        format="hex"
-                                                    />
+                                                <MriColorPicker
+                                                    color={localWallSettings.settings.dead}
+                                                    onChange={(val) => handleLocalWallChange('global', 'dead', val)}
+                                                    active={true}
+                                                    format="hex"
+                                                />
                                                     <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.dead}</span>
                                                     <MriButton
                                                         size="icon"
@@ -368,12 +388,12 @@ export default function Settings() {
                                                     <Sun className="w-3.5 h-3.5 text-yellow-500" /> {t('settings_wall_invisible')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                    <MriColorPicker
-                                                        color={wallSettings.settings.invisible}
-                                                        onChange={(val) => saveWallSetting('global', 'invisible', val)}
-                                                        active={true}
-                                                        format="hex"
-                                                    />
+                                                <MriColorPicker
+                                                    color={localWallSettings.settings.invisible}
+                                                    onChange={(val) => handleLocalWallChange('global', 'invisible', val)}
+                                                    active={true}
+                                                    format="hex"
+                                                />
                                                     <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.invisible}</span>
                                                     <MriButton
                                                         size="icon"
@@ -392,12 +412,12 @@ export default function Settings() {
                                                     <User className="w-3.5 h-3.5 text-blue-500" /> {t('settings_wall_default')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                    <MriColorPicker
-                                                        color={wallSettings.settings.default}
-                                                        onChange={(val) => saveWallSetting('global', 'default', val)}
-                                                        active={true}
-                                                        format="hex"
-                                                    />
+                                                <MriColorPicker
+                                                    color={localWallSettings.settings.default}
+                                                    onChange={(val) => handleLocalWallChange('global', 'default', val)}
+                                                    active={true}
+                                                    format="hex"
+                                                />
                                                     <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.default}</span>
                                                     <MriButton
                                                         size="icon"
@@ -442,7 +462,7 @@ export default function Settings() {
                                                                 <div className="flex items-center gap-2">
                                                                     <MriColorPicker
                                                                         color={color}
-                                                                        onChange={(val) => saveWallSetting('principal', principal, val)}
+                                                                        onChange={(val) => handleLocalWallChange('principal', principal, val)}
                                                                         active={true}
                                                                         format="hex"
                                                                     />
