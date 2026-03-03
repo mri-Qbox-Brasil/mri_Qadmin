@@ -75,53 +75,6 @@ local function LoadPermissions()
     TriggerEvent('mri_Qadmin:server:PermissionsLoaded')
 end
 
--- ...
-
-RegisterCommand('qadmin_check', function(source, args)
-    if source ~= 0 then
-        if not IsPlayerAceAllowed(source, 'qadmin.master') then
-             return
-        end
-    end
-    local target = tonumber(args[1])
-    local extraGroup = args[2] -- Optional: Check a specific group name
-    if not target then return Debug('Usage: qadmin_check [id] [optional_group_to_check]') end
-
-    local Name = GetPlayerName(target)
-    if not Name then return Debug('Player not found') end
-
-    Debug(('--- Checking Permissions for %s (%d) ---'):format(Name, target))
-    local testNodes = {'qadmin.page.players', 'qadmin.page.dashboard', 'group.indy'}
-
-    if extraGroup then
-        Debug(('--- Checking Group Principal: %s ---'):format(extraGroup))
-        for _, node in ipairs(testNodes) do
-            local allowed = IsPrincipalAceAllowed(extraGroup, node)
-            Debug(('Principal "%s" -> %s: %s'):format(extraGroup, node, tostring(allowed)))
-        end
-    end
-
-    Debug('--- Checking Player ACEs ---')
-    for _, node in ipairs(testNodes) do
-        local allowed = IsPlayerAceAllowed(target, node)
-        Debug(('Player -> %s: %s'):format(node, tostring(allowed)))
-    end
-
-    Debug('--- Checking Player Identifiers Direct Mapping ---')
-    local num = GetNumPlayerIdentifiers(target)
-    for i = 0, num-1 do
-        local id = GetPlayerIdentifier(target, i)
-        Debug('Identifier: ' .. id)
-        -- Check if this specific identifier has the permission directly or via inheritance
-        for _, node in ipairs(testNodes) do
-             if IsPrincipalAceAllowed(id, node) then
-                 Debug(('   -> Has Ace: %s'):format(node))
-             end
-        end
-    end
-    Debug('-------------------------------------------')
-end, true)
-
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- EVENTS & CALLBACKS
 -----------------------------------------------------------------------------------------------------------------------------------------
@@ -594,17 +547,15 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     return allowed
 end)
 
-RegisterCommand('mri_qadmin.setmaster', function(source, args)
+lib.addCommand('mri_qadmin.setmaster', {
+    help = 'Set a player as Master Admin (Console Only)',
+    params = {
+        { name = 'target', help = 'Player ID', type = 'playerId' },
+    },
+}, function(source, args)
     if source ~= 0 then return end -- Console only
 
-    local target = args[1]
-    if not target then
-        print('^1[mri_Qadmin] Usage: mri_qadmin.setmaster [id/license]^7')
-        return
-    end
-
-    local license = target
-    -- Check if it's a numeric ID (online player)
+    local target = args.target
     if tonumber(target) then
         local p = QBCore.Functions.GetPlayer(tonumber(target))
         if p then
@@ -658,20 +609,19 @@ RegisterCommand('mri_qadmin.setmaster', function(source, args)
             end
         end
     end)
-end, true)
+end)
 
-RegisterCommand('mri_qadmin.addpermission', function(source, args)
+lib.addCommand('mri_qadmin.addpermission', {
+    help = 'Add permission to a player (Console Only)',
+    params = {
+        { name = 'target', help = 'Player ID or License', type = 'string' },
+        { name = 'permission', help = 'Permission node (e.g., group.admin)', type = 'string' },
+    },
+}, function(source, args)
     if source ~= 0 then return end -- Console only
 
-    local target = args[1]
-    local permission = args[2]
-
-    if not target or not permission then
-        print('^1[mri_Qadmin] Usage: mri_qadmin.addpermission [id/license] [permission]^7')
-        print('^1[mri_Qadmin] Example: mri_qadmin.addpermission 1 group.admin^7')
-        print('^1[mri_Qadmin] Example: mri_qadmin.addpermission license:abcd... qadmin.action.ban_player^7')
-        return
-    end
+    local target = args.target
+    local permission = args.permission
 
     local license = target
     -- Check if it's a numeric ID (online player)
@@ -721,4 +671,4 @@ RegisterCommand('mri_qadmin.addpermission', function(source, args)
             end
         end
     end)
-end, true)
+end)
