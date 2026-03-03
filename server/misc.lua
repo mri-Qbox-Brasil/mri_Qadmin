@@ -349,6 +349,19 @@ RegisterNetEvent('mri_Qadmin:server:GetBucket', function(actionKey, selectedData
     QBCore.Functions.Notify(src, locale("bucket_get", player, currentBucket), 'success', 7500)
 end)
 
+-- Helper function to broadcast explicit money update
+local function broadcastMoneyUpdate(src, targetId, player)
+    if not player then return end
+    local moneyData = {}
+    for k, v in pairs(player.PlayerData.money) do
+        table.insert(moneyData, { name = k, amount = v })
+    end
+    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
+        id = tonumber(targetId),
+        money = moneyData
+    })
+end
+
 -- Give Money
 RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
@@ -368,6 +381,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "give_money_crypto" or "give_money"), tonumber(amount),
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
+    broadcastMoneyUpdate(src, target, Player)
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -386,6 +400,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedD
         Player.Functions.AddMoney(tostring(moneyType), tonumber(amount))
         QBCore.Functions.Notify(src,
             locale((moneyType == "crypto" and "give_money_all_crypto" or "give_money_all"), tonumber(amount)), "success")
+        broadcastMoneyUpdate(src, v, Player)
     end
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
@@ -407,6 +422,7 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(actionKey, selectedData
 
     if Player.PlayerData.money[moneyType] >= tonumber(amount) then
         Player.Functions.RemoveMoney(moneyType, tonumber(amount), "state-fees")
+        broadcastMoneyUpdate(src, target, Player)
     else
         QBCore.Functions.Notify(src, locale("not_enough_money"), "primary")
     end

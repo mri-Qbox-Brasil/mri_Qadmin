@@ -261,19 +261,39 @@ export default function Players() {
         }))
 
         setSelectedPlayer((prev: any) => {
-            if (prev && getPlayerKey(prev) === getPlayerKey(data)) {
-                console.log('[DEBUG] Updating selected player directly')
+            if (prev && String(prev.id) === String(data.id)) {
+                console.log('[DEBUG] Updating selected player vitals directly')
                 return { ...prev, health: data.health, armor: data.armor, metadata: data.metadata }
             }
             return prev
         })
     }
 
-    on('RefreshPlayers', refreshPlayers)
+    const handleMoneyUpdate = (data: any) => {
+        console.log('[DEBUG] Money sync received:', data)
+        setPlayers(prev => prev.map(p => {
+            if (String(p.id) === String(data.id)) {
+                return { ...p, money: data.money }
+            }
+            return p
+        }))
+
+        setSelectedPlayer((prev: any) => {
+            if (prev && String(prev.id) === String(data.id)) {
+                console.log('[DEBUG] Updating selected player money directly')
+                return { ...prev, money: data.money }
+            }
+            return prev
+        })
+    }
+
+    on('refreshPlayers', refreshPlayers)
     on('UpdatePlayerVitals', handleVitals)
+    on('UpdatePlayerMoney', handleMoneyUpdate)
     return () => {
-        off('RefreshPlayers', refreshPlayers)
+        off('refreshPlayers', refreshPlayers)
         off('UpdatePlayerVitals', handleVitals)
+        off('UpdatePlayerMoney', handleMoneyUpdate)
     }
   }, [pagination.page, search])
 
@@ -285,6 +305,7 @@ export default function Players() {
               // Only update if something changed to avoid infinity loops
               if (found.health !== selectedPlayer.health ||
                   found.armor !== selectedPlayer.armor ||
+                  JSON.stringify(found.money) !== JSON.stringify(selectedPlayer.money) ||
                   JSON.stringify(found.metadata) !== JSON.stringify(selectedPlayer.metadata)) {
                   setSelectedPlayer(found)
               }
