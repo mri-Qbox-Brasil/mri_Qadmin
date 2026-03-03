@@ -269,11 +269,31 @@ export default function Players() {
         })
     }
 
+    const handleMoneyUpdate = (data: any) => {
+        console.log('[DEBUG] Money Update received:', data)
+        setPlayers(prev => prev.map(p => {
+            if (String(p.id) === String(data.id)) {
+                return { ...p, money: data.money }
+            }
+            return p
+        }))
+
+        setSelectedPlayer((prev: any) => {
+            if (prev && getPlayerKey(prev) === getPlayerKey(data)) {
+                console.log('[DEBUG] Updating selected player money directly')
+                return { ...prev, money: data.money }
+            }
+            return prev
+        })
+    }
+
     on('RefreshPlayers', refreshPlayers)
     on('UpdatePlayerVitals', handleVitals)
+    on('UpdatePlayerMoney', handleMoneyUpdate)
     return () => {
         off('RefreshPlayers', refreshPlayers)
         off('UpdatePlayerVitals', handleVitals)
+        off('UpdatePlayerMoney', handleMoneyUpdate)
     }
   }, [pagination.page, search])
 
@@ -285,7 +305,8 @@ export default function Players() {
               // Only update if something changed to avoid infinity loops
               if (found.health !== selectedPlayer.health ||
                   found.armor !== selectedPlayer.armor ||
-                  JSON.stringify(found.metadata) !== JSON.stringify(selectedPlayer.metadata)) {
+                  JSON.stringify(found.metadata) !== JSON.stringify(selectedPlayer.metadata) ||
+                  JSON.stringify(found.money) !== JSON.stringify(selectedPlayer.money)) {
                   setSelectedPlayer(found)
               }
           }

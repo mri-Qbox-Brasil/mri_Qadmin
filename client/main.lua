@@ -338,6 +338,14 @@ RegisterNetEvent('mri_Qadmin:client:UpdatePlayerVitals', function(data)
     })
 end)
 
+RegisterNetEvent('mri_Qadmin:client:UpdatePlayerMoney', function(data)
+    Debug("Recebido UpdatePlayerMoney para ID: " .. tostring(data.id))
+    SendNUIMessage({
+        action = 'UpdatePlayerMoney',
+        data = data
+    })
+end)
+
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst)
     Debug("HUD UpdateNeeds:", newHunger, newThirst)
     TriggerServerEvent('mri_Qadmin:server:SyncVitals', { hunger = newHunger, thirst = newThirst })
