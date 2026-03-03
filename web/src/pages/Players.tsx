@@ -261,8 +261,8 @@ export default function Players() {
         }))
 
         setSelectedPlayer((prev: any) => {
-            if (prev && getPlayerKey(prev) === getPlayerKey(data)) {
-                console.log('[DEBUG] Updating selected player directly')
+            if (prev && String(prev.id) === String(data.id)) {
+                console.log('[DEBUG] Updating selected player vitals directly')
                 return { ...prev, health: data.health, armor: data.armor, metadata: data.metadata }
             }
             return prev
@@ -291,7 +291,7 @@ export default function Players() {
     on('UpdatePlayerVitals', handleVitals)
     on('UpdatePlayerMoney', handleMoneyUpdate)
     return () => {
-        off('RefreshPlayers', refreshPlayers)
+        off('refreshPlayers', refreshPlayers)
         off('UpdatePlayerVitals', handleVitals)
         off('UpdatePlayerMoney', handleMoneyUpdate)
     }

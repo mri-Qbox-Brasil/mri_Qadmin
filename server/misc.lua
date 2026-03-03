@@ -431,6 +431,7 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(actionKey, selectedData
 
     if Player.PlayerData.money[moneyType] >= tonumber(amount) then
         Player.Functions.RemoveMoney(moneyType, tonumber(amount), "state-fees")
+        broadcastMoneyUpdate(src, target, Player)
     else
         QBCore.Functions.Notify(src, locale("not_enough_money"), "primary")
     end
