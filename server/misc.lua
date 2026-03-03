@@ -349,6 +349,18 @@ RegisterNetEvent('mri_Qadmin:server:GetBucket', function(actionKey, selectedData
     QBCore.Functions.Notify(src, locale("bucket_get", player, currentBucket), 'success', 7500)
 end)
 
+-- Helper to format money into the array expected by the UI
+local function formatPlayerMoney(Player)
+    local moneyArr = {}
+    local moneyData = Player.PlayerData.money or {}
+    for k, v in pairs(moneyData) do
+        local val = Player.Functions.GetMoney(k)
+        if val == nil then val = v end
+        table.insert(moneyArr, { name = k, amount = val })
+    end
+    return moneyArr
+end
+
 -- Give Money
 RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
@@ -368,6 +380,11 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "give_money_crypto" or "give_money"), tonumber(amount),
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
+
+    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
+        id = tonumber(target),
+        money = formatPlayerMoney(Player)
+    })
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -383,9 +400,16 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedD
 
     for _, v in pairs(players) do
         local Player = QBCore.Functions.GetPlayer(tonumber(v))
-        Player.Functions.AddMoney(tostring(moneyType), tonumber(amount))
-        QBCore.Functions.Notify(src,
-            locale((moneyType == "crypto" and "give_money_all_crypto" or "give_money_all"), tonumber(amount)), "success")
+        if Player then
+            Player.Functions.AddMoney(tostring(moneyType), tonumber(amount))
+            QBCore.Functions.Notify(src,
+                locale((moneyType == "crypto" and "give_money_all_crypto" or "give_money_all"), tonumber(amount)), "success")
+
+            TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
+                id = tonumber(v),
+                money = formatPlayerMoney(Player)
+            })
+        end
     end
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
@@ -414,6 +438,11 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(actionKey, selectedData
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "take_money_crypto" or "take_money"), tonumber(amount) .. "R$",
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
+
+    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
+        id = tonumber(target),
+        money = formatPlayerMoney(Player)
+    })
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
