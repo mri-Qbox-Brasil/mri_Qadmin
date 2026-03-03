@@ -8,6 +8,7 @@ interface Player {
   name: string
   license?: string
   citizenid?: string
+  cid?: string
   online: boolean
   ping?: number
   bucket?: number
@@ -99,7 +100,7 @@ export default function PlayerListItem({ player, isSelected, onClick, onAction }
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                             )}
                         </div>
-                         {t('id')}: {player.id}
+                         {t('id')}: {player.online ? player.id : (player.citizenid || player.cid || t('offline'))}
                     </div>
                     {player.online ? (
                         <>

@@ -21,6 +21,7 @@ import Permissions from '@/pages/Permissions/Permissions'
 import LiveMapPage from './pages/LiveMapPage'
 import LiveScreensPage from './pages/LiveScreensPage'
 import { useAppState } from '@/context/AppState'
+import { useTheme } from '@/context/ThemeContext'
 import { useNui } from '@/context/NuiContext'
 import WebRTCStreamer from '@/components/WebRTCStreamer'
 import { isEnvBrowser } from '@/utils/misc'
@@ -34,6 +35,7 @@ export default function App() {
   const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'action_manager' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
   const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings } = useAppState()
   const { on, off, sendNui } = useNui()
+  const { theme, accent, scale } = useTheme()
   const isDev = (import.meta as any)?.env?.DEV === true
   const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const devParam = query ? query.get('devpanel') === '1' : false
@@ -188,7 +190,14 @@ export default function App() {
 
   return (
     <>
-      <div className="app-shell bg-background text-foreground" style={{ display: visible ? 'flex' : 'none' }}>
+      <div
+        className="app-shell bg-background text-foreground"
+        style={{
+          display: visible ? 'flex' : 'none',
+          transform: `scale(${scale / 100})`,
+          transformOrigin: 'center'
+        }}
+      >
           <Listeners />
           {/* WebRTCStreamer works in background, but we keep it here.
               Wait, if we hide app-shell, WebRTCStreamer is inside it.

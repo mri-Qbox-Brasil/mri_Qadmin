@@ -54,6 +54,7 @@ export default function PlayerVitals({ vitals, size = 'compact', onAction, class
     const { t } = useI18n();
 
     const getVitalValue = (key: string) => {
+        if (!vitals) return 0;
         let val = vitals[key] !== undefined ? vitals[key] : vitals.metadata?.[key];
 
         if (key === 'health') {

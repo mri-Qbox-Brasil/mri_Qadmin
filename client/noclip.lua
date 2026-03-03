@@ -239,6 +239,6 @@ local function ToggleNoclip()
 end
 
 RegisterNetEvent('mri_Qadmin:client:ToggleNoClip', function()
-    if not CheckPerms(Config.Actions["noclip"].perms) then return end
+    if not CheckPerms("qadmin.action.noclip") then return end
     ToggleNoclip()
 end)

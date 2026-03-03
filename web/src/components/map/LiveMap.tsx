@@ -319,16 +319,18 @@ export default function LiveMap({ markers, centerOnMarkerId, initialZoom = 3, on
                                         <div>X: {marker.x.toFixed(1)}</div>
                                         <div>Y: {marker.y.toFixed(1)}</div>
                                     </div>
-                                    <MriButton
-                                        size="sm"
-                                        className="w-full h-10 text-xs gap-2 bg-primary hover:bg-primary/90 transition-all font-bold"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onViewScreen?.(marker.id, marker.name);
-                                        }}
-                                    >
-                                        <Monitor size={14} /> {t('livemap_view_screen')}
-                                    </MriButton>
+                                    {onViewScreen && (
+                                        <MriButton
+                                            size="sm"
+                                            className="w-full h-10 text-xs gap-2 bg-primary hover:bg-primary/90 transition-all font-bold"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onViewScreen?.(marker.id, marker.name);
+                                            }}
+                                        >
+                                            <Monitor size={14} /> {t('livemap_view_screen')}
+                                        </MriButton>
+                                    )}
                                 </div>
                             </div>
                         </Popup>
