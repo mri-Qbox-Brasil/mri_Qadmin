@@ -92,7 +92,7 @@ export default function Bans() {
     if (!confirmBan) return
     try {
       await sendNui('clickButton', {
-        data: 'unban_rowid',
+        data: { event: 'mri_Qadmin:server:unban_rowid', type: 'server', perms: 'qadmin.action.unban_player' },
         selectedData: { ban_id: { value: confirmBan.id } }
       })
       setConfirmBan(null)
