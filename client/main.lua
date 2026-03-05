@@ -231,6 +231,11 @@ RegisterNUICallback("GetPlayerVitals", function(data, cb)
     cb(res)
 end)
 
+RegisterNUICallback("mri_Qadmin:callback:GetPlayerInventory", function(data, cb)
+    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerInventory', false, data.targetId)
+    cb(res)
+end)
+
 RegisterNUICallback("SetPlayerVital", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:SetVital', data.targetId, data.vital, data.value)
     cb({ status = "ok" })

@@ -18,12 +18,13 @@ import MapModal from '@/components/players/MapModal'
 import ScreenModal from '@/components/players/ScreenModal'
 import {
     LayoutGrid, List, Search, RefreshCw, ChevronLeft, User, Heart,
-    ExternalLink, Gift, Trash2, Skull, Ban, Eye,
+    ExternalLink, Gift, Trash2, Skull, Ban, Eye, ShoppingBag,
     Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
     Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
+import InventoryViewerModal from '@/components/players/InventoryViewerModal'
 
 /* Atomic Components */
 import SectionHeader from '@/components/shared/SectionHeader'
@@ -87,6 +88,7 @@ export default function Players() {
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [groupType, setGroupType] = useState<'job' | 'gang'>('job')
   const [isProcessingAction, setIsProcessingAction] = useState(false)
+  const [showInventoryViewer, setShowInventoryViewer] = useState<{ show: boolean; target: any } | null>(null)
 
   /* Confirmations State */
   const [showDeleteVehicleConfirm, setShowDeleteVehicleConfirm] = useState(false)
@@ -704,7 +706,8 @@ export default function Players() {
                                             key={i}
                                             vehicle={v}
                                             onSpawn={(plate) => sendAction({ event: 'mri_Qadmin:client:SpawnPersonalVehicle', type: 'client', perms: 'qadmin.action.spawn_vehicle' }, { VehiclePlate: { value: plate } })}
-                                            onOpenTrunk={(plate) => sendAction({ event: 'mri_Qadmin:client:openTrunk', type: 'client', perms: 'qadmin.action.open_trunk' }, { Plate: { value: plate } })}
+                                            onOpenTrunk={(plate) => setShowInventoryViewer({ show: true, target: { id: plate, type: 'trunk' } })}
+                                            onOpenGlovebox={(plate) => setShowInventoryViewer({ show: true, target: { id: plate, type: 'glovebox' } })}
                                             onDelete={(plate) => { setPendingDeletePlate(plate); setShowDeleteVehicleConfirm(true); }}
                                         />
                                     ))}
@@ -722,6 +725,10 @@ export default function Players() {
                                 <MriButton onClick={() => sendAction({ event: 'mri_Qadmin:client:openInventory', type: 'client', perms: 'qadmin.action.open_inventory' })} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
                                     <div className="p-1.5 rounded bg-muted text-primary"><ExternalLink className="w-4 h-4" /></div>
                                     {t('open_inventory')}
+                                </MriButton>
+                                <MriButton onClick={() => setShowInventoryViewer({ show: true, target: { id: selectedPlayer.id, name: selectedPlayer.name, type: 'player' } })} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
+                                    <div className="p-1.5 rounded bg-muted text-primary"><ShoppingBag className="w-4 h-4" /></div>
+                                    {t('view_inventory')}
                                 </MriButton>
                                 <MriButton onClick={() => setShowGiveItemModal(true)} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
                                     <div className="p-1.5 rounded bg-muted text-primary"><Gift className="w-4 h-4" /></div>
@@ -957,6 +964,13 @@ export default function Players() {
             playerName={viewingScreenPlayer?.name}
             onClose={() => setViewingScreenPlayer(null)}
         />
+
+         {showInventoryViewer?.show && (
+            <InventoryViewerModal
+                target={showInventoryViewer.target}
+                onClose={() => setShowInventoryViewer(null)}
+            />
+        )}
     </div>
   )
 }
