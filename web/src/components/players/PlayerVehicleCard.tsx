@@ -12,10 +12,11 @@ interface PlayerVehicleCardProps {
   vehicle: Vehicle
   onSpawn: (plate: string) => void
   onOpenTrunk: (plate: string) => void
+  onOpenGlovebox: (plate: string) => void
   onDelete: (plate: string) => void
 }
 
-export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onDelete }: PlayerVehicleCardProps) {
+export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onOpenGlovebox, onDelete }: PlayerVehicleCardProps) {
   const { t } = useI18n()
 
   return (
@@ -36,10 +37,18 @@ export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onDel
         <MriButton
           size="sm"
           variant="secondary"
-          className="flex-1 h-7 text-xs bg-muted hover:bg-muted/80"
+          className="flex-1 h-7 text-[10px] bg-muted hover:bg-muted/80 px-1"
           onClick={() => onOpenTrunk(vehicle.plate)}
         >
-          {t('btn_trunk')}
+          Trunk
+        </MriButton>
+        <MriButton
+          size="sm"
+          variant="secondary"
+          className="flex-1 h-7 text-[10px] bg-muted hover:bg-muted/80 px-1"
+          onClick={() => onOpenGlovebox(vehicle.plate)}
+        >
+          Glove
         </MriButton>
         <MriButton
           size="sm"

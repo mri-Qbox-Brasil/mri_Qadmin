@@ -314,7 +314,7 @@ export default function PlayerScreenStream({
                         />
                     </div>
                     <MonitorIcon className="w-20 h-20 text-muted-foreground opacity-20 relative z-10" />
-                    <div className="absolute bottom-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white z-10 backdrop-blur-sm border border-white/10 uppercase tracking-widest font-bold">
+                    <div className="absolute bottom-4 left-4 bg-black/60 px-2 py-1 rounded text-[10px] text-white z-10 border border-white/10 uppercase tracking-widest font-bold">
                         Mock Feed (Simulator Active) • ID: {playerId}
                     </div>
                     <div className="absolute top-4 left-4 bg-primary/20 text-primary text-[9px] px-2 py-0.5 rounded border border-primary/30 z-10 animate-pulse">
