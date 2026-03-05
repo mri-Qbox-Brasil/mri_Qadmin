@@ -8,8 +8,7 @@ end
 
 -- Own Vehicle
 RegisterNetEvent('mri_Qadmin:client:Admincar', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    if not CheckPerms('qadmin.action.admincar') then return end
 
     if not cache.vehicle then return end
 
@@ -27,8 +26,7 @@ end)
 
 -- Spawn Vehicle
 RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    if not CheckPerms('qadmin.action.spawn_vehicle') then return end
 
     local selectedVehicle = selectedData["Vehicle"].value
     local hash = GetHashKey(selectedVehicle)
@@ -43,10 +41,10 @@ RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(data, selectedData)
 
     local coords = GetEntityCoords(cache.ped)
     local heading = GetEntityHeading(cache.ped)
-    
+
     local groundFound, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z + 100.0, false)
     local spawnZ = groundFound and groundZ + 0.5 or coords.z + 0.5
-    
+
     local vehicle = CreateVehicle(hash, coords.x, coords.y, spawnZ, heading, true, false)
     TaskWarpPedIntoVehicle(cache.ped, vehicle, -1)
 
@@ -176,8 +174,7 @@ end)
 -- Spawn Personal vehicles
 
 RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    if not CheckPerms('qadmin.action.spawn_vehicle') then return end
 
     local plate = selectedData['VehiclePlate'].value
     local ped = PlayerPedId()

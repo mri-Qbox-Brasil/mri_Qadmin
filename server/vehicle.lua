@@ -68,8 +68,7 @@ end)
 RegisterNetEvent("mri_Qadmin:server:givecar", function(actionKey, selectedData)
     local src = source
 
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then
+    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
@@ -133,8 +132,7 @@ end)
 RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(actionKey, selectedData)
     local src = source
 
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then
+    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
@@ -178,8 +176,7 @@ end)
 
 -- Fix Vehicle for player
 RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then return end
+    if not CheckPerms(source, 'qadmin.action.spawn_vehicle') then return end
     local src = source
     local playerId = selectedData['Player'].value
     local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
@@ -197,8 +194,7 @@ end)
 RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(actionKey, selectedData)
     local src = source
 
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(src, actionData.perms) then
+    if not CheckPerms(src, 'qadmin.action.delete_vehicle') then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end

@@ -115,7 +115,7 @@ export default function Items() {
             onClose={closeModal}
             onSubmit={async (playerId, item, amount) => {
                 try {
-                  await sendNui('clickButton', { data: 'give_item', selectedData: { Player: { value: playerId }, Item: { value: item }, Amount: { value: amount } } })
+                  await sendNui('clickButton', { data: { event: 'mri_Qadmin:server:GiveItem', type: 'server', perms: 'qadmin.action.give_item' }, selectedData: { Player: { value: playerId }, Item: { value: item }, Amount: { value: amount } } })
                   closeModal()
                 } catch (e) {
                   console.error('give item', e)

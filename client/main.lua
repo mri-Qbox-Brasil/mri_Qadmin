@@ -98,7 +98,8 @@ local actionCooldowns = {}
 
 RegisterNUICallback("clickButton", function(nuiData, cb)
     local selectedData = nuiData.selectedData
-	local actionKey = nuiData.data
+	local action = nuiData.data
+    local actionKey = type(action) == "string" and action or (action.event or "unknown")
 
     -- Cooldown check
     local now = GetGameTimer()
@@ -110,7 +111,14 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
     actionCooldowns[actionKey] = now
 
     Debug("Button clicked:", json.encode(nuiData))
-	local actionData = CheckDataFromKey(actionKey)
+
+    local actionData = nil
+    if type(action) == "table" then
+        actionData = action
+    else
+        actionData = CheckDataFromKey(action)
+    end
+
 	if not actionData or not CheckPerms(actionData.perms) then
 		cb("ok")
 		return

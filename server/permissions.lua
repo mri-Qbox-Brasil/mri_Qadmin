@@ -452,6 +452,27 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
         count = count + 1
     end
 
+    -- Core Actions (Direct Execution)
+    local corePermissions = {
+        'qadmin.action.revive', 'qadmin.action.kill_player', 'qadmin.action.ban_player',
+        'qadmin.action.kick_player', 'qadmin.action.warn_player', 'qadmin.action.verify_player',
+        'qadmin.action.set_job', 'qadmin.action.set_gang', 'qadmin.action.give_money',
+        'qadmin.action.remove_money', 'qadmin.action.set_bucket', 'qadmin.action.give_item',
+        'qadmin.action.clear_inventory', 'qadmin.action.delete_vehicle', 'qadmin.action.spectate_player',
+        'qadmin.action.freeze_player', 'qadmin.action.teleport_to_player', 'qadmin.action.bring_player',
+        'qadmin.action.teleport_back', 'qadmin.action.drunk_player', 'qadmin.action.blackout',
+        'qadmin.action.toggle_cuffs', 'qadmin.action.clothing_menu', 'qadmin.action.set_ped',
+        'qadmin.action.unban_player', 'qadmin.action.spawn_vehicle', 'qadmin.action.open_inventory',
+        'qadmin.action.open_trunk', 'qadmin.action.open_stash', 'qadmin.action.admincar',
+        'qadmin.action.delete_character', 'qadmin.action.change_resource'
+    }
+
+    for _, perms in ipairs(corePermissions) do
+        if verifyAndAdd('group.admin', perms, 1, 'Core Action: ' .. perms) then
+            count = count + 1
+        end
+    end
+
     -- Seed Actions from Config
     local actionTypes = {
         { tbl = Config.Actions, label = 'Action' },

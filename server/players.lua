@@ -350,8 +350,7 @@ lib.callback.register('mri_Qadmin:callback:GetPlayers', function(source, page, l
 end)
 
 RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then
+    if not CheckPerms(source, 'qadmin.action.set_job') then
         return
     end
     local src = source
@@ -413,8 +412,7 @@ end)
 
 -- Set Gang
 RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then
+    if not CheckPerms(source, 'qadmin.action.set_gang') then
         return
     end
     local src = source

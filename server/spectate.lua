@@ -1,8 +1,7 @@
 local spectating = {}
 
 RegisterNetEvent('mri_Qadmin:server:SpectateTarget', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+    if not CheckPerms(source, 'qadmin.action.spectate_player') then return end
     local player = GetValue(selectedData, "Player")
     local type = "1"
     if spectating[source] then type = "0" end

@@ -125,7 +125,7 @@ export default function Vehicles() {
                  <VehicleGridCard
                     key={v.model}
                     vehicle={v}
-                    onSpawn={(model) => sendNui('clickButton', { data: 'spawn_vehicle', selectedData: { Vehicle: { value: model } } })}
+                    onSpawn={(model) => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:SpawnVehicle', type: 'client', perms: 'qadmin.action.spawn_vehicle' }, selectedData: { Vehicle: { value: model } } })}
                     onUpdateStock={(veh) => setStockModal({ show: true, vehicle: veh })}
                 />
              )}
