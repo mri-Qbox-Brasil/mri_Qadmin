@@ -825,7 +825,7 @@ For more information, see https://radix-ui.com/primitives/docs/components/${t.do
         className: "w-full h-full relative group overflow-hidden", children: [c.jsx("style", {
             children: `
                 .leaflet-container { background: #09090b !important; overflow: visible !important; }
-                .leaflet-tile-pane { filter: brightness(${h}); transition: filter 0.3s ease; }
+                .leaflet-tile-pane { filter: brightness(${f}); transition: filter 0.3s ease; }
                 .leaflet-popup-content-wrapper { background: rgba(15, 15, 20, 0.9) !important; color: white !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
                 .leaflet-popup-tip { background: rgba(15, 15, 20, 0.9) !important; }
                 .leaflet-popup-content { margin: 0 !important; width: auto !important; }
