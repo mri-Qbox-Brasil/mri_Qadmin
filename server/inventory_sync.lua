@@ -1,0 +1,1 @@
+-- Removido em favor da consolidação em inventory_callback.lua para evitar erros de callback

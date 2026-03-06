@@ -74,3 +74,29 @@ RegisterNUICallback('mri_Qadmin:server:GiveInventoryItem', function(data, cb)
     local success = lib.callback.await('mri_Qadmin:server:GiveInventoryItem', false, data.targetId, data.item, data.count, data.type)
     cb(success)
 end)
+
+RegisterNUICallback('mri_Qadmin:server:MoveInventoryItem', function(data, cb)
+    local success = lib.callback.await('mri_Qadmin:server:MoveInventoryItem', false, data)
+    cb(success)
+end)
+
+RegisterNUICallback('mri_Qadmin:server:StartWatchingInventory', function(data, cb)
+    local inventoryId = data.type == 'player' and tonumber(data.id) or (data.type == 'trunk' and 'trunk'..data.id or 'glovebox'..data.id)
+    local success = lib.callback.await('mri_Qadmin:server:StartWatchingInventory', false, inventoryId)
+    cb(success)
+end)
+
+RegisterNUICallback('mri_Qadmin:server:StopWatchingInventory', function(data, cb)
+    local inventoryId = data.type == 'player' and tonumber(data.id) or (data.type == 'trunk' and 'trunk'..data.id or 'glovebox'..data.id)
+    local success = lib.callback.await('mri_Qadmin:server:StopWatchingInventory', false, inventoryId)
+    cb(success)
+end)
+
+RegisterNetEvent('mri_Qadmin:client:InventoryUpdated', function(inventoryId)
+    SendNUIMessage({
+        action = 'inventoryUpdate',
+        data = {
+            inventoryId = inventoryId
+        }
+    })
+end)
