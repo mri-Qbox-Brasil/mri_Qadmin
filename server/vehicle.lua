@@ -43,6 +43,8 @@ end)
 -- Admin Car
 RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
     local src = source
+    if not CheckPerms(src, 'qadmin.action.admin_car') then return end
+
     local Player = QBCore.Functions.GetPlayer(src)
     local result = MySQL.query.await('SELECT plate FROM player_vehicles WHERE plate = ?', { plate })
 
@@ -159,6 +161,9 @@ end)
 
 -- Change Plate
 RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlate)
+    local src = source
+    if not CheckPerms(src, 'qadmin.action.change_plate') then return end
+
     local newPlate = newPlate:upper()
 
     if Config.Inventory == 'ox_inventory' then
