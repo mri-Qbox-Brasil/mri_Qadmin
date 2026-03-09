@@ -12,7 +12,9 @@ export default function Listeners() {
     setEntityInfo,
     setGameData,
     setStaffMessages,
-    setMyPermissions
+    setMyPermissions,
+    setPagination,
+    setLastPlayersFetch
   } = useAppState()
   const { setSupportedLanguages } = useI18n()
 
@@ -61,6 +63,16 @@ export default function Listeners() {
         playerActions: data.playerActions || prev.playerActions || {},
         otherActions: data.otherActions || prev.otherActions || {},
       }))
+
+      if (data.players) {
+        setPlayers(data.players)
+        setPagination((prev: any) => ({
+          ...prev,
+          total: data.playersTotal || data.players.length,
+          totalPages: data.playersPages || 1
+        }))
+        setLastPlayersFetch(Date.now())
+      }
 
     }
 
