@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { MriButton, MriSpinner } from '@mriqbox/ui-kit'
-import { RefreshCw, User, X, Trash2, Plus, Copy, AlertTriangle, Car, ArrowLeftRight, ArrowRightLeft, Search } from 'lucide-react'
+import { RefreshCw, User, X, Trash2, Plus, Copy, AlertTriangle, Car, ArrowLeftRight, Search } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { InventoryItem } from './InventoryItem'
