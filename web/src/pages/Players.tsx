@@ -293,7 +293,7 @@ export default function Players() {
     on('UpdatePlayerVitals', handleVitals)
     on('UpdatePlayerMoney', handleMoneyUpdate)
     return () => {
-        off('refreshPlayers', refreshPlayers)
+        off('RefreshPlayers', refreshPlayers)
         off('UpdatePlayerVitals', handleVitals)
         off('UpdatePlayerMoney', handleMoneyUpdate)
     }

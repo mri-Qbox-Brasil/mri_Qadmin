@@ -74,8 +74,8 @@ const InventorySlot = ({ target, onClose, onAddComparison, isSecondary, otherTar
 
   useEffect(() => {
     hoveredSlotRef.current = hoveredSlot
-    if (hoveredSlot) console.log('[mri_Qadmin] Slot Hovered:', hoveredSlot)
-  }, [hoveredSlot])
+    if (debugMode && hoveredSlot) console.log('[mri_Qadmin] Slot Hovered:', hoveredSlot)
+  }, [hoveredSlot, debugMode])
 
   const fetchInventory = async () => {
     setLoading(true)
@@ -152,26 +152,18 @@ const InventorySlot = ({ target, onClose, onAddComparison, isSecondary, otherTar
   const handleTransferToOther = async (itemName: string, slot: number) => {
       if (!otherTarget) return
 
-      // First remove from current
-      const successRemove = await sendNui<boolean>('mri_Qadmin:server:RemoveInventoryItem', {
-          targetId: target.id,
+      const success = await sendNui<boolean>('mri_Qadmin:server:MoveInventoryItem', {
+          fromId: target.id,
+          fromType: target.type,
+          toId: otherTarget.id,
+          toType: otherTarget.type,
           item: itemName,
           count: selectedAmount,
-          slot: slot,
-          type: target.type
+          fromSlot: slot,
       })
 
-      if (successRemove) {
-          // Then add to other
-          await sendNui<boolean>('mri_Qadmin:server:GiveInventoryItem', {
-              targetId: otherTarget.id,
-              item: itemName,
-              count: selectedAmount,
-              type: otherTarget.type
-          })
+      if (success) {
           fetchInventory()
-          // We need a way to trigger refresh on the OTHER slot too.
-          // For now, emitters or shared state would be better, but we'll stick to local.
           window.dispatchEvent(new CustomEvent('inventory-refresh', { detail: { targetId: otherTarget.id } }))
       }
   }

@@ -404,12 +404,15 @@ lib.callback.register('mri_Qadmin:server:MoveInventoryItem', function(source, da
 end)
 
 lib.callback.register('mri_Qadmin:server:StartWatchingInventory', function(source, inventoryId)
+    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not inventoryId or inventoryId == '' then return false end
     if not watching[inventoryId] then watching[inventoryId] = {} end
     watching[inventoryId][source] = true
     return true
 end)
 
 lib.callback.register('mri_Qadmin:server:StopWatchingInventory', function(source, inventoryId)
+    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
     if watching[inventoryId] then
         watching[inventoryId][source] = nil
         if next(watching[inventoryId]) == nil then
