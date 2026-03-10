@@ -255,6 +255,7 @@ end)
 RegisterNetEvent('mri_Qadmin:server:Revive', function(actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.revive') then return end
 
+    local src = source
     local player = tonumber(GetValue(selectedData, "Player"))
     if not player then return end
 

@@ -40,7 +40,7 @@ export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onOpe
           className="flex-1 h-7 text-[10px] bg-muted hover:bg-muted/80 px-1"
           onClick={() => onOpenTrunk(vehicle.plate)}
         >
-          Trunk
+          {t('btn_trunk')}
         </MriButton>
         <MriButton
           size="sm"
@@ -48,7 +48,7 @@ export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onOpe
           className="flex-1 h-7 text-[10px] bg-muted hover:bg-muted/80 px-1"
           onClick={() => onOpenGlovebox(vehicle.plate)}
         >
-          Glove
+          {t('btn_glovebox')}
         </MriButton>
         <MriButton
           size="sm"

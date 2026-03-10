@@ -1,6 +1,6 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { Trash2, Copy } from 'lucide-react'
+import { Trash2, Copy, ArrowRightLeft, ImageOff } from 'lucide-react'
 
 interface InventoryItemProps {
   name: string
@@ -18,7 +18,6 @@ interface InventoryItemProps {
   sourceId?: string | number
   sourceType?: string
 }
-import { ArrowRightLeft, ImageOff } from 'lucide-react'
 
 export const InventoryItem: React.FC<InventoryItemProps> = ({
   name,
