@@ -53,7 +53,7 @@ interface InventorySlotProps {
 }
 
 const InventorySlot = ({ target, onClose, onAddComparison, isSecondary, otherTarget }: InventorySlotProps) => {
-  const { t } = useI18n()
+  useI18n()
   const { sendNui, debugMode } = useNui()
   const [data, setData] = useState<InventoryResponse | null>(null)
   const [loading, setLoading] = useState(true)
