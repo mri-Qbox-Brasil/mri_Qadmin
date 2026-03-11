@@ -76,7 +76,11 @@ export default function Groups() {
 
       try {
           await sendNui('clickButton', {
-              data: action,
+              data: {
+                  event: type === 'gang' ? 'mri_Qadmin:server:SetGang' : 'mri_Qadmin:server:SetJob',
+                  type: 'server',
+                  perms: type === 'gang' ? 'qadmin.action.set_gang' : 'qadmin.action.set_job'
+              },
               selectedData: {
                   Player: { value: member.id },
                   ...groupField,
@@ -182,7 +186,11 @@ export default function Groups() {
                  const fieldName = editingMember.type === 'job' ? 'Job' : 'Gang'
                  try {
                      await sendNui('clickButton', {
-                         data: action,
+                         data: {
+                             event: editingMember.type === 'gang' ? 'mri_Qadmin:server:SetGang' : 'mri_Qadmin:server:SetJob',
+                             type: 'server',
+                             perms: editingMember.type === 'gang' ? 'qadmin.action.set_gang' : 'qadmin.action.set_job'
+                         },
                          selectedData: {
                              Player: { value: editingMember.member.id },
                              [fieldName]: { value: group },

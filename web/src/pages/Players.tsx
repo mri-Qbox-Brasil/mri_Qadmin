@@ -18,12 +18,13 @@ import MapModal from '@/components/players/MapModal'
 import ScreenModal from '@/components/players/ScreenModal'
 import {
     LayoutGrid, List, Search, RefreshCw, ChevronLeft, User, Heart,
-    ExternalLink, Gift, Trash2, Skull, Ban, Eye,
+    ExternalLink, Gift, Trash2, Skull, Ban, Eye, ShoppingBag,
     Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
     Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
+import InventoryViewerModal from '@/components/players/InventoryViewerModal'
 
 /* Atomic Components */
 import SectionHeader from '@/components/shared/SectionHeader'
@@ -87,6 +88,7 @@ export default function Players() {
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [groupType, setGroupType] = useState<'job' | 'gang'>('job')
   const [isProcessingAction, setIsProcessingAction] = useState(false)
+  const [showInventoryViewer, setShowInventoryViewer] = useState<{ show: boolean; target: any } | null>(null)
 
   /* Confirmations State */
   const [showDeleteVehicleConfirm, setShowDeleteVehicleConfirm] = useState(false)
@@ -261,8 +263,8 @@ export default function Players() {
         }))
 
         setSelectedPlayer((prev: any) => {
-            if (prev && getPlayerKey(prev) === getPlayerKey(data)) {
-                console.log('[DEBUG] Updating selected player directly')
+            if (prev && String(prev.id) === String(data.id)) {
+                console.log('[DEBUG] Updating selected player vitals directly')
                 return { ...prev, health: data.health, armor: data.armor, metadata: data.metadata }
             }
             return prev
@@ -319,7 +321,7 @@ export default function Players() {
 
   const refreshPlayers = () => fetchPlayers(pagination.page, search, true)
 
-  async function sendAction(action: string, selectedData: Record<string, any> = {}, targetPlayer: any = null) {
+  async function sendAction(action: string | any, selectedData: Record<string, any> = {}, targetPlayer: any = null) {
     if (isProcessingAction) return
     const p = targetPlayer || selectedPlayer
     if (!p) return
@@ -346,7 +348,9 @@ export default function Players() {
          payload.Player = { value: p.id }
     }
 
-    if (action === 'verifyPlayer') {
+    const isVerify = action === 'verifyPlayer' || (typeof action === 'object' && action.event === 'mri_Qadmin:server:verifyPlayer')
+
+    if (isVerify) {
         const newMeta = { ...(p.metadata || {}) }
         newMeta.verified = !newMeta.verified
         if (newMeta.verified) newMeta.verified_by = t('you')
@@ -360,7 +364,7 @@ export default function Players() {
 
     try {
       await sendNui('clickButton', { data: action, selectedData: payload })
-      if (action === 'verifyPlayer') await refreshPlayers()
+      if (isVerify) await refreshPlayers()
     } catch (e) {
       console.error('sendAction error', e)
     } finally {
@@ -563,19 +567,19 @@ export default function Players() {
                         <section>
                             <SectionHeader icon={Ban} title={t('actions_quick')} />
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                <GridActionButton icon={Check} label={`${t('verify')}`} onClick={() => sendAction('verifyPlayer')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={Heart} label={`${t('revive')}`} onClick={() => sendAction('revivePlayer')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={Skull} label={`${t('kill')}`} onClick={() => sendAction('kill_player')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={User} label={`${t('clothing')}`} onClick={() => sendAction('clothingMenu')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={Lock} label={`${t('toggle_cuffs')}`} onClick={() => sendAction('toggle_cuffs')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Check} label={`${t('verify')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:verifyPlayer', type: 'server', perms: 'qadmin.action.verify_player' })} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Heart} label={`${t('revive')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:Revive', type: 'server', perms: 'qadmin.action.revive' })} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Skull} label={`${t('kill')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:KillPlayer', type: 'server', perms: 'qadmin.action.kill_player' })} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={User} label={`${t('clothing')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:ClothingMenu', type: 'server', perms: 'qadmin.action.clothing_menu' })} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Lock} label={`${t('toggle_cuffs')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:CuffPlayer', type: 'server', perms: 'qadmin.action.toggle_cuffs' })} disabled={!selectedPlayer.online} />
                             </div>
                         </section>
 
                         <section>
                             <SectionHeader icon={Eye} title={t('moderation_section')} />
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                <GridActionButton icon={Eye} label={`${t('spectate')}`} onClick={() => sendAction('spectate_player')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={Lock} label={`${t('toggle_freeze')}`} onClick={() => sendAction('freeze_player')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Eye} label={`${t('spectate')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:SpectateTarget', type: 'server', perms: 'qadmin.action.spectate_player' })} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Lock} label={`${t('toggle_freeze')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:FreezePlayer', type: 'server', perms: 'qadmin.action.freeze_player' })} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={AlertTriangle} label={`${t('warn')}`} variant="warning" onClick={() => setShowWarnModal(true)} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={LogOut} label={`${t('kick')}`} onClick={() => setShowKickModal(true)} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Ban} label={`${t('ban')}`} variant="destructive" onClick={() => setShowBanModal(true)} />
@@ -585,9 +589,9 @@ export default function Players() {
                          <section>
                             <SectionHeader icon={Crosshair} title={t('teleportation_section')} />
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                <GridActionButton icon={Crosshair} label={`${t('go_to')}`} onClick={() => sendAction('teleportToPlayer')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={Download} label={`${t('bring')}`} onClick={() => sendAction('bringPlayer')} disabled={!selectedPlayer.online} />
-                                <GridActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction('sendPlayerBack')} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Crosshair} label={`${t('go_to')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:TeleportToPlayer', type: 'server', perms: 'qadmin.action.teleport_to_player' })} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Download} label={`${t('bring')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:BringPlayer', type: 'server', perms: 'qadmin.action.bring_player' })} disabled={!selectedPlayer.online} />
+                                <GridActionButton icon={Undo} label={`${t('send_back')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:SendPlayerBack', type: 'server', perms: 'qadmin.action.teleport_back' })} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={Navigation} label={`${t('set_bucket')}`} onClick={() => setShowBucketModal(true)} disabled={!selectedPlayer.online} />
                                 <GridActionButton icon={MapIcon} label={`${t('track_player') || 'Map'}`} onClick={() => setShowMapModal(true)} disabled={!selectedPlayer.online} />
                             </div>
@@ -701,8 +705,9 @@ export default function Players() {
                                         <PlayerVehicleCard
                                             key={i}
                                             vehicle={v}
-                                            onSpawn={(plate) => sendAction('spawnPersonalVehicle', { VehiclePlate: { value: plate } })}
-                                            onOpenTrunk={(plate) => sendAction('open_trunk', { Plate: { value: plate } })}
+                                            onSpawn={(plate) => sendAction({ event: 'mri_Qadmin:client:SpawnPersonalVehicle', type: 'client', perms: 'qadmin.action.spawn_vehicle' }, { VehiclePlate: { value: plate } })}
+                                            onOpenTrunk={(plate) => setShowInventoryViewer({ show: true, target: { id: plate, type: 'trunk' } })}
+                                            onOpenGlovebox={(plate) => setShowInventoryViewer({ show: true, target: { id: plate, type: 'glovebox' } })}
                                             onDelete={(plate) => { setPendingDeletePlate(plate); setShowDeleteVehicleConfirm(true); }}
                                         />
                                     ))}
@@ -717,9 +722,13 @@ export default function Players() {
                          <section>
                             <SectionHeader icon={ExternalLink} title={t('inventory_management')} />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <MriButton onClick={() => sendAction('open_inventory')} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
+                                <MriButton onClick={() => sendAction({ event: 'mri_Qadmin:client:openInventory', type: 'client', perms: 'qadmin.action.open_inventory' })} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
                                     <div className="p-1.5 rounded bg-muted text-primary"><ExternalLink className="w-4 h-4" /></div>
                                     {t('open_inventory')}
+                                </MriButton>
+                                <MriButton onClick={() => setShowInventoryViewer({ show: true, target: { id: selectedPlayer.id, name: selectedPlayer.name, type: 'player' } })} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
+                                    <div className="p-1.5 rounded bg-muted text-primary"><ShoppingBag className="w-4 h-4" /></div>
+                                    {t('view_inventory')}
                                 </MriButton>
                                 <MriButton onClick={() => setShowGiveItemModal(true)} disabled={!selectedPlayer.online} className={cn("h-12 bg-card border border-border hover:bg-muted justify-start gap-4 text-foreground/80", !selectedPlayer.online && "opacity-50 pointer-events-none grayscale cursor-not-allowed")}>
                                     <div className="p-1.5 rounded bg-muted text-primary"><Gift className="w-4 h-4" /></div>
@@ -736,8 +745,8 @@ export default function Players() {
                              <section>
                                 <SectionHeader icon={Skull} title={t('offline_actions')} />
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                     <GridActionButton icon={Trash2} label={`${t('delete_character')}`} variant="destructive" onClick={() => sendAction('delete_cid', { cid: { value: selectedPlayer.cid } })} />
-                                     <GridActionButton icon={Ban} label={`${t('unban')}`} onClick={() => sendAction('unban_cid', { cid: { value: selectedPlayer.cid } })} />
+                                     <GridActionButton icon={Trash2} label={`${t('delete_character')}`} variant="destructive" onClick={() => sendAction({ event: 'mri_Qadmin:server:delete_cid', type: 'server', perms: 'qadmin.action.delete_character' }, { cid: { value: selectedPlayer.cid } })} />
+                                     <GridActionButton icon={Ban} label={`${t('unban')}`} onClick={() => sendAction({ event: 'mri_Qadmin:server:unban_cid', type: 'server', perms: 'qadmin.action.unban_player' }, { cid: { value: selectedPlayer.cid } })} />
                                 </div>
                             </section>
                         )}
@@ -799,7 +808,7 @@ export default function Players() {
             }
             onClose={() => setShowMoneyModal(false)}
             onSubmit={(type, amount) => {
-                sendAction(isGivingMoney ? 'give_money' : 'remove_money', {
+                sendAction({ event: isGivingMoney ? 'mri_Qadmin:server:GiveMoney' : 'mri_Qadmin:server:TakeMoney', type: 'server', perms: isGivingMoney ? 'qadmin.action.give_money' : 'qadmin.action.remove_money' }, {
                     Type: { value: type },
                     Amount: { value: amount }
                 })
@@ -814,7 +823,7 @@ export default function Players() {
             disablePlayerSelect={true}
             onClose={() => setShowGiveItemModal(false)}
             onSubmit={(targetId, item, amount) => {
-                sendAction('give_item_player', {
+                sendAction({ event: 'mri_Qadmin:server:GiveItem', type: 'server', perms: 'qadmin.action.give_item' }, {
                     Player: { value: targetId },
                     Item: { value: item },
                     Amount: { value: amount }
@@ -826,28 +835,28 @@ export default function Players() {
 
         {showWarnModal && selectedPlayer && (
           <ConfirmAction text={t('confirm_warn').replace('%s', selectedPlayer.name)} onCancel={() => setShowWarnModal(false)} onConfirm={() => {
-            sendAction('warn_player', { Reason: { value: 'Staff warning' } })
+            sendAction({ event: 'mri_Qadmin:server:WarnPlayer', type: 'server', perms: 'qadmin.action.warn_player' }, { Reason: { value: 'Staff warning' } })
             setShowWarnModal(false)
           }} />
         )}
 
         {showKickModal && selectedPlayer && (
           <ConfirmAction text={t('confirm_kick').replace('%s', selectedPlayer.name)} onCancel={() => setShowKickModal(false)} onConfirm={() => {
-            sendAction('kickPlayer', { Reason: { value: 'Staff kick' } })
+            sendAction({ event: 'mri_Qadmin:server:KickPlayer', type: 'server', perms: 'qadmin.action.kick_player' }, { Reason: { value: 'Staff kick' } })
             setShowKickModal(false)
           }} />
         )}
 
         {showBanModal && selectedPlayer && (
           <BanModal onClose={() => setShowBanModal(false)} onSubmit={(duration, reason) => {
-            sendAction('banPlayer', { Duration: { value: duration }, Reason: { value: reason } })
+            sendAction({ event: 'mri_Qadmin:server:BanPlayer', type: 'server', perms: 'qadmin.action.ban_player' }, { Duration: { value: duration }, Reason: { value: reason } })
             setShowBanModal(false)
           }} />
         )}
 
         {showBucketModal && selectedPlayer && (
           <BucketModal onClose={() => setShowBucketModal(false)} onSubmit={(bucket) => {
-            sendAction('set_bucket', { Bucket: { value: bucket } })
+            sendAction({ event: 'mri_Qadmin:server:SetBucket', type: 'server', perms: 'qadmin.action.set_bucket' }, { Bucket: { value: bucket } })
             setShowBucketModal(false)
           }} />
         )}
@@ -872,9 +881,10 @@ export default function Players() {
             }
             onClose={() => setShowGroupModal(false)}
             onSubmit={(group, grade) => {
-              const dataName = groupType === 'job' ? 'set_job' : 'set_gang'
+              const eventName = groupType === 'job' ? 'mri_Qadmin:server:SetJob' : 'mri_Qadmin:server:SetGang'
               const fieldName = groupType === 'job' ? 'Job' : 'Gang'
-              sendAction(dataName, { [fieldName]: { value: group }, Grade: { value: grade } })
+              const permNode = groupType === 'job' ? 'qadmin.action.set_job' : 'qadmin.action.set_gang'
+              sendAction({ event: eventName, type: 'server', perms: permNode }, { [fieldName]: { value: group }, Grade: { value: grade } })
               setShowGroupModal(false)
             }} />
         )}
@@ -890,7 +900,7 @@ export default function Players() {
                  setPlayers(prev => prev.map(p => p.id === updated.id ? updated : p))
              }
 
-            await sendAction('deletePersonalVehicle', { Plate: { value: pendingDeletePlate } })
+            await sendAction({ event: 'mri_Qadmin:server:DeleteVehicleByPlate', type: 'server', perms: 'qadmin.action.delete_vehicle' }, { Plate: { value: pendingDeletePlate } })
             setShowDeleteVehicleConfirm(false)
             setPendingDeletePlate(null)
             setTimeout(() => refreshPlayers(), 500)
@@ -902,7 +912,7 @@ export default function Players() {
                 text={t('confirm_clear_inventory').replace('%s', selectedPlayer.name)}
                 onCancel={() => setShowClearInventoryConfirm(false)}
                 onConfirm={() => {
-                    sendAction('clear_inventory');
+                    sendAction({ event: 'mri_Qadmin:server:ClearInventory', type: 'server', perms: 'qadmin.action.clear_inventory' });
                     setShowClearInventoryConfirm(false);
                 }}
             />
@@ -917,9 +927,9 @@ export default function Players() {
                 onCancel={() => setShowDismissConfirm(null)}
                 onConfirm={() => {
                     if (showDismissConfirm === 'job') {
-                        sendAction('fireJob', { Job: { value: 'unemployed' }, Grade: { value: 0 } })
+                        sendAction({ event: 'mri_Qadmin:server:SetJob', type: 'server', perms: 'qadmin.action.set_job' }, { Job: { value: 'unemployed' }, Grade: { value: 0 } })
                     } else {
-                        sendAction('fireGang', { Gang: { value: 'none' }, Grade: { value: 0 } })
+                        sendAction({ event: 'mri_Qadmin:server:SetGang', type: 'server', perms: 'qadmin.action.set_gang' }, { Gang: { value: 'none' }, Grade: { value: 0 } })
                     }
                     setShowDismissConfirm(null)
                     setTimeout(() => refreshPlayers(), 500)
@@ -954,6 +964,13 @@ export default function Players() {
             playerName={viewingScreenPlayer?.name}
             onClose={() => setViewingScreenPlayer(null)}
         />
+
+         {showInventoryViewer?.show && (
+            <InventoryViewerModal
+                target={showInventoryViewer.target}
+                onClose={() => setShowInventoryViewer(null)}
+            />
+        )}
     </div>
   )
 }

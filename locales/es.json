@@ -225,6 +225,7 @@
     "btn_open": "Abrir",
     "updating": "Actualizando...",
     "btn_trunk": "Maletero",
+    "btn_glovebox": "Guantera",
     "btn_delete": "Eliminar",
     "confirm_warn": "¿Advertir a %s?",
     "confirm_kick": "¿Expulsar a %s?",

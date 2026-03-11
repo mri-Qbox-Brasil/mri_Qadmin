@@ -23,6 +23,7 @@ server_scripts {
     "server/db.lua",
     "server/groups.lua",
     "server/inventory.lua",
+    "server/inventory_callback.lua",
     "server/items.lua",
     "server/locations.lua",
     "server/misc.lua",

@@ -223,3 +223,17 @@ export const MOCK_GAME_DATA = {
     locations: [],
     peds: []
 };
+
+export const MOCK_INVENTORY = {
+    items: [
+        { name: "water", label: "Garrafa De Água", count: 2, slot: 1, weight: 200, metadata: { type: 'item' } },
+        { name: "bread", label: "Pão", count: 1, slot: 2, weight: 150 },
+        { name: "weapon_pistol", label: "Pistola 9mm", count: 1, slot: 5, weight: 1200, metadata: { ammo: 12, components: ['suppressor'] } },
+        { name: "phone", label: "iPhone 15", count: 1, slot: 3, weight: 180 },
+        { name: "bandage", label: "Bandagem", count: 5, slot: 4, weight: 50 },
+        { name: "radio", label: "Rádio", count: 1, slot: 6, weight: 450 }
+    ],
+    weight: 2230,
+    maxWeight: 85000,
+    slots: 30
+};

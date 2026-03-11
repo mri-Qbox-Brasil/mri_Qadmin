@@ -26,6 +26,18 @@ export default defineConfig({
           }
           return 'assets/[name].[ext]';
         },
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('three') || id.includes('@citizenfx/three')) {
+              return 'vendor-three';
+            }
+            if (id.includes('leaflet')) {
+              return 'vendor-leaflet';
+            }
+            // Keep react, radix, lucide, etc. in the main vendor chunk to avoid TDZ/Circular dependency issues
+            return 'vendor';
+          }
+        }
       },
     },
   }

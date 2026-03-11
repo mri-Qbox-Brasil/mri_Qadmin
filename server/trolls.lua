@@ -1,8 +1,7 @@
 -- Freeze Player
 local frozen = false
 RegisterNetEvent('mri_Qadmin:server:FreezePlayer', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then return end
+    if not CheckPerms(source, 'qadmin.action.freeze_player') then return end
     local src = source
 
     local target = selectedData["Player"].value
@@ -30,8 +29,7 @@ end)
 
 -- Drunk Player
 RegisterNetEvent('mri_Qadmin:server:DrunkPlayer', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then return end
+    if not CheckPerms(source, 'qadmin.action.drunk_player') then return end
 
     local src = source
     local target = selectedData["Player"].value

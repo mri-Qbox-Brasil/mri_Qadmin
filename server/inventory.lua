@@ -1,7 +1,6 @@
 -- Clear Inventory
 RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then return end
+    if not CheckPerms(source, 'qadmin.action.clear_inventory') then return end
 
     local src = source
     local player = GetValue(selectedData, "Player")
@@ -24,8 +23,7 @@ end)
 
 -- Clear Inventory Offline
 RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then return end
+    if not CheckPerms(source, 'qadmin.action.clear_inventory') then return end
 
     local src = source
     local citizenId = GetValue(selectedData, "Citizen ID")
@@ -82,8 +80,7 @@ end)
 
 -- Give Item
 RegisterNetEvent('mri_Qadmin:server:GiveItem', function(actionKey, selectedData)
-    local actionData = CheckDataFromKey(actionKey)
-    if not actionData or not CheckPerms(source, actionData.perms) then return end
+    if not CheckPerms(source, 'qadmin.action.give_item') then return end
 
     local target = GetValue(selectedData, "Player")
     local item = GetValue(selectedData, "Item")
