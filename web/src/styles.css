@@ -130,6 +130,8 @@
     display: flex;
     @apply bg-background border border-border rounded-xl shadow-2xl;
     overflow: hidden;
+    isolation: isolate;
+    transform: translateZ(0);
 }
 
 /* Custom Scrollbar */

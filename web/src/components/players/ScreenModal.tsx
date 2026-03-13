@@ -1,12 +1,18 @@
-import { useEffect, useState, useCallback } from 'react';
-import { MriModal } from '@mriqbox/ui-kit';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import {
+    MriModal,
+    MriPlayerScreenStream,
+    MriPlayerVitals,
+    MriVitalAdjustModal
+} from '@mriqbox/ui-kit';
 import { useNui } from '@/context/NuiContext';
+import { useAppState } from '@/context/AppState';
+import { useI18n } from '@/hooks/useI18n';
 import { Camera, Maximize2, Minimize2, RefreshCw, Wifi, Keyboard } from 'lucide-react';
 import { isEnvBrowser } from '@/utils/misc';
-import VitalAdjustModal from '@/components/shared/VitalAdjustModal';
+import { signaling } from '@/utils/signaling';
+import { subscribeFromCF } from '@/utils/cf-sfu';
 import { cn } from '@/lib/utils';
-import PlayerScreenStream from '@/components/shared/PlayerScreenStream';
-import PlayerVitals from '@/components/shared/PlayerVitals';
 
 interface ScreenModalProps {
     playerId: number | null
@@ -15,9 +21,9 @@ interface ScreenModalProps {
 }
 
 interface Vitals {
-    health:   number   // 0-200 (FiveM entity health)
-    armor:    number   // 0-100
-    ping:     number   // ms
+    health: number   // 0-200 (FiveM entity health)
+    armor: number   // 0-100
+    ping: number   // ms
     metadata: {
         hunger?: number   // 0-100
         thirst?: number   // 0-100
@@ -36,10 +42,12 @@ function Badge({ children, color }: { children: React.ReactNode, color: string }
 }
 
 export default function ScreenModal({ playerId, onClose, playerName }: ScreenModalProps) {
-    const { sendNui } = useNui();
-    const [fps, setFps]           = useState<number | null>(null);
-    const [vitals, setVitals]     = useState<Vitals | null>(null);
-    const [showVital, setShowVital] = useState<{ vital: any, label: string, value: number } | null>(null);
+    const { sendNui, on, off } = useNui();
+    const { settings, gameData } = useAppState();
+    const { t } = useI18n();
+    const [fps, setFps] = useState<number | null>(null);
+    const [vitals, setVitals] = useState<Vitals | null>(null);
+    const [showVital, setShowVital] = useState<{ vital: 'health' | 'armor' | 'hunger' | 'thirst' | 'stress', label: string, value: number } | null>(null);
     const [isMaximized, setIsMaximized] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [showKeyboard, setShowKeyboard] = useState(false);
@@ -50,30 +58,88 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
     const fetchVitals = useCallback(() => {
         if (!playerId) return;
         sendNui('GetPlayerVitals', { targetId: playerId }).then((v: any) => {
-            if (v && !v.error) setVitals(v);
-        }).catch(() => {});
+            if (v && !v.error) {
+                // Normalize for MriPlayerVitals component
+                setVitals({
+                    ...v,
+                    health: Math.max(0, Math.min(100, (v.health || 100) - 100)),
+                    hunger: v.metadata?.hunger,
+                    thirst: v.metadata?.thirst,
+                    stress: v.metadata?.stress,
+                });
+            }
+        }).catch(() => { });
     }, [playerId, sendNui]);
+
+    const selfIdRef = useRef((gameData as any)?.selfId);
+    const targetIdRef = useRef(playerId);
+
+    const selfIdFromState = (gameData as any)?.selfId;
+    useEffect(() => { selfIdRef.current = selfIdFromState }, [selfIdFromState]);
+    useEffect(() => { targetIdRef.current = playerId }, [playerId]);
+
+    // Initialize signaling for the viewer role
+    useEffect(() => {
+        if (!selfIdRef.current) return;
+        const url = settings?.WebRTCUrl || gameData.webrtcUrl || null;
+        const provider = (settings?.SignalingProvider || gameData.signalingProvider || 'websocket') as any;
+        signaling.init(url, String(selfIdRef.current), provider);
+    }, [gameData.webrtcUrl, gameData.signalingProvider, settings?.WebRTCUrl, settings?.SignalingProvider]);
+
+    const startingRef = useRef(false);
+
+    const wrappedSendNui = useCallback((event: string, data: any) => {
+        if ((event === 'GetPlayerScreen' || event === 'StopPlayerScreen') && !data.viewerId) {
+            const target = data.targetId || targetIdRef.current || 'unknown';
+            data.viewerId = `modal-${selfIdRef.current || 'unknown'}-${target}`;
+        }
+        return sendNui(event, data);
+    }, [sendNui]);
+
+    const startStream = useCallback(() => {
+        if (!playerId || startingRef.current) return;
+        startingRef.current = true;
+        wrappedSendNui('GetPlayerScreen', { targetId: playerId }).catch(() => {
+            startingRef.current = false;
+        });
+    }, [playerId, wrappedSendNui]);
 
     useEffect(() => {
         if (!playerId) return;
         fetchVitals();
+        startStream();
         const id = setInterval(fetchVitals, 3000);
-        return () => clearInterval(id);
-    }, [playerId, fetchVitals]);
+        return () => {
+            clearInterval(id);
+            wrappedSendNui('StopPlayerScreen', { targetId: playerId }).catch(() => { });
+            startingRef.current = false;
+        };
+    }, [playerId, fetchVitals, startStream, wrappedSendNui]);
 
     // ── Derived values ──────────────────────────────────────────────
-    const ping      = vitals ? vitals.ping                          : null;
-    const isDead    = vitals ? vitals.health < 101                  : false;
+    const ping = vitals ? vitals.ping : null;
+    const isDead = vitals ? vitals.health < 101 : false;
 
     const fpsBadgeColor = fps === null ? '' :
         fps >= 30 ? 'text-green-400 border-green-500/30 bg-green-500/10' :
-        fps >= 15 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' :
-                    'text-red-400    border-red-500/30    bg-red-500/10';
+            fps >= 15 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' :
+                'text-red-400    border-red-500/30    bg-red-500/10';
 
     const pingColor = ping === null ? '' :
-        ping < 80  ? 'text-green-400  border-green-500/30  bg-green-500/10'  :
-        ping < 150 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' :
-                     'text-red-400    border-red-500/30    bg-red-500/10';
+        ping < 80 ? 'text-green-400  border-green-500/30  bg-green-500/10' :
+            ping < 150 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' :
+                'text-red-400    border-red-500/30    bg-red-500/10';
+
+    const streamLabels = useMemo(() => ({
+        connecting: t('stream_connecting'),
+        error_title: t('stream_error_title'),
+        error_desc: t('stream_error_desc'),
+        retry: t('stream_retry'),
+        live: t('stream_live'),
+        stable: t('stream_stable'),
+        mock_active: t('stream_mock_active'),
+        simulator: t('stream_simulator')
+    }), [t]);
 
     if (!playerId) return null;
 
@@ -141,8 +207,7 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
 
             {/* ── Body: video + vitals ────────────────────────────────── */}
             <div className="flex flex-1 gap-3 min-h-0">
-                {/* Shared Stream Component */}
-                <PlayerScreenStream
+                <MriPlayerScreenStream
                     key={`${playerId}-${refreshKey}`}
                     playerId={playerId}
                     playerName={playerName}
@@ -150,6 +215,16 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                     onFpsUpdate={setFps}
                     showKeyboard={showKeyboard}
                     className="flex-1 rounded-lg border border-input shadow-inner bg-black"
+                    onSendNui={wrappedSendNui}
+                    onNuiEvent={((event: string, cb: any) => {
+                        on(event, cb);
+                        return () => off(event, cb);
+                    }) as any}
+                    signaling={signaling as any}
+                    subscribeFromCF={subscribeFromCF}
+                    webrtcConfig={settings?.webrtc}
+                    selfId={`modal-${(gameData as any)?.selfId || 'unknown'}-${playerId}`}
+                    labels={streamLabels}
                 />
 
                 {/* Vitals panel */}
@@ -158,10 +233,17 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">Vitais</p>
 
                         {vitals ? (
-                            <PlayerVitals
-                                vitals={vitals}
+                            <MriPlayerVitals
+                                vitals={vitals as any}
                                 size="compact"
-                                onAction={(vital, label, val) => setShowVital({ vital, label, value: val })}
+                                onAction={(vital: any, label: string, val: number) => setShowVital({ vital, label, value: val })}
+                                labels={{
+                                    health: t('vitals_health'),
+                                    armor: t('vitals_armor'),
+                                    hunger: t('vitals_hunger'),
+                                    thirst: t('vitals_thirst'),
+                                    stress: t('vitals_stress')
+                                }}
                             />
                         ) : (
                             <div className="text-xs text-muted-foreground italic">Carregando...</div>
@@ -170,13 +252,13 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                 </div>
             </div>
 
-            <VitalAdjustModal
+            <MriVitalAdjustModal
                 isOpen={!!showVital}
                 playerName={playerName || `Player #${playerId}`}
-                vital={showVital?.vital}
+                vital={(showVital?.vital || 'health') as any}
                 currentValue={showVital?.value || 0}
                 onClose={() => setShowVital(null)}
-                onSubmit={(val) => {
+                onSubmit={(val: number) => {
                     let serverVal = val;
                     if (showVital?.vital === 'health') {
                         serverVal = Math.round(val + 100);
@@ -187,6 +269,16 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                         value: serverVal
                     });
                     setShowVital(null);
+                }}
+                labels={{
+                    health: t('vitals_health'),
+                    armor: t('vitals_armor'),
+                    hunger: t('vitals_hunger'),
+                    thirst: t('vitals_thirst'),
+                    stress: t('vitals_stress'),
+                    newValue: t('new_value'),
+                    confirm: t('confirm'),
+                    cancel: t('cancel')
                 }}
             />
         </MriModal>

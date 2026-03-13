@@ -40,6 +40,7 @@ server_scripts {
     "server/vehicle.lua",
     "server/wall.lua",
     "server/key_manager.lua",
+    "server/webrtc.lua",
 }
 
 client_scripts {
@@ -59,6 +60,7 @@ client_scripts {
     "client/wall.lua",
     "client/world.lua",
     "client/key_capture.lua",
+    "client/webrtc.lua",
 }
 
 dependencies {

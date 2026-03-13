@@ -65,10 +65,14 @@ local function getPlayers(page, pageSize, search)
         local match = true
         if search and search ~= "" then
             local lowerSearch = string.lower(search)
-            if not (string.find(string.lower(name), lowerSearch) or
-                    string.find(string.lower(license or ""), lowerSearch) or
-                    string.find(string.lower(cid), lowerSearch) or
-                    string.find(idStr, lowerSearch)) then
+            local searchId = tonumber(search)
+
+            local nameMatch = string.find(string.lower(name), lowerSearch, 1, true)
+            local licenseMatch = license and string.find(string.lower(license), lowerSearch, 1, true)
+            local cidMatch = cid and string.find(string.lower(cid), lowerSearch, 1, true)
+            local idMatch = searchId and (k == searchId)
+
+            if not (nameMatch or licenseMatch or cidMatch or idMatch) then
                 match = false
             end
         end
@@ -88,8 +92,6 @@ local function getPlayers(page, pageSize, search)
                 steam = QBCore.Functions.GetIdentifier(k, 'steam'),
                 fivem = QBCore.Functions.GetIdentifier(k, 'fivem'),
                 ip = QBCore.Functions.GetIdentifier(k, 'ip'),
-                job = playerData.job,
-                gang = playerData.gang,
                 job = playerData.job,
                 gang = playerData.gang,
                 money = (function()
@@ -148,24 +150,10 @@ local function getPlayers(page, pageSize, search)
             whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
             queryParams = { lowerSearch, lowerSearch, lowerSearch }
 
-            -- exclude online from DB count?
-            -- "NOT IN" with 2000 IDs is bad.
-            -- Since online is small subset of 7000, usually we can just ignore duplication or handle it?
-            -- existing code filtered duplicates.
-            -- We can assume `online = true` implies they exist in DB, so DB search WILL find them.
-            -- So DB count includes online players.
-            -- We need to subtract online matches from DB count to get "Offline DB Count"?
-            -- Correct logic: `Total = Online Matches + (DB Matches - Online Matches that are in DB)`
-            -- This is too complex for a count query.
-            -- Simplified: `Total = DB Matches`. We assume everyone is in DB.
-            -- But we want to show Online FIRST.
-            -- If we just query DB, we get everyone.
-            -- If we paginate DB, we get mixed online/offline.
-            -- We want Online First.
-            -- Approach:
-            -- 1. Get All Online (Filtered).
-            -- 2. Query DB (Filtered), but EXCLUDE the specific CIDs we found online.
-            -- This ensures Total = #Online + #OfflineDB.
+            -- Deduplication Logic:
+            -- Since online players already exist in the DB, we exclude their CitizenIDs
+            -- from the query to avoid duplicates and ensure Online players show first.
+            -- Performance Note: "NOT IN" with very large ID sets can be slow on some SQL engines.
 
             if #onlinePlayers > 0 then
                 local cids = {}
@@ -251,7 +239,6 @@ local function getPlayers(page, pageSize, search)
                     steam = nil,
                     job = job_obj,
                     gang = gang_obj,
-                    dob = charinfo.birthdate or "Desconhecido",
                     dob = charinfo.birthdate or "Desconhecido",
                     money = (function()
                         local m = {}

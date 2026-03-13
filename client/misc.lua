@@ -207,33 +207,3 @@ RegisterNetEvent("mri_Qadmin:client:setPed", function(pedModels)
     SetModelAsNoLongerNeeded(pedModels)
 end)
 
--- WebRTC Streaming State
-local isWebRTCStreaming = false
-
-RegisterNetEvent('mri_Qadmin:client:StartWebRTC', function(requester)
-    print('[WebRTC] Starting Stream for requester:', requester)
-    isWebRTCStreaming = true
-
-    SendNUIMessage({
-        action = 'StartWebRTC',
-        data = {
-            targetId = requester,
-            selfId = GetPlayerServerId(PlayerId())
-        }
-    })
-end)
-
-RegisterNetEvent('mri_Qadmin:client:StopWebRTC', function()
-    isWebRTCStreaming = false
-    SendNUIMessage({ action = 'StopWebRTC' })
-end)
-
--- FiveM Native signaling relay — final hop: deliver signal message to the NUI
-RegisterNetEvent('mri_Qadmin:client:DeliverSignal', function(msg)
-    SendNUIMessage({ action = 'Signal', data = msg })
-end)
-
--- CF SFU: relay publisher track info to the subscriber NUI
-RegisterNetEvent('mri_Qadmin:client:CFTrackReady', function(trackInfo)
-    SendNUIMessage({ action = 'CFTrackReady', data = trackInfo })
-end)

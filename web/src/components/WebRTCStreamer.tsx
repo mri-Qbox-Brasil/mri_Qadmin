@@ -1,9 +1,8 @@
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNui } from '@/context/NuiContext';
 import { useAppState } from '@/context/AppState';
 import { signaling } from '@/utils/signaling/index';
-import { publishToCF } from '@/utils/cf-sfu';
 // We don't static import GameRender to avoid early instantiation loops
 
 const RTC_CONFIG = {
@@ -14,134 +13,186 @@ const RTC_CONFIG = {
 
 export default function WebRTCStreamer() {
     const { on, off, sendNui } = useNui();
-    const peerRef = useRef<RTCPeerConnection | null>(null);
+    const connectionsRef = useRef<Map<string, { pc: RTCPeerConnection, signalingUnsub: () => void }>>(new Map());
+    const startingViewersRef = useRef<Set<string>>(new Set());
 
     const { gameData, settings } = useAppState();
     const webrtcUrl = settings?.WebRTCUrl || gameData.webrtcUrl;
+    const providerType = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
+
+    const configRef = useRef({ webrtcUrl, providerType });
+    useEffect(() => {
+        configRef.current = { webrtcUrl, providerType };
+    }, [webrtcUrl, providerType]);
 
     useEffect(() => {
+        let rendererInstance: any = null;
 
-        const startHandler = async (data: any) => {
-            console.log('[WebRTC Streamer] Start Request from:', data.targetId, 'Self:', data.selfId);
-
-            // Init Signaling (for metadata exchange in all providers)
-            const url = webrtcUrl || null;
-            const provider = (settings?.SignalingProvider ?? gameData.signalingProvider ?? 'websocket') as 'websocket' | 'fivem-native' | 'cloudflare-sfu';
-            signaling.init(url, String(data.selfId), provider);
-
-            // Close any previous peer
-            if (peerRef.current) { peerRef.current.close(); peerRef.current = null; }
-
-            // Load renderer (shared singleton)
-            let stream: MediaStream | null = null;
-            try {
-                const { default: renderer } = await import('@/utils/fivem-renderer');
-                console.log('[WebRTC Streamer] GameRender Singleton Loaded');
-                stream = (renderer as any).startStream() as MediaStream;
-            } catch (err) {
-                console.error('[WebRTC Streamer] Failed to load renderer:', err);
-                return;
+        const cleanup = (vid?: string) => {
+            if (vid) {
+                const conn = connectionsRef.current.get(vid);
+                if (conn) {
+                    conn.pc.close();
+                    conn.signalingUnsub();
+                    connectionsRef.current.delete(vid);
+                    if (rendererInstance) rendererInstance.stopStream();
+                }
+            } else {
+                connectionsRef.current.forEach((conn) => {
+                    conn.pc.close();
+                    conn.signalingUnsub();
+                    if (rendererInstance) rendererInstance.stopStream();
+                });
+                connectionsRef.current.clear();
             }
+        };
 
-            // ── CF SFU path ──────────────────────────────────────────────────
-            if (provider === 'cloudflare-sfu') {
+        const initializeConnection = async (targetViewerId: string) => {
+            try {
+                let myId = (gameData as any).selfId;
+                if (!myId) {
+                    try {
+                        const res = await sendNui('getSelfId', {}, 0);
+                        myId = typeof res === 'object' && res !== null ? (res as any).id : Number(res);
+                    } catch (e) {
+                        console.error('[WebRTC Streamer] Failed to get selfId:', e);
+                        return;
+                    }
+                }
+
+                // Init Signaling
+                const url = configRef.current.webrtcUrl || null;
+                signaling.init(url, String(myId), configRef.current.providerType);
+
+                // Load renderer
+                let stream: MediaStream | null = null;
                 try {
-                    console.log('[WebRTC Streamer] CF SFU publish starting...');
-                    const { pc, sessionId, trackName } = await publishToCF(stream!);
-                    peerRef.current = pc;
+                    const { default: renderer } = await import('@/utils/fivem-renderer');
+                    rendererInstance = renderer;
+                    stream = (renderer as any).startStream() as MediaStream;
+                } catch (err) {
+                    console.error('[WebRTC Streamer] Failed to load renderer:', err);
+                    return;
+                }
 
-                    // Announce track info to the admin viewer via signaling relay
+                if (configRef.current.providerType === 'cloudflare-sfu') {
+                    const { publishToCF } = await import('@/utils/cf-sfu');
+                    const { pc, sessionId, trackName } = await publishToCF(stream!);
+                    const signalingUnsub = () => { };
+                    connectionsRef.current.set(targetViewerId, { pc, signalingUnsub });
                     signaling.send({
                         type: 'cf-track-ready',
                         sessionId,
                         trackName,
-                        targetId: 'viewer-' + String(data.targetId),
-                        sourceId: String(data.selfId),
+                        targetId: targetViewerId,
+                        sourceId: String(myId),
                     });
-
-                    pc.onconnectionstatechange = () =>
-                        console.log('[CF SFU Streamer] Connection State:', pc.connectionState);
-                } catch (err) {
-                    console.error('[CF SFU Streamer] Publish failed:', err);
+                    return;
                 }
-                return;
+
+                const pc = new RTCPeerConnection(RTC_CONFIG);
+                stream!.getTracks().forEach(track => pc.addTrack(track, stream!));
+
+                pc.onconnectionstatechange = () => {
+                    if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+                        cleanup(targetViewerId);
+                    }
+                };
+
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        signaling.send({
+                            type: 'candidate',
+                            targetId: targetViewerId,
+                            sourceId: String(myId),
+                            data: event.candidate
+                        });
+                    }
+                };
+
+                const candidateQueue: any[] = [];
+                const normalizeId = (id: string) => id.replace(/^(viewer-)+/, '');
+
+                const signalingUnsub = signaling.onMessage(async (msg) => {
+                    const msgSourceId = String((msg as any).sourceId || '');
+
+                    // Prefix-agnostic comparison: treats 'list-2-1' and 'viewer-list-2-1' as the same
+                    if (normalizeId(msgSourceId) !== normalizeId(targetViewerId)) return;
+
+                    if (msg.type === 'answer') {
+                        try {
+                            await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+                            while (candidateQueue.length > 0) {
+                                const cand = candidateQueue.shift();
+                                await pc.addIceCandidate(new RTCIceCandidate(cand));
+                            }
+                        } catch (err) {
+                            console.error('[WebRTC Streamer] Remote description error:', err);
+                        }
+                    } else if (msg.type === 'candidate') {
+                        if (pc.remoteDescription) {
+                            try {
+                                await pc.addIceCandidate(new RTCIceCandidate(msg.data));
+                            } catch (err) {
+                                console.error('[WebRTC Streamer] ICE error:', err);
+                            }
+                        } else {
+                            candidateQueue.push(msg.data);
+                        }
+                    }
+                });
+
+                connectionsRef.current.set(targetViewerId, { pc, signalingUnsub });
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                signaling.send({
+                    type: 'offer',
+                    targetId: targetViewerId,
+                    sourceId: String(myId),
+                    data: offer
+                });
+            } catch (err) {
+                console.error('[WebRTC Streamer] Init failed:', err);
+                cleanup(targetViewerId);
+            } finally {
+                startingViewersRef.current.delete(targetViewerId);
             }
-
-            // ── P2P path (fivem-native or websocket) ─────────────────────────
-            const pc = new RTCPeerConnection(RTC_CONFIG);
-            peerRef.current = pc;
-
-            stream!.getTracks().forEach((track: MediaStreamTrack) => {
-                if (peerRef.current) {
-                    peerRef.current.addTrack(track, stream!);
-                    console.log('[WebRTC Streamer] Added Track:', track.kind, 'Enabled:', track.enabled);
-                }
-            });
-
-            pc.onconnectionstatechange = () =>
-                console.log('[WebRTC Streamer] 🔌 Connection State:', pc.connectionState);
-
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    signaling.send({
-                        type: 'candidate',
-                        targetId: 'viewer-' + String(data.targetId),
-                        sourceId: String(data.selfId),
-                        data: event.candidate
-                    });
-                }
-            };
-
-            console.log('[WebRTC Streamer] Creating Offer (with tracks)...');
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-
-            signaling.send({
-                type: 'offer',
-                targetId: 'viewer-' + String(data.targetId),
-                sourceId: String(data.selfId),
-                data: offer
-            });
-            console.log('[WebRTC Streamer] Offer SENT to', 'viewer-' + String(data.targetId));
-
-            const candidateQueue: any[] = [];
-            signaling.onMessage(async (msg) => {
-                const expectedSource = 'viewer-' + String(data.targetId);
-
-                if (msg.type === 'answer' && String(msg.sourceId) === expectedSource) {
-                    console.log('[WebRTC Streamer] ✅ Received Valid Answer!');
-                    await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
-                    while (candidateQueue.length > 0) {
-                        const cand = candidateQueue.shift();
-                        await pc.addIceCandidate(new RTCIceCandidate(cand));
-                    }
-                }
-                if (msg.type === 'candidate' && String(msg.sourceId) === expectedSource) {
-                    if (pc.remoteDescription) {
-                        await pc.addIceCandidate(new RTCIceCandidate(msg.data));
-                    } else {
-                        candidateQueue.push(msg.data);
-                    }
-                }
-            });
-
-            pc.oniceconnectionstatechange = () =>
-                console.log('[WebRTC Streamer] 🧊 ICE State:', pc.iceConnectionState);
         };
 
-        const stopHandler = () => {
-            if (peerRef.current) peerRef.current.close();
-            peerRef.current = null;
+        const startHandler = async (data: any) => {
+            const rawTargetId = String(data.viewerId || data.targetId || '');
+            const targetViewerId = rawTargetId.startsWith('viewer-') ? rawTargetId : `viewer-${rawTargetId}`;
+
+            if (startingViewersRef.current.has(targetViewerId)) return;
+            startingViewersRef.current.add(targetViewerId);
+
+            if (connectionsRef.current.has(targetViewerId)) {
+                const old = connectionsRef.current.get(targetViewerId);
+                if (old) {
+                    old.pc.close();
+                    old.signalingUnsub();
+                    connectionsRef.current.delete(targetViewerId);
+                }
+            }
+
+            await initializeConnection(targetViewerId);
+        };
+
+        const stopHandler = (data: any) => {
+            const rawVid = String(data.viewerId || '');
+            const vid = rawVid.startsWith('viewer-') ? rawVid : `viewer-${rawVid}`;
+            cleanup(vid);
         };
 
         on('StartWebRTC', startHandler);
         on('StopWebRTC', stopHandler);
 
         return () => {
+            cleanup();
             off('StartWebRTC', startHandler);
             off('StopWebRTC', stopHandler);
         };
-    }, [on, off, sendNui, webrtcUrl, settings?.SignalingProvider, gameData.signalingProvider]);
+    }, [on, off, sendNui, gameData]);
 
     return null;
 }

@@ -455,5 +455,8 @@
     "livemap_style_satellite": "Satélite",
     "livemap_style_roadmap": "Roadmap",
     "success.coords_copied": "Coordenadas copiadas para la transferencia",
-    "success.heading_copied": "Cabeçalho copiado para a transferência"
+    "success.heading_copied": "Cabeçalho copiado para a transferência",
+    "settings_developer": "Configuraciones de Desarrollador",
+    "settings_mock_mode": "Modo Mock",
+    "settings_mock_mode_desc": "Habilita datos ficticios para pruebas incluso dentro de FiveM."
 }

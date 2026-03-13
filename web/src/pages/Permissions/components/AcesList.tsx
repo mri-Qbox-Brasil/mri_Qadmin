@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { MriButton, MriInput } from '@mriqbox/ui-kit'
 import { Trash2, Plus, ChevronDown, ChevronRight, Shield } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
@@ -14,11 +14,11 @@ import PermissionsSkeleton from '@/components/skeletons/PermissionsSkeleton'
 import { cn } from '@/lib/utils'
 
 interface Ace {
-  id: number
-  principal: string
-  object: string
-  allow: number
-  description?: string
+    id: number
+    principal: string
+    object: string
+    allow: number
+    description?: string
 }
 
 function AceGroup({ principal, items, onRemove, onToggle, players }: { principal: string, items: Ace[], onRemove: (a: Ace) => void, onToggle: (a: Ace) => void, players: any[] }) {
@@ -53,30 +53,29 @@ function AceGroup({ principal, items, onRemove, onToggle, players }: { principal
                         const isPending = ace.id > 10000000000
                         return (
                             <div key={ace.id} className={`flex items-center gap-4 p-3 pl-9 hover:bg-muted/20 text-sm ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    <button
+                                <button
                                     onClick={(e) => { e.stopPropagation(); if (!isPending) onToggle(ace) }}
                                     disabled={isPending}
-                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded transition-colors ${
-                                        ace.allow
+                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded transition-colors ${ace.allow
                                         ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
                                         : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                                    } ${isPending ? 'group-hover:bg-transparent' : ''}`}
-                                    >
+                                        } ${isPending ? 'group-hover:bg-transparent' : ''}`}
+                                >
                                     {ace.allow ? t('permissions_allow') : t('permissions_deny')}
-                                    </button>
-                                    <div className="flex flex-col">
-                                        <span className="font-mono">{ace.object}</span>
-                                        {ace.description && <span className="text-muted-foreground text-xs italic">{ace.description}</span>}
-                                        {isPending && <span className="text-[10px] italic opacity-70">...syncing</span>}
-                                    </div>
+                                </button>
+                                <div className="flex flex-col">
+                                    <span className="font-mono">{ace.object}</span>
+                                    {ace.description && <span className="text-muted-foreground text-xs italic">{ace.description}</span>}
+                                    {isPending && <span className="text-[10px] italic opacity-70">...syncing</span>}
+                                </div>
 
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); if (!isPending) onRemove(ace); }}
-                                        className={`ml-auto transition-colors ${isPending ? 'text-muted-foreground/30' : 'text-muted-foreground hover:text-red-500'}`}
-                                        disabled={isPending}
-                                    >
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); if (!isPending) onRemove(ace); }}
+                                    className={`ml-auto transition-colors ${isPending ? 'text-muted-foreground/30' : 'text-muted-foreground hover:text-red-500'}`}
+                                    disabled={isPending}
+                                >
                                     {isPending ? <Spinner size="sm" /> : <Trash2 className="w-4 h-4" />}
-                                    </button>
+                                </button>
                             </div>
                         )
                     })}
@@ -87,284 +86,285 @@ function AceGroup({ principal, items, onRemove, onToggle, players }: { principal
 }
 
 export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCountChange }: { searchQuery?: string, refreshTrigger?: number, onCountChange?: (n: number) => void }) {
-  const { sendNui } = useNui()
-  const { t } = useI18n()
-  const { players } = useAppState()
-  const [aces, setAces] = useState<Ace[]>([])
-  const [loading, setLoading] = useState(false)
-  const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1, description: '' })
-  const [allowType, setAllowType] = useState(1)
+    const { sendNui } = useNui()
+    const { t } = useI18n()
+    const { players } = useAppState()
+    const [aces, setAces] = useState<Ace[]>([])
+    const [loading, setLoading] = useState(false)
+    const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1, description: '' })
+    const [allowType, setAllowType] = useState(1)
 
-  const [confirm, setConfirm] = useState<{
-    type: "add" | "remove";
-    ace?: Ace;
-  } | null>(null);
+    const [confirm, setConfirm] = useState<{
+        type: "add" | "remove";
+        ace?: Ace;
+    } | null>(null);
 
-  const fetchAces = async () => {
-    setLoading(true);
-    try {
-      if (isEnvBrowser()) {
-        setTimeout(() => {
-          if (aces.length === 0) {
-            setAces(MOCK_ACES);
-            onCountChange?.(MOCK_ACES.length);
-          } else {
-            onCountChange?.(aces.length);
-          }
-          setLoading(false);
-        }, 500);
-        return;
-      }
-      const data = await sendNui("mri_Qadmin:callback:GetAces");
-      const list = Array.isArray(data) ? data : [];
-      setAces(list);
-      onCountChange?.(list.length);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      if (!isEnvBrowser()) setLoading(false);
-    }
-  };
+    // Correctly report count to parent when aces change
+    useEffect(() => {
+        onCountChange?.(aces.length);
+    }, [aces, onCountChange]);
 
-  useEffect(() => {
-    fetchAces();
-  }, [refreshTrigger]);
 
-  const handleAdd = async () => {
-    if (!newAce.principal || !newAce.object) return;
-    setConfirm({ type: "add" });
-  };
-
-  const handleRemove = async (ace: Ace) => {
-    setConfirm({ type: "remove", ace });
-  };
-
-  const handleToggle = async (ace: Ace) => {
-    // Optimistic update
-    setAces((prev) =>
-      prev.map((a) => (a.id === ace.id ? { ...a, allow: a.allow ? 0 : 1 } : a)),
-    );
-
-    if (isEnvBrowser()) return;
-
-    await sendNui('toggle_ace', { id: ace.id })
-  }
-
-  const executeAction = async () => {
-    if (!confirm) return;
-
-    if (isEnvBrowser()) {
-        if (confirm.type === 'add') {
-            const mockId = Math.floor(Math.random() * 10000)
-            const newItem = {
-               id: mockId,
-               principal: newAce.principal,
-               object: newAce.object,
-               allow: allowType,
-               description: newAce.description
+    const fetchAces = useCallback(async () => {
+        setLoading(true);
+        try {
+            if (isEnvBrowser()) {
+                setTimeout(() => {
+                    setAces(prev => (prev.length === 0 ? MOCK_ACES : prev));
+                    setLoading(false);
+                }, 500);
+                return;
             }
-            setAces([...aces, newItem])
+            const data = await sendNui("mri_Qadmin:callback:GetAces");
+            const list = Array.isArray(data) ? data : [];
+            setAces(list);
+            // onCountChange handled in useEffect
+        } catch (e) {
+            console.error(e);
+        } finally {
+            if (!isEnvBrowser()) setLoading(false);
+        }
+    }, [sendNui]);
+
+    useEffect(() => {
+        fetchAces();
+    }, [refreshTrigger, fetchAces]);
+
+    const handleAdd = async () => {
+        if (!newAce.principal || !newAce.object) return;
+        setConfirm({ type: "add" });
+    };
+
+    const handleRemove = async (ace: Ace) => {
+        setConfirm({ type: "remove", ace });
+    };
+
+    const handleToggle = async (ace: Ace) => {
+        // Optimistic update
+        setAces((prev) =>
+            prev.map((a) => (a.id === ace.id ? { ...a, allow: a.allow ? 0 : 1 } : a)),
+        );
+
+        if (isEnvBrowser()) return;
+
+        await sendNui('toggle_ace', { id: ace.id })
+    }
+
+    const executeAction = async () => {
+        if (!confirm) return;
+
+        if (isEnvBrowser()) {
+            if (confirm.type === 'add') {
+                const mockId = Math.floor(Math.random() * 10000)
+                const newItem = {
+                    id: mockId,
+                    principal: newAce.principal,
+                    object: newAce.object,
+                    allow: allowType,
+                    description: newAce.description
+                }
+                setAces([...aces, newItem])
+                setNewAce({ principal: '', object: '', allow: 1, description: '' })
+            } else if (confirm.type === 'remove' && confirm.ace) {
+                setAces(aces.filter(a => a.id !== confirm.ace?.id))
+            }
+            setConfirm(null)
+            return
+        }
+
+        if (confirm.type === 'add') {
+            // Optimistic Add
+            const tempId = Date.now()
+            const newItem = {
+                id: tempId,
+                principal: newAce.principal,
+                object: newAce.object,
+                allow: allowType === 1 ? 1 : 0,
+                description: newAce.description
+            }
+
+            // Optimistic state update with deduplication check?
+            // Actually just append, let the list render dedupe it or let server sync fix it.
+            setAces(prev => [...prev, newItem])
             setNewAce({ principal: '', object: '', allow: 1, description: '' })
-          } else if (confirm.type === 'remove' && confirm.ace) {
-            setAces(aces.filter(a => a.id !== confirm.ace?.id))
-          }
-          setConfirm(null)
-          return
+
+            await sendNui('add_ace', {
+                principal: newAce.principal,
+                object: newAce.object,
+                allow: allowType === 1,
+                description: newAce.description
+            })
+        } else if (confirm.type === 'remove' && confirm.ace) {
+            // Optimistic Remove
+            const removeId = confirm.ace.id
+            setAces(prev => prev.filter(a => a.id !== removeId))
+
+            await sendNui("remove_ace", { id: confirm.ace.id });
+        }
+
+        setConfirm(null)
     }
 
-    if (confirm.type === 'add') {
-         // Optimistic Add
-         const tempId = Date.now()
-         const newItem = {
-            id: tempId,
-            principal: newAce.principal,
-            object: newAce.object,
-            allow: allowType === 1 ? 1 : 0,
-            description: newAce.description
-         }
-
-         // Optimistic state update with deduplication check?
-         // Actually just append, let the list render dedupe it or let server sync fix it.
-         setAces(prev => [...prev, newItem])
-         setNewAce({ principal: '', object: '', allow: 1, description: '' })
-
-         await sendNui('add_ace', {
-            principal: newAce.principal,
-            object: newAce.object,
-            allow: allowType === 1,
-            description: newAce.description
-        })
-    } else if (confirm.type === 'remove' && confirm.ace) {
-        // Optimistic Remove
-        const removeId = confirm.ace.id
-        setAces(prev => prev.filter(a => a.id !== removeId))
-
-        await sendNui("remove_ace", { id: confirm.ace.id });
-    }
-
-    setConfirm(null)
-  }
-
-  return (
-    <div className="flex flex-col h-full space-y-4">
-      <div className="bg-card p-4 rounded-lg border border-border shrink-0 grid grid-cols-12 gap-3 items-end">
-          <div className="col-span-6">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_principal_label')}</label>
-              <MriCreatableCombobox
-                 options={[
-                     { label: 'group.admin', value: 'group.admin' },
-                     { label: 'group.mod', value: 'group.mod' },
-                     ...aces.map(a => ({ label: a.principal, value: a.principal }))
-                 ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)} // Unique
-                 value={newAce.principal}
-                 onChange={(val) => setNewAce({...newAce, principal: val})}
-                 placeholder={t('select_placeholder')}
-                 searchPlaceholder={t('actions_search_placeholder')}
-               />
-          </div>
-          <div className="col-span-6">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_object_label')}</label>
-              <MriCreatableCombobox
-                 options={[
-                     ...aces.map(a => ({ label: a.object, value: a.object }))
-                 ].filter((v,i,a) => a.findIndex(t => t.value === v.value) === i)}
-                 value={newAce.object}
-                 onChange={(val) => setNewAce({...newAce, object: val})}
-                 placeholder={t('select_placeholder')}
-                 searchPlaceholder={t('actions_search_placeholder')}
-              />
-          </div>
-
-          <div className="col-span-8">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_desc_label')}</label>
-              <MriInput
-                value={newAce.description}
-                onChange={(e) => setNewAce({...newAce, description: e.target.value})}
-                placeholder="Ex: Temp Access"
-                className="bg-input border-input h-9"
-              />
-          </div>
-          <div className="col-span-2">
-               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_type_label')}</label>
-               <div className="flex bg-muted/50 rounded-md p-1 h-9 border border-border">
-                  <button
-                    type="button"
-                    onClick={() => setAllowType(1)}
-                    className={cn(
-                      "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
-                      allowType === 1
-                        ? "bg-green-500 text-white shadow-sm scale-[1.02]"
-                        : "text-muted-foreground hover:bg-muted"
-                    )}
-                  >
-                    {t('permissions_allow')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAllowType(0)}
-                    className={cn(
-                      "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
-                      allowType === 0
-                        ? "bg-red-500 text-white shadow-sm scale-[1.02]"
-                        : "text-muted-foreground hover:bg-muted"
-                    )}
-                  >
-                    {t('permissions_deny')}
-                  </button>
-               </div>
-          </div>
-          <div className="col-span-2">
-               <MriButton size="sm" className="h-9 w-full" onClick={handleAdd}>
-                  <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
-               </MriButton>
-          </div>
-      </div>
-
-      <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto pr-1">
-          {loading && aces.length === 0 ? (
-            <PermissionsSkeleton />
-          ) : aces.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              {t('permissions_no_aces')}
-            </div>
-          ) : (
-            (() => {
-              // Filter first
-              const filtered = aces.filter((a) => {
-                const search = searchQuery.toLowerCase();
-                if (!search) return true;
-                return (
-                  a.principal.toLowerCase().includes(search) ||
-                  a.object.toLowerCase().includes(search) ||
-                  (a.description &&
-                    a.description.toLowerCase().includes(search))
-                );
-              });
-
-              if (filtered.length === 0 && searchQuery) {
-                return (
-                  <div className="p-8 text-center text-muted-foreground">
-                    {t('permissions_no_matches').replace('%s', searchQuery)}
-                  </div>
-                );
-              }
-
-              // Group by principal
-              const grouped = filtered.reduce(
-                (acc, curr) => {
-                  if (!acc[curr.principal]) acc[curr.principal] = [];
-                  acc[curr.principal].push(curr);
-                  return acc;
-                },
-                {} as Record<string, Ace[]>,
-              );
-
-                const groupedEntries = Object.entries(grouped).map(([principal, items]) => {
-                    const uniqueMap = new Map<string, Ace>()
-                    items.forEach(item => {
-                        uniqueMap.set(item.object, { ...item })
-                    })
-                    return { principal, items: Array.from(uniqueMap.values()) }
-                });
-
-                return (
-                    <Virtuoso
-                        style={{ height: '100%' }}
-                        data={groupedEntries}
-                        itemContent={(index, { principal, items }) => (
-                            <div className="pb-3">
-                                <AceGroup
-                                    principal={principal}
-                                    items={items}
-                                    onRemove={handleRemove}
-                                    onToggle={handleToggle}
-                                    players={players}
-                                />
-                            </div>
-                        )}
+    return (
+        <div className="flex flex-col h-full space-y-4">
+            <div className="bg-card p-4 rounded-lg border border-border shrink-0 grid grid-cols-12 gap-3 items-end">
+                <div className="col-span-6">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_principal_label')}</label>
+                    <MriCreatableCombobox
+                        options={[
+                            { label: 'group.admin', value: 'group.admin' },
+                            { label: 'group.mod', value: 'group.mod' },
+                            ...aces.map(a => ({ label: a.principal, value: a.principal }))
+                        ].filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)} // Unique
+                        value={newAce.principal}
+                        onChange={(val) => setNewAce({ ...newAce, principal: val })}
+                        placeholder={t('select_placeholder')}
+                        searchPlaceholder={t('actions_search_placeholder')}
                     />
-                )
-            })()
-        )}
-    </div>
-  </div>
+                </div>
+                <div className="col-span-6">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_object_label')}</label>
+                    <MriCreatableCombobox
+                        options={[
+                            ...aces.map(a => ({ label: a.object, value: a.object }))
+                        ].filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)}
+                        value={newAce.object}
+                        onChange={(val) => setNewAce({ ...newAce, object: val })}
+                        placeholder={t('select_placeholder')}
+                        searchPlaceholder={t('actions_search_placeholder')}
+                    />
+                </div>
 
-      {confirm && (
-        <ConfirmAction
-          text={
-            confirm.type === "add"
-              ? t('permissions_confirm_add_ace')
-                  .replace('%s', newAce.object)
-                  .replace('%s', newAce.principal)
-              : t('permissions_confirm_remove_ace')
-                  .replace('%s', confirm.ace?.object || "")
-                  .replace('%s', confirm.ace?.principal || "")
-          }
-          onConfirm={executeAction}
-          onCancel={() => setConfirm(null)}
-        />
-      )}
-    </div>
-  );
+                <div className="col-span-8">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_desc_label')}</label>
+                    <MriInput
+                        value={newAce.description}
+                        onChange={(e) => setNewAce({ ...newAce, description: e.target.value })}
+                        placeholder="Ex: Temp Access"
+                        className="bg-input border-input h-9"
+                    />
+                </div>
+                <div className="col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_type_label')}</label>
+                    <div className="flex bg-muted/50 rounded-md p-1 h-9 border border-border">
+                        <button
+                            type="button"
+                            onClick={() => setAllowType(1)}
+                            className={cn(
+                                "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
+                                allowType === 1
+                                    ? "bg-green-500 text-white shadow-sm scale-[1.02]"
+                                    : "text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            {t('permissions_allow')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAllowType(0)}
+                            className={cn(
+                                "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
+                                allowType === 0
+                                    ? "bg-red-500 text-white shadow-sm scale-[1.02]"
+                                    : "text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            {t('permissions_deny')}
+                        </button>
+                    </div>
+                </div>
+                <div className="col-span-2">
+                    <MriButton size="sm" className="h-9 w-full" onClick={handleAdd}>
+                        <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
+                    </MriButton>
+                </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
+                <div className="h-full">
+                    {loading && aces.length === 0 ? (
+                        <PermissionsSkeleton />
+                    ) : aces.length === 0 ? (
+                        <div className="p-8 text-center text-muted-foreground">
+                            {t('permissions_no_aces')}
+                        </div>
+                    ) : (
+                        (() => {
+                            // Filter first
+                            const filtered = aces.filter((a) => {
+                                const search = searchQuery.toLowerCase();
+                                if (!search) return true;
+                                return (
+                                    a.principal.toLowerCase().includes(search) ||
+                                    a.object.toLowerCase().includes(search) ||
+                                    (a.description &&
+                                        a.description.toLowerCase().includes(search))
+                                );
+                            });
+
+                            if (filtered.length === 0 && searchQuery) {
+                                return (
+                                    <div className="p-8 text-center text-muted-foreground">
+                                        {t('permissions_no_matches').replace('%s', searchQuery)}
+                                    </div>
+                                );
+                            }
+
+                            // Group by principal
+                            const grouped = filtered.reduce(
+                                (acc, curr) => {
+                                    if (!acc[curr.principal]) acc[curr.principal] = [];
+                                    acc[curr.principal].push(curr);
+                                    return acc;
+                                },
+                                {} as Record<string, Ace[]>,
+                            );
+
+                            const groupedEntries: { principal: string; items: Ace[] }[] = Object.entries(grouped).map(([principal, items]) => {
+                                const uniqueMap = new Map<string, Ace>()
+                                items.forEach(item => {
+                                    uniqueMap.set(item.object, { ...item })
+                                })
+                                return { principal, items: Array.from(uniqueMap.values()) }
+                            });
+
+                            return (
+                                <Virtuoso
+                                    style={{ height: '100%' }}
+                                    data={groupedEntries}
+                                    itemContent={(_: number, { principal, items }: { principal: string; items: Ace[] }) => (
+                                        <div className="pb-3">
+                                            <AceGroup
+                                                principal={principal}
+                                                items={items}
+                                                onRemove={handleRemove}
+                                                onToggle={handleToggle}
+                                                players={players}
+                                            />
+                                        </div>
+                                    )}
+                                />
+                            )
+                        })()
+                    )}
+                </div>
+            </div>
+
+            {confirm && (
+                <ConfirmAction
+                    text={
+                        confirm.type === "add"
+                            ? t('permissions_confirm_add_ace')
+                                .replace('%s', newAce.object)
+                                .replace('%s', newAce.principal)
+                            : t('permissions_confirm_remove_ace')
+                                .replace('%s', confirm.ace?.object || "")
+                                .replace('%s', confirm.ace?.principal || "")
+                    }
+                    onConfirm={executeAction}
+                    onCancel={() => setConfirm(null)}
+                />
+            )}
+        </div>
+    );
 }

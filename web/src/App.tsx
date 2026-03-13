@@ -32,207 +32,211 @@ import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
 // ... existing imports
 
 export default function App() {
-  const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'action_manager' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
-  const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings } = useAppState()
-  const { on, off, sendNui } = useNui()
-  const { theme, accent, scale } = useTheme()
-  const isDev = (import.meta as any)?.env?.DEV === true
-  const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-  const devParam = query ? query.get('devpanel') === '1' : false
-  const devStorage = typeof window !== 'undefined' ? window.localStorage.getItem('ps:devOpen') === '1' : false
-  const [visible, setVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
+    const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'action_manager' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
+    const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings } = useAppState()
+    const { on, off, sendNui } = useNui()
+    const { scale } = useTheme()
+    const isDev = (import.meta as any)?.env?.DEV === true
+    const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+    const devParam = query ? query.get('devpanel') === '1' : false
+    const devStorage = typeof window !== 'undefined' ? window.localStorage.getItem('ps:devOpen') === '1' : false
+    const [visible, setVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
 
-  useEffect(() => {
-    const handler = (e: any) => {
-      const detail = e?.detail || {}
-      const { route: r, playerId } = detail
-      if (!r) return
+    useEffect(() => {
+        const handler = (e: any) => {
+            const detail = e?.detail || {}
+            const { route: r, playerId } = detail
+            if (!r) return
 
-      // Permission Check for navigation
-      if (r in PAGE_PERMISSIONS) {
-          const perm = PAGE_PERMISSIONS[r as keyof typeof PAGE_PERMISSIONS]
-          if (!hasPermission(myPermissions, perm)) {
-              return
-          }
-      }
+            // Permission Check for navigation
+            if (r in PAGE_PERMISSIONS) {
+                const perm = PAGE_PERMISSIONS[r as keyof typeof PAGE_PERMISSIONS]
+                if (!hasPermission(myPermissions, perm)) {
+                    return
+                }
+            }
 
-      if (r === 'players') {
-        const p = players?.find((x: any) => String(x.id) === String(playerId))
-        if (p) {
-          setSelectedPlayer(p)
-        } else if (playerId) {
-          (window as any).__ps_pendingPlayerId = playerId
+            if (r === 'players') {
+                const p = players?.find((x: any) => String(x.id) === String(playerId))
+                if (p) {
+                    setSelectedPlayer(p)
+                } else if (playerId) {
+                    (window as any).__ps_pendingPlayerId = playerId
+                }
+                setRoute('players')
+                return
+            }
+            setRoute(r)
         }
-        setRoute('players')
-        return
-      }
-      setRoute(r)
-    }
 
-    window.addEventListener('ps:navigate', handler as EventListener)
-    return () => window.removeEventListener('ps:navigate', handler as EventListener)
-  }, [players, setSelectedPlayer, myPermissions])
+        window.addEventListener('ps:navigate', handler as EventListener)
+        return () => window.removeEventListener('ps:navigate', handler as EventListener)
+    }, [players, setSelectedPlayer, myPermissions])
 
-  useEffect(() => {
-    if (isEnvBrowser()) {
-      setGameData(MOCK_GAME_DATA)
-      setPlayers(MOCK_PLAYERS)
-      setMyPermissions(['qadmin.page.*', 'action.*']) // Full access to pages and actions in dev
-    }
-  }, [setGameData, setPlayers, setMyPermissions])
+    useEffect(() => {
+        if (isEnvBrowser()) {
+            setGameData(MOCK_GAME_DATA)
+            setPlayers(MOCK_PLAYERS)
+            setMyPermissions(['qadmin.page.*', 'action.*']) // Full access to pages and actions in dev
+        }
+    }, [setGameData, setPlayers, setMyPermissions])
 
-  // Correct implementation:
-  const { setPermissionRefreshTrigger } = useAppState()
+    // Correct implementation:
+    const { setPermissionRefreshTrigger } = useAppState()
 
-  useEffect(() => {
-    const onPerms = (perms: string[]) => {
-        setMyPermissions(Array.isArray(perms) ? perms : [])
-    }
-    const onRefreshLists = () => {
-         setPermissionRefreshTrigger(prev => prev + 1)
-    }
+    useEffect(() => {
+        const onPerms = (perms: string[]) => {
+            setMyPermissions(Array.isArray(perms) ? perms : [])
+        }
+        const onRefreshLists = () => {
+            setPermissionRefreshTrigger(prev => prev + 1)
+        }
 
-    const onSettingsUpdate = (data: Record<string, any>) => {
-        setSettings(data)
-    }
+        const onSettingsUpdate = (data: Record<string, any>) => {
+            setSettings(data)
+        }
 
-    on('updatePermissions', onPerms)
-    on('refreshPermissionsLists', onRefreshLists)
-    on('updateSettings', onSettingsUpdate)
+        on('updatePermissions', onPerms)
+        on('refreshPermissionsLists', onRefreshLists)
+        on('updateSettings', onSettingsUpdate)
 
-    return () => {
-        off('updatePermissions', onPerms)
-        off('refreshPermissionsLists', onRefreshLists)
-        off('updateSettings', onSettingsUpdate)
-    }
-  }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
+        return () => {
+            off('updatePermissions', onPerms)
+            off('refreshPermissionsLists', onRefreshLists)
+            off('updateSettings', onSettingsUpdate)
+        }
+    }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
 
-  // Listen for NUI visibility messages from the client resource
-  useEffect(() => {
-    const onVisible = (data: any) => {
-      const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.data) : Boolean(data)
-      setVisible(newVis)
+    // Listen for NUI visibility messages from the client resource
+    useEffect(() => {
+        const onVisible = (data: any) => {
+            const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.data) : Boolean(data)
+            setVisible(newVis)
 
-      if (newVis && !isEnvBrowser()) {
-          // Fetch permissions
-          sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
-              if (Array.isArray(perms)) setMyPermissions(perms)
-          }).catch(console.error)
+            if (newVis && !isEnvBrowser()) {
+                // Fetch permissions
+                sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
+                    if (Array.isArray(perms)) setMyPermissions(perms)
+                }).catch(console.error)
 
-          // Fetch Dynamic Settings
-          sendNui('getSettings').then((settingsData) => {
-              if (settingsData && typeof settingsData === 'object') {
-                  setSettings(settingsData)
-              }
-          }).catch(console.error)
-      }
+                // Fetch Dynamic Settings
+                sendNui('getSettings').then((settingsData) => {
+                    if (settingsData && typeof settingsData === 'object') {
+                        setSettings(settingsData)
+                    }
+                }).catch(console.error)
+            }
 
-      try {
-        const root = document.getElementById('root')
-        if (root) root.style.display = newVis ? '' : 'none'
-      } catch (e) {
-        // ignore in non-browser environments
-      }
-    }
-    on('setVisible', onVisible)
-    return () => off('setVisible', onVisible)
-  }, [on, off, sendNui, setMyPermissions])
-
-  // ensure root display follows `visible` (covers initial dev mode)
-  useEffect(() => {
-    try {
-      const root = document.getElementById('root')
-      if (root) root.style.display = visible ? '' : 'none'
-    } catch (e) {}
-  }, [visible])
-
-  // expose helper in dev so user can toggle persistent dev-open state
-  useEffect(() => {
-    if (!isDev) return
-    ;(window as any).psToggleDevPanel = (persist?: boolean) => {
-      const newVis = !(document.getElementById('root')?.style.display === '' )
-      if (persist) window.localStorage.setItem('ps:devOpen', newVis ? '1' : '0')
-      setVisible(newVis)
-    }
-  }, [isDev])
-
-  // Close the entire UI when Escape is pressed (mimic previous Svelte behaviour)
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' || e.key === 'Esc') {
-        // if a modal is open, let the modal handle Escape instead of closing whole UI
-        try {
-          if ((document.body as any).dataset && (document.body as any).dataset.psModalOpen === 'true') {
-            return
-          }
-        } catch (err) {}
-        if (visible) {
-          try {
-            // notify client to hide UI (client may also call SetNuiFocus(false))
-            sendNui && sendNui('hideUI')
-          } catch (err) {
-            // ignore
-            setVisible(false)
             try {
-              const root = document.getElementById('root')
-              if (root) root.style.display = 'none'
-            } catch (e) {}
-          }
+                const root = document.getElementById('root')
+                if (root) root.style.display = newVis ? '' : 'none'
+            } catch {
+                // ignore in non-browser environments
+                console.warn('Root display update failed');
+            }
         }
-      }
-    }
+        on('setVisible', onVisible)
+        return () => off('setVisible', onVisible)
+    }, [on, off, sendNui, setMyPermissions, setSettings])
 
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [visible, sendNui])
+    // ensure root display follows `visible` (covers initial dev mode)
+    useEffect(() => {
+        try {
+            const root = document.getElementById('root')
+            if (root) root.style.display = visible ? '' : 'none'
+        } catch {
+            // ignore
+        }
+    }, [visible])
 
-  // if (!visible) return null // REMOVED: We need WebRTCStreamer to stay mounted!
+    // expose helper in dev so user can toggle persistent dev-open state
+    useEffect(() => {
+        if (!isDev) return
+            ; (window as any).psToggleDevPanel = (persist?: boolean) => {
+                const newVis = !(document.getElementById('root')?.style.display === '')
+                if (persist) window.localStorage.setItem('ps:devOpen', newVis ? '1' : '0')
+                setVisible(newVis)
+            }
+    }, [isDev])
 
-  return (
-    <>
-      <div
-        className="app-shell bg-background text-foreground"
-        style={{
-          display: visible ? 'flex' : 'none',
-          transform: `scale(${scale / 100})`,
-          transformOrigin: 'center'
-        }}
-      >
-          <Listeners />
-          {/* WebRTCStreamer works in background, but we keep it here.
+    // Close the entire UI when Escape is pressed (mimic previous Svelte behaviour)
+    useEffect(() => {
+        function onKey(e: KeyboardEvent) {
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                // if a modal is open, let the modal handle Escape instead of closing whole UI
+                try {
+                    if ((document.body as any).dataset && (document.body as any).dataset.psModalOpen === 'true') {
+                        return
+                    }
+                } catch {
+                    // ignore
+                }
+
+                if (visible) {
+                    try {
+                        // notify client to hide UI (client may also call SetNuiFocus(false))
+                        if (sendNui) sendNui('hideUI')
+                    } catch {
+                        // ignore
+                        setVisible(false)
+                        const root = document.getElementById('root')
+                        if (root) root.style.display = 'none'
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [visible, sendNui, setVisible])
+
+    // if (!visible) return null // REMOVED: We need WebRTCStreamer to stay mounted!
+
+    return (
+        <>
+            <div
+                className="app-shell bg-background text-foreground"
+                style={{
+                    display: visible ? 'flex' : 'none',
+                    transform: `scale(${scale / 100})`,
+                    transformOrigin: 'center'
+                }}
+            >
+                <Listeners />
+                {/* WebRTCStreamer works in background, but we keep it here.
               Wait, if we hide app-shell, WebRTCStreamer is inside it.
               Does display:none stop JS? No. It just hides it.
               But let's move it out to be safe if app-shell has logic.
           */}
 
-          {/* Overlays */}
-          <VehicleDev />
-          <ToggleCoords />
-          <EntityInformation />
+                {/* Overlays */}
+                <VehicleDev />
+                <ToggleCoords />
+                <EntityInformation />
 
-          <Sidebar onRoute={setRoute} currentRoute={route} />
-          <div className="flex-1 p-2 overflow-auto">
-            {route === 'resources' ? <Resources /> :
-             route === 'players' ? <Players /> :
-             route === 'actions' ? <Actions /> :
-             route === 'action_manager' ? <ActionManager /> :
-             route === 'staffchat' ? <StaffChat /> :
-             route === 'commands' ? <Commands /> :
-             route === 'items' ? <Items /> :
-             route === 'bans' ? <Bans /> :
-             route === 'vehicles' ? <Vehicles /> :
-             route === 'groups' ? <Groups /> :
-             route === 'credits' ? <Credits /> :
-             route === 'settings' ? <Settings /> :
-             route === 'dashboard' ? <Dashboard /> :
-             route === 'permissions' ? <Permissions /> :
-             route === 'livemap' ? <LiveMapPage /> :
-             route === 'livescreens' ? <LiveScreensPage /> :
-             null}
-          </div>
-      </div>
-      {/* LISTENERS MUST BE ALWAYS ACTIVE */}
-      <WebRTCStreamer />
-    </>
-  )
+                <Sidebar onRoute={setRoute} currentRoute={route} />
+                <div className="flex-1 p-2 overflow-hidden flex flex-col min-h-0 min-w-0">
+                    {route === 'resources' ? <Resources /> :
+                        route === 'players' ? <Players /> :
+                            route === 'actions' ? <Actions /> :
+                                route === 'action_manager' ? <ActionManager /> :
+                                    route === 'staffchat' ? <StaffChat /> :
+                                        route === 'commands' ? <Commands /> :
+                                            route === 'items' ? <Items /> :
+                                                route === 'bans' ? <Bans /> :
+                                                    route === 'vehicles' ? <Vehicles /> :
+                                                        route === 'groups' ? <Groups /> :
+                                                            route === 'credits' ? <Credits /> :
+                                                                route === 'settings' ? <Settings /> :
+                                                                    route === 'dashboard' ? <Dashboard /> :
+                                                                        route === 'permissions' ? <Permissions /> :
+                                                                            route === 'livemap' ? <LiveMapPage /> :
+                                                                                route === 'livescreens' ? <LiveScreensPage /> :
+                                                                                    null}
+                </div>
+            </div>
+            {/* LISTENERS MUST BE ALWAYS ACTIVE */}
+            <WebRTCStreamer />
+        </>
+    )
 }

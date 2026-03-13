@@ -2,6 +2,15 @@ local function noPerms(source)
     QBCore.Functions.Notify(source, locale('no_perms') or "Permissões insuficientes.", 'error')
 end
 
+local function formatNodes(perms)
+    if type(perms) == 'string' then
+        return perms
+    elseif type(perms) == 'table' then
+        return table.concat(perms, ', ')
+    end
+    return nil
+end
+
 --- @param perms string | table
 function CheckPerms(source, perms)
     local function checkNode(node)
@@ -21,7 +30,7 @@ function CheckPerms(source, perms)
 
     -- Master Bypass
     if checkNode('qadmin.master') then
-        Debug(('[DEBUG] CheckPerms Source: %s | Bypass Master (Allowed)'):format(source))
+        Debug(('[DEBUG] CheckPerms Source: %s, Nodes: %s | Bypass Master (Allowed)'):format(source, formatNodes(perms)))
         return true
     end
 

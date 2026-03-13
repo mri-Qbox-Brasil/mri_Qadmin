@@ -11,6 +11,9 @@ export const MOCK_PLAYERS = [
         online: true,
         health: 100,
         armor: 100,
+        cash: 5000,
+        bank: 150000,
+        crypto: 10,
         metadata: {
             verified: true,
             hunger: 80,
@@ -39,6 +42,9 @@ export const MOCK_PLAYERS = [
         ping: 40,
         bucket: 1,
         online: true,
+        cash: 200,
+        bank: 5000,
+        crypto: 0,
         metadata: { verified: false },
         job: { label: "EMS", name: "ambulance", grade: { name: "Medic", level: 2 } },
         gang: { label: "Ballas", name: "ballas", grade: { name: "Member", level: 1 } },
@@ -55,6 +61,9 @@ export const MOCK_PLAYERS = [
         license: "license:offlineuser123",
         last_loggedout: Date.now() - 86400000, // 1 day ago
         online: false,
+        cash: 0,
+        bank: 0,
+        crypto: 0,
         job: { label: "Unemployed", name: "unemployed", grade: { name: "Unemployed", level: 0 } },
         gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },
     }
@@ -162,7 +171,7 @@ export const MOCK_GAME_DATA = {
         { name: "stopped-resource", version: "0.0.1", author: "Unknown", description: "Buggy resource", resourceState: "stopped" }
     ],
     bans: [
-         { id: "1", name: "Banned User", reason: "Cheating", expire: Date.now() + 100000000, bannedby: "Admin", license: "license:banned", discord: "discord:12345", ip: "127.0.0.1" }
+        { id: "1", name: "Banned User", reason: "Cheating", expire: Date.now() + 100000000, bannedby: "Admin", license: "license:banned", discord: "discord:12345", ip: "127.0.0.1" }
     ],
     commands: [
         { name: "noclip", description: "Toggle noclip" },
@@ -210,19 +219,50 @@ export const MOCK_GAME_DATA = {
         "spawn_vehicle": { label: "Spawn Vehicle", dropdown: [{ id: "vehicle", label: "Vehicle Model", option: "dropdown", data: "vehicles" }] }
     },
     staffMessages: [
-         { fullname: "John Doe", message: "Anyone seeing the report about ID 42?", time: Date.now() - 3600000 },
-         { fullname: "Jane Smith", message: "Yeah, I'm checking it now. Seems like a VDM request.", time: Date.now() - 3500000 },
-         { fullname: "John Doe", message: "Copy that. Let me know if you need help.", time: Date.now() - 3400000 },
-         { fullname: "Admin User", message: "Guys, don't forget the community meeting at 8 PM.", time: Date.now() - 1800000 },
-         { fullname: "Jane Smith", message: "I'll be there.", time: Date.now() - 1750000 },
-         { fullname: "Moderator One", message: "Can someone key me for the pd garage?", time: Date.now() - 600000 },
-         { fullname: "Admin User", message: "Done.", time: Date.now() - 500000 },
-         { fullname: "Moderator One", message: "Thanks!", time: Date.now() - 450000 }
+        { fullname: "John Doe", message: "Anyone seeing the report about ID 42?", time: Date.now() - 3600000 },
+        { fullname: "Jane Smith", message: "Yeah, I'm checking it now. Seems like a VDM request.", time: Date.now() - 3500000 },
+        { fullname: "John Doe", message: "Copy that. Let me know if you need help.", time: Date.now() - 3400000 },
+        { fullname: "Admin User", message: "Guys, don't forget the community meeting at 8 PM.", time: Date.now() - 1800000 },
+        { fullname: "Jane Smith", message: "I'll be there.", time: Date.now() - 1750000 },
+        { fullname: "Moderator One", message: "Can someone key me for the pd garage?", time: Date.now() - 600000 },
+        { fullname: "Admin User", message: "Done.", time: Date.now() - 500000 },
+        { fullname: "Moderator One", message: "Thanks!", time: Date.now() - 450000 }
     ],
     vehicleImages: "https://docs.fivem.net/vehicles/",
     locations: [],
     peds: []
 };
+
+export const MOCK_CHANGELOG = [
+    {
+        repo: "mri_Qadmin",
+        author: "Project Sloth",
+        date: new Date().toLocaleString(),
+        message: "feat: implement togglable mock mode for developer settings",
+        url: "https://github.com/mri-Qbox-Brasil/mri_Qadmin"
+    },
+    {
+        repo: "qb-core",
+        author: "Qbox",
+        date: new Date(Date.now() - 86400000).toLocaleString(),
+        message: "fix: resolve issue with player character loading sequence",
+        url: "https://github.com/mri-Qbox-Brasil/qb-core"
+    },
+    {
+        repo: "ox_lib",
+        author: "Overextended",
+        date: new Date(Date.now() - 172800000).toLocaleString(),
+        message: "docs: update API documentation for version 3.0.0",
+        url: "https://github.com/mri-Qbox-Brasil/ox_lib"
+    },
+    {
+        repo: "mri_Qadmin",
+        author: "Project Sloth",
+        date: new Date(Date.now() - 259200000).toLocaleString(),
+        message: "refactor: optimize bans table alignment with fixed layout",
+        url: "https://github.com/mri-Qbox-Brasil/mri_Qadmin"
+    }
+];
 
 export const MOCK_INVENTORY = {
     items: [
