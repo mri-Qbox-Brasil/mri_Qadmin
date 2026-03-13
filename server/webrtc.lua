@@ -100,13 +100,13 @@ local function cfRequest(method, path, body)
     if Config.Debug then
         print(('[CF SFU] --> %s %s (body: %d bytes)'):format(method, url, #bodyStr))
     end
-    PerformHttpRequest(url, function(code, responseBody, _h)
+    PerformHttpRequest(url, function(code, responseBody, _)
     if Config.Debug then
         print(('[CF SFU] <-- %d  %s'):format(code, (responseBody or ''):sub(1, 400)))
     end
         if code >= 200 and code < 300 then
-            local ok, data = pcall(json.decode, responseBody)
-            if ok and data then p:resolve(data)
+            local ok, respData = pcall(json.decode, responseBody)
+            if ok and respData then p:resolve(respData)
             else p:resolve({ raw = responseBody })
             end
         elseif code == 0 then

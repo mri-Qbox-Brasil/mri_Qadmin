@@ -1,5 +1,5 @@
 -- Clear Inventory
-RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.clear_inventory') then return end
 
     local src = source
@@ -22,7 +22,7 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(actionKey, selecte
 end)
 
 -- Clear Inventory Offline
-RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.clear_inventory') then return end
 
     local src = source
@@ -79,7 +79,7 @@ RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(actionData, vehiclePlat
 end)
 
 -- Give Item
-RegisterNetEvent('mri_Qadmin:server:GiveItem', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:GiveItem', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_item') then return end
 
     local target = GetValue(selectedData, "Player")

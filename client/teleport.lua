@@ -16,8 +16,8 @@ end)
 
 -- Teleport to coords
 RegisterNetEvent('mri_Qadmin:client:TeleportToCoords', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     local coordsData = selectedData["Coordenadas"]
     if not coordsData or not coordsData['value'] then return end
@@ -43,8 +43,8 @@ end)
 
 -- Teleport to Locaton
 RegisterNetEvent('mri_Qadmin:client:TeleportToLocation', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     local coords = selectedData["Location"].value
 
     lastCoords = GetEntityCoords(cache.ped)
@@ -53,8 +53,8 @@ end)
 
 -- Teleport back
 RegisterNetEvent('mri_Qadmin:client:TeleportBack', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     if lastCoords then
         local coords = GetEntityCoords(cache.ped)

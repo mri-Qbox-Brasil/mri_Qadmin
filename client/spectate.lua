@@ -26,7 +26,7 @@ local function CreateInstructionalButtons(buttons)
     return scaleform
 end
 
-RegisterNetEvent('mri_Qadmin:requestSpectate', function(target, name)
+RegisterNetEvent('mri_Qadmin:requestSpectate', function(target, _)
     oldPos = GetEntityCoords(cache.ped)
     spectateInfo = {
         toggled = true,

@@ -455,9 +455,9 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
 end)
 
 -- Set Perms
-RegisterNetEvent("mri_Qadmin:server:SetPerms", function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
+    local actionData = CheckDataFromKey(dataKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
     local src = source
     local rank = GetValue(selectedData, "Permissions")
     local targetId = GetValue(selectedData, "Player")
@@ -475,9 +475,9 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(data, selectedData)
 end)
 
 -- Remove Stress
-RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(dataKey, selectedData)
+    local actionData = CheckDataFromKey(dataKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
     local src = source
     local playerOpt = GetValue(selectedData, 'Player (Optional)')
     local targetId = playerOpt and tonumber(playerOpt) or src
@@ -591,13 +591,13 @@ local function GetPlayerFromBagName(bagName)
     return tonumber(playerHandle)
 end
 
-AddStateBagChangeHandler("dead", nil, function(bagName, key, value, _unused, replicated)
+AddStateBagChangeHandler("dead", nil, function(bagName, _, _, _, _)
     local playerId = GetPlayerFromBagName(bagName)
     if not playerId then return end
     broadcastVitalsUpdate(playerId)
 end)
 
-AddStateBagChangeHandler("isdead", nil, function(bagName, key, value, _unused, replicated)
+AddStateBagChangeHandler("isdead", nil, function(bagName, _, _, _, _)
     local playerId = GetPlayerFromBagName(bagName)
     if not playerId then return end
     broadcastVitalsUpdate(playerId)

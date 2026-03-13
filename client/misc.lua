@@ -1,8 +1,8 @@
 -- Toggles Invincibility
 local visible = true
 RegisterNetEvent('mri_Qadmin:client:ToggleInvisible', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     visible = not visible
 
     SetEntityVisible(cache.ped, visible, 0)
@@ -11,8 +11,8 @@ end)
 -- God Mode
 local godmode = false
 RegisterNetEvent('mri_Qadmin:client:ToggleGodmode', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     godmode = not godmode
 
     if godmode then
@@ -28,8 +28,8 @@ end)
 
 -- Kill Player
 RegisterNetEvent('mri_Qadmin:client:KillPlayer', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     local player = selectedData["Player"].value
     SetEntityHealth(cache.ped, 0)
     QBCore.Functions.Notify(locale("kill_player", player), 'success')
@@ -77,8 +77,8 @@ end)
 -- Infinite Ammo
 local InfiniteAmmo = false
 RegisterNetEvent('mri_Qadmin:client:setInfiniteAmmo', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     InfiniteAmmo = not InfiniteAmmo
 
     if GetAmmoInPedWeapon(cache.ped, cache.weapon) < 6 then
@@ -116,8 +116,8 @@ local function showCoordsMenu()
 end
 
 RegisterNetEvent('mri_Qadmin:client:ToggleCoords', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     showCoords = not showCoords
 
@@ -128,8 +128,8 @@ end)
 
 -- Set Ammo
 RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     local ammo = selectedData["Ammo Ammount"].value
     local weapon = GetSelectedPedWeapon(cache.ped)
@@ -174,7 +174,7 @@ local toogleAdmin = lib.addKeybind({
     name = 'mri:toogleAdmin',
     description = locale("command_admin_desc"),
     defaultKey = Config.AdminKey,
-    onPressed = function(self)
+    onPressed = function(_)
         ExecuteCommand('adm')
     end
 })
@@ -186,7 +186,7 @@ local toogleNoclip = lib.addKeybind({
     name = 'mri:toogleNoclip',
     description = locale("command_noclip_desc"),
     defaultKey = Config.NoclipKey,
-    onPressed = function(self)
+    onPressed = function(_)
         ExecuteCommand('nc')
     end
 })

@@ -59,15 +59,15 @@ local function RayCastGamePlayCamera(distance)
 		y = cameraCoord.y + direction.y * distance,
 		z = cameraCoord.z + direction.z * distance
 	}
-	local a, b, c, d, e = GetShapeTestResult(StartShapeTestRay(cameraCoord.x, cameraCoord.y, cameraCoord.z, destination.x, destination.y, destination.z, -1, PlayerPedId(), 0))
+	local _, b, _, _, e = GetShapeTestResult(StartShapeTestRay(cameraCoord.x, cameraCoord.y, cameraCoord.z, destination.x, destination.y, destination.z, -1, PlayerPedId(), 0))
 	return b, c, e
 end
 
 -- Toggle Delete Laser
 local activeLaser = false
 RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
-    local x = 0.4
-    local y = 0.025
+    -- local x = 0.4
+    -- local y = 0.025
     activeLaser = not activeLaser
     CreateThread(function()
         while true do
@@ -85,7 +85,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
                     local entityCoord = GetEntityCoords(entity)
                     local heading = GetEntityHeading(entity)
                     local model = GetEntityModel(entity)
-                    local minimum, maximum = GetModelDimensions(model)
+                    GetModelDimensions(model)
                     DrawEntityBoundingBox(entity, color)
                     DrawLine(position.x, position.y, position.z, coords.x, coords.y, coords.z, color.r, color.g, color.b, color.a)
 
@@ -120,7 +120,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
                     }
                 })
             else
-                local wait = 500
+                wait = 500
                 SendNUIMessage({
                     action = "showEntityInfo",
                     data = {

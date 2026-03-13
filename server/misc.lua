@@ -1,4 +1,4 @@
-RegisterNetEvent('mri_Qadmin:server:unban_cid', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:unban_cid', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.unban_player') then return end
 
     local src = source
@@ -28,7 +28,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_cid', function(actionKey, selectedData
     end
 end)
 
-RegisterNetEvent('mri_Qadmin:server:delete_cid', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:delete_cid', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.delete_character') then return end
 
     local src = source
@@ -55,8 +55,7 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     if not CheckPerms(source, 'qadmin.action.ban_player') then return end
 
     Debug(('[BanPlayer] actionKey: %s | selectedData: %s'):format(tostring(actionKey), json.encode(selectedData)))
-    local player = GetValue(selectedData, "Player")
-    player = player and tonumber(player)
+    local player = tonumber(GetValue(selectedData, "Player"))
     local reason = GetValue(selectedData, "Reason") or ""
     local duration = GetValue(selectedData, "Duration") or GetValue(selectedData, "Duração")
     local time = tonumber(duration)
@@ -159,7 +158,7 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
 end)
 
 -- Warn Player
-RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.warn_player') then return end
     local targetId = GetValue(selectedData, "Player")
     local target = QBCore.Functions.GetPlayer(targetId)
@@ -183,7 +182,7 @@ RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(actionKey, selectedDat
     end
 end)
 
-RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.kick_player') then return end
     local src = source
     local playerVal = GetValue(selectedData, "Player")
@@ -252,7 +251,7 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
 end)
 
 -- Revive Player
-RegisterNetEvent('mri_Qadmin:server:Revive', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:Revive', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.revive') then return end
 
     local src = source
@@ -271,7 +270,7 @@ RegisterNetEvent('mri_Qadmin:server:Revive', function(actionKey, selectedData)
 end)
 
 -- Revive All
-RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(actionKey)
+RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(_)
     if not CheckPerms(source, 'qadmin.action.revive') then return end
 
     -- Trigger standard hospital revive event for all
@@ -284,7 +283,7 @@ RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(actionKey)
 end)
 
 -- Revive Radius
-RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(actionKey)
+RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(_)
     if not CheckPerms(source, 'qadmin.action.revive') then return end
 
     local src = source
@@ -308,7 +307,7 @@ RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(actionKey)
 end)
 
 -- Set RoutingBucket
-RegisterNetEvent('mri_Qadmin:server:SetBucket', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:SetBucket', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_bucket') then return end
 
     local src = source
@@ -328,7 +327,7 @@ RegisterNetEvent('mri_Qadmin:server:SetBucket', function(actionKey, selectedData
 end)
 
 -- Get RoutingBucket
-RegisterNetEvent('mri_Qadmin:server:GetBucket', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:GetBucket', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_bucket') then return end
 
     local src = source
@@ -351,7 +350,7 @@ local function formatPlayerMoney(Player)
 end
 
 -- Give Money
-RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_money') then return end
 
     local src = source
@@ -377,7 +376,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData
 end)
 
 -- Give Money to all
-RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_money') then return end
 
     local src = source
@@ -402,7 +401,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedD
 end)
 
 -- Take Money
-RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.remove_money') then return end
 
     local src = source
@@ -435,7 +434,7 @@ end)
 
 -- Blackout
 local Blackout = false
-RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(actionKey)
+RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(_)
     if not CheckPerms(source, 'qadmin.action.blackout') then return end
     Blackout = not Blackout
 
@@ -453,14 +452,14 @@ RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(actionKey)
 end)
 
 -- Toggle Cuffs
-RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.toggle_cuffs') then return end
 
     local target = tonumber(GetValue(selectedData, "Player"))
 
     if GetResourceState("ND_Police") == "started" then
         local playerIsCuffed = Player(target).state.isCuffed
-        local playerCuffType = Player(target).state.cuffType or "cuffs"
+        local _playerCuffType = Player(target).state.cuffType or "cuffs"
 
         if playerIsCuffed then
             TriggerClientEvent("ND_Police:uncuffPed", target)
@@ -476,7 +475,7 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(actionKey, selectedDat
 end)
 
 -- Give Clothing Menu
-RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.clothing_menu') then return end
 
     local src = source
@@ -494,7 +493,7 @@ RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(actionKey, selectedD
 end)
 
 -- Set Ped
-RegisterNetEvent("mri_Qadmin:server:setPed", function(actionKey, selectedData)
+RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
     local src = source
     if not CheckPerms(source, 'qadmin.action.set_ped') then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
@@ -548,7 +547,7 @@ lib.callback.register('mri_Qadmin:callback:GetBans', function(source, data)
 end)
 
 -- Desbanir por ID da linha
-RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.unban_player') then return end
 
     local src = source
@@ -567,7 +566,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(actionKey, selectedDa
     end
 end)
 -- Kill Player
-RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.kill_player') then return end
 
     local src = source

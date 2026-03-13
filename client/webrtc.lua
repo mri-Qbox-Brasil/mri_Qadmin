@@ -1,12 +1,12 @@
 -- WebRTC and Screen Streaming Client-side Logic
 
-local isWebRTCStreaming = false
+local _isWebRTCStreaming = false
 
 -- ── Client Events ────────────────────────────────────────────────────────────
 
 RegisterNetEvent('mri_Qadmin:client:StartWebRTC', function(requester)
     print('[WebRTC] Starting Stream for requester:', requester)
-    isWebRTCStreaming = true
+    _isWebRTCStreaming = true
 
     SendNUIMessage({
         action = 'StartWebRTC',
@@ -18,7 +18,7 @@ RegisterNetEvent('mri_Qadmin:client:StartWebRTC', function(requester)
 end)
 
 RegisterNetEvent('mri_Qadmin:client:StopWebRTC', function(viewerId)
-    isWebRTCStreaming = false
+    _isWebRTCStreaming = false
     SendNUIMessage({
         action = 'StopWebRTC',
         data = { viewerId = viewerId }
@@ -42,7 +42,7 @@ RegisterNUICallback("GetPlayerScreen", function(data, cb)
     cb(res)
 end)
 
-RegisterNUICallback("SignalRegister", function(data, cb)
+RegisterNUICallback("SignalRegister", function(_, cb)
     -- No-op: identity is tracked by server ID, not a registration table
     cb({ status = "ok" })
 end)

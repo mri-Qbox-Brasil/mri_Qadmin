@@ -120,7 +120,7 @@ local function TeleportToGround()
         local retval, hit, hitCoords
 
         -- Wait for raycast result
-        for i = 1, 100 do -- max 100 frames (~1.5s) timeout
+        for _ = 1, 100 do -- max 100 frames (~1.5s) timeout
             retval, hit, hitCoords = GetShapeTestResult(rayCast)
             if retval ~= 1 then break end
             Wait(0)

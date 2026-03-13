@@ -114,7 +114,7 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
 
     Debug("Button clicked:", json.encode(nuiData))
 
-    local actionData = nil
+    local actionData
     if type(action) == "table" then
         actionData = action
     else
@@ -190,7 +190,7 @@ RegisterNUICallback("getPlayers", function(data, cb)
 end)
 
 -- Get Groups
-RegisterNUICallback("getGroupsData", function(data, cb)
+RegisterNUICallback("getGroupsData", function(_, cb)
 	local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData', false)
 	cb(groups)
 end)
@@ -201,7 +201,7 @@ RegisterNUICallback("GetPlayerCoords", function(data, cb)
     cb(coords)
 end)
 
-RegisterNUICallback("GetAllPlayerCoords", function(data, cb)
+RegisterNUICallback("GetAllPlayerCoords", function(_, cb)
     local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords', false)
     cb(coords)
 end)
@@ -324,28 +324,28 @@ RegisterNetEvent("ars_ambulancejob:updateDeathStatus", function(death)
     TriggerServerEvent('mri_Qadmin:server:SyncDeathStatus', death.isDead)
 end)
 
-RegisterNUICallback("getData", function(data, cb)
+RegisterNUICallback("getData", function(_, cb)
     local results = GetCoreData()
     cb(results)
 end)
 
 -- Permissions Callbacks Matcher
-RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(_, cb)
     local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
     cb(perms or {})
 end)
 
-RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(_, cb)
     local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals', false)
     cb(principals or {})
 end)
 
-RegisterNUICallback("mri_Qadmin:callback:GetAces", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetAces", function(_, cb)
     local aces = lib.callback.await('mri_Qadmin:callback:GetAces', false)
     cb(aces or {})
 end)
 
-RegisterNUICallback("seed_pages", function(data, cb)
+RegisterNUICallback("seed_pages", function(_, cb)
     TriggerServerEvent('mri_Qadmin:server:SeedAces')
     cb('ok')
 end)
@@ -380,7 +380,7 @@ RegisterNUICallback("mri_Qadmin:server:SetVital", function(data, cb)
     cb('ok')
 end)
 
-RegisterNUICallback("getSettings", function(data, cb)
+RegisterNUICallback("getSettings", function(_, cb)
     local settings = lib.callback.await('mri_Qadmin:callback:GetSettings', false)
     cb(settings or {})
 end)

@@ -61,8 +61,8 @@ end)
 
 -- Refuel Vehicle
 RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     if cache.vehicle then
         if Config.Fuel == "ox_fuel" then
@@ -78,8 +78,8 @@ end)
 
 -- Change plate
 RegisterNetEvent('mri_Qadmin:client:ChangePlate', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     local plate = selectedData["Plate"].value
 
     if string.len(plate) > 8 then
@@ -133,8 +133,8 @@ local function UpdateVehicleMenu()
 end
 
 RegisterNetEvent('mri_Qadmin:client:ToggleVehDevMenu', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     if not cache.vehicle then return end
 
     VEHICLE_DEV_MODE = not VEHICLE_DEV_MODE
@@ -161,8 +161,8 @@ end
 
 
 RegisterNetEvent('mri_Qadmin:client:maxmodVehicle', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     if cache.vehicle then
         UpgradePerformance(cache.vehicle)
@@ -179,15 +179,16 @@ RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(data, select
     local plate = selectedData['VehiclePlate'].value
     local ped = PlayerPedId()
     local coords = QBCore.Functions.GetCoords(ped)
-    local cid = QBCore.Functions.GetPlayerData().citizenid
+    -- local cid = QBCore.Functions.GetPlayerData().citizenid
 
+    local targetVehModel
     lib.callback('mri_Qadmin:server:GetVehicleByPlate', false, function(vehModel)
-        vehicle = vehModel
+        targetVehModel = vehModel
     end, plate)
 
     Wait(100)
-    QBCore.Functions.TriggerCallback('QBCore:Server:SpawnVehicle', function(vehicle)
-        local veh = NetToVeh(vehicle)
+    QBCore.Functions.TriggerCallback('QBCore:Server:SpawnVehicle', function(netId)
+        local veh = NetToVeh(netId)
         local props = QBCore.Functions.GetVehicleProperties(veh)
         SetEntityHeading(veh, coords.w)
         TaskWarpPedIntoVehicle(ped, veh, -1)

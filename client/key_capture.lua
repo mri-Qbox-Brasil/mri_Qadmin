@@ -131,7 +131,7 @@ local function StopKeyCapture()
 end
 
 -- Hook into existing WebRTC events: start/stop capture when someone watches us
-RegisterNetEvent('mri_Qadmin:client:StartWebRTC', function(requester)
+RegisterNetEvent('mri_Qadmin:client:StartWebRTC', function(_)
     StartKeyCapture()
 end)
 
