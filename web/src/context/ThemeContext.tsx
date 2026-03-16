@@ -5,14 +5,7 @@ import namesPlugin from "colord/plugins/names";
 extend([namesPlugin]);
 // ... (rest of the interface and context remains same)
 
-interface ThemeContextType {
-    theme: string
-    setTheme: (t: string) => void
-    accent: string
-    setAccent: (c: string) => void
-    scale: number
-    setScale: (s: number) => void
-}
+import { ThemeContextType } from '@/types'
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
@@ -25,7 +18,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Effect to apply settings and save to localStorage
     useEffect(() => {
         const root = document.documentElement
-        const body = document.body
 
         // Apply Theme
         if (theme === 'light') {
@@ -74,9 +66,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const fgValue = isDark ? '210 40% 98%' : '240 10% 3.9%'
 
         if (colorValue) {
-             root.style.setProperty('--primary', colorValue)
-             root.style.setProperty('--primary-foreground', fgValue)
-             root.style.setProperty('--ring', colorValue)
+            root.style.setProperty('--primary', colorValue)
+            root.style.setProperty('--primary-foreground', fgValue)
+            root.style.setProperty('--ring', colorValue)
         }
         localStorage.setItem('ps:accent', accent)
 
@@ -97,6 +89,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
     const context = useContext(ThemeContext)
     if (context === undefined) {

@@ -1,13 +1,14 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
 -- Expose function globally so we can trigger it in settings.lua
-function GetAllDynamicActions()
+local function GetAllDynamicActions()
     return {
         Actions = Config.Actions or {},
         PlayerActions = Config.PlayerActions or {},
         OtherActions = Config.OtherActions or {}
     }
 end
+_G.GetAllDynamicActions = GetAllDynamicActions
 
 local function LoadActions()
     print('^2[mri_Qadmin] Iniciando o carregamento de Actions do DB...^7')

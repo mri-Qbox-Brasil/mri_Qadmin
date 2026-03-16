@@ -45,7 +45,7 @@ local function LoadSettings()
 end
 
 -- Helper to extract only primitive settings for client sync
-function GetPrimitiveSettings()
+local function GetPrimitiveSettings()
     local payload = {}
     for k, v in pairs(Config) do
         local t = type(v)

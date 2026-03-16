@@ -203,6 +203,6 @@ CreateThread(function()
 end)
 
 -- Remove Stress
-RegisterNetEvent('mri_Qadmin:client:removeStress', function(data)
+RegisterNetEvent('mri_Qadmin:client:removeStress', function(_)
     TriggerServerEvent('hud:server:RelieveStress', 100)
 end)

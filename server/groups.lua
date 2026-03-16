@@ -106,6 +106,6 @@ local function getGroups()
     return { jobs = jobsList, gangs = gangsList }
 end
 
-lib.callback.register('mri_Qadmin:callback:GetGroupsData', function(source)
+lib.callback.register('mri_Qadmin:callback:GetGroupsData', function(_source)
     return getGroups()
 end)

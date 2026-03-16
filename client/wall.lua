@@ -68,11 +68,6 @@ end)
 
 function DrawText3D(x,y,z, text, r,g,b)
     local onScreen,_x,_y=World3dToScreen2d(x,y,z)
-    local px,py,pz=table.unpack(GetGameplayCamCoords())
-    local dist = GetDistanceBetweenCoords(px,py,pz, x,y,z, 1)
-    local scale = (1/dist)*2
-    local fov = (1/GetGameplayCamFov())*100
-    local scale = scale*fov
     if onScreen then
         SetTextFont(4)
         SetTextProportional(1)
@@ -104,7 +99,7 @@ Citizen.CreateThread(
                 local c1 = GetEntityCoords(ped_id, true)
                 local cam = GetGameplayCamCoord()
 
-                for k, id in ipairs(GetActivePlayers()) do
+                for _, id in ipairs(GetActivePlayers()) do
                     if NetworkIsPlayerActive(id) then
                         local src = GetPlayerServerId(id)
                         local nped_id = GetPlayerPed(id)
@@ -148,8 +143,8 @@ Citizen.CreateThread(
                                 DrawText3D(c2.x, c2.y, c2.z + 1.2, defaultText)
                                 DrawText3D(c2.x, c2.y, c2.z + 0.8, extraText)
 
-                                -- Dynamic Color Selection
-                                local r, g, b = 0, 0, 255 -- Final fallback
+                                 -- Dynamic Color Selection
+                                 local r, g, b
 
                                 if inv then -- Invisivel (Prioridade Máxima)
                                     r, g, b = ParseRGB(wall_users[srcStr].inv_color or "255, 255, 0")
@@ -176,7 +171,7 @@ Citizen.CreateThread(
 -- NUI CALLBACKS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-RegisterNUICallback("mri_Qadmin:callback:GetWallSettings", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetWallSettings", function(_data, cb)
     local results = lib.callback.await('mri_Qadmin:callback:GetWallSettings', false)
     cb(results or {})
 end)

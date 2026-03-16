@@ -1,6 +1,6 @@
 import React from 'react'
 import { MriButton, MriCard, MriPageHeader, MriSelectSearch, MriInput } from '@mriqbox/ui-kit'
-import { Sun, Moon, Monitor, Check, Palette, Settings as SettingsIcon, Accessibility, Languages, RotateCcw, Eye, Ghost, User, Plus, Trash2, Search } from 'lucide-react'
+import { Sun, Check, Palette, Settings as SettingsIcon, Accessibility, Languages, RotateCcw, Eye, Ghost, User, Plus, Trash2, Search, Code } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 
@@ -10,11 +10,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { MriColorPicker } from '@mriqbox/ui-kit'
 import ConfirmAction from '@/components/players/ConfirmAction'
 
-const THEMES = [
-    { id: 'light', icon: Sun, label: 'settings_theme_light' },
-    { id: 'dark', icon: Moon, label: 'settings_theme_dark' },
-    { id: 'system', icon: Monitor, label: 'settings_theme_system' },
-]
+// THEMES removed - unused
 
 const COLORS = [
     { id: 'green', value: '160 100% 45%', class: 'bg-green-500' },
@@ -32,11 +28,26 @@ const WALL_DEFAULTS = {
     default: '#0000FF'
 }
 
+// Helper functions for color conversion
+const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 0, 255';
+}
+
+const rgbToHex = (rgb: string) => {
+    if (!rgb) return '#0000FF';
+    if (rgb.startsWith('#')) return rgb;
+    const parts = rgb.split(',').map(x => parseInt(x.trim()));
+    if (parts.length < 3) return '#0000FF';
+    const [r, g, b] = parts;
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+}
+
 export default function Settings() {
     const { t, locale, preferredLocale, setPreferredLocale, supportedLanguages } = useI18n()
-    const { theme, setTheme, accent, setAccent, scale, setScale } = useTheme()
+    const { accent, setAccent, scale, setScale } = useTheme()
     const { sendNui } = useNui()
-    const { settings, setSettings, gameData } = useAppState()
+    const { settings, setSettings, gameData, useMocks, setUseMocks } = useAppState()
 
     const [wallSettings, setWallSettings] = React.useState<any>(null)
     const [localWallSettings, setLocalWallSettings] = React.useState<any>(null)
@@ -44,21 +55,6 @@ export default function Settings() {
     const [newGroupColor, setNewGroupColor] = React.useState({ group: '', color: '#0000FF' })
     const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null)
     const [groupSearch, setGroupSearch] = React.useState('')
-
-    // Helper functions for color conversion
-    const hexToRgb = (hex: string) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 0, 255';
-    }
-
-    const rgbToHex = (rgb: string) => {
-        if (!rgb) return '#0000FF';
-        if (rgb.startsWith('#')) return rgb;
-        const parts = rgb.split(',').map(x => parseInt(x.trim()));
-        if (parts.length < 3) return '#0000FF';
-        const [r, g, b] = parts;
-        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
-    }
 
     // Debounce save function
     const timeoutRef = React.useRef<Record<string, any>>({})
@@ -364,12 +360,12 @@ export default function Settings() {
                                                     <Ghost className="w-3.5 h-3.5 text-red-500" /> {t('settings_wall_dead')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                <MriColorPicker
-                                                    color={localWallSettings.settings.dead}
-                                                    onChange={(val) => handleLocalWallChange('global', 'dead', val)}
-                                                    active={true}
-                                                    format="hex"
-                                                />
+                                                    <MriColorPicker
+                                                        color={localWallSettings.settings.dead}
+                                                        onChange={(val) => handleLocalWallChange('global', 'dead', val)}
+                                                        active={true}
+                                                        format="hex"
+                                                    />
                                                     <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.dead}</span>
                                                     <MriButton
                                                         size="icon"
@@ -388,12 +384,12 @@ export default function Settings() {
                                                     <Sun className="w-3.5 h-3.5 text-yellow-500" /> {t('settings_wall_invisible')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                <MriColorPicker
-                                                    color={localWallSettings.settings.invisible}
-                                                    onChange={(val) => handleLocalWallChange('global', 'invisible', val)}
-                                                    active={true}
-                                                    format="hex"
-                                                />
+                                                    <MriColorPicker
+                                                        color={localWallSettings.settings.invisible}
+                                                        onChange={(val) => handleLocalWallChange('global', 'invisible', val)}
+                                                        active={true}
+                                                        format="hex"
+                                                    />
                                                     <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.invisible}</span>
                                                     <MriButton
                                                         size="icon"
@@ -412,12 +408,12 @@ export default function Settings() {
                                                     <User className="w-3.5 h-3.5 text-blue-500" /> {t('settings_wall_default')}
                                                 </label>
                                                 <div className="flex items-center gap-3">
-                                                <MriColorPicker
-                                                    color={localWallSettings.settings.default}
-                                                    onChange={(val) => handleLocalWallChange('global', 'default', val)}
-                                                    active={true}
-                                                    format="hex"
-                                                />
+                                                    <MriColorPicker
+                                                        color={localWallSettings.settings.default}
+                                                        onChange={(val) => handleLocalWallChange('global', 'default', val)}
+                                                        active={true}
+                                                        format="hex"
+                                                    />
                                                     <span className="text-xs font-mono text-muted-foreground uppercase flex-1">{wallSettings.settings.default}</span>
                                                     <MriButton
                                                         size="icon"
@@ -518,6 +514,31 @@ export default function Settings() {
                                         </div>
                                     </>
                                 )}
+                            </MriCard>
+                        </div>
+
+                        {/* Developer Settings Section */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-lg font-medium text-foreground pb-2 border-b border-border">
+                                <Code className="w-5 h-5 text-primary" />
+                                {t('settings_developer') || "Developer Settings"}
+                            </div>
+                            <MriCard className="p-6 bg-card border-border">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <h3 className="text-sm font-medium text-foreground">{t('settings_mock_mode') || "Mock Mode"}</h3>
+                                        <p className="text-xs text-muted-foreground">{t('settings_mock_mode_desc') || "Enable mock data for testing even in FiveM environment."}</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={useMocks}
+                                            onChange={(e) => setUseMocks(e.target.checked)}
+                                        />
+                                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary border border-border"></div>
+                                    </label>
+                                </div>
                             </MriCard>
                         </div>
                     </div>

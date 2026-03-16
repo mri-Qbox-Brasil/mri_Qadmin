@@ -20,8 +20,8 @@ end)
 
 -- Play Sound
 RegisterNetEvent('mri_Qadmin:client:PlaySound', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     local player = selectedData["Player"].value
     local sound = selectedData["Sound"].value
 

@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
-import { MriButton, MriInput, MriPageHeader } from '@mriqbox/ui-kit'
-import { Search, Terminal, Command, Copy, RefreshCw } from 'lucide-react'
+import { MriButton, MriPageHeader, MriCompactSearch } from '@mriqbox/ui-kit'
+import { Terminal, Command, Copy, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { VirtuosoGrid } from 'react-virtuoso'
 import CommandsSkeleton from '@/components/skeletons/CommandsSkeleton'
+import { MOCK_GAME_DATA } from '@/utils/mockData'
 
 export default function Commands() {
     const { gameData, setGameData } = useAppState()
@@ -31,10 +32,17 @@ export default function Commands() {
         navigator.clipboard.writeText(text)
     }
 
+    const commandOptions = React.useMemo(() => {
+        return commands.map((cmd: any) => ({
+            value: cmd.name,
+            label: cmd.name
+        }))
+    }, [commands])
+
     const handleRefresh = async () => {
         setLoading(true)
         try {
-            const data = await sendNui('getData')
+            const data = await sendNui('getData', {}, MOCK_GAME_DATA)
             if (data) setGameData((prev: any) => ({ ...prev, ...data }))
         } catch (e) {
             console.error(e)
@@ -46,24 +54,36 @@ export default function Commands() {
     return (
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('nav_commands')} icon={Terminal} countLabel={t('records')} count={filteredCommands.length}>
-                    <div className="relative w-72">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <MriInput
+                <div className="flex items-center gap-2">
+                    <MriCompactSearch
                         placeholder={t('commands_search_placeholder')}
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="pl-9 bg-card border-border focus:border-ring h-10 transition-colors"
-                        />
-                    </div>
-                    <MriButton
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                        onClick={handleRefresh}
-                        disabled={loading}
-                    >
-                        <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-                    </MriButton>
+                        onChange={setSearch}
+                        options={commandOptions}
+                        searchPlaceholder={t('commands_search_placeholder')}
+                        className="w-8 h-8 border-border bg-card/60"
+                    />
+                    {search && (
+                        <MriButton
+                            size="icon"
+                            variant="outline"
+                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                            onClick={() => setSearch('')}
+                            title={t('common_clear')}
+                        >
+                            <X size={16} />
+                        </MriButton>
+                    )}
+                </div>
+                <MriButton
+                    size="icon"
+                    variant="outline"
+                    className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                    onClick={handleRefresh}
+                    disabled={loading}
+                >
+                    <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                </MriButton>
             </MriPageHeader>
 
             {loading && commands.length === 0 ? (
@@ -74,12 +94,12 @@ export default function Commands() {
                     <p>{t('commands_none_found')}</p>
                 </div>
             ) : (
-                <div className="flex-1 overflow-hidden p-8">
+                <div className="flex-1 overflow-hidden pt-4 p-2">
                     <VirtuosoGrid
                         style={{ height: '100%' }}
                         data={filteredCommands}
-                        listClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                        itemContent={(index, cmd) => (
+                        listClassName="grid grid-cols-4 gap-4"
+                        itemContent={(index: number, cmd: any) => (
                             <div key={cmd.name} className="bg-card border border-border rounded-xl p-4 flex gap-4 hover:border-primary/50 hover:bg-muted/50 transition-all group relative overflow-hidden">
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <MriButton size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => copyToClipboard(cmd.name)}>

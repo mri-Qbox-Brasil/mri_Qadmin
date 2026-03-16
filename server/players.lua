@@ -1,35 +1,3 @@
-local function getVehicles(cid)
-    local result = MySQL.query.await(
-        'SELECT vehicle, plate, fuel, engine, body FROM player_vehicles WHERE citizenid = ?', { cid }
-    )
-    local vehicles = {}
-
-    for k, v in pairs(result) do
-        local vehicleData = QBCore.Shared.Vehicles[v.vehicle]
-
-        if not vehicleData then
-            vehicleData = {
-                name = ("Veículo Desconhecido (%s)"):format(v.vehicle or "N/A"),
-                brand = "N/A",
-                model = v.vehicle or "N/A"
-            }
-        end
-
-        vehicles[#vehicles + 1] = {
-            id = k,
-            cid = cid,
-            label = vehicleData.name,
-            brand = vehicleData.brand,
-            model = vehicleData.model,
-            plate = v.plate,
-            fuel = v.fuel,
-            engine = v.engine,
-            body = v.body
-        }
-    end
-
-    return vehicles
-end
 
 local function getPlayers(page, pageSize, search)
     page = math.max(1, tonumber(page) or 1)
@@ -59,16 +27,19 @@ local function getPlayers(page, pageSize, search)
         local name = playerData.charinfo.firstname .. ' ' .. playerData.charinfo.lastname
         local license = QBCore.Functions.GetIdentifier(k, 'license')
         local cid = playerData.citizenid
-        local idStr = tostring(k)
-
+ 
         -- Filter Online Players if search is active
         local match = true
         if search and search ~= "" then
             local lowerSearch = string.lower(search)
-            if not (string.find(string.lower(name), lowerSearch) or
-                    string.find(string.lower(license or ""), lowerSearch) or
-                    string.find(string.lower(cid), lowerSearch) or
-                    string.find(idStr, lowerSearch)) then
+            local searchId = tonumber(search)
+
+            local nameMatch = string.find(string.lower(name), lowerSearch, 1, true)
+            local licenseMatch = license and string.find(string.lower(license), lowerSearch, 1, true)
+            local cidMatch = cid and string.find(string.lower(cid), lowerSearch, 1, true)
+            local idMatch = searchId and (k == searchId)
+
+            if not (nameMatch or licenseMatch or cidMatch or idMatch) then
                 match = false
             end
         end
@@ -90,12 +61,10 @@ local function getPlayers(page, pageSize, search)
                 ip = QBCore.Functions.GetIdentifier(k, 'ip'),
                 job = playerData.job,
                 gang = playerData.gang,
-                job = playerData.job,
-                gang = playerData.gang,
                 money = (function()
                     local m = {}
-                    for k, v in pairs(playerData.money) do
-                        table.insert(m, { name = k, amount = v })
+                    for mk, mv in pairs(playerData.money) do
+                        table.insert(m, { name = mk, amount = mv })
                     end
                     return m
                 end)(),
@@ -125,8 +94,8 @@ local function getPlayers(page, pageSize, search)
 
     -- Calculate how many slots left for DB players
     local slotsRemaining = pageSize - #resultPlayers
-    local totalRecords = totalOnline -- Will add DB count
-
+    local totalRecords -- Will add DB count
+ 
     -- If we still need players and aren't search-constrained to online only (unless we want to search DB too)
     -- We ALWAYS search DB if we want full results.
 
@@ -135,7 +104,6 @@ local function getPlayers(page, pageSize, search)
     -- If page overlaps, offset is 0 for DB (and we take LIMIT slotsRemaining)
 
     local dbOffset = math.max(0, offset - totalOnline)
-    local dbModels = {}
 
     if slotsRemaining > 0 or (totalOnline < offset) then
         -- Count DB matches
@@ -148,25 +116,6 @@ local function getPlayers(page, pageSize, search)
             whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
             queryParams = { lowerSearch, lowerSearch, lowerSearch }
 
-            -- exclude online from DB count?
-            -- "NOT IN" with 2000 IDs is bad.
-            -- Since online is small subset of 7000, usually we can just ignore duplication or handle it?
-            -- existing code filtered duplicates.
-            -- We can assume `online = true` implies they exist in DB, so DB search WILL find them.
-            -- So DB count includes online players.
-            -- We need to subtract online matches from DB count to get "Offline DB Count"?
-            -- Correct logic: `Total = Online Matches + (DB Matches - Online Matches that are in DB)`
-            -- This is too complex for a count query.
-            -- Simplified: `Total = DB Matches`. We assume everyone is in DB.
-            -- But we want to show Online FIRST.
-            -- If we just query DB, we get everyone.
-            -- If we paginate DB, we get mixed online/offline.
-            -- We want Online First.
-            -- Approach:
-            -- 1. Get All Online (Filtered).
-            -- 2. Query DB (Filtered), but EXCLUDE the specific CIDs we found online.
-            -- This ensures Total = #Online + #OfflineDB.
-
             if #onlinePlayers > 0 then
                 local cids = {}
                 for _, p in ipairs(onlinePlayers) do
@@ -174,14 +123,12 @@ local function getPlayers(page, pageSize, search)
                 end
                 whereClause = whereClause .. " AND citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
             end
-        else
-            if #onlinePlayers > 0 then
-                 local cids = {}
-                for _, p in ipairs(onlinePlayers) do
-                    cids[#cids + 1] = "'" .. p.cid .. "'"
-                end
-                 whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
+        elseif #onlinePlayers > 0 then
+            local cids = {}
+            for _, p in ipairs(onlinePlayers) do
+                cids[#cids + 1] = "'" .. p.cid .. "'"
             end
+            whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
         end
 
         local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
@@ -252,7 +199,6 @@ local function getPlayers(page, pageSize, search)
                     job = job_obj,
                     gang = gang_obj,
                     dob = charinfo.birthdate or "Desconhecido",
-                    dob = charinfo.birthdate or "Desconhecido",
                     money = (function()
                         local m = {}
                         for k, v in pairs(moneyinfo) do
@@ -277,25 +223,23 @@ local function getPlayers(page, pageSize, search)
          local countQuery = "SELECT COUNT(*) as count FROM players"
          local queryParams = {}
          local whereClause = ""
-          if search and search ~= "" then
+        if search and search ~= "" then
             local lowerSearch = "%" .. string.lower(search) .. "%"
             whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
             queryParams = { lowerSearch, lowerSearch, lowerSearch }
-             if #onlinePlayers > 0 then
+            if #onlinePlayers > 0 then
                 local cids = {}
                 for _, p in ipairs(onlinePlayers) do
                     cids[#cids + 1] = "'" .. p.cid .. "'"
                 end
                 whereClause = whereClause .. " AND citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
             end
-        else
-            if #onlinePlayers > 0 then
-                 local cids = {}
-                for _, p in ipairs(onlinePlayers) do
-                    cids[#cids + 1] = "'" .. p.cid .. "'"
-                end
-                 whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
+        elseif #onlinePlayers > 0 then
+            local cids = {}
+            for _, p in ipairs(onlinePlayers) do
+                cids[#cids + 1] = "'" .. p.cid .. "'"
             end
+            whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
         end
         local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
         totalRecords = totalOnline + (dbCount or 0)
@@ -345,11 +289,11 @@ local function getPlayers(page, pageSize, search)
     }
 end
 
-lib.callback.register('mri_Qadmin:callback:GetPlayers', function(source, page, limit, search)
+lib.callback.register('mri_Qadmin:callback:GetPlayers', function(_source, page, limit, search)
     return getPlayers(page, limit, search)
 end)
 
-RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_job') then
         return
     end
@@ -378,9 +322,9 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
         return
     end
 
-    for searchgrade, info in pairs(jobInfo["grades"]) do
+    for searchgrade, gradeinfo in pairs(jobInfo["grades"]) do
         if tonumber(searchgrade) == tonumber(Grade) then
-            grade = info
+            grade = gradeinfo
             break
         end
     end
@@ -411,7 +355,7 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
 end)
 
 -- Set Gang
-RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_gang') then
         return
     end
@@ -439,9 +383,9 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
         return
     end
 
-    for searchgrade, info in pairs(GangInfo["grades"]) do
+    for searchgrade, gradeinfo in pairs(GangInfo["grades"]) do
         if tonumber(searchgrade) == tonumber(Grade) then
-            grade = info
+            grade = gradeinfo
             break
         end
     end
@@ -468,9 +412,9 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
 end)
 
 -- Set Perms
-RegisterNetEvent("mri_Qadmin:server:SetPerms", function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
+    local actionData = CheckDataFromKey(dataKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
     local src = source
     local rank = GetValue(selectedData, "Permissions")
     local targetId = GetValue(selectedData, "Player")
@@ -488,9 +432,9 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(data, selectedData)
 end)
 
 -- Remove Stress
-RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(source, data.perms) then return end
+RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(dataKey, selectedData)
+    local actionData = CheckDataFromKey(dataKey)
+    if not actionData or not CheckPerms(source, actionData.perms) then return end
     local src = source
     local playerOpt = GetValue(selectedData, 'Player (Optional)')
     local targetId = playerOpt and tonumber(playerOpt) or src
@@ -527,7 +471,6 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     end
 
     -- Broadcast update immediate
-    local ped = GetPlayerPed(tonumber(targetId))
     TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
         id = tonumber(targetId),
         health = (vital == "health") and tonumber(value) or GetEntityHealth(ped),
@@ -604,13 +547,13 @@ local function GetPlayerFromBagName(bagName)
     return tonumber(playerHandle)
 end
 
-AddStateBagChangeHandler("dead", nil, function(bagName, key, value, _unused, replicated)
+AddStateBagChangeHandler("dead", nil, function(bagName, _, _, _, _)
     local playerId = GetPlayerFromBagName(bagName)
     if not playerId then return end
     broadcastVitalsUpdate(playerId)
 end)
 
-AddStateBagChangeHandler("isdead", nil, function(bagName, key, value, _unused, replicated)
+AddStateBagChangeHandler("isdead", nil, function(bagName, _, _, _, _)
     local playerId = GetPlayerFromBagName(bagName)
     if not playerId then return end
     broadcastVitalsUpdate(playerId)

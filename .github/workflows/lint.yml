@@ -1,0 +1,67 @@
+name: Lint (Web & Lua)
+
+on:
+  push:
+    paths:
+      - 'web/**'
+      - 'client/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'locales/**'
+      - 'fxmanifest.lua'
+      - '.github/workflows/lint.yml'
+      - '.luacheckrc'
+  pull_request:
+    paths:
+      - 'web/**'
+      - 'client/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'locales/**'
+      - 'fxmanifest.lua'
+      - '.github/workflows/lint.yml'
+      - '.luacheckrc'
+
+jobs:
+  lint-web:
+    name: Lint Web (ESLint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: web
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run ESLint
+        working-directory: web
+        run: pnpm run lint
+
+  lint-lua:
+    name: Lint Lua (Luacheck)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 luarocks
+          sudo luarocks install luacheck
+
+      - name: Run Luacheck
+        run: luacheck . --codes --formatter plain

@@ -46,6 +46,7 @@ class GameRender {
         this._lastFrame = 0;
         this._frameInterval = 1000 / MAX_FPS;
         this._overlayEl = null;
+        this.watchers = 0;
 
         this._loop = this._loop.bind(this);
     }
@@ -57,9 +58,22 @@ class GameRender {
 
     // ── Public: lifecycle ────────────────────────────────────────────────────
 
+    stopStream() {
+        this.watchers--;
+        if (this.watchers <= 0) {
+            this.watchers = 0;
+            this.pause();
+            if (this._overlayEl) {
+                this._overlayEl.remove();
+                this._overlayEl = null;
+                this._overlayCtx = null;
+                this._overlayC = null;
+            }
+        }
+    }
+
     init() {
         if (this.gl) return;
-        console.log('[GameRender] Initializing raw WebGL capture (screencapture-main method)...');
 
         const W = window.innerWidth;
         const H = window.innerHeight;
@@ -99,7 +113,6 @@ class GameRender {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);          // ← TRIGGER
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);   // ← RESET
-        console.log('[GameRender] CfxTexture Handshake ✅');
 
         // Shader program
         const prog = gl.createProgram();
@@ -147,7 +160,6 @@ class GameRender {
     // Restart the renderer (e.g. after stream was closed and reopened)
     restart() {
         if (this.isRunning) return; // already running, nothing to do
-        console.log('[GameRender] Restarting render loop...');
         this.isRunning = true;
         this._lastFrame = 0;
         requestAnimationFrame(this._loop);
@@ -161,6 +173,7 @@ class GameRender {
     // ── Public: stream ───────────────────────────────────────────────────────
 
     startStream() {
+        this.watchers++;
         this.init();
         if (!this.isRunning) this.restart();
         // Direct captureStream on the WebGL canvas — zero GPU↔CPU copy

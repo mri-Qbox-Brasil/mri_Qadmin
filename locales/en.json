@@ -457,5 +457,8 @@
     "livemap_style_satellite": "Satellite",
     "livemap_style_roadmap": "Roadmap",
     "success.coords_copied": "Coordinates copied to clipboard",
-    "success.heading_copied": "Heading copied to clipboard"
+    "success.heading_copied": "Heading copied to clipboard",
+    "settings_developer": "Developer Settings",
+    "settings_mock_mode": "Mock Mode",
+    "settings_mock_mode_desc": "Enable mock data for testing even in FiveM environment."
 }

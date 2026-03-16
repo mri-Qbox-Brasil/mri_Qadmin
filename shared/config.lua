@@ -15,7 +15,7 @@ Config.SupportedLanguages = {
 Config.Keybindings = true
 Config.AdminKey = "0"
 Config.NoclipKey = "9"
-Config.Debug = true -- Set to true to enable debug prints
+Config.Debug = false -- Set to true to enable debug prints
 
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"
@@ -61,8 +61,9 @@ Config.Options = {
     }
 }
 
-AddEventHandler("onResourceStart", function()
-    Wait(100)
+Config.Inventory = 'qb-inventory' -- Default
+
+local function DetectInventory()
     if GetResourceState('ox_inventory') == 'started' then
         Config.Inventory = 'ox_inventory'
     elseif GetResourceState('ps-inventory') == 'started' then
@@ -72,6 +73,18 @@ AddEventHandler("onResourceStart", function()
     elseif GetResourceState('qb-inventory') == 'started' then
         Config.Inventory = 'qb-inventory'
     end
+end
+
+AddEventHandler("onResourceStart", function(resource)
+    if resource == 'ox_inventory' or resource == 'ps-inventory' or resource == 'lj-inventory' or resource == 'qb-inventory' or resource == GetCurrentResourceName() then
+        DetectInventory()
+    end
+end)
+
+-- Initial check
+CreateThread(function()
+    Wait(500)
+    DetectInventory()
 end)
 
 function Debug(...)

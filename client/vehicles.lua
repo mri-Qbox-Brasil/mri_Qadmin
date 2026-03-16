@@ -7,7 +7,7 @@ local function GetVehicleName(hash)
 end
 
 -- Own Vehicle
-RegisterNetEvent('mri_Qadmin:client:Admincar', function(data)
+RegisterNetEvent('mri_Qadmin:client:Admincar', function(_data)
     if not CheckPerms('qadmin.action.admincar') then return end
 
     if not cache.vehicle then return end
@@ -25,7 +25,7 @@ RegisterNetEvent('mri_Qadmin:client:Admincar', function(data)
 end)
 
 -- Spawn Vehicle
-RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(data, selectedData)
+RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
     if not CheckPerms('qadmin.action.spawn_vehicle') then return end
 
     local selectedVehicle = selectedData["Vehicle"].value
@@ -61,8 +61,8 @@ end)
 
 -- Refuel Vehicle
 RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     if cache.vehicle then
         if Config.Fuel == "ox_fuel" then
@@ -78,8 +78,8 @@ end)
 
 -- Change plate
 RegisterNetEvent('mri_Qadmin:client:ChangePlate', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     local plate = selectedData["Plate"].value
 
     if string.len(plate) > 8 then
@@ -133,8 +133,8 @@ local function UpdateVehicleMenu()
 end
 
 RegisterNetEvent('mri_Qadmin:client:ToggleVehDevMenu', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
     if not cache.vehicle then return end
 
     VEHICLE_DEV_MODE = not VEHICLE_DEV_MODE
@@ -153,7 +153,7 @@ local function UpgradePerformance(vehicle)
 
     for _, modType in ipairs(PERFORMANCE_MOD_INDICES) do
         local maxMod = GetNumVehicleMods(vehicle, modType) - 1
-        SetVehicleMod(vehicle, modType, maxMod, customWheels)
+        SetVehicleMod(vehicle, modType, maxMod, false)
     end
 
     QBCore.Functions.Notify(locale("vehicle_max_modded"), 'success', 7500)
@@ -161,8 +161,8 @@ end
 
 
 RegisterNetEvent('mri_Qadmin:client:maxmodVehicle', function(data)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
 
     if cache.vehicle then
         UpgradePerformance(cache.vehicle)
@@ -173,21 +173,22 @@ end)
 
 -- Spawn Personal vehicles
 
-RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(data, selectedData)
+RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(_data, selectedData)
     if not CheckPerms('qadmin.action.spawn_vehicle') then return end
 
     local plate = selectedData['VehiclePlate'].value
     local ped = PlayerPedId()
     local coords = QBCore.Functions.GetCoords(ped)
-    local cid = QBCore.Functions.GetPlayerData().citizenid
+    -- local cid = QBCore.Functions.GetPlayerData().citizenid
 
+    local targetVehModel
     lib.callback('mri_Qadmin:server:GetVehicleByPlate', false, function(vehModel)
-        vehicle = vehModel
+        targetVehModel = vehModel
     end, plate)
 
     Wait(100)
-    QBCore.Functions.TriggerCallback('QBCore:Server:SpawnVehicle', function(vehicle)
-        local veh = NetToVeh(vehicle)
+    QBCore.Functions.TriggerCallback('QBCore:Server:SpawnVehicle', function(netId)
+        local veh = NetToVeh(netId)
         local props = QBCore.Functions.GetVehicleProperties(veh)
         SetEntityHeading(veh, coords.w)
         TaskWarpPedIntoVehicle(ped, veh, -1)
@@ -205,7 +206,7 @@ RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(data, select
         TriggerEvent("vehiclekeys:client:SetOwner", plate)
         TriggerEvent('iens:repaira', ped)
         TriggerEvent('vehiclemod:client:fixEverything', ped)
-    end, vehicle, coords, true)
+    end, targetVehModel, coords, true)
 end)
 
 

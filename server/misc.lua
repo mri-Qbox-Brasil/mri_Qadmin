@@ -1,4 +1,4 @@
-RegisterNetEvent('mri_Qadmin:server:unban_cid', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:unban_cid', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.unban_player') then return end
 
     local src = source
@@ -28,7 +28,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_cid', function(actionKey, selectedData
     end
 end)
 
-RegisterNetEvent('mri_Qadmin:server:delete_cid', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:delete_cid', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.delete_character') then return end
 
     local src = source
@@ -55,8 +55,7 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     if not CheckPerms(source, 'qadmin.action.ban_player') then return end
 
     Debug(('[BanPlayer] actionKey: %s | selectedData: %s'):format(tostring(actionKey), json.encode(selectedData)))
-    local player = GetValue(selectedData, "Player")
-    player = player and tonumber(player)
+    local player = tonumber(GetValue(selectedData, "Player"))
     local reason = GetValue(selectedData, "Reason") or ""
     local duration = GetValue(selectedData, "Duration") or GetValue(selectedData, "Duração")
     local time = tonumber(duration)
@@ -65,9 +64,9 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     local timeTable = os.date('*t', banTime)
 
     -- Check if target is online
-    local targetPlayer = player and QBCore.Functions.GetPlayer(player)
+    local targetPlayerOnline = player and QBCore.Functions.GetPlayer(player)
 
-    if targetPlayer then
+    if targetPlayerOnline then
         -- ONLINE BAN
         MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
             { GetPlayerName(player), QBCore.Functions.GetIdentifier(player, 'license'), QBCore.Functions.GetIdentifier(
@@ -91,23 +90,23 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     else
         -- OFFLINE BAN
         -- We need at least a license or CID
-        local license = GetValue(selectedData, "license")
+        local licenseVal = GetValue(selectedData, "license")
         local discord = GetValue(selectedData, "discord")
         local name = GetValue(selectedData, "name") or "Offline Player"
 
         -- If we only have CID, try to fetch license
         local cid = GetValue(selectedData, "cid")
-        if not license and cid then
-             license = MySQL.scalar.await('SELECT license FROM players WHERE citizenid = ?', { cid })
+        if not licenseVal and cid then
+             licenseVal = MySQL.scalar.await('SELECT license FROM players WHERE citizenid = ?', { cid })
         end
 
-        if not license then
+        if not licenseVal then
             QBCore.Functions.Notify(source, "Não foi possível banir: Player Offline e License não encontrada.", 'error', 7500)
             return
         end
 
         MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            { name, license, discord or "", "0.0.0.0", reason, banTime, GetPlayerName(source) })
+            { name, licenseVal, discord or "", "0.0.0.0", reason, banTime, GetPlayerName(source) })
 
         QBCore.Functions.Notify(source, locale("playerbanned", name, banTime, reason), 'success', 7500)
     end
@@ -133,19 +132,19 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
         return
     end
 
-    local license = QBCore.Functions.GetIdentifier(targetId, 'license')
+    local licenseVal = QBCore.Functions.GetIdentifier(targetId, 'license')
 
-    if not license then
+    if not licenseVal then
         if src > 0 then
             QBCore.Functions.Notify(src, 'License do jogador não encontrada.', 'error', 7500)
         end
         return
     end
 
-    local result = MySQL.query.await('SELECT * FROM bans WHERE license = ?', { license })
+    local result = MySQL.query.await('SELECT * FROM bans WHERE license = ?', { licenseVal })
 
     if result and #result > 0 then
-        local deleteResult = MySQL.update.await('DELETE FROM bans WHERE license = ?', { license })
+        MySQL.update.await('DELETE FROM bans WHERE license = ?', { licenseVal })
 
         if src > 0 then
             QBCore.Functions.Notify(src, 'Jogador desbanido com sucesso.', 'success', 7500)
@@ -159,7 +158,7 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
 end)
 
 -- Warn Player
-RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.warn_player') then return end
     local targetId = GetValue(selectedData, "Player")
     local target = QBCore.Functions.GetPlayer(targetId)
@@ -183,7 +182,7 @@ RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(actionKey, selectedDat
     end
 end)
 
-RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.kick_player') then return end
     local src = source
     local playerVal = GetValue(selectedData, "Player")
@@ -252,7 +251,7 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
 end)
 
 -- Revive Player
-RegisterNetEvent('mri_Qadmin:server:Revive', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:Revive', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.revive') then return end
 
     local src = source
@@ -271,7 +270,7 @@ RegisterNetEvent('mri_Qadmin:server:Revive', function(actionKey, selectedData)
 end)
 
 -- Revive All
-RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(actionKey)
+RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(_)
     if not CheckPerms(source, 'qadmin.action.revive') then return end
 
     -- Trigger standard hospital revive event for all
@@ -284,17 +283,17 @@ RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(actionKey)
 end)
 
 -- Revive Radius
-RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(actionKey)
+RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(_)
     if not CheckPerms(source, 'qadmin.action.revive') then return end
 
     local src = source
     local ped = GetPlayerPed(src)
     local pos = GetEntityCoords(ped)
-    local players = QBCore.Functions.GetPlayers()
+    local allPlayers = QBCore.Functions.GetPlayers()
 
-    for k, v in pairs(players) do
-        local target = GetPlayerPed(v)
-        local targetPos = GetEntityCoords(target)
+    for _, v in pairs(allPlayers) do
+        local targetPed = GetPlayerPed(v)
+        local targetPos = GetEntityCoords(targetPed)
         local dist = #(pos - targetPos)
 
         if dist < 15.0 then
@@ -308,7 +307,7 @@ RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(actionKey)
 end)
 
 -- Set RoutingBucket
-RegisterNetEvent('mri_Qadmin:server:SetBucket', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:SetBucket', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_bucket') then return end
 
     local src = source
@@ -328,7 +327,7 @@ RegisterNetEvent('mri_Qadmin:server:SetBucket', function(actionKey, selectedData
 end)
 
 -- Get RoutingBucket
-RegisterNetEvent('mri_Qadmin:server:GetBucket', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:GetBucket', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_bucket') then return end
 
     local src = source
@@ -351,7 +350,7 @@ local function formatPlayerMoney(Player)
 end
 
 -- Give Money
-RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_money') then return end
 
     local src = source
@@ -377,7 +376,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(actionKey, selectedData
 end)
 
 -- Give Money to all
-RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_money') then return end
 
     local src = source
@@ -402,7 +401,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(actionKey, selectedD
 end)
 
 -- Take Money
-RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.remove_money') then return end
 
     local src = source
@@ -435,7 +434,7 @@ end)
 
 -- Blackout
 local Blackout = false
-RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(actionKey)
+RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(_)
     if not CheckPerms(source, 'qadmin.action.blackout') then return end
     Blackout = not Blackout
 
@@ -453,14 +452,13 @@ RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(actionKey)
 end)
 
 -- Toggle Cuffs
-RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.toggle_cuffs') then return end
 
     local target = tonumber(GetValue(selectedData, "Player"))
 
     if GetResourceState("ND_Police") == "started" then
         local playerIsCuffed = Player(target).state.isCuffed
-        local playerCuffType = Player(target).state.cuffType or "cuffs"
 
         if playerIsCuffed then
             TriggerClientEvent("ND_Police:uncuffPed", target)
@@ -476,7 +474,7 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(actionKey, selectedDat
 end)
 
 -- Give Clothing Menu
-RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.clothing_menu') then return end
 
     local src = source
@@ -494,7 +492,7 @@ RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(actionKey, selectedD
 end)
 
 -- Set Ped
-RegisterNetEvent("mri_Qadmin:server:setPed", function(actionKey, selectedData)
+RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
     local src = source
     if not CheckPerms(source, 'qadmin.action.set_ped') then
         QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
@@ -515,7 +513,7 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(actionKey, selectedData)
 end)
 
 -- Callback para listar bans com paginação e busca
-lib.callback.register('mri_Qadmin:callback:GetBans', function(source, data)
+lib.callback.register('mri_Qadmin:callback:GetBans', function(_source, data)
     local page = data and tonumber(data.page) or 1
     local pageSize = data and tonumber(data.pageSize) or 50
     local search = data and data.search or ""
@@ -548,7 +546,7 @@ lib.callback.register('mri_Qadmin:callback:GetBans', function(source, data)
 end)
 
 -- Desbanir por ID da linha
-RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.unban_player') then return end
 
     local src = source
@@ -567,12 +565,11 @@ RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(actionKey, selectedDa
     end
 end)
 -- Kill Player
-RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.kill_player') then return end
 
     local src = source
     local targetId = tonumber(GetValue(selectedData, "Player"))
-    local targetPed = GetPlayerPed(targetId)
     local targetPlayer = QBCore.Functions.GetPlayer(targetId)
 
     Debug(('[mri_Qadmin] KillPlayer: Admin %s killing Target %s'):format(src, targetId))
@@ -586,7 +583,7 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(actionKey, selectedDat
     end
 end)
 
-lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(source, targetIds)
+lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(_source, targetIds)
     local coordsList = {}
     if not targetIds or type(targetIds) ~= 'table' then return coordsList end
 
@@ -607,18 +604,18 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(source, ta
     return coordsList
 end)
 
-lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
-    local players = QBCore.Functions.GetPlayers()
+lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(_source)
+    local allPlayers = QBCore.Functions.GetPlayers()
     local coordsList = {}
 
-    for _, id in pairs(players) do
-        local src = tonumber(id)
-        local ped = GetPlayerPed(src)
+    for _, id in pairs(allPlayers) do
+        local playerSrc = tonumber(id)
+        local ped = GetPlayerPed(playerSrc)
         if ped and ped ~= 0 then
             local coords = GetEntityCoords(ped)
             local heading = GetEntityHeading(ped)
-            local player = QBCore.Functions.GetPlayer(src)
-            local name = "Unknown"
+            local playerObj = QBCore.Functions.GetPlayer(playerSrc)
+            local name
             local vitals = { health = 100, armor = 0, hunger = 100, thirst = 100 }
             local inVehicle = false
             local vehicleType = nil
@@ -629,28 +626,28 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
                 vehicleType = Entity(ped).state.vehicleType or 'car'
             end
 
-            local isStaff = IsPlayerAceAllowed(src, 'qadmin.master')
+            local isStaff = IsPlayerAceAllowed(playerSrc, 'qadmin.master')
             local staffColor = nil
             if isStaff then
-                local rgb, _ = GetPlayerESPColor(src)
+                local rgb, _ = GetPlayerESPColor(playerSrc)
                 if rgb then
                     staffColor = RGBToHex(rgb)
                 end
             end
 
-            if player then
-                name = player.PlayerData.charinfo.firstname .. ' ' .. player.PlayerData.charinfo.lastname
+            if playerObj then
+                name = playerObj.PlayerData.charinfo.firstname .. ' ' .. playerObj.PlayerData.charinfo.lastname
                 vitals.health = GetEntityHealth(ped)
                 vitals.armor = GetPedArmour(ped)
-                vitals.hunger = player.PlayerData.metadata['hunger'] or 100
-                vitals.thirst = player.PlayerData.metadata['thirst'] or 100
-                vitals.isDead = player.PlayerData.metadata['isdead'] or player.PlayerData.metadata['inlaststand'] or false
+                vitals.hunger = playerObj.PlayerData.metadata['hunger'] or 100
+                vitals.thirst = playerObj.PlayerData.metadata['thirst'] or 100
+                vitals.isDead = playerObj.PlayerData.metadata['isdead'] or playerObj.PlayerData.metadata['inlaststand'] or false
             else
-                name = GetPlayerName(src)
+                name = GetPlayerName(playerSrc)
             end
 
             table.insert(coordsList, {
-                id = src,
+                id = playerSrc,
                 x = coords.x,
                 y = coords.y,
                 heading = heading,
@@ -668,22 +665,23 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
 end)
 
 -- Screenshot Logic
-lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(source, targetId)
+lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(_source, targetId, viewerId)
     local target = tonumber(targetId)
     local src = source
-    print('[DEBUG] GetPlayerScreen called. Source:', src, 'Target:', target)
+    print('[DEBUG] GetPlayerScreen called. Source:', src, 'Target:', target, 'Viewer:', viewerId)
 
     if target and target ~= 0 then
         -- Trigger WebRTC Start on Target
-        -- Params: requesterSource (who wants to watch)
-        TriggerClientEvent('mri_Qadmin:client:StartWebRTC', target, src)
+        -- Default to source if no specialized viewerId provided
+        local vid = viewerId or tostring(src)
+        TriggerClientEvent('mri_Qadmin:client:StartWebRTC', target, vid)
         return { status = "webrtc_initiated" }
     end
     return { status = "error", message = "Invalid Target" }
 end)
 
 -- Real-time vitals for ScreenModal
-lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(source, targetId)
+lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(_source, targetId)
     local target = tonumber(targetId)
     if not target or target == 0 then return { error = 'Invalid target' } end
     local player = QBCore.Functions.GetPlayer(target)
@@ -697,144 +695,3 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(source, ta
     }
 end)
 
--- Stop WebRTC streaming on the target player
-RegisterServerEvent('mri_Qadmin:server:StopPlayerScreen', function(targetId)
-    local target = tonumber(targetId)
-    if target and target ~= 0 then
-        TriggerClientEvent('mri_Qadmin:client:StopWebRTC', target)
-    end
-end)
-
--- ── FiveM Native Signaling Relay ─────────────────────────────────────────────
--- Receives a signal message from one client and forwards it to the target.
--- The target is encoded in msg.targetId (e.g. "viewer-5" or "3").
-RegisterServerEvent('mri_Qadmin:server:Signal', function(msg)
-    if not msg or not msg.targetId then return end
-
-    local targetIdStr = tostring(msg.targetId)
-    local target = nil
-
-    -- Resolve target by stripping "viewer-" prefix if present
-    local rawId = targetIdStr:match("^viewer%-(%d+)$") or targetIdStr
-    target = tonumber(rawId)
-
-    if target and target ~= 0 then
-        -- Deliver the message to the target player's NUI as a 'Signal' action
-        TriggerClientEvent('mri_Qadmin:client:DeliverSignal', target, msg)
-    end
-end)
-
-RegisterNetEvent('mri_Qadmin:server:ReceiveScreenChunk', function(requester, chunkData)
-    -- chunkData = { captureId, current, total, data }
-    if requester then
-        TriggerClientEvent('mri_Qadmin:client:ReceiveScreenChunk', requester, {
-             id = source, -- The player who sent the screen
-             captureId = chunkData.captureId,
-             current = chunkData.current,
-             total = chunkData.total,
-             data = chunkData.data
-        })
-    end
-end)
-
--- ── Cloudflare Realtime SFU API Proxy ────────────────────────────────────────
--- Secrets are read from server/server_secrets.json via LoadResourceFile so they
--- never appear in shared_scripts and work regardless of the Lua runtime isolation.
-local _cfSecrets = nil
-local function cfSecrets()
-    if _cfSecrets then return _cfSecrets end
-    local raw = LoadResourceFile(GetCurrentResourceName(), 'server/server_secrets.json')
-    if not raw then
-        print('[CF SFU] ERROR: server/server_secrets.json not found!')
-        _cfSecrets = {}
-    else
-        local ok, data = pcall(json.decode, raw)
-        _cfSecrets = (ok and data) or {}
-        if not _cfSecrets.CloudflareAppId then
-            print('[CF SFU] ERROR: server_secrets.json is missing CloudflareAppId')
-        else
-            print('[CF SFU] Secrets loaded OK. AppId:', _cfSecrets.CloudflareAppId:sub(1, 8) .. '...')
-        end
-    end
-    return _cfSecrets
-end
-
-local CF_BASE = 'https://rtc.live.cloudflare.com/v1/apps/'
-
-local function cfRequest(method, path, body)
-    local s   = cfSecrets()
-    local appId     = s.CloudflareAppId     or ''
-    local appSecret = s.CloudflareAppSecret or ''
-    if appId == '' then return { error = 'CF credentials missing — check server/server_secrets.json' } end
-
-    local p = promise.new()
-    local url = CF_BASE .. appId .. path
-    local headers = { ['Authorization'] = 'Bearer ' .. appSecret }
-    local bodyStr = ''
-
-    -- Only attach Content-Type + body when there is actual payload
-    if body ~= nil and next(body) ~= nil then
-        bodyStr = json.encode(body)
-        headers['Content-Type'] = 'application/json'
-    end
-
-    print(('[CF SFU] --> %s %s (body: %d bytes)'):format(method, url, #bodyStr))
-    PerformHttpRequest(url, function(code, responseBody, _h)
-        print(('[CF SFU] <-- %d  %s'):format(code, (responseBody or ''):sub(1, 400)))
-        if code >= 200 and code < 300 then
-            local ok, data = pcall(json.decode, responseBody)
-            if ok and data then p:resolve(data)
-            else p:resolve({ raw = responseBody })
-            end
-        elseif code == 0 then
-            p:resolve({ error = 'CF API: connection failed (code 0) — check server outbound HTTPS access' })
-        else
-            p:resolve({ error = ('CF API error %d: %s'):format(code, responseBody or '') })
-        end
-    end, method, bodyStr, headers)
-    return Citizen.Await(p)
-end
-
-lib.callback.register('mri_Qadmin:callback:CFCreateSession', function(_source)
-    -- sessions/new expects NO body and NO Content-Type
-    local ok, result = pcall(cfRequest, 'POST', '/sessions/new', nil)
-    if not ok then
-        print('[CF SFU] CFCreateSession exception:', result)
-        return { error = 'CFCreateSession exception: ' .. tostring(result) }
-    end
-    return result
-end)
-
-lib.callback.register('mri_Qadmin:callback:CFPublishTracks', function(_source, data)
-    local ok, result = pcall(cfRequest, 'POST', ('/sessions/%s/tracks/new'):format(data.sessionId), {
-        sessionDescription = data.offer,
-        tracks = {{ location = 'local', mid = '0', trackName = 'screen' }},
-    })
-    if not ok then print('[CF SFU] CFPublishTracks exception:', result); return { error = tostring(result) } end
-    return result
-end)
-
-lib.callback.register('mri_Qadmin:callback:CFSubscribe', function(_source, data)
-    local ok, result = pcall(cfRequest, 'POST', ('/sessions/%s/tracks/new'):format(data.mySessionId), {
-        tracks = {{ location = 'remote', sessionId = data.publisherSessionId, trackName = data.trackName }},
-    })
-    if not ok then print('[CF SFU] CFSubscribe exception:', result); return { error = tostring(result) } end
-    return result
-end)
-
-lib.callback.register('mri_Qadmin:callback:CFRenegotiate', function(_source, data)
-    return cfRequest('PUT', ('/sessions/%s/renegotiate'):format(data.sessionId), {
-        sessionDescription = data.answer,
-    })
-end)
-
--- Relay publisher track info to the waiting admin viewer
-RegisterServerEvent('mri_Qadmin:server:CFAnnounceTrack', function(data)
-    local adminId = tonumber(data.adminId)
-    if adminId and adminId ~= 0 then
-        TriggerClientEvent('mri_Qadmin:client:CFTrackReady', adminId, {
-            sessionId = data.sessionId,
-            trackName = data.trackName,
-        })
-    end
-end)

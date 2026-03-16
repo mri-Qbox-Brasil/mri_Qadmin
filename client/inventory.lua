@@ -1,5 +1,5 @@
 -- Open Inventory
-RegisterNetEvent('mri_Qadmin:client:openInventory', function(data, selectedData)
+RegisterNetEvent('mri_Qadmin:client:openInventory', function(_, selectedData)
     if not CheckPerms('qadmin.action.open_inventory') then return end
     local player = selectedData["Player"].value
 
@@ -11,7 +11,7 @@ RegisterNetEvent('mri_Qadmin:client:openInventory', function(data, selectedData)
 end)
 
 -- Open Stash
-RegisterNetEvent('mri_Qadmin:client:openStash', function(data, selectedData)
+RegisterNetEvent('mri_Qadmin:client:openStash', function(_, selectedData)
     if not CheckPerms('qadmin.action.open_stash') then return end
     local stash = selectedData["Stash"].value
 

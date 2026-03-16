@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
-import { MriPageHeader, MriCard, MriButton } from '@mriqbox/ui-kit'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { MriPageHeader, MriCard, MriPlayerScreenStream } from '@mriqbox/ui-kit'
 import { Monitor, X, Video, Wifi, Maximize2, Minimize2, Keyboard } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
-import PlayerScreenStream from '@/components/shared/PlayerScreenStream'
+import { signaling } from '@/utils/signaling'
+import { subscribeFromCF } from '@/utils/cf-sfu'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
 
@@ -17,20 +18,12 @@ interface WatchedPlayer {
 }
 
 export default function LiveScreensPage() {
-    const { sendNui } = useNui()
+    const { sendNui, on, off } = useNui()
     const { gameData, settings } = useAppState()
     const { t } = useI18n()
-    const [players, setPlayers]   = useState<any[]>([])
+    const [players, setPlayers] = useState<any[]>([])
     const [watching, setWatching] = useState<WatchedPlayer[]>([])
     const [maximizedId, setMaximizedId] = useState<number | null>(null)
-    const [myId, setMyId]         = useState<string | null>(null)
-
-    // Get own player ID
-    useEffect(() => {
-        sendNui('getSelfId').then((id: any) => {
-            if (id) setMyId(String(id))
-        })
-    }, [sendNui])
 
     // Fetch online-only player list
     useEffect(() => {
@@ -40,15 +33,77 @@ export default function LiveScreensPage() {
         })
     }, [sendNui])
 
+    // Use a ref to track active streams for unmount cleanup
+    const watchingRef = useRef<WatchedPlayer[]>([])
+    useEffect(() => { watchingRef.current = watching }, [watching])
+
+    const selfIdValue = (gameData as any)?.selfId;
+    const selfIdRef = useRef(selfIdValue);
+    useEffect(() => { if (selfIdValue) selfIdRef.current = selfIdValue }, [selfIdValue]);
+
+    // Initialize signaling for the viewer role
+    useEffect(() => {
+        if (!selfIdRef.current) return;
+        const url = settings?.WebRTCUrl || gameData.webrtcUrl || null;
+        const provider = (settings?.SignalingProvider || gameData.signalingProvider || 'websocket') as any;
+        signaling.init(url, String(selfIdRef.current), provider);
+    }, [gameData.webrtcUrl, gameData.signalingProvider, settings?.WebRTCUrl, settings?.SignalingProvider]);
+
+    const streamLabels = useMemo(() => ({
+        connecting: t('stream_connecting'),
+        error_title: t('stream_error_title'),
+        error_desc: t('stream_error_desc'),
+        retry: t('stream_retry'),
+        live: t('stream_live'),
+        stable: t('stream_stable'),
+        mock_active: t('stream_mock_active'),
+        simulator: t('stream_simulator')
+    }), [t]);
+
+    const wrappedSendNui = useCallback((event: string, data: any) => {
+        if ((event === 'GetPlayerScreen' || event === 'StopPlayerScreen') && !data.viewerId) {
+            const target = data.targetId || 'unknown';
+            data.viewerId = `list-${selfIdRef.current || 'unknown'}-${target}`;
+        }
+        return sendNui(event, data);
+    }, [sendNui]);
+
+    // Effect to handle stream initiation after component mounting (to avoid race conditions)
+    const lastWatchingRef = useRef<number[]>([]);
+    useEffect(() => {
+        const currentIds = watching.map(w => w.id);
+        const added = currentIds.filter(id => !lastWatchingRef.current.includes(id));
+
+        added.forEach(id => {
+            wrappedSendNui('GetPlayerScreen', { targetId: id }).catch(err => {
+                console.error('[LiveScreens] Request failed for', id, err);
+            });
+        });
+
+        lastWatchingRef.current = currentIds;
+    }, [watching, wrappedSendNui]);
+
+    useEffect(() => {
+        return () => {
+            // Stop all active streams when navigating away from the page
+            watchingRef.current.forEach((p: WatchedPlayer) => {
+                wrappedSendNui('StopPlayerScreen', {
+                    targetId: p.id
+                }).catch(() => { })
+            })
+        }
+    }, [wrappedSendNui])
+
     const toggleWatch = useCallback((player: any) => {
         setWatching(prev => {
             if (prev.find(w => w.id === player.id)) {
                 if (maximizedId === player.id) setMaximizedId(null)
+                wrappedSendNui('StopPlayerScreen', { targetId: player.id }).catch(() => { })
                 return prev.filter(w => w.id !== player.id);
             }
             return [...prev, { id: player.id, name: player.name, loading: true, showKeyboard: false }];
         });
-    }, [maximizedId]);
+    }, [maximizedId, wrappedSendNui]);
 
     const toggleMaximize = (id: number) => {
         setMaximizedId(prev => prev === id ? null : id)
@@ -62,7 +117,7 @@ export default function LiveScreensPage() {
         <div className="h-full flex flex-col bg-background relative overflow-hidden">
             <MriPageHeader title={t('livescreens_title') || "Live Screens Dashboard"} icon={Monitor} />
 
-            <div className="flex-1 p-4 overflow-hidden flex flex-col gap-4 relative">
+            <div className="flex-1 pt-4 p-2 overflow-hidden flex flex-col gap-4 relative">
                 {/* Active feeds grid */}
                 <div className="flex-1 border rounded-xl p-4 overflow-auto bg-card/50 relative">
                     <div className="flex items-center justify-between mb-4">
@@ -85,7 +140,7 @@ export default function LiveScreensPage() {
                             "grid gap-4 transition-all duration-300",
                             maximizedId
                                 ? "grid-cols-1 h-full"
-                                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                : "grid-cols-4"
                         )}>
                             {watching.map(p => {
                                 const isMax = maximizedId === p.id
@@ -130,11 +185,21 @@ export default function LiveScreensPage() {
                                             </div>
                                         </div>
 
-                                        <PlayerScreenStream
+                                        <MriPlayerScreenStream
                                             playerId={p.id}
                                             playerName={p.name}
                                             showKeyboard={p.showKeyboard}
                                             className="flex-1"
+                                            onSendNui={wrappedSendNui}
+                                            onNuiEvent={(event: string, cb: any) => {
+                                                on(event, cb);
+                                                return () => off(event, cb);
+                                            }}
+                                            signaling={signaling as any}
+                                            subscribeFromCF={subscribeFromCF}
+                                            webrtcConfig={settings?.webrtc}
+                                            selfId={`list-${selfIdValue || 'unknown'}-${p.id}`}
+                                            labels={streamLabels}
                                         />
                                     </MriCard>
                                 )

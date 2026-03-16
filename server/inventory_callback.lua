@@ -12,7 +12,7 @@ end
 local function AdminLog(src, action, target, item, count, invType)
     local admin = QBCore.Functions.GetPlayer(src)
     local adminName = admin and (admin.PlayerData.charinfo.firstname .. ' ' .. admin.PlayerData.charinfo.lastname) or GetPlayerName(src)
-    local targetName = "Unknown"
+    local targetName
 
     if invType == 'player' or not invType then
         local tPlayer = QBCore.Functions.GetPlayer(tonumber(target))

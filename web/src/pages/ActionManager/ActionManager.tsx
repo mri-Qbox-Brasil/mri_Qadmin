@@ -1,12 +1,11 @@
 import React, { useState, useMemo } from 'react'
-import { MriButton, MriPageHeader, MriCard } from '@mriqbox/ui-kit'
-import { Settings as SettingsIcon, Plus, Trash2, Save, Edit, Code, Zap } from 'lucide-react'
+import { MriButton, MriPageHeader, MriCard, MriActionModal, MriCompactSearch, MriSearchInput } from '@mriqbox/ui-kit'
+import { Settings as SettingsIcon, Plus, Trash2, Save, Code, Edit, Zap, X, RefreshCw } from 'lucide-react'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/hooks/useI18n'
-import ActionModal from '@/components/ActionModal'
 import ConfirmAction from '@/components/players/ConfirmAction'
-import SearchInput from '@/components/shared/SearchInput'
+import { cn } from '@/lib/utils'
 
 export default function ActionManager() {
     const { t } = useI18n()
@@ -16,6 +15,7 @@ export default function ActionManager() {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editPayload, setEditPayload] = useState<string>('')
     const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(false)
 
     // Modals state
     const [showCreateModal, setShowCreateModal] = useState(false)
@@ -36,11 +36,37 @@ export default function ActionManager() {
             : Object.entries(actionsSource).map(([k, v]) => ({ ...(v as any), id: k }))
 
         return list.filter(a => {
-            const matchesId = a.id.toLowerCase().includes(search.toLowerCase())
-            const matchesLabel = a.label && a.label.toLowerCase().includes(search.toLowerCase())
+            const matchesId = String(a.id).toLowerCase().includes(search.toLowerCase())
+            const matchesLabel = a.label && String(a.label).toLowerCase().includes(search.toLowerCase())
             return matchesId || matchesLabel
         }).sort((a, b) => a.id.localeCompare(b.id))
     }, [actionsSource, search])
+
+    const actionOptions = useMemo(() => {
+        const list = Array.isArray(actionsSource)
+            ? actionsSource.map((v, i) => ({ ...v, id: v.id || i.toString() }))
+            : Object.entries(actionsSource).map(([k, v]) => ({ ...(v as any), id: k }))
+        return list.map(a => ({
+            value: a.id,
+            label: a.label || a.id
+        }))
+    }, [actionsSource])
+
+    const handleRefresh = async () => {
+        setLoading(true)
+        try {
+            // Trigger a data fetch from the app state context
+            // In many of these pages, just sending 'getData' or similar works
+            await sendNui('getData', {}, {})
+            // The AppState usually handles the response via NUI message,
+            // but we call it to manually trigger an update.
+        } catch (e) {
+            console.error(e)
+        } finally {
+            // Artificial delay to show animation
+            setTimeout(() => setLoading(false), 500)
+        }
+    }
 
     const handleSave = async (id: string, payloadStr: string) => {
         try {
@@ -74,11 +100,20 @@ export default function ActionManager() {
         setEditingId(cleanId)
         setEditPayload(JSON.stringify({
             label: t('action_manager_new_action') || "Nova Ação",
-            icon: "Zap",
-            color: "blue",
-            type: "client",
-            event: "evento:exemplo",
-            perms: "qadmin.page.actions"
+            perms: "qadmin.page.actions",
+            dropdown: [
+                { label: "Player", option: "dropdown", data: "players", valueField: "id", labelField: "name" },
+                { label: "Reason", option: "text" },
+                {
+                    label: "Option",
+                    option: "dropdown",
+                    data: [
+                        { label: "Example 1", value: "1" },
+                        { label: "Example 2", value: "2" }
+                    ]
+                },
+                { label: "Confirm", option: "button", type: "server", event: "mri_Qadmin:server:ExampleEvent" }
+            ]
         }, null, 2))
 
         setShowCreateModal(false)
@@ -94,20 +129,52 @@ export default function ActionManager() {
                 icon={SettingsIcon}
             >
                 <div className="flex items-center gap-3">
-                    <SearchInput
-                        placeholder={t('action_manager_search') || "Buscar Ação..."}
-                        value={search}
-                        onChange={setSearch}
-                    />
-                    <MriButton variant="outline" onClick={() => setShowCreateModal(true)}>
-                        <Plus className="w-4 h-4 mr-2" /> {t('action_manager_create')}
+                    <div className="flex items-center gap-2">
+                        <MriCompactSearch
+                            placeholder={t('search_placeholder_items')}
+                            value={search}
+                            onChange={setSearch}
+                            options={actionOptions}
+                            searchPlaceholder={t('search_placeholder_items')}
+                            className="w-8 h-8 border-border bg-card/60"
+                        />
+                        {search && (
+                            <MriButton
+                                size="icon"
+                                variant="outline"
+                                className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                                onClick={() => setSearch('')}
+                                title={t('common_clear')}
+                            >
+                                <X size={16} />
+                            </MriButton>
+                        )}
+                    </div>
+                    <MriButton
+                        size="icon"
+                        variant="outline"
+                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        title={t('refresh')}
+                    >
+                        <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                    </MriButton>
+                    <MriButton
+                        size="icon"
+                        variant="outline"
+                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowCreateModal(true)}
+                        title={t('action_manager_create')}
+                    >
+                        <Plus className={cn("w-4 h-4", loading && "animate-spin")} />
                     </MriButton>
                 </div>
             </MriPageHeader>
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar Categories */}
-                <div className="w-64 border-r border-border p-4 space-y-2 flex flex-col bg-card/30">
+                <div className="w-64 border-r border-border p-2 space-y-2 flex flex-col bg-card/30">
                     <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('action_manager_categories')}</h3>
                     {(['Actions', 'PlayerActions', 'OtherActions'] as const).map(cat => (
                         <MriButton
@@ -122,7 +189,7 @@ export default function ActionManager() {
                 </div>
 
                 {/* Main Content View */}
-                <div className="flex-1 p-6 overflow-y-auto">
+                <div className="flex-1 p-4 overflow-y-auto">
                     {editingId ? (
                         <MriCard className="p-6 space-y-4">
                             <div className="flex items-center justify-between border-b border-border pb-4">
@@ -145,7 +212,7 @@ export default function ActionManager() {
                             />
                         </MriCard>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             {actionsList.map(action => (
                                 <MriCard key={action.id} className="p-4 flex flex-col justify-between hover:border-primary/50 transition-colors">
                                     <div>
@@ -211,12 +278,11 @@ export default function ActionManager() {
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider pl-1">
                             {t('action_manager_create_prompt') || 'Digite o ID (Key) da nova Action:'}
                         </label>
-                        <SearchInput
+                        <MriSearchInput
                             placeholder="ex: kick_player"
                             width="w-full"
                             value={newActionId}
                             onChange={setNewActionId}
-                            autoFocus
                         />
                     </div>
                 </MriActionModal>

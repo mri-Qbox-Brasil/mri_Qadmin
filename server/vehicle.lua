@@ -1,6 +1,6 @@
 lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
     local vehicles = {}
-    local baseVehicles = {}
+    local baseVehicles
 
     if GetResourceState('qbx_core') == 'started' then
         baseVehicles = exports.qbx_core:GetVehiclesByName()
@@ -67,7 +67,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
 end)
 
 -- Give Car
-RegisterNetEvent("mri_Qadmin:server:givecar", function(actionKey, selectedData)
+RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
     local src = source
 
     if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
@@ -131,7 +131,7 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(actionKey, selectedData)
 end)
 
 -- Give Car
-RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(actionKey, selectedData)
+RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(_, selectedData)
     local src = source
 
     if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
@@ -162,7 +162,7 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     local src = source
     if not CheckPerms(src, 'qadmin.action.change_plate') then return end
 
-    local newPlate = newPlate:upper()
+    newPlate = newPlate:upper()
 
     if Config.Inventory == 'ox_inventory' then
         exports.ox_inventory:UpdateVehicle(currentPlate, newPlate)
@@ -173,14 +173,14 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
 end)
 
-lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(source, plate)
+lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(_source, plate)
     local result = MySQL.query.await('SELECT vehicle FROM player_vehicles WHERE plate = ?', { plate })
     local veh = result[1] and result[1].vehicle or {}
     return veh
 end)
 
 -- Fix Vehicle for player
-RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.spawn_vehicle') then return end
     local src = source
     local playerId = selectedData['Player'].value
@@ -196,7 +196,7 @@ RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(actionKey, selectedData
 end)
 
 -- Delete Vehicle by Plate
-RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedData)
     local src = source
 
     if not CheckPerms(src, 'qadmin.action.delete_vehicle') then

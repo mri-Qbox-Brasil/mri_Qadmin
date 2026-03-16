@@ -32,7 +32,9 @@ local function setupMenu()
             webrtcUrl = Config.WebRTCUrl,
             signalingProvider = Config.SignalingProvider,
             descriptions = Config.Descriptions,
-            settingOptions = Config.Options
+            settingOptions = Config.Options,
+            inventory = Config.Inventory,
+            selfId = GetPlayerServerId(PlayerId())
 		}
 	})
 end
@@ -62,7 +64,7 @@ RegisterNUICallback('getTranslations', function(data, cb)
 	cb(nil)
 end)
 
-RegisterNUICallback("mri_Qadmin:callback:GetBans", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetBans", function(_data, cb)
     local bans = lib.callback.await('mri_Qadmin:callback:GetBans', false)
     cb(bans)
 end)
@@ -112,7 +114,7 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
 
     Debug("Button clicked:", json.encode(nuiData))
 
-    local actionData = nil
+    local actionData
     if type(action) == "table" then
         actionData = action
     else
@@ -188,7 +190,7 @@ RegisterNUICallback("getPlayers", function(data, cb)
 end)
 
 -- Get Groups
-RegisterNUICallback("getGroupsData", function(data, cb)
+RegisterNUICallback("getGroupsData", function(_, cb)
 	local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData', false)
 	cb(groups)
 end)
@@ -199,32 +201,11 @@ RegisterNUICallback("GetPlayerCoords", function(data, cb)
     cb(coords)
 end)
 
-RegisterNUICallback("GetAllPlayerCoords", function(data, cb)
+RegisterNUICallback("GetAllPlayerCoords", function(_, cb)
     local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords', false)
     cb(coords)
 end)
 
-RegisterNUICallback("GetPlayerScreen", function(data, cb)
-    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerScreen', false, data.targetId)
-    cb(res)
-end)
-
-RegisterNUICallback("SignalRegister", function(data, cb)
-    -- No-op: identity is tracked by server ID, not a registration table
-    cb({ status = "ok" })
-end)
-
-RegisterNUICallback("Signal", function(data, cb)
-    -- Relay signaling message to targetId via server
-    TriggerServerEvent('mri_Qadmin:server:Signal', data)
-    cb({ status = "ok" })
-end)
-
-RegisterNUICallback("StopPlayerScreen", function(data, cb)
-    -- Tell the target player to stop streaming
-    TriggerServerEvent('mri_Qadmin:server:StopPlayerScreen', data.targetId)
-    cb({ status = "ok" })
-end)
 
 RegisterNUICallback("GetPlayerVitals", function(data, cb)
     local res = lib.callback.await('mri_Qadmin:callback:GetPlayerVitals', false, data.targetId)
@@ -237,31 +218,6 @@ RegisterNUICallback("SetPlayerVital", function(data, cb)
 end)
 
 -- ── Cloudflare Realtime SFU ──────────────────────────────────────────────────
-RegisterNUICallback("CFCreateSession", function(_, cb)
-    local res = lib.callback.await('mri_Qadmin:callback:CFCreateSession', false)
-    cb(res)
-end)
-
-RegisterNUICallback("CFPublishTracks", function(data, cb)
-    local res = lib.callback.await('mri_Qadmin:callback:CFPublishTracks', false, data)
-    cb(res)
-end)
-
-RegisterNUICallback("CFSubscribe", function(data, cb)
-    local res = lib.callback.await('mri_Qadmin:callback:CFSubscribe', false, data)
-    cb(res)
-end)
-
-RegisterNUICallback("CFRenegotiate", function(data, cb)
-    local res = lib.callback.await('mri_Qadmin:callback:CFRenegotiate', false, data)
-    cb(res)
-end)
-
--- P2 announces its CF track to the admin viewer
-RegisterNUICallback("CFAnnounceTrack", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:CFAnnounceTrack', data)
-    cb({ status = "ok" })
-end)
 
 RegisterNUICallback("getSelfId", function(_, cb)
     cb(GetPlayerServerId(PlayerId()))
@@ -368,28 +324,28 @@ RegisterNetEvent("ars_ambulancejob:updateDeathStatus", function(death)
     TriggerServerEvent('mri_Qadmin:server:SyncDeathStatus', death.isDead)
 end)
 
-RegisterNUICallback("getData", function(data, cb)
+RegisterNUICallback("getData", function(_, cb)
     local results = GetCoreData()
     cb(results)
 end)
 
 -- Permissions Callbacks Matcher
-RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(_, cb)
     local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
     cb(perms or {})
 end)
 
-RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(_, cb)
     local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals', false)
     cb(principals or {})
 end)
 
-RegisterNUICallback("mri_Qadmin:callback:GetAces", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetAces", function(_, cb)
     local aces = lib.callback.await('mri_Qadmin:callback:GetAces', false)
     cb(aces or {})
 end)
 
-RegisterNUICallback("seed_pages", function(data, cb)
+RegisterNUICallback("seed_pages", function(_, cb)
     TriggerServerEvent('mri_Qadmin:server:SeedAces')
     cb('ok')
 end)
@@ -424,7 +380,7 @@ RegisterNUICallback("mri_Qadmin:server:SetVital", function(data, cb)
     cb('ok')
 end)
 
-RegisterNUICallback("getSettings", function(data, cb)
+RegisterNUICallback("getSettings", function(_, cb)
     local settings = lib.callback.await('mri_Qadmin:callback:GetSettings', false)
     cb(settings or {})
 end)
