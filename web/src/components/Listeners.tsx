@@ -11,7 +11,9 @@ export default function Listeners() {
         setVehicleDev,
         setShowCoords,
         setEntityInfo,
+        setNearbyEntities,
         setGameData,
+
         setStaffMessages,
         setMyPermissions,
         setPagination,
@@ -106,6 +108,10 @@ export default function Listeners() {
             setMyPermissions(Array.isArray(data) ? data : [])
         }
 
+        const showNearbyEntities = (data: any) => {
+            setNearbyEntities(data)
+        }
+
         on('setupUI', setupUI)
         on('updateActions', updateActions)
         on('setResourceData', setResourceData)
@@ -114,6 +120,7 @@ export default function Listeners() {
         on('showVehicleMenu', showVehicleMenu)
         on('showCoordsMenu', showCoordsMenu)
         on('showEntityInfo', showEntityInfo)
+        on('showNearbyEntities', showNearbyEntities)
         on('setMessages', setMessages)
         on('updatePermissions', setPermissions)
 
@@ -129,9 +136,11 @@ export default function Listeners() {
             off('showVehicleMenu', showVehicleMenu)
             off('showCoordsMenu', showCoordsMenu)
             off('showEntityInfo', showEntityInfo)
+            off('showNearbyEntities', showNearbyEntities)
             off('setMessages', setMessages)
         }
-    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages])
+
+    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setNearbyEntities, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages])
 
     return null
 }

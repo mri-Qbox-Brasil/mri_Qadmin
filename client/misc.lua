@@ -11,11 +11,17 @@ end)
 -- God Mode
 local godmode = false
 RegisterNetEvent('mri_Qadmin:client:ToggleGodmode', function(data)
-    local actionData = CheckDataFromKey(data)
-    if not actionData or not CheckPerms(actionData.perms) then return end
-    godmode = not godmode
+    if godmode then
+        godmode = false
+    else
+        if not data then return end
+        local actionData = CheckDataFromKey(data)
+        if not actionData or not CheckPerms(actionData.perms) then return end
+        godmode = true
+    end
 
     if godmode then
+
         QBCore.Functions.Notify(locale("godmode", "Ativado"), 'primary')
         while godmode do
             Wait(0)
@@ -116,12 +122,17 @@ local function showCoordsMenu()
 end
 
 RegisterNetEvent('mri_Qadmin:client:ToggleCoords', function(data)
-    local actionData = CheckDataFromKey(data)
-    if not actionData or not CheckPerms(actionData.perms) then return end
-
-    showCoords = not showCoords
+    if showCoords then
+        showCoords = false
+    else
+        if not data then return end
+        local actionData = CheckDataFromKey(data)
+        if not actionData or not CheckPerms(actionData.perms) then return end
+        showCoords = true
+    end
 
     if showCoords then
+
         CreateThread(showCoordsMenu)
     end
 end)
@@ -157,17 +168,44 @@ end)
 local ToggleDev = false
 
 RegisterNetEvent('mri_Qadmin:client:ToggleDev', function(dataKey)
-    local data = CheckDataFromKey(dataKey)
-    if not data or not CheckPerms(data.perms) then return end
-
-    ToggleDev = not ToggleDev
+    -- If already on, allow turning off without dataKey/perm check
+    if ToggleDev then
+        ToggleDev = false
+    else
+        -- If turning on, require valid dataKey and permissions
+        if not dataKey then return end
+        local data = CheckDataFromKey(dataKey)
+        if not data or not CheckPerms(data.perms) then return end
+        ToggleDev = true
+    end
 
     TriggerEvent("qb-admin:client:ToggleDevmode")              -- toggle dev mode (ps-hud/qb-hud)
     TriggerEvent('mri_Qadmin:client:ToggleCoords', dataKey)  -- toggle Coords
     TriggerEvent('mri_Qadmin:client:ToggleGodmode', dataKey) -- Godmode
+    TriggerEvent('mri_Qadmin:client:ToggleLaser')            -- toggle Laser (auto-on)
+    TriggerEvent('mri_Qadmin:client:ToggleNearbyScanner')    -- toggle Nearby Scanner (auto-on)
+
 
     QBCore.Functions.Notify(locale("toggle_dev"), 'success')
 end)
+
+-- Deactivate DevMode on BACKSPACE if menu is closed
+CreateThread(function()
+    while true do
+        if ToggleDev and not MenuVisible then
+            if IsControlJustReleased(0, 177) or IsDisabledControlJustReleased(0, 177) then
+                TriggerEvent('mri_Qadmin:client:ToggleDev')
+                Wait(500) -- Simple debounce
+            end
+            Wait(0)
+        else
+            Wait(500)
+        end
+    end
+end)
+
+
+
 
 -- Key Bindings
 local toogleAdmin = lib.addKeybind({

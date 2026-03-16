@@ -46,6 +46,8 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
         { icon: Settings, label: t('nav_settings'), route: 'settings' },
         { icon: Zap, label: t('nav_action_manager'), route: 'action_manager' },
         { icon: Info, label: t('nav_credits'), route: 'credits' },
+        { icon: Box, label: '', divider: true },
+        { icon: Zap, label: t('nav_devmode'), route: 'devmode' },
     ].filter(item => {
         if (item.divider) return true
         if (!item.route) return true

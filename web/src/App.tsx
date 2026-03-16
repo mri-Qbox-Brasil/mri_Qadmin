@@ -20,6 +20,8 @@ import ActionManager from '@/pages/ActionManager/ActionManager'
 import Permissions from '@/pages/Permissions/Permissions'
 import LiveMapPage from './pages/LiveMapPage'
 import LiveScreensPage from './pages/LiveScreensPage'
+import NearbyEntities from '@/components/overlays/NearbyEntities'
+
 import { useAppState } from '@/context/AppState'
 import { useTheme } from '@/context/ThemeContext'
 import { useNui } from '@/context/NuiContext'
@@ -127,35 +129,23 @@ export default function App() {
                 }).catch(console.error)
             }
 
-            try {
-                const root = document.getElementById('root')
-                if (root) root.style.display = newVis ? '' : 'none'
-            } catch {
-                // ignore in non-browser environments
-                console.warn('Root display update failed');
-            }
+
         }
         on('setVisible', onVisible)
         return () => off('setVisible', onVisible)
     }, [on, off, sendNui, setMyPermissions, setSettings])
 
-    // ensure root display follows `visible` (covers initial dev mode)
-    useEffect(() => {
-        try {
-            const root = document.getElementById('root')
-            if (root) root.style.display = visible ? '' : 'none'
-        } catch {
-            // ignore
-        }
-    }, [visible])
+
 
     // expose helper in dev so user can toggle persistent dev-open state
     useEffect(() => {
         if (!isDev) return
             ; (window as any).psToggleDevPanel = (persist?: boolean) => {
-                const newVis = !(document.getElementById('root')?.style.display === '')
-                if (persist) window.localStorage.setItem('ps:devOpen', newVis ? '1' : '0')
-                setVisible(newVis)
+                setVisible(prev => {
+                    const newVis = !prev
+                    if (persist) window.localStorage.setItem('ps:devOpen', newVis ? '1' : '0')
+                    return newVis
+                })
             }
     }, [isDev])
 
@@ -179,8 +169,6 @@ export default function App() {
                     } catch {
                         // ignore
                         setVisible(false)
-                        const root = document.getElementById('root')
-                        if (root) root.style.display = 'none'
                     }
                 }
             }
@@ -202,19 +190,19 @@ export default function App() {
                     transformOrigin: 'center'
                 }}
             >
-                <Listeners />
-                {/* WebRTCStreamer works in background, but we keep it here.
-              Wait, if we hide app-shell, WebRTCStreamer is inside it.
-              Does display:none stop JS? No. It just hides it.
-              But let's move it out to be safe if app-shell has logic.
-          */}
 
                 {/* Overlays */}
-                <VehicleDev />
-                <ToggleCoords />
-                <EntityInformation />
+                {(() => {
+                    const handleRoute = (r: any) => {
+                        if (r === 'devmode') {
+                            sendNui('clickButton', { data: 'toggleDevmode' })
+                            return
+                        }
+                        setRoute(r)
+                    }
 
-                <Sidebar onRoute={setRoute} currentRoute={route} />
+                    return <Sidebar onRoute={handleRoute} currentRoute={route} />
+                })()}
                 <div className="flex-1 p-2 overflow-hidden flex flex-col min-h-0 min-w-0">
                     {route === 'resources' ? <Resources /> :
                         route === 'players' ? <Players /> :
@@ -235,8 +223,20 @@ export default function App() {
                                                                                     null}
                 </div>
             </div>
-            {/* LISTENERS MUST BE ALWAYS ACTIVE */}
+            {/* Background elements and Overlays */}
+            <Listeners />
+            
+            {/* Left side overlays container */}
+            <div className="fixed inset-y-0 left-0 flex flex-col justify-center gap-4 z-50 pointer-events-none">
+                <ToggleCoords />
+                <VehicleDev />
+                <EntityInformation />
+            </div>
+
+            <NearbyEntities />
             <WebRTCStreamer />
+
+
         </>
     )
 }

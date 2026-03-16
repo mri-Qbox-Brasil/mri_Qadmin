@@ -460,5 +460,20 @@
     "success.heading_copied": "Heading copied to clipboard",
     "settings_developer": "Developer Settings",
     "settings_mock_mode": "Mock Mode",
-    "settings_mock_mode_desc": "Enable mock data for testing even in FiveM environment."
+    "settings_mock_mode_desc": "Enable mock data for testing even in FiveM environment.",
+    "devmode_entity_info": "Entity Information",
+    "devmode_nearby_entities": "Nearby Entities",
+    "devmode_type": "Type",
+    "devmode_distance": "Distance",
+    "devmode_handle": "Handle",
+    "devmode_netid": "NetID",
+    "devmode_hash": "Hash",
+    "devmode_model": "Model",
+    "devmode_copy_info": "C - Copy Information",
+    "devmode_delete_ent": "E - Delete Entity",
+    "devmode_exit_info": "BACKSPACE - Close / Toggle dev-off",
+    "devmode_unknown": "Unknown",
+    "devmode_ped": "Ped",
+    "devmode_vehicle": "Vehicle",
+    "devmode_object": "Object"
 }

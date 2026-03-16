@@ -8,8 +8,7 @@ export default function VehicleDev() {
     if (!vehicleDev?.show) return null
 
     return (
-        <div className="fixed inset-y-0 left-0 flex items-center z-50 pointer-events-none">
-            <MriCard className="w-64 ml-4 pointer-events-auto bg-primary text-primary-foreground border-none shadow-lg">
+        <MriCard className="w-64 ml-4 pointer-events-auto bg-primary text-primary-foreground border-none shadow-lg">
                 <MriCardHeader className="p-4 pb-2">
                     <MriCardTitle className="flex items-center gap-2 text-sm font-medium">
                         <Car className="h-4 w-4" />
@@ -26,6 +25,5 @@ export default function VehicleDev() {
                     <p><span className="font-semibold">Body:</span> {vehicleDev.body_health}</p>
                 </MriCardContent>
             </MriCard>
-        </div>
     )
 }
