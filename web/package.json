@@ -35,7 +35,7 @@
     },
     "dependencies": {
         "@citizenfx/three": "^0.100.0",
-        "@mriqbox/ui-kit": "^3.4.0",
+        "@mriqbox/ui-kit": "^3.4.2",
         "@radix-ui/react-slot": "^1.2.4",
         "@types/three": "^0.183.0",
         "clsx": "^1.2.1",
