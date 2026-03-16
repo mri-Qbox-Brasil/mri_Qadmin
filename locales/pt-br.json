@@ -460,5 +460,20 @@
     "success.heading_copied": "Cabeçalho copiado para a área de transferência",
     "settings_developer": "Configurações de Desenvolvedor",
     "settings_mock_mode": "Modo Mock",
-    "settings_mock_mode_desc": "Habilita dados fictícios para testes mesmo dentro do FiveM."
+    "settings_mock_mode_desc": "Habilita dados fictícios para testes mesmo dentro do FiveM.",
+    "devmode_entity_info": "Informações da Entidade",
+    "devmode_nearby_entities": "Entidades Próximas",
+    "devmode_type": "Tipo",
+    "devmode_distance": "Distância",
+    "devmode_handle": "Handle",
+    "devmode_netid": "NetID",
+    "devmode_hash": "Hash",
+    "devmode_model": "Modelo",
+    "devmode_copy_info": "C - Copiar Informações",
+    "devmode_delete_ent": "E - Deletar Entidade",
+    "devmode_exit_info": "BACKSPACE - Fechar / Toggle dev-off",
+    "devmode_unknown": "Desconhecido",
+    "devmode_ped": "Ped",
+    "devmode_vehicle": "Veículo",
+    "devmode_object": "Objeto"
 }

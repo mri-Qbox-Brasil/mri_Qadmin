@@ -1,39 +1,11 @@
+-- luacheck: globals MenuVisible QBCore
+-- luacheck: ignore 113/NetworkGetEntityIsNetworked 113/NetworkGetNetworkIdFromEntity
+local QBCore = exports['qb-core']:GetCoreObject()
 local ObjectList = require "data.object"
 
-local function DrawEntityBoundingBox(entity, color)
-    local model = GetEntityModel(entity)
-    local min, max = GetModelDimensions(model)
-    local rightVector, forwardVector, upVector, position = GetEntityMatrix(entity)
-
-    -- Calculate size
-    local dim =
-    {
-        x = 0.5 * (max.x - min.x),
-        y = 0.5 * (max.y - min.y),
-        z = 0.5 * (max.z - min.z)
-    }
-
-    -- Calculate the eight bounding box edges
-    local edges = {}
-    edges[1] = position - dim.y * rightVector - dim.x * forwardVector - dim.z * upVector
-    edges[2] = edges[1] + 2 * dim.y * rightVector
-    edges[3] = edges[2] + 2 * dim.z * upVector
-    edges[4] = edges[1] + 2 * dim.z * upVector
-    edges[5] = position + dim.y * rightVector + dim.x * forwardVector + dim.z * upVector
-    edges[6] = edges[5] - 2 * dim.y * rightVector
-    edges[7] = edges[6] - 2 * dim.z * upVector
-    edges[8] = edges[5] - 2 * dim.z * upVector
-
-    -- Draw lines to connect the edges and create the bounding box
-    for i = 1, 4 do
-        local j = i % 4 + 1
-        DrawLine(edges[i].x, edges[i].y, edges[i].z, edges[j].x, edges[j].y, edges[j].z, color.r, color.g, color.b, color.a)
-        DrawLine(edges[i + 4].x, edges[i + 4].y, edges[i + 4].z, edges[j + 4].x, edges[j + 4].y, edges[j + 4].z, color.r, color.g, color.b, color.a)
-        DrawLine(edges[i].x, edges[i].y, edges[i].z, edges[i + 4].x, edges[i + 4].y, edges[i + 4].z, color.r, color.g, color.b, color.a)
-    end
-end
 
 local function RotationToDirection(rotation)
+
 	local adjustedRotation =
 	{
 		x = (math.pi / 180) * rotation.x,
@@ -73,25 +45,44 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
         while true do
             local wait = 7
             if activeLaser then
-                local color = {r = 255, g = 255, b = 255, a = 200}
+                local color = {r = 0, g = 255, b = 0, a = 200}
                 local position = GetEntityCoords(PlayerPedId())
                 local hit, coords, entity = RayCastGamePlayCamera(1000.0)
                 local objectData = {}
 
-                DisableControlAction(0, 200)
+                if not MenuVisible then
+                    DisableControlAction(0, 200)
+                end
                 DisableControlAction(0, 26)
 
                 if hit and (IsEntityAVehicle(entity) or IsEntityAPed(entity) or IsEntityAnObject(entity)) then
+
                     local entityCoord = GetEntityCoords(entity)
                     local heading = GetEntityHeading(entity)
                     local model = GetEntityModel(entity)
-                    GetModelDimensions(model)
-                    DrawEntityBoundingBox(entity, color)
+                    local min, max = GetModelDimensions(model)
+                    local radius = #(max - min) * 0.5
+                    
+                    DrawMarker(1, entityCoord.x, entityCoord.y, entityCoord.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, radius * 1.5, radius * 1.5, 2.0, color.r, color.g, color.b, color.a, false, false, 2, nil, nil, false)
                     DrawLine(position.x, position.y, position.z, coords.x, coords.y, coords.z, color.r, color.g, color.b, color.a)
 
+
+                    local playerCoords = GetEntityCoords(cache.ped)
+                    local dist = #(playerCoords - entityCoord)
+                    local entNetId = NetworkGetEntityIsNetworked(entity) and NetworkGetNetworkIdFromEntity(entity) or nil
+                    local entType = locale('devmode_unknown')
+                    if IsEntityAVehicle(entity) then entType = locale('devmode_vehicle')
+                    elseif IsEntityAPed(entity) then entType = locale('devmode_ped')
+                    elseif IsEntityAnObject(entity) then entType = locale('devmode_object') end
+
+
                     objectData.hash = model
-                    objectData.name = ObjectList[model]
+                    objectData.id = entity
+                    objectData.netId = entNetId
+                    objectData.name = ObjectList[model] or "Unknown"
                     objectData.coords = ("vec4(%s, %s, %s, %s)"):format(entityCoord.x, entityCoord.y, entityCoord.z, heading)
+                    objectData.type = entType
+                    objectData.distance = QBCore.Shared.Round(dist, 1)
 
                     if IsControlJustReleased(0, 38) then
                         SetEntityAsMissionEntity(entity, true, true)
@@ -107,16 +98,19 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
                     DrawMarker(28, coords.x, coords.y, coords.z, 0.0, 0.0, 0.0, 0.0, 180.0, 0.0, 0.1, 0.1, 0.1, color.r, color.g, color.b, color.a, false, true, 2, nil, nil, false)
                 end
 
-                if IsDisabledControlJustReleased(0, 200) then
-                    activeLaser = not activeLaser
-                end
+
+
 
                 SendNUIMessage({
                     action = "showEntityInfo",
                     data = {
                         show = true,
                         hash = objectData.hash or "",
-                        name = objectData.name or "",
+                        name = objectData.name or "Unknown",
+                        id = objectData.id,
+                        netId = objectData.netId,
+                        type = objectData.type,
+                        distance = objectData.distance
                     }
                 })
             else

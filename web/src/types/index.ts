@@ -96,7 +96,25 @@ export interface EntityInfoData {
     show: boolean
     name: string
     hash: string
+    id?: number
+    netId?: number
+    distance?: number
+    type?: 'Vehicle' | 'Ped' | 'Object' | 'Unknown'
 }
+
+export interface NearbyEntityData {
+    id: number
+    netId?: number
+    name: string
+    distance: number
+    type: 'Vehicle' | 'Ped' | 'Object'
+}
+
+export interface NearbyEntitiesData {
+    show: boolean
+    entities: NearbyEntityData[]
+}
+
 
 export interface PaginationState {
     page: number

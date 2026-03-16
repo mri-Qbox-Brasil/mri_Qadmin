@@ -60,7 +60,9 @@ client_scripts {
     "client/wall.lua",
     "client/world.lua",
     "client/key_capture.lua",
+    "client/nearby_scanner.lua",
     "client/webrtc.lua",
+
 }
 
 dependencies {

@@ -1,11 +1,17 @@
+-- luacheck: globals MenuVisible
+MenuVisible = false
+
+
 --- @param bool boolean
 function ToggleUI(bool)
+    MenuVisible = bool
 	SetNuiFocus(bool, bool)
 	SendNUIMessage({
 		action = "setVisible",
 		data = bool
 	})
 end
+
 
 --- @param perms table
 function CheckPerms(perms)

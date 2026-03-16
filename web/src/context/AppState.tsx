@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 
-import { Player, VehicleDevData, CoordsData, GameData, EntityInfoData, PaginationState } from '@/types'
+import { Player, VehicleDevData, CoordsData, GameData, EntityInfoData, PaginationState, NearbyEntitiesData } from '@/types'
 
 interface AppStateValue {
     players: Player[]
@@ -32,6 +32,9 @@ interface AppStateValue {
     setShowCoords: (v: CoordsData | null) => void
     entityInfo: EntityInfoData | null
     setEntityInfo: (v: EntityInfoData | null) => void
+    nearbyEntities: NearbyEntitiesData | null
+    setNearbyEntities: (v: NearbyEntitiesData | null) => void
+
 
     // User Permissions
     myPermissions: string[]
@@ -85,7 +88,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const [vehicleDev, setVehicleDev] = useState<VehicleDevData | null>(null)
     const [showCoords, setShowCoords] = useState<CoordsData | null>(null)
     const [entityInfo, setEntityInfo] = useState<EntityInfoData | null>(null)
+    const [nearbyEntities, setNearbyEntities] = useState<NearbyEntitiesData | null>(null)
     const [staffMessages, setStaffMessages] = useState<any[]>([])
+
 
     const [settings, setSettings] = useState<Record<string, any>>({})
     const [useMocks, setUseMocks] = useState<boolean>(false)
@@ -103,7 +108,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             vehicleDev, setVehicleDev,
             showCoords, setShowCoords,
             entityInfo, setEntityInfo,
+            nearbyEntities, setNearbyEntities,
             myPermissions, setMyPermissions,
+
             permissionRefreshTrigger, setPermissionRefreshTrigger,
             settings, setSettings,
             useMocks, setUseMocks

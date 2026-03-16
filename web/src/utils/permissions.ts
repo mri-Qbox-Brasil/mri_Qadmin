@@ -16,6 +16,7 @@ export const PAGE_PERMISSIONS = {
     credits: 'qadmin.page.credits',
     livemap: 'qadmin.page.livemap',
     livescreens: 'qadmin.page.livescreens',
+    devmode: 'qadmin.page.devmode',
 }
 
 export function hasPermission(userAces: string[], permission: string): boolean {

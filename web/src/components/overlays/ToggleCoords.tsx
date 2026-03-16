@@ -8,8 +8,7 @@ export default function ToggleCoords() {
     if (!showCoords?.show) return null
 
     return (
-        <div className="fixed inset-y-0 left-0 flex items-center z-50 pointer-events-none">
-            <MriCard className="w-64 ml-4 pointer-events-auto bg-primary text-primary-foreground border-none shadow-lg">
+        <MriCard className="w-64 ml-4 pointer-events-auto bg-primary text-primary-foreground border-none shadow-lg">
                 <MriCardHeader className="p-4 pb-2">
                     <MriCardTitle className="flex items-center gap-2 text-sm font-medium">
                         <MapPin className="h-4 w-4" />
@@ -23,6 +22,5 @@ export default function ToggleCoords() {
                     <p><span className="font-semibold">Heading:</span> {showCoords.heading}</p>
                 </MriCardContent>
             </MriCard>
-        </div>
     )
 }
