@@ -1,4 +1,6 @@
+-- luacheck: globals MenuVisible
 MenuVisible = false
+
 
 --- @param bool boolean
 function ToggleUI(bool)

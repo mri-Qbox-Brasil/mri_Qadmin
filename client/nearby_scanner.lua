@@ -1,4 +1,6 @@
+-- luacheck: ignore 113/GetGamePool 113/GetDisplayNameFromVehicleModel 113/SetDrawOrigin 113/DrawRect 113/ClearDrawOrigin
 local QBCore = exports['qb-core']:GetCoreObject()
+
 local ObjectList = require "data.object"
 
 local activeNearbyScanner = false

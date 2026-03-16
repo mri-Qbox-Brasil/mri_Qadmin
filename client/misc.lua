@@ -1,4 +1,6 @@
+-- luacheck: globals MenuVisible
 -- Toggles Invincibility
+
 local visible = true
 RegisterNetEvent('mri_Qadmin:client:ToggleInvisible', function(data)
     local actionData = CheckDataFromKey(data)

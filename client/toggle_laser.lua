@@ -1,39 +1,11 @@
+-- luacheck: globals MenuVisible QBCore
+-- luacheck: ignore 113/NetworkGetEntityIsNetworked 113/NetworkGetNetworkIdFromEntity
+local QBCore = exports['qb-core']:GetCoreObject()
 local ObjectList = require "data.object"
 
-local function DrawEntityBoundingBox(entity, color)
-    local model = GetEntityModel(entity)
-    local min, max = GetModelDimensions(model)
-    local rightVector, forwardVector, upVector, position = GetEntityMatrix(entity)
-
-    -- Calculate size
-    local dim =
-    {
-        x = 0.5 * (max.x - min.x),
-        y = 0.5 * (max.y - min.y),
-        z = 0.5 * (max.z - min.z)
-    }
-
-    -- Calculate the eight bounding box edges
-    local edges = {}
-    edges[1] = position - dim.y * rightVector - dim.x * forwardVector - dim.z * upVector
-    edges[2] = edges[1] + 2 * dim.y * rightVector
-    edges[3] = edges[2] + 2 * dim.z * upVector
-    edges[4] = edges[1] + 2 * dim.z * upVector
-    edges[5] = position + dim.y * rightVector + dim.x * forwardVector + dim.z * upVector
-    edges[6] = edges[5] - 2 * dim.y * rightVector
-    edges[7] = edges[6] - 2 * dim.z * upVector
-    edges[8] = edges[5] - 2 * dim.z * upVector
-
-    -- Draw lines to connect the edges and create the bounding box
-    for i = 1, 4 do
-        local j = i % 4 + 1
-        DrawLine(edges[i].x, edges[i].y, edges[i].z, edges[j].x, edges[j].y, edges[j].z, color.r, color.g, color.b, color.a)
-        DrawLine(edges[i + 4].x, edges[i + 4].y, edges[i + 4].z, edges[j + 4].x, edges[j + 4].y, edges[j + 4].z, color.r, color.g, color.b, color.a)
-        DrawLine(edges[i].x, edges[i].y, edges[i].z, edges[i + 4].x, edges[i + 4].y, edges[i + 4].z, color.r, color.g, color.b, color.a)
-    end
-end
 
 local function RotationToDirection(rotation)
+
 	local adjustedRotation =
 	{
 		x = (math.pi / 180) * rotation.x,
