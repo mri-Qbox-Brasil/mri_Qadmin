@@ -69,7 +69,6 @@ export default function Items() {
         setSelectedItem(null)
     }
 
-    if (loading) return <GridSkeleton />
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
@@ -107,7 +106,9 @@ export default function Items() {
             </MriPageHeader>
 
             <div className="flex-1 overflow-hidden py-4 px-2 ">
-                {filtered.length === 0 ? (
+                {loading ? (
+                    <GridSkeleton className="h-full" hideHeader={true} />
+                ) : filtered.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                         <Box className="w-12 h-12 opacity-20" />
                         <p>{t('items_none_found')}</p>

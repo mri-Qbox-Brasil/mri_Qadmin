@@ -180,7 +180,7 @@ export default function PrincipalsList({
     });
     const [principalColors, setPrincipalColors] = useState<Record<string, string>>({});
     const [localPrincipalColors, setLocalPrincipalColors] = useState<Record<string, string>>({});
-    const timeoutRef = React.useRef<Record<string, any>>({})
+    const timeoutRef = React.useRef<Record<string, any>>({});
     const [confirm, setConfirm] = useState<{
         type: "add" | "remove";
         principal?: Principal;

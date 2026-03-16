@@ -1,25 +1,30 @@
 import { Skeleton } from "@/components/ui/Skeleton"
+import { cn } from "@/lib/utils"
 
 interface GridSkeletonProps {
     count?: number;
+    className?: string;
+    hideHeader?: boolean;
 }
 
-export default function GridSkeleton({ count = 12 }: GridSkeletonProps) {
+export default function GridSkeleton({ count = 12, className, hideHeader = false }: GridSkeletonProps) {
     return (
-        <div className="h-full w-full flex flex-col bg-background">
+        <div className={cn("h-full w-full flex flex-col bg-background", className)}>
             {/* Header Placeholder: Title + Search + Button */}
-            <div className="flex h-16 items-center border-b border-border bg-card px-8 gap-4 shrink-0">
-                <div className="bg-muted w-10 h-10 rounded-lg flex items-center justify-center">
-                    <Skeleton className="w-5 h-5 rounded" />
+            {!hideHeader && (
+                <div className="flex h-16 items-center border-b border-border bg-card px-8 gap-4 shrink-0">
+                    <div className="bg-muted w-10 h-10 rounded-lg flex items-center justify-center">
+                        <Skeleton className="w-5 h-5 rounded" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                    </div>
+                    <div className="flex-1" />
+                    <Skeleton className="h-10 w-64 rounded-xl" /> {/* Search */}
+                    <Skeleton className="h-10 w-10 rounded-md" />  {/* Action Button */}
                 </div>
-                <div className="flex flex-col gap-1">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                </div>
-                <div className="flex-1" />
-                <Skeleton className="h-10 w-64 rounded-xl" /> {/* Search */}
-                <Skeleton className="h-10 w-10 rounded-md" />  {/* Action Button */}
-            </div>
+            )}
 
             <div className="flex-1 overflow-hidden p-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">

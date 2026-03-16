@@ -94,7 +94,6 @@ export default function Vehicles() {
         }
     }
 
-    if (loading) return <GridSkeleton />
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
@@ -132,7 +131,9 @@ export default function Vehicles() {
             </MriPageHeader>
 
             <div className="flex-1 overflow-hidden pt-4 p-2">
-                {filteredVehicles.length === 0 ? (
+                {loading ? (
+                    <GridSkeleton className="h-full" hideHeader={true} />
+                ) : filteredVehicles.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                         <Car className="w-12 h-12 opacity-20" />
                         <p>{t('vehicles_none_found')}</p>
