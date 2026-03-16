@@ -72,7 +72,6 @@ function DrawText3D(x,y,z, text, r,g,b)
     local dist = GetDistanceBetweenCoords(px,py,pz, x,y,z, 1)
     local scale = (1/dist)*2
     local fov = (1/GetGameplayCamFov())*100
-    scale = scale*fov
     if onScreen then
         SetTextFont(4)
         SetTextProportional(1)
