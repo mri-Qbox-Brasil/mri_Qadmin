@@ -51,10 +51,10 @@ end)
 
 
 -- Ban Player
-RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(_actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.ban_player') then return end
 
-    Debug(('[BanPlayer] actionKey: %s | selectedData: %s'):format(tostring(_actionKey), json.encode(selectedData)))
+    Debug(('[BanPlayer] actionKey: %s | selectedData: %s'):format(tostring(actionKey), json.encode(selectedData)))
     local player = tonumber(GetValue(selectedData, "Player"))
     local reason = GetValue(selectedData, "Reason") or ""
     local duration = GetValue(selectedData, "Duration") or GetValue(selectedData, "Duração")
@@ -115,8 +115,8 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(_actionKey, selectedDat
 end)
 
 -- Unban Player
-RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(_data, selectedData)
-    local actionData = CheckDataFromKey(_data)
+RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
+    local actionData = CheckDataFromKey(data)
     local src = source or 0
 
     if not actionData then
@@ -459,7 +459,6 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(_, selectedData)
 
     if GetResourceState("ND_Police") == "started" then
         local playerIsCuffed = Player(target).state.isCuffed
-        local _playerCuffType = Player(target).state.cuffType or "cuffs"
 
         if playerIsCuffed then
             TriggerClientEvent("ND_Police:uncuffPed", target)
@@ -514,7 +513,7 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
 end)
 
 -- Callback para listar bans com paginação e busca
-lib.callback.register('mri_Qadmin:callback:GetBans', function(source, data)
+lib.callback.register('mri_Qadmin:callback:GetBans', function(_source, data)
     local page = data and tonumber(data.page) or 1
     local pageSize = data and tonumber(data.pageSize) or 50
     local search = data and data.search or ""
@@ -571,7 +570,6 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(_, selectedData)
 
     local src = source
     local targetId = tonumber(GetValue(selectedData, "Player"))
-    local targetPed = GetPlayerPed(targetId)
     local targetPlayer = QBCore.Functions.GetPlayer(targetId)
 
     Debug(('[mri_Qadmin] KillPlayer: Admin %s killing Target %s'):format(src, targetId))
@@ -585,7 +583,7 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(_, selectedData)
     end
 end)
 
-lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(source, targetIds)
+lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(_source, targetIds)
     local coordsList = {}
     if not targetIds or type(targetIds) ~= 'table' then return coordsList end
 
@@ -606,7 +604,7 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(source, ta
     return coordsList
 end)
 
-lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
+lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(_source)
     local allPlayers = QBCore.Functions.GetPlayers()
     local coordsList = {}
 
@@ -617,7 +615,7 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
             local coords = GetEntityCoords(ped)
             local heading = GetEntityHeading(ped)
             local playerObj = QBCore.Functions.GetPlayer(playerSrc)
-            local name = "Unknown"
+            local name
             local vitals = { health = 100, armor = 0, hunger = 100, thirst = 100 }
             local inVehicle = false
             local vehicleType = nil
@@ -667,7 +665,7 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
 end)
 
 -- Screenshot Logic
-lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(source, targetId, viewerId)
+lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(_source, targetId, viewerId)
     local target = tonumber(targetId)
     local src = source
     print('[DEBUG] GetPlayerScreen called. Source:', src, 'Target:', target, 'Viewer:', viewerId)
@@ -683,7 +681,7 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(source, ta
 end)
 
 -- Real-time vitals for ScreenModal
-lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(source, targetId)
+lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(_source, targetId)
     local target = tonumber(targetId)
     if not target or target == 0 then return { error = 'Invalid target' } end
     local player = QBCore.Functions.GetPlayer(target)

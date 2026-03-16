@@ -2,7 +2,7 @@ QBCore = exports["qb-core"]:GetCoreObject()
 
 lib.callback.register(
     "mri_Qadmin:callback:GetServerInfo",
-    function(source, cb)
+    function(_source, _cb)
         local stats = MySQL.single.await([[
             SELECT
                 (SELECT COUNT(1) FROM player_vehicles) as vehicleCount,

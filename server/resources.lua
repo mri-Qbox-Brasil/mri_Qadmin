@@ -35,12 +35,12 @@ CreateThread(function()
     refreshResources()
 end)
 
-lib.callback.register('mri_Qadmin:callback:GetResources', function(source)
+lib.callback.register('mri_Qadmin:callback:GetResources', function(_source)
     return refreshResources()
 end)
 
 
-lib.callback.register('mri_Qadmin:callback:ChangeResourceState', function(source, data, perms)
+lib.callback.register('mri_Qadmin:callback:ChangeResourceState', function(source, data, _perms)
     Debug(json.encode(data))
     if not CheckPerms(source, "qadmin.action.change_resource") then return end
 

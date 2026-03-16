@@ -1,6 +1,6 @@
 lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
     local vehicles = {}
-    local baseVehicles = {}
+    local baseVehicles
 
     if GetResourceState('qbx_core') == 'started' then
         baseVehicles = exports.qbx_core:GetVehiclesByName()
@@ -173,7 +173,7 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
 end)
 
-lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(source, plate)
+lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(_source, plate)
     local result = MySQL.query.await('SELECT vehicle FROM player_vehicles WHERE plate = ?', { plate })
     local veh = result[1] and result[1].vehicle or {}
     return veh

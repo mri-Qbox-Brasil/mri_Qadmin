@@ -14,6 +14,8 @@ local wall_settings = {
 local function toRGBString(col)
     if type(col) == "string" and col:find("#") then
         local hex = col:gsub("#", "")
+        local rawId = targetIdStr:match("viewer%-.+%-(%d+)%-%d+$") or targetIdStr:match("viewer%-(%d+)$") or targetIdStr:match("(%d+)$") or targetIdStr
+        local target = tonumber(rawId)
         return string.format("%d, %d, %d", tonumber("0x" .. hex:sub(1, 2)) or 0, tonumber("0x" .. hex:sub(3, 4)) or 0, tonumber("0x" .. hex:sub(5, 6)) or 0)
     end
     return col
@@ -47,8 +49,8 @@ function GetPlayerESPColor(src)
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return nil end
 
-    local license = 'license:' .. Player.PlayerData.license
-    local identifier = 'identifier.' .. license
+    local _license = 'license:' .. Player.PlayerData.license
+    -- local identifier = 'identifier.' .. license
 
     local bestColor = nil
     local matches = {}
@@ -79,11 +81,7 @@ local function updateWallInfos(source, silent)
         wall_infos[srcStr].staff = Player.PlayerData.metadata['staff']
         local charInfo = Player.PlayerData.charinfo
         local name = charInfo.firstname .. " " .. charInfo.lastname
-        if name == nil or name == "" then
-            name = "N/A"
-        else
-            wall_infos[srcStr].name = name
-        end
+        wall_infos[srcStr].name = (name ~= nil and name ~= "") and name or "N/A"
         wall_infos[srcStr].wallstats = false
         local gColor, gPrincipals = GetPlayerESPColor(source)
         wall_infos[srcStr].group_color = gColor
@@ -102,7 +100,6 @@ end
 local function enableWall(source)
     local src = source
     local srcStr = tostring(src)
-    local Player = QBCore.Functions.GetPlayer(src)
 
     if wall_infos[srcStr] and wall_infos[srcStr].wallstats == true then
         wall_infos[srcStr].wallstats = false
@@ -117,7 +114,7 @@ local function enableWall(source)
     TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
 end
 
-QBCore.Commands.Add("wall", "Enable/Disable wall", {}, false, function(source, args)
+QBCore.Commands.Add("wall", "Enable/Disable wall", {}, false, function(source, _args)
     if not CheckPerms(source, 'qadmin.action.enable_wall') then return end
     enableWall(source)
 end)
@@ -130,7 +127,7 @@ RegisterNetEvent("mri_Qadmin:server:enableWall", function(data)
     enableWall(src)
 end)
 
-QBCore.Functions.CreateCallback('mri_wall:getWallInfos', function(source, cb)
+QBCore.Functions.CreateCallback('mri_wall:getWallInfos', function(_source, cb)
     cb(wall_infos)
 end)
 
@@ -157,7 +154,7 @@ end)
 -- NUI CALLBACKS & EVENTS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-lib.callback.register('mri_Qadmin:callback:GetWallSettings', function(source)
+lib.callback.register('mri_Qadmin:callback:GetWallSettings', function(_source)
     return {
         colors = principal_colors,
         settings = wall_settings

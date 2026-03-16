@@ -1,7 +1,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
 -- Expose function globally so we can trigger it in settings.lua
-function GetAllDynamicActions()
+local function GetAllDynamicActions()
     return {
         Actions = Config.Actions or {},
         PlayerActions = Config.PlayerActions or {},

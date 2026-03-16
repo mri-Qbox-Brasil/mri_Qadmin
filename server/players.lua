@@ -27,8 +27,7 @@ local function getPlayers(page, pageSize, search)
         local name = playerData.charinfo.firstname .. ' ' .. playerData.charinfo.lastname
         local license = QBCore.Functions.GetIdentifier(k, 'license')
         local cid = playerData.citizenid
-        local idStr = tostring(k)
-
+ 
         -- Filter Online Players if search is active
         local match = true
         if search and search ~= "" then
@@ -64,8 +63,8 @@ local function getPlayers(page, pageSize, search)
                 gang = playerData.gang,
                 money = (function()
                     local m = {}
-                    for k, v in pairs(playerData.money) do
-                        table.insert(m, { name = k, amount = v })
+                    for mk, mv in pairs(playerData.money) do
+                        table.insert(m, { name = mk, amount = mv })
                     end
                     return m
                 end)(),
@@ -95,8 +94,8 @@ local function getPlayers(page, pageSize, search)
 
     -- Calculate how many slots left for DB players
     local slotsRemaining = pageSize - #resultPlayers
-    local totalRecords = totalOnline -- Will add DB count
-
+    local totalRecords -- Will add DB count
+ 
     -- If we still need players and aren't search-constrained to online only (unless we want to search DB too)
     -- We ALWAYS search DB if we want full results.
 
@@ -105,7 +104,6 @@ local function getPlayers(page, pageSize, search)
     -- If page overlaps, offset is 0 for DB (and we take LIMIT slotsRemaining)
 
     local dbOffset = math.max(0, offset - totalOnline)
-    local dbModels = {}
 
     if slotsRemaining > 0 or (totalOnline < offset) then
         -- Count DB matches
@@ -291,11 +289,11 @@ local function getPlayers(page, pageSize, search)
     }
 end
 
-lib.callback.register('mri_Qadmin:callback:GetPlayers', function(source, page, limit, search)
+lib.callback.register('mri_Qadmin:callback:GetPlayers', function(_source, page, limit, search)
     return getPlayers(page, limit, search)
 end)
 
-RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_job') then
         return
     end
@@ -357,7 +355,7 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
 end)
 
 -- Set Gang
-RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.set_gang') then
         return
     end
@@ -473,7 +471,6 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     end
 
     -- Broadcast update immediate
-    local ped = GetPlayerPed(tonumber(targetId))
     TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
         id = tonumber(targetId),
         health = (vital == "health") and tonumber(value) or GetEntityHealth(ped),

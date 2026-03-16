@@ -7,7 +7,7 @@ local function GetVehicleName(hash)
 end
 
 -- Own Vehicle
-RegisterNetEvent('mri_Qadmin:client:Admincar', function(data)
+RegisterNetEvent('mri_Qadmin:client:Admincar', function(_data)
     if not CheckPerms('qadmin.action.admincar') then return end
 
     if not cache.vehicle then return end
@@ -25,7 +25,7 @@ RegisterNetEvent('mri_Qadmin:client:Admincar', function(data)
 end)
 
 -- Spawn Vehicle
-RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(data, selectedData)
+RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
     if not CheckPerms('qadmin.action.spawn_vehicle') then return end
 
     local selectedVehicle = selectedData["Vehicle"].value
@@ -153,7 +153,7 @@ local function UpgradePerformance(vehicle)
 
     for _, modType in ipairs(PERFORMANCE_MOD_INDICES) do
         local maxMod = GetNumVehicleMods(vehicle, modType) - 1
-        SetVehicleMod(vehicle, modType, maxMod, customWheels)
+        SetVehicleMod(vehicle, modType, maxMod, false)
     end
 
     QBCore.Functions.Notify(locale("vehicle_max_modded"), 'success', 7500)
@@ -173,7 +173,7 @@ end)
 
 -- Spawn Personal vehicles
 
-RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(data, selectedData)
+RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(_data, selectedData)
     if not CheckPerms('qadmin.action.spawn_vehicle') then return end
 
     local plate = selectedData['VehiclePlate'].value
@@ -206,7 +206,7 @@ RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(data, select
         TriggerEvent("vehiclekeys:client:SetOwner", plate)
         TriggerEvent('iens:repaira', ped)
         TriggerEvent('vehiclemod:client:fixEverything', ped)
-    end, vehicle, coords, true)
+    end, targetVehModel, coords, true)
 end)
 
 

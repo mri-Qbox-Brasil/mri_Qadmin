@@ -33,7 +33,6 @@ RegisterNetEvent('mri_Qadmin:server:DrunkPlayer', function(_, selectedData)
 
     local src = source
     local target = selectedData["Player"].value
-    local targetPed = GetPlayerPed(target)
     local Player = QBCore.Functions.GetPlayer(target)
 
     if not Player then

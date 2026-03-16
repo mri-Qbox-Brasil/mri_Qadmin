@@ -50,15 +50,6 @@ local function LoadPermissions()
 
              if p.child == pLicense or p.child == fullLicense or p.child == fullLicense2 or p.child == data.name then
                  -- Rely on the direct execute command above; this logic previously incorrectly called the disabled expansion
-             else
-                 -- Check secondary IDs if needed, but license is primary
-                 local num = GetNumPlayerIdentifiers(src)
-                 for i = 0, num-1 do
-                    if GetPlayerIdentifier(src, i) == p.child then
-                        -- Primary matching handled the rest
-                        break
-                    end
-                 end
              end
         end
     end
@@ -516,9 +507,6 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     -- Always allow dashboard if able to open menu
     table.insert(allowed, 'qadmin.page.dashboard')
 
-    -- Debug list
-    local debugResults = {}
-
     local function checkNode(node)
         if IsPlayerAceAllowed(src, node) then return true end
         local num = GetNumPlayerIdentifiers(src)
@@ -559,7 +547,6 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     -- Also check for master bypass
     if checkNode('qadmin.master') then
         table.insert(allowed, 'qadmin.master')
-        debugResults['qadmin.master'] = true
     end
 
     Debug(('[mri_Qadmin] GetMyPermissions for Src %d (%s)'):format(src, GetPlayerName(src)))
@@ -577,6 +564,7 @@ lib.addCommand('mri_qadmin.setmaster', {
     if source ~= 0 then return end -- Console only
 
     local target = args.target
+    local license = target
     if tonumber(target) then
         local p = QBCore.Functions.GetPlayer(tonumber(target))
         if p then
