@@ -8,6 +8,7 @@ function GetAllDynamicActions()
         OtherActions = Config.OtherActions or {}
     }
 end
+_G.GetAllDynamicActions = GetAllDynamicActions
 
 local function LoadActions()
     print('^2[mri_Qadmin] Iniciando o carregamento de Actions do DB...^7')

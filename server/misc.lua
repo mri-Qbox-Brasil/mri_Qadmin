@@ -51,10 +51,10 @@ end)
 
 
 -- Ban Player
-RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData)
+RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(_actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.ban_player') then return end
 
-    Debug(('[BanPlayer] actionKey: %s | selectedData: %s'):format(tostring(actionKey), json.encode(selectedData)))
+    Debug(('[BanPlayer] actionKey: %s | selectedData: %s'):format(tostring(_actionKey), json.encode(selectedData)))
     local player = tonumber(GetValue(selectedData, "Player"))
     local reason = GetValue(selectedData, "Reason") or ""
     local duration = GetValue(selectedData, "Duration") or GetValue(selectedData, "Duração")
@@ -64,9 +64,9 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     local timeTable = os.date('*t', banTime)
 
     -- Check if target is online
-    local targetPlayer = player and QBCore.Functions.GetPlayer(player)
+    local targetPlayerOnline = player and QBCore.Functions.GetPlayer(player)
 
-    if targetPlayer then
+    if targetPlayerOnline then
         -- ONLINE BAN
         MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
             { GetPlayerName(player), QBCore.Functions.GetIdentifier(player, 'license'), QBCore.Functions.GetIdentifier(
@@ -90,23 +90,23 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
     else
         -- OFFLINE BAN
         -- We need at least a license or CID
-        local license = GetValue(selectedData, "license")
+        local licenseVal = GetValue(selectedData, "license")
         local discord = GetValue(selectedData, "discord")
         local name = GetValue(selectedData, "name") or "Offline Player"
 
         -- If we only have CID, try to fetch license
         local cid = GetValue(selectedData, "cid")
-        if not license and cid then
-             license = MySQL.scalar.await('SELECT license FROM players WHERE citizenid = ?', { cid })
+        if not licenseVal and cid then
+             licenseVal = MySQL.scalar.await('SELECT license FROM players WHERE citizenid = ?', { cid })
         end
 
-        if not license then
+        if not licenseVal then
             QBCore.Functions.Notify(source, "Não foi possível banir: Player Offline e License não encontrada.", 'error', 7500)
             return
         end
 
         MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            { name, license, discord or "", "0.0.0.0", reason, banTime, GetPlayerName(source) })
+            { name, licenseVal, discord or "", "0.0.0.0", reason, banTime, GetPlayerName(source) })
 
         QBCore.Functions.Notify(source, locale("playerbanned", name, banTime, reason), 'success', 7500)
     end
@@ -115,8 +115,8 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
 end)
 
 -- Unban Player
-RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
-    local actionData = CheckDataFromKey(data)
+RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(_data, selectedData)
+    local actionData = CheckDataFromKey(_data)
     local src = source or 0
 
     if not actionData then
@@ -132,19 +132,19 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
         return
     end
 
-    local license = QBCore.Functions.GetIdentifier(targetId, 'license')
+    local licenseVal = QBCore.Functions.GetIdentifier(targetId, 'license')
 
-    if not license then
+    if not licenseVal then
         if src > 0 then
             QBCore.Functions.Notify(src, 'License do jogador não encontrada.', 'error', 7500)
         end
         return
     end
 
-    local result = MySQL.query.await('SELECT * FROM bans WHERE license = ?', { license })
+    local result = MySQL.query.await('SELECT * FROM bans WHERE license = ?', { licenseVal })
 
     if result and #result > 0 then
-        local deleteResult = MySQL.update.await('DELETE FROM bans WHERE license = ?', { license })
+        MySQL.update.await('DELETE FROM bans WHERE license = ?', { licenseVal })
 
         if src > 0 then
             QBCore.Functions.Notify(src, 'Jogador desbanido com sucesso.', 'success', 7500)
@@ -289,11 +289,11 @@ RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(_)
     local src = source
     local ped = GetPlayerPed(src)
     local pos = GetEntityCoords(ped)
-    local players = QBCore.Functions.GetPlayers()
+    local allPlayers = QBCore.Functions.GetPlayers()
 
-    for k, v in pairs(players) do
-        local target = GetPlayerPed(v)
-        local targetPos = GetEntityCoords(target)
+    for _, v in pairs(allPlayers) do
+        local targetPed = GetPlayerPed(v)
+        local targetPos = GetEntityCoords(targetPed)
         local dist = #(pos - targetPos)
 
         if dist < 15.0 then
@@ -607,16 +607,16 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(source, ta
 end)
 
 lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
-    local players = QBCore.Functions.GetPlayers()
+    local allPlayers = QBCore.Functions.GetPlayers()
     local coordsList = {}
 
-    for _, id in pairs(players) do
-        local src = tonumber(id)
-        local ped = GetPlayerPed(src)
+    for _, id in pairs(allPlayers) do
+        local playerSrc = tonumber(id)
+        local ped = GetPlayerPed(playerSrc)
         if ped and ped ~= 0 then
             local coords = GetEntityCoords(ped)
             local heading = GetEntityHeading(ped)
-            local player = QBCore.Functions.GetPlayer(src)
+            local playerObj = QBCore.Functions.GetPlayer(playerSrc)
             local name = "Unknown"
             local vitals = { health = 100, armor = 0, hunger = 100, thirst = 100 }
             local inVehicle = false
@@ -628,28 +628,28 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(source)
                 vehicleType = Entity(ped).state.vehicleType or 'car'
             end
 
-            local isStaff = IsPlayerAceAllowed(src, 'qadmin.master')
+            local isStaff = IsPlayerAceAllowed(playerSrc, 'qadmin.master')
             local staffColor = nil
             if isStaff then
-                local rgb, _ = GetPlayerESPColor(src)
+                local rgb, _ = GetPlayerESPColor(playerSrc)
                 if rgb then
                     staffColor = RGBToHex(rgb)
                 end
             end
 
-            if player then
-                name = player.PlayerData.charinfo.firstname .. ' ' .. player.PlayerData.charinfo.lastname
+            if playerObj then
+                name = playerObj.PlayerData.charinfo.firstname .. ' ' .. playerObj.PlayerData.charinfo.lastname
                 vitals.health = GetEntityHealth(ped)
                 vitals.armor = GetPedArmour(ped)
-                vitals.hunger = player.PlayerData.metadata['hunger'] or 100
-                vitals.thirst = player.PlayerData.metadata['thirst'] or 100
-                vitals.isDead = player.PlayerData.metadata['isdead'] or player.PlayerData.metadata['inlaststand'] or false
+                vitals.hunger = playerObj.PlayerData.metadata['hunger'] or 100
+                vitals.thirst = playerObj.PlayerData.metadata['thirst'] or 100
+                vitals.isDead = playerObj.PlayerData.metadata['isdead'] or playerObj.PlayerData.metadata['inlaststand'] or false
             else
-                name = GetPlayerName(src)
+                name = GetPlayerName(playerSrc)
             end
 
             table.insert(coordsList, {
-                id = src,
+                id = playerSrc,
                 x = coords.x,
                 y = coords.y,
                 heading = heading,

@@ -59,8 +59,8 @@ local function RayCastGamePlayCamera(distance)
 		y = cameraCoord.y + direction.y * distance,
 		z = cameraCoord.z + direction.z * distance
 	}
-	local _, b, _, _, e = GetShapeTestResult(StartShapeTestRay(cameraCoord.x, cameraCoord.y, cameraCoord.z, destination.x, destination.y, destination.z, -1, PlayerPedId(), 0))
-	return b, c, e
+	local _, b, coords, _, e = GetShapeTestResult(StartShapeTestRay(cameraCoord.x, cameraCoord.y, cameraCoord.z, destination.x, destination.y, destination.z, -1, PlayerPedId(), 0))
+	return b, coords, e
 end
 
 -- Toggle Delete Laser

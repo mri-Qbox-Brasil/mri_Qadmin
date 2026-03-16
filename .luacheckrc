@@ -8,10 +8,11 @@ globals = {
     "RegisterNetEvent", "TriggerEvent", "TriggerClientEvent", "TriggerServerEvent",
     "AddEventHandler", "RegisterNUICallback", "SendNUIMessage", "exports",
     "GetConvar", "GetConvarInt", "GetResourceState", "GetParentResourceName",
-    "GetNumResources", "GetResourceInfo", "IsAceAllowed",
+    "GetNumResources", "GetResourceInfo", "IsAceAllowed", "RegisterServerEvent",
     "GlobalState", "Entity", "Player", "LocalPlayer", "lib", "cache", "source",
     "joaat", "promise", "PerformHttpRequest", "vec", "vec2", "vec3", "vec4",
-    "quat", "mat2", "mat3", "mat4",
+    "quat", "mat2", "mat3", "mat4", "RegisterServerCallback", "RegisterCommand",
+    "RegisterKeyMapping",
 
     -- Commonly used natives
     "GetPlayerPed", "GetEntityCoords", "GetEntityHeading", "GetEntityHealth", "GetPedArmour",
@@ -56,7 +57,10 @@ globals = {
     "GetGameTimer", "GetResourcePath", "IsPlayerAceAllowed", "GetRegisteredCommands",
     "DropPlayer", "SetPlayerRoutingBucket", "IsPrincipalAceAllowed", "IsDuplicityVersion",
     "AddStateBagChangeHandler", "GetResourceMetadata", "GetResourceByFindIndex",
-    "StartResource", "StopResource", "SetPedArmour", "joaat",
+    "StartResource", "StopResource", "SetPedArmour", "joaat", "IsControlPressed",
+    "IsDisabledControlPressed", "SetEntityHealth", "GetVehiclePedIsIn", "GetVehicleType",
+    "GetVehicleClass", "DoesEntityExist", "DisableControlAction", "IsControlJustReleased",
+    "GetPlayerName", "GetNumPlayerIdentifiers", "GetPlayerIdentifier", "RegisterServerEvent",
 
     -- Framework / Custom globals
     "QBCore", "Config", "locale", "_U", "Debug", "CheckPerms", "CheckDataFromKey",

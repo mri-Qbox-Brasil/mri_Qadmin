@@ -17,21 +17,21 @@ local function LoadPermissions()
     MySQL.query.await('DELETE t1 FROM mri_qadmin_aces t1 INNER JOIN mri_qadmin_aces t2 WHERE t1.id > t2.id AND t1.principal = t2.principal AND t1.object = t2.object')
 
     -- Load Principals (Inheritance)
-    local principals = MySQL.query.await('SELECT * FROM mri_qadmin_principals') or {}
+    local dbPrincipals = MySQL.query.await('SELECT * FROM mri_qadmin_principals') or {}
 
     -- Cache players for optimization
-    local onlinePlayers = {}
+    local cachedOnlinePlayers = {}
     for _, id in ipairs(QBCore.Functions.GetPlayers()) do
         local p = QBCore.Functions.GetPlayer(id)
         if p then
-            onlinePlayers[id] = {
+            cachedOnlinePlayers[id] = {
                 license = p.PlayerData.license,
                 name = p.PlayerData.name
             }
         end
     end
 
-    for _, p in ipairs(principals) do
+    for _, p in ipairs(dbPrincipals) do
         local child = p.child
         -- Fix: Ensure identifier prefix if missing for license-style strings that aren't already prefixed
         -- This fixes the issue where permissions are lost on restart because "license:xxx" is not a valid principal, it must be "identifier.license:xxx"
@@ -43,12 +43,12 @@ local function LoadPermissions()
         lib.addPrincipal(child, p.parent)
 
         -- Expand for online players
-        for src, data in pairs(onlinePlayers) do
-             local license = data.license
-             local fullLicense = 'license:'..license
-             local fullLicense2 = 'license2:'..license
+        for src, data in pairs(cachedOnlinePlayers) do
+             local pLicense = data.license
+             local fullLicense = 'license:'..pLicense
+             local fullLicense2 = 'license2:'..pLicense
 
-             if p.child == license or p.child == fullLicense or p.child == fullLicense2 or p.child == data.name then
+             if p.child == pLicense or p.child == fullLicense or p.child == fullLicense2 or p.child == data.name then
                  -- Rely on the direct execute command above; this logic previously incorrectly called the disabled expansion
              else
                  -- Check secondary IDs if needed, but license is primary
@@ -62,7 +62,7 @@ local function LoadPermissions()
              end
         end
     end
-    Debug(('[mri_Qadmin] Loaded %d Principals from DB'):format(#principals))
+    Debug(('[mri_Qadmin] Loaded %d Principals from DB'):format(#dbPrincipals))
 
     -- Load Aces (Permissions)
     local aces = MySQL.query.await('SELECT * FROM mri_qadmin_aces') or {}
@@ -92,13 +92,13 @@ RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
 
     local license = player.PlayerData.license
     -- Check if this license is a child in any principal inheritance
-    local principals = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {license}) or {}
-    local principals2 = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {'license:'..license}) or {}
+    local principalsList1 = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {license}) or {}
+    local principalsList2 = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {'license:'..license}) or {}
 
     -- Combine results
     local found = {}
-    for _, p in ipairs(principals) do found[p.parent] = true end
-    for _, p in ipairs(principals2) do found[p.parent] = true end
+    for _, p in ipairs(principalsList1) do found[p.parent] = true end
+    for _, p in ipairs(principalsList2) do found[p.parent] = true end
 
     -- Reverse Permission Sync (QBCore -> mri_Qadmin)
     local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
@@ -243,24 +243,24 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
     end
 
     -- Try to find if 'child' is an online player and expand to all their identifiers
-    local players = QBCore.Functions.GetPlayers()
+    local allOnlinePlayers = QBCore.Functions.GetPlayers()
     local foundOnline = false
-    for _, id in ipairs(players) do
-        local p = QBCore.Functions.GetPlayer(id)
-        if p then
-            local pLicense = p.PlayerData.license
+    for _, playerSrc in ipairs(allOnlinePlayers) do
+        local pObj = QBCore.Functions.GetPlayer(playerSrc)
+        if pObj then
+            local pLicense = pObj.PlayerData.license
             local fullLicense = 'license:'..pLicense
             local fullLicense2 = 'license2:'..pLicense  -- Support for license2 (new FiveM standard)
             -- Match loosely against license, license2 or exact string
             -- Also check if child matches any identifier directly
 
             local match = false
-            if child == pLicense or child == fullLicense or child == fullLicense2 or child == p.PlayerData.name then
+            if child == pLicense or child == fullLicense or child == fullLicense2 or child == pObj.PlayerData.name then
                 match = true
             else
-                local num = GetNumPlayerIdentifiers(id)
+                local num = GetNumPlayerIdentifiers(playerSrc)
                 for i = 0, num-1 do
-                    if GetPlayerIdentifier(id, i) == child then
+                    if GetPlayerIdentifier(playerSrc, i) == child then
                          match = true
                          break
                     end
@@ -268,7 +268,7 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
             end
 
             if match then
-                 Debug(('[mri_Qadmin] Found Online Player for Principal Add: %s (Src: %s)'):format(p.PlayerData.name, id))
+                 Debug(('[mri_Qadmin] Found Online Player for Principal Add: %s (Src: %s)'):format(pObj.PlayerData.name, playerSrc))
                  -- Player is online, Native FiveM takes care of principal propagation.
                  foundOnline = true
                  break
@@ -307,22 +307,22 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
         lib.removePrincipal(data.child, data.parent)
 
         -- Force refresh for the specific client if they are online to be sure
-        local players = QBCore.Functions.GetPlayers()
-        for _, id in ipairs(players) do
-             local p = QBCore.Functions.GetPlayer(id)
-             if p then
+        local onlinePlayersForSync = QBCore.Functions.GetPlayers()
+        for _, playerSrc in ipairs(onlinePlayersForSync) do
+             local pObj = QBCore.Functions.GetPlayer(playerSrc)
+             if pObj then
                  -- Debug matching
-                 local fullLicense = 'license:'..p.PlayerData.license
-                 -- print(('[mri_Qadmin] Checking player %s (License: %s Full: %s) against %s'):format(p.PlayerData.name, p.PlayerData.license, fullLicense, data.child))
+                 local fullLicense = 'license:'..pObj.PlayerData.license
+                 -- print(('[mri_Qadmin] Checking player %s (License: %s Full: %s) against %s'):format(pObj.PlayerData.name, pObj.PlayerData.license, fullLicense, data.child))
 
-                 if p.PlayerData.license == data.child or fullLicense == data.child then
-                     Debug(('[mri_Qadmin] Targeting online player %s (Src: %s) for update'):format(p.PlayerData.name, id))
-                     TriggerClientEvent('QBCore:Notify', id, 'Suas permissões foram atualizadas.', 'primary')
+                 if pObj.PlayerData.license == data.child or fullLicense == data.child then
+                     Debug(('[mri_Qadmin] Targeting online player %s (Src: %s) for update'):format(pObj.PlayerData.name, playerSrc))
+                     TriggerClientEvent('QBCore:Notify', playerSrc, 'Suas permissões foram atualizadas.', 'primary')
 
                      -- Try removing explicit runtime identifiers too just in case
-                     local num = GetNumPlayerIdentifiers(id)
+                     local num = GetNumPlayerIdentifiers(playerSrc)
                      for i = 0, num-1 do
-                        local ident = GetPlayerIdentifier(id, i)
+                        local ident = GetPlayerIdentifier(playerSrc, i)
                         lib.removePrincipal('identifier.' .. ident, data.parent)
                      end
                  end
@@ -332,20 +332,20 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
         -- Logic to remove from all online identifiers if player is online
         local child = data.child
         local parent = data.parent
-        local players = QBCore.Functions.GetPlayers()
-        for _, id in ipairs(players) do
-            local p = QBCore.Functions.GetPlayer(id)
-            if p then
-                local pLicense = p.PlayerData.license
+        local allOnlinePlayersForRemove = QBCore.Functions.GetPlayers()
+        for _, playerSrc in ipairs(allOnlinePlayersForRemove) do
+            local pObj = QBCore.Functions.GetPlayer(playerSrc)
+            if pObj then
+                local pLicense = pObj.PlayerData.license
                 local fullLicense = 'license:'..pLicense
 
                 local match = false
-                if child == pLicense or child == fullLicense or child == p.PlayerData.name then
+                if child == pLicense or child == fullLicense or child == pObj.PlayerData.name then
                     match = true
                 else
-                    local num = GetNumPlayerIdentifiers(id)
+                    local num = GetNumPlayerIdentifiers(playerSrc)
                     for i = 0, num-1 do
-                        if GetPlayerIdentifier(id, i) == child then
+                        if GetPlayerIdentifier(playerSrc, i) == child then
                              match = true
                              break
                         end
@@ -353,11 +353,11 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
                 end
 
                 if match then
-                    Debug(('[mri_Qadmin] Found Online Player for Principal Remove: %s (Src: %s)'):format(p.PlayerData.name, id))
+                    Debug(('[mri_Qadmin] Found Online Player for Principal Remove: %s (Src: %s)'):format(pObj.PlayerData.name, playerSrc))
                     -- Legacy loop to forcefully remove from all identifiers, just to be sure
-                    local num = GetNumPlayerIdentifiers(id)
+                    local num = GetNumPlayerIdentifiers(playerSrc)
                     for i = 0, num-1 do
-                        local ident = GetPlayerIdentifier(id, i)
+                        local ident = GetPlayerIdentifier(playerSrc, i)
                         Debug(('[mri_Qadmin] Removing Principal: identifier.%s -> %s'):format(ident, parent))
                         lib.removePrincipal('identifier.' .. ident, parent)
                     end

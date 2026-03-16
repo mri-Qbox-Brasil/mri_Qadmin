@@ -64,7 +64,7 @@ RegisterNUICallback('getTranslations', function(data, cb)
 	cb(nil)
 end)
 
-RegisterNUICallback("mri_Qadmin:callback:GetBans", function(data, cb)
+RegisterNUICallback("mri_Qadmin:callback:GetBans", function(_data, cb)
     local bans = lib.callback.await('mri_Qadmin:callback:GetBans', false)
     cb(bans)
 end)

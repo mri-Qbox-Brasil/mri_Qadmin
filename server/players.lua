@@ -1,35 +1,3 @@
-local function getVehicles(cid)
-    local result = MySQL.query.await(
-        'SELECT vehicle, plate, fuel, engine, body FROM player_vehicles WHERE citizenid = ?', { cid }
-    )
-    local vehicles = {}
-
-    for k, v in pairs(result) do
-        local vehicleData = QBCore.Shared.Vehicles[v.vehicle]
-
-        if not vehicleData then
-            vehicleData = {
-                name = ("Veículo Desconhecido (%s)"):format(v.vehicle or "N/A"),
-                brand = "N/A",
-                model = v.vehicle or "N/A"
-            }
-        end
-
-        vehicles[#vehicles + 1] = {
-            id = k,
-            cid = cid,
-            label = vehicleData.name,
-            brand = vehicleData.brand,
-            model = vehicleData.model,
-            plate = v.plate,
-            fuel = v.fuel,
-            engine = v.engine,
-            body = v.body
-        }
-    end
-
-    return vehicles
-end
 
 local function getPlayers(page, pageSize, search)
     page = math.max(1, tonumber(page) or 1)
@@ -150,11 +118,6 @@ local function getPlayers(page, pageSize, search)
             whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
             queryParams = { lowerSearch, lowerSearch, lowerSearch }
 
-            -- Deduplication Logic:
-            -- Since online players already exist in the DB, we exclude their CitizenIDs
-            -- from the query to avoid duplicates and ensure Online players show first.
-            -- Performance Note: "NOT IN" with very large ID sets can be slow on some SQL engines.
-
             if #onlinePlayers > 0 then
                 local cids = {}
                 for _, p in ipairs(onlinePlayers) do
@@ -162,14 +125,12 @@ local function getPlayers(page, pageSize, search)
                 end
                 whereClause = whereClause .. " AND citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
             end
-        else
-            if #onlinePlayers > 0 then
-                 local cids = {}
-                for _, p in ipairs(onlinePlayers) do
-                    cids[#cids + 1] = "'" .. p.cid .. "'"
-                end
-                 whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
+        elseif #onlinePlayers > 0 then
+            local cids = {}
+            for _, p in ipairs(onlinePlayers) do
+                cids[#cids + 1] = "'" .. p.cid .. "'"
             end
+            whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
         end
 
         local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
@@ -264,25 +225,23 @@ local function getPlayers(page, pageSize, search)
          local countQuery = "SELECT COUNT(*) as count FROM players"
          local queryParams = {}
          local whereClause = ""
-          if search and search ~= "" then
+        if search and search ~= "" then
             local lowerSearch = "%" .. string.lower(search) .. "%"
             whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
             queryParams = { lowerSearch, lowerSearch, lowerSearch }
-             if #onlinePlayers > 0 then
+            if #onlinePlayers > 0 then
                 local cids = {}
                 for _, p in ipairs(onlinePlayers) do
                     cids[#cids + 1] = "'" .. p.cid .. "'"
                 end
                 whereClause = whereClause .. " AND citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
             end
-        else
-            if #onlinePlayers > 0 then
-                 local cids = {}
-                for _, p in ipairs(onlinePlayers) do
-                    cids[#cids + 1] = "'" .. p.cid .. "'"
-                end
-                 whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
+        elseif #onlinePlayers > 0 then
+            local cids = {}
+            for _, p in ipairs(onlinePlayers) do
+                cids[#cids + 1] = "'" .. p.cid .. "'"
             end
+            whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
         end
         local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
         totalRecords = totalOnline + (dbCount or 0)
@@ -365,9 +324,9 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(actionKey, selectedData)
         return
     end
 
-    for searchgrade, info in pairs(jobInfo["grades"]) do
+    for searchgrade, gradeinfo in pairs(jobInfo["grades"]) do
         if tonumber(searchgrade) == tonumber(Grade) then
-            grade = info
+            grade = gradeinfo
             break
         end
     end
@@ -426,9 +385,9 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(actionKey, selectedData)
         return
     end
 
-    for searchgrade, info in pairs(GangInfo["grades"]) do
+    for searchgrade, gradeinfo in pairs(GangInfo["grades"]) do
         if tonumber(searchgrade) == tonumber(Grade) then
-            grade = info
+            grade = gradeinfo
             break
         end
     end
