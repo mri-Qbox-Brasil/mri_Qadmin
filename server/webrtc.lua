@@ -27,13 +27,8 @@ RegisterServerEvent('mri_Qadmin:server:Signal', function(msg)
     if not msg or not msg.targetId then return end
 
     local targetIdStr = tostring(msg.targetId)
-    local target = nil
-
-    -- Resolve target by extracting the REQUESTER ID from the viewerId
-    -- Format: "viewer-[TYPE]-[REQUESTER]-[TARGET]"
-    -- Example: "viewer-list-2-1" -> Requester is 2
     local rawId = targetIdStr:match("viewer%-.+%-(%d+)%-%d+$") or targetIdStr:match("viewer%-(%d+)$") or targetIdStr:match("(%d+)$") or targetIdStr
-    target = tonumber(rawId)
+    local target = tonumber(rawId)
 
     if target and target ~= 0 then
         if Config.Debug then

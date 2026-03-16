@@ -14,8 +14,6 @@ local wall_settings = {
 local function toRGBString(col)
     if type(col) == "string" and col:find("#") then
         local hex = col:gsub("#", "")
-        local rawId = targetIdStr:match("viewer%-.+%-(%d+)%-%d+$") or targetIdStr:match("viewer%-(%d+)$") or targetIdStr:match("(%d+)$") or targetIdStr
-        local target = tonumber(rawId)
         return string.format("%d, %d, %d", tonumber("0x" .. hex:sub(1, 2)) or 0, tonumber("0x" .. hex:sub(3, 4)) or 0, tonumber("0x" .. hex:sub(5, 6)) or 0)
     end
     return col
@@ -49,7 +47,7 @@ function GetPlayerESPColor(src)
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return nil end
 
-    local _license = 'license:' .. Player.PlayerData.license
+    -- local _license = 'license:' .. Player.PlayerData.license
     -- local identifier = 'identifier.' .. license
 
     local bestColor = nil

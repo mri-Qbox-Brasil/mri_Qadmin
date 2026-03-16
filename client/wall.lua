@@ -70,8 +70,6 @@ function DrawText3D(x,y,z, text, r,g,b)
     local onScreen,_x,_y=World3dToScreen2d(x,y,z)
     local px,py,pz=table.unpack(GetGameplayCamCoords())
     local dist = GetDistanceBetweenCoords(px,py,pz, x,y,z, 1)
-    local scale = (1/dist)*2
-    local fov = (1/GetGameplayCamFov())*100
     if onScreen then
         SetTextFont(4)
         SetTextProportional(1)

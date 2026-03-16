@@ -1,6 +1,6 @@
 -- Changes the time
-RegisterNetEvent('mri_Qadmin:client:ChangeTime', function(data, selectedData)
-    local data = CheckDataFromKey(data)
+RegisterNetEvent('mri_Qadmin:client:ChangeTime', function(_data, selectedData)
+    local data = CheckDataFromKey(_data)
     if not data or not CheckPerms(data.perms) then return end
     local time = selectedData["Time Events"].value
 
@@ -10,16 +10,16 @@ RegisterNetEvent('mri_Qadmin:client:ChangeTime', function(data, selectedData)
 end)
 
 -- Changes the weather
-RegisterNetEvent('mri_Qadmin:client:ChangeWeather', function(data, selectedData)
-    local data = CheckDataFromKey(data)
+RegisterNetEvent('mri_Qadmin:client:ChangeWeather', function(_data, selectedData)
+    local data = CheckDataFromKey(_data)
     if not data or not CheckPerms(data.perms) then return end
     local weather = selectedData["Weather"].value
 
     TriggerServerEvent('qb-weathersync:server:setWeather', weather)
 end)
 
-RegisterNetEvent('mri_Qadmin:client:copyToClipboard', function(data, selectedData)
-    local data = CheckDataFromKey(data)
+RegisterNetEvent('mri_Qadmin:client:copyToClipboard', function(_data, selectedData)
+    local data = CheckDataFromKey(_data)
     if not data or not CheckPerms(data.perms) then return end
 
     local dropdown = selectedData["Copy Coords"].value

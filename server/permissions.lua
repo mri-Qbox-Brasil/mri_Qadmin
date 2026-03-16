@@ -43,15 +43,6 @@ local function LoadPermissions()
         lib.addPrincipal(child, p.parent)
 
         -- Expand for online players
-        for src, data in pairs(cachedOnlinePlayers) do
-             local pLicense = data.license
-             local fullLicense = 'license:'..pLicense
-             local fullLicense2 = 'license2:'..pLicense
-
-             if p.child == pLicense or p.child == fullLicense or p.child == fullLicense2 or p.child == data.name then
-                 -- Rely on the direct execute command above; this logic previously incorrectly called the disabled expansion
-             end
-        end
     end
     Debug(('[mri_Qadmin] Loaded %d Principals from DB'):format(#dbPrincipals))
 
