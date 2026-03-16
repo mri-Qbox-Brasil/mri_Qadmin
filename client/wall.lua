@@ -68,7 +68,6 @@ end)
 
 function DrawText3D(x,y,z, text, r,g,b)
     local onScreen,_x,_y=World3dToScreen2d(x,y,z)
-    local px,py,pz=table.unpack(GetGameplayCamCoords())
     if onScreen then
         SetTextFont(4)
         SetTextProportional(1)
