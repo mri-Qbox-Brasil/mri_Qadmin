@@ -19,17 +19,6 @@ local function LoadPermissions()
     -- Load Principals (Inheritance)
     local dbPrincipals = MySQL.query.await('SELECT * FROM mri_qadmin_principals') or {}
 
-    -- Cache players for optimization
-    local cachedOnlinePlayers = {}
-    for _, id in ipairs(QBCore.Functions.GetPlayers()) do
-        local p = QBCore.Functions.GetPlayer(id)
-        if p then
-            cachedOnlinePlayers[id] = {
-                license = p.PlayerData.license,
-                name = p.PlayerData.name
-            }
-        end
-    end
 
     for _, p in ipairs(dbPrincipals) do
         local child = p.child
@@ -42,7 +31,6 @@ local function LoadPermissions()
         Debug(('[mri_Qadmin] [DEBUG] Executing: lib.addPrincipal %s %s'):format(child, p.parent))
         lib.addPrincipal(child, p.parent)
 
-        -- Expand for online players
     end
     Debug(('[mri_Qadmin] Loaded %d Principals from DB'):format(#dbPrincipals))
 
