@@ -319,7 +319,7 @@ export default function Players() {
         return (
             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none flex flex-col items-center gap-2">
                 {loading ? (
-                    <div className="bg-background/80 backdrop-blur-sm p-3 rounded-full shadow-2xl border border-border/50 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-background/80 backdrop-blur-sm p-3 rounded-full shadow-2xl border border-border/50 animate-in fade-in zoom-in duration-300 pointer-events-none">
                         <MriSpinner size="lg" />
                     </div>
                 ) : (

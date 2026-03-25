@@ -592,12 +592,23 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(_source, t
         if ped and ped ~= 0 then
             local coords = GetEntityCoords(ped)
             local heading = GetEntityHeading(ped)
+            local playerObj = QBCore.Functions.GetPlayer(id)
+            local vitals = { health = 100, armor = 0, hunger = 100, thirst = 100 }
+            if playerObj then
+                vitals.health = GetEntityHealth(ped)
+                vitals.armor = GetPedArmour(ped)
+                vitals.hunger = playerObj.PlayerData.metadata['hunger'] or 100
+                vitals.thirst = playerObj.PlayerData.metadata['thirst'] or 100
+                vitals.isDead = playerObj.PlayerData.metadata['isdead'] or playerObj.PlayerData.metadata['inlaststand'] or false
+            end
+
             table.insert(coordsList, {
                 id = id,
                 x = coords.x,
                 y = coords.y,
                 heading = heading,
-                name = GetPlayerName(id) or "Unknown"
+                name = GetPlayerName(id) or "Unknown",
+                vitals = vitals
             })
         end
     end
