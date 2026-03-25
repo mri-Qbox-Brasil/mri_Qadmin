@@ -62,10 +62,13 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                 // Normalize for MriPlayerVitals component
                 setVitals({
                     ...v,
-                    health: Math.max(0, Math.min(100, (v.health || 100) - 100)),
-                    hunger: v.metadata?.hunger,
-                    thirst: v.metadata?.thirst,
-                    stress: v.metadata?.stress,
+                    health: v.health || 100,
+                    metadata: {
+                        ...v.metadata,
+                        hunger: v.metadata?.hunger ?? 100,
+                        thirst: v.metadata?.thirst ?? 100,
+                        stress: v.metadata?.stress ?? 0,
+                    }
                 });
             }
         }).catch(() => { });

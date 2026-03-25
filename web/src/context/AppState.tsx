@@ -63,7 +63,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     const [lastPlayersFetch, setLastPlayersFetch] = useState<number>(0)
 
-    const [menuWide, setMenuWide] = useState<boolean>(false)
+    const [menuWide, setMenuWideState] = useState<boolean>(() => localStorage.getItem('mri_qadmin_menu_wide') === 'true')
     const [myPermissions, setMyPermissions] = useState<string[]>([]) // Start empty
     const [permissionRefreshTrigger, setPermissionRefreshTrigger] = useState<number>(0)
 
@@ -93,7 +93,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
 
     const [settings, setSettings] = useState<Record<string, any>>({})
-    const [useMocks, setUseMocks] = useState<boolean>(false)
+    const [useMocks, setUseMocksState] = useState<boolean>(() => localStorage.getItem('mri_qadmin_use_mocks') === 'true')
+
+    const setMenuWide = (v: boolean) => {
+        setMenuWideState(v)
+        localStorage.setItem('mri_qadmin_menu_wide', String(v))
+    }
+
+    const setUseMocks = (v: boolean) => {
+        setUseMocksState(v)
+        localStorage.setItem('mri_qadmin_use_mocks', String(v))
+    }
 
 
     return (
