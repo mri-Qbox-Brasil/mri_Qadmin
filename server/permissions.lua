@@ -184,11 +184,7 @@ RegisterNetEvent('QBCore:Server:OnPlayerUnload', function()
 
     DynamicRoles[license] = nil
 
-    -- Also cleanup identifiers from lib session just in case
-    local num = GetNumPlayerIdentifiers(src)
-    for i = 0, num - 1 do
-        -- We can't easily know ALL parents without a full scan, but we at least cleared CID ones.
-    end
+    -- We can't easily know ALL parents without a full scan, but we at least cleared CID ones.
 end)
 
 RegisterNetEvent('QBCore:Server:OnJobUpdate', function(src, job)
