@@ -13,7 +13,7 @@ module.exports = {
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "powershell -Command \"(Get-Content fxmanifest.lua) -replace 'version \\\".*?\\\"', 'version \\\"${nextRelease.version}\\\"' | Set-Content fxmanifest.lua; (Get-Content web/package.json) -replace '\"version\": \\\".*?\\\"', '\"version\": \\\"${nextRelease.version}\\\"' | Set-Content web/package.json\""
+                "prepareCmd": "sed -i -E 's/version \\\".*\\\"/version \\\"${nextRelease.version}\\\"/g' fxmanifest.lua && sed -i -E 's/\\\"version\\\": \\\".*\\\"/\\\"version\\\": \\\"${nextRelease.version}\\\"/g' web/package.json"
             }
         ],
         [
