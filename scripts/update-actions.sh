@@ -80,7 +80,7 @@ if [ "$UPDATED" = true ]; then
 
     git checkout -b "$BRANCH_NAME"
     git add .github/workflows/*.yml
-    git commit -m "chore: update github actions versions"
+    git commit -m "chore: update github actions versions [skip ci]"
     git push origin "$BRANCH_NAME" --force
 
     # Busca membros do time para atribuição (default: merge)
@@ -92,7 +92,7 @@ if [ "$UPDATED" = true ]; then
     ASSIGNEES=$(gh api "orgs/$ORG/teams/$TEAM_NAME/members" -q '.[].login' | paste -sd "," - || echo "")
 
     PR_ARGS=(
-        --title "chore: update github actions versions"
+        --title "chore: update github actions versions [skip ci]"
         --body "Automated update of GitHub Actions versions found in .github/workflows/"
         --base main
         --head "$BRANCH_NAME"
