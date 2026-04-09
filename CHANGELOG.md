@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.3.0...v1.3.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* skip_ci on update ([55c93e3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/55c93e30c651a01dd87406f495dd347821fcbd4f))
+
 # [1.3.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.2.0...v1.3.0) (2026-04-09)
 
 
