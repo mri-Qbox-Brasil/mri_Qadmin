@@ -11,7 +11,6 @@ local function setupMenu()
     TriggerServerEvent('mri_Qadmin:server:GetInitialData')
 end
 
-local dataReceived = false
 RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
     if initialData then
         -- Update Config with settings from DB
@@ -30,7 +29,6 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
 
         -- Update local cache in client/data.lua
         SetDataCache(initialData)
-        dataReceived = true
         Debug('^2[mri_Qadmin] Initial data received via Latent Event and cached.^7')
         
         -- Automatically notify NUI that fresh data (items, vehicles, etc) is ready

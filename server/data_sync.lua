@@ -1,4 +1,3 @@
-local QBCore = exports['qb-core']:GetCoreObject()
 
 Debug('^2[mri_Qadmin] Carregando Sistema de Sincronizacao de Dados...^7')
 

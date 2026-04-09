@@ -101,7 +101,7 @@ local function getPlayers(page, pageSize, search)
 
     -- Calculate how many slots left for DB players
     local slotsRemaining = pageSize - #resultPlayers
-    local totalRecords = totalOnline
+    local totalRecords
 
     -- DB Offset: If we fully consumed online players, we advance into DB
     local dbOffset = math.max(0, offset - totalOnline)

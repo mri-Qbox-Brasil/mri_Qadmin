@@ -187,7 +187,6 @@ RegisterNetEvent('QBCore:Server:OnPlayerUnload', function()
     -- Also cleanup identifiers from lib session just in case
     local num = GetNumPlayerIdentifiers(src)
     for i = 0, num - 1 do
-        local ident = GetPlayerIdentifier(src, i)
         -- We can't easily know ALL parents without a full scan, but we at least cleared CID ones.
     end
 end)

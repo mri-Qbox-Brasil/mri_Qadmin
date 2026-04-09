@@ -1,4 +1,3 @@
-local commandsTable, addedCommands = {}, {}
 local blacklistCommands = {
     "sv_", "adhesive_", "citizen_", "con_", "endpoint_", "fileserver", "load_server",
     "mysql_connection", "net_tcp", "netPort", "netlib", "onesync", "onesync_",

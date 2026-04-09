@@ -117,7 +117,6 @@ lib.callback.register('mri_Qadmin:callback:GetGroupMembers', function(source, gr
 
     -- Process Offline Players from DB
     -- Note: This is still heavy if not indexed, but much better than fetching ALL players
-    local query = "SELECT charinfo, citizenid, ?? as group_info FROM players WHERE ?? LIKE ?"
     local field = (groupType == 'job') and 'job' or 'gang'
     local results = MySQL.query.await("SELECT charinfo, citizenid, " .. field .. " as group_info FROM players WHERE " .. field .. " LIKE ?", { '%' .. groupName .. '%' })
 
