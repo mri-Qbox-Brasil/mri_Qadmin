@@ -78,6 +78,10 @@ fi
 if [ "$UPDATED" = true ]; then
     echo "🚀 Criando Pull Request..."
 
+    # Garante que a opção de excluir a branch após o merge esteja ativada no repositório
+    echo "⚙️ Configurando o repositório para auto-deletar a branch após o merge..."
+    gh repo edit --delete-branch-on-merge || echo "⚠️ Aviso: Permissão insuficiente para alterar configurações do repositório. Ative isso manualmente em Settings > Pull Requests."
+
     git checkout -b "$BRANCH_NAME"
     git add .github/workflows/*.yml
     git commit -m "chore: update github actions versions [skip ci]"
