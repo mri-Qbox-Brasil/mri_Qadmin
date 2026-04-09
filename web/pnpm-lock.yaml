@@ -12,8 +12,8 @@ importers:
         specifier: ^0.100.0
         version: 0.100.0
       '@mriqbox/ui-kit':
-        specifier: ^3.4.2
-        version: 3.4.2(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)
+        specifier: ^3.5.1
+        version: 3.5.1(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@18.3.28)(react@18.3.1)
@@ -600,8 +600,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mriqbox/ui-kit@3.4.2':
-    resolution: {integrity: sha512-pa6Qk68z9aEO+wvqkZdnXyb6v/WtCsD1vyUDZQ2QoFqVoewkMXxsMMlx8iG0thoqMNA14eOKzYR+NZe0yx3fGw==}
+  '@mriqbox/ui-kit@3.5.1':
+    resolution: {integrity: sha512-w8e9iH2SO3LCm2JAR86Me0fYeXm40bmqKR6+zUsMp1yoe+8ckHDzkcabbHavzZ8oXkwoofTT9MVLy+TgiWbq/Q==}
     hasBin: true
 
   '@nodelib/fs.scandir@2.1.5':
@@ -3134,7 +3134,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mriqbox/ui-kit@3.4.2(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)':
+  '@mriqbox/ui-kit@3.5.1(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)':
     dependencies:
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-popover': 1.1.15(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

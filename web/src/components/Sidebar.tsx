@@ -4,6 +4,7 @@ import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
 import { LayoutDashboard, Users, Box, Terminal, Zap, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
+import pkg from '../../package.json'
 
 interface SidebarProps {
     onRoute: (r: any) => void
@@ -71,24 +72,38 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
             </div>
 
             <div className={cn(
-                "p-3 border-t border-border flex items-center transition-all duration-300",
-                !menuWide ? "justify-center" : "justify-between"
+                "p-3 border-t border-border flex flex-col gap-2 transition-all duration-300",
+                !menuWide && "items-center"
             )}>
-                {menuWide && (
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">
-                        {t('settings_theme_mode') || "Theme"}
-                    </span>
-                )}
-                <button
-                    onClick={toggleTheme}
-                    className={cn(
-                        "p-2 rounded-lg transition-all hover:bg-muted text-muted-foreground hover:text-primary active:scale-95",
-                        !menuWide && "w-10 h-10 flex items-center justify-center bg-secondary/30"
+                <div className={cn(
+                    "flex items-center w-full",
+                    !menuWide ? "justify-center" : "justify-between"
+                )}>
+                    {menuWide && (
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">
+                            {t('settings_theme_mode') || "Theme"}
+                        </span>
                     )}
-                    title={t(`settings_theme_${theme}`)}
-                >
-                    <ThemeIcon className="w-4 h-4" />
-                </button>
+                    <button
+                        onClick={toggleTheme}
+                        className={cn(
+                            "p-2 rounded-lg transition-all hover:bg-muted text-muted-foreground hover:text-primary active:scale-95",
+                            !menuWide && "w-10 h-10 flex items-center justify-center bg-secondary/30"
+                        )}
+                        title={t(`settings_theme_${theme}`)}
+                    >
+                        <ThemeIcon className="w-4 h-4" />
+                    </button>
+                </div>
+                
+                <div className={cn(
+                    "flex px-1 items-center",
+                    !menuWide ? "justify-center" : "justify-start"
+                )}>
+                    <span className="text-[9px] font-mono text-muted-foreground/60 select-none">
+                        v{pkg.version}
+                    </span>
+                </div>
             </div>
         </div>
     )

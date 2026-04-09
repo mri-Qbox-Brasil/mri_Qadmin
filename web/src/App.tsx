@@ -43,6 +43,22 @@ export default function App() {
     const devParam = query ? query.get('devpanel') === '1' : false
     const devStorage = typeof window !== 'undefined' ? window.localStorage.getItem('ps:devOpen') === '1' : false
     const [visible, setVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
+    const [autoScale, setAutoScale] = useState(1)
+
+    useEffect(() => {
+        const updateScale = () => {
+            const width = window.innerWidth;
+            if (width > 1920) {
+                setAutoScale(width / 1920);
+            } else {
+                setAutoScale(1);
+            }
+        };
+
+        window.addEventListener('resize', updateScale);
+        updateScale();
+        return () => window.removeEventListener('resize', updateScale);
+    }, []);
 
     useEffect(() => {
         const handler = (e: any) => {
@@ -108,6 +124,18 @@ export default function App() {
             off('updateSettings', onSettingsUpdate)
         }
     }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
+
+    // Auto-Redirection Logic: Kick user to Dashboard if they lose access to current page
+    useEffect(() => {
+        if (route === 'dashboard') return
+        if (route in PAGE_PERMISSIONS) {
+            const perm = PAGE_PERMISSIONS[route as keyof typeof PAGE_PERMISSIONS]
+            if (!hasPermission(myPermissions, perm)) {
+                console.log(`[mri_Qadmin] Access revoked for ${route}. Redirecting to dashboard.`)
+                setRoute('dashboard')
+            }
+        }
+    }, [myPermissions, route])
 
     // Listen for NUI visibility messages from the client resource
     useEffect(() => {
@@ -186,7 +214,7 @@ export default function App() {
                 className="app-shell bg-background text-foreground"
                 style={{
                     display: visible ? 'flex' : 'none',
-                    transform: `scale(${scale / 100})`,
+                    transform: `scale(${(scale / 100) * autoScale})`,
                     transformOrigin: 'center'
                 }}
             >

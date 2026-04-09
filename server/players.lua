@@ -24,61 +24,68 @@ local function getPlayers(page, pageSize, search)
     -- Process Online Players First
     for k, v in pairs(GetPlayers) do
         local playerData = v.PlayerData
-        local name = playerData.charinfo.firstname .. ' ' .. playerData.charinfo.lastname
-        local license = QBCore.Functions.GetIdentifier(k, 'license')
-        local cid = playerData.citizenid
- 
-        -- Filter Online Players if search is active
-        local match = true
-        if search and search ~= "" then
-            local lowerSearch = string.lower(search)
-            local searchId = tonumber(search)
+        if playerData and playerData.charinfo then
+            local charinfo = playerData.charinfo
+            local name = (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or "")
+            local license = QBCore.Functions.GetIdentifier(k, 'license')
+            local citizenid = playerData.citizenid or "N/A"
+     
+            -- Filter Online Players if search is active
+            local match = true
+            if search and search ~= "" then
+                local lowerSearch = string.lower(search)
+                local searchId = tonumber(search)
 
-            local nameMatch = string.find(string.lower(name), lowerSearch, 1, true)
-            local licenseMatch = license and string.find(string.lower(license), lowerSearch, 1, true)
-            local cidMatch = cid and string.find(string.lower(cid), lowerSearch, 1, true)
-            local idMatch = searchId and (k == searchId)
+                local nameMatch = string.find(string.lower(name), lowerSearch, 1, true)
+                local licenseMatch = license and string.find(string.lower(license), lowerSearch, 1, true)
+                local cidMatch = citizenid and string.find(string.lower(citizenid), lowerSearch, 1, true)
+                local idMatch = searchId and (k == searchId)
 
-            if not (nameMatch or licenseMatch or cidMatch or idMatch) then
-                match = false
+                if not (nameMatch or licenseMatch or cidMatch or idMatch) then
+                    match = false
+                end
             end
-        end
 
-        if match then
-            onlinePlayers[#onlinePlayers + 1] = {
-                id = k,
-                name = name,
-                birthdate = playerData.charinfo.birthdate,
-                phone = playerData.charinfo.phone,
-                bucket = GetPlayerRoutingBucket(k),
-                ping = GetPlayerPing(k),
-                cid = cid,
-                license = license,
-                license2 = QBCore.Functions.GetIdentifier(k, 'license2'),
-                discord = QBCore.Functions.GetIdentifier(k, 'discord'),
-                steam = QBCore.Functions.GetIdentifier(k, 'steam'),
-                fivem = QBCore.Functions.GetIdentifier(k, 'fivem'),
-                ip = QBCore.Functions.GetIdentifier(k, 'ip'),
-                job = playerData.job,
-                gang = playerData.gang,
-                money = (function()
-                    local m = {}
-                    for mk, mv in pairs(playerData.money) do
-                        table.insert(m, { name = mk, amount = mv })
-                    end
-                    return m
-                end)(),
-                health = GetEntityHealth(GetPlayerPed(k)),
-                armor = GetPedArmour(GetPlayerPed(k)),
-                vehicles = {},
-                metadata = playerData.metadata,
-                last_loggedout = playerData.lastLoggedOut,
-                online = true
-            }
+            if match then
+                onlinePlayers[#onlinePlayers + 1] = {
+                    id = k,
+                    name = name,
+                    birthdate = charinfo.birthdate or "N/A",
+                    phone = charinfo.phone or "N/A",
+                    bucket = GetPlayerRoutingBucket(k),
+                    ping = GetPlayerPing(k),
+                    cid = charinfo.cid or 0,
+                    citizenid = citizenid,
+                    license = license,
+                    license2 = QBCore.Functions.GetIdentifier(k, 'license2'),
+                    discord = QBCore.Functions.GetIdentifier(k, 'discord'),
+                    steam = QBCore.Functions.GetIdentifier(k, 'steam'),
+                    fivem = QBCore.Functions.GetIdentifier(k, 'fivem'),
+                    ip = QBCore.Functions.GetIdentifier(k, 'ip'),
+                    job = playerData.job,
+                    gang = playerData.gang,
+                    money = (function()
+                        local m = {}
+                        if playerData.money then
+                            for mk, mv in pairs(playerData.money) do
+                                table.insert(m, { name = mk, amount = mv })
+                            end
+                        end
+                        return m
+                    end)(),
+                    health = GetEntityHealth(GetPlayerPed(k)),
+                    armor = GetPedArmour(GetPlayerPed(k)),
+                    vehicles = {},
+                    metadata = playerData.metadata or {},
+                    charinfo = charinfo,
+                    last_loggedout = playerData.lastLoggedOut,
+                    online = true
+                }
+            end
         end
     end
 
-    -- Sort online players by ID (or name?)
+    -- Sort online players by ID
     table.sort(onlinePlayers, function(a, b) return a.id < b.id end)
 
     local totalOnline = #onlinePlayers
@@ -94,56 +101,47 @@ local function getPlayers(page, pageSize, search)
 
     -- Calculate how many slots left for DB players
     local slotsRemaining = pageSize - #resultPlayers
-    local totalRecords -- Will add DB count
- 
-    -- If we still need players and aren't search-constrained to online only (unless we want to search DB too)
-    -- We ALWAYS search DB if we want full results.
+    local totalRecords = totalOnline
 
     -- DB Offset: If we fully consumed online players, we advance into DB
-    -- If page starts after online players, offset is (page_start - totalOnline)
-    -- If page overlaps, offset is 0 for DB (and we take LIMIT slotsRemaining)
-
     local dbOffset = math.max(0, offset - totalOnline)
 
-    if slotsRemaining > 0 or (totalOnline < offset) then
-        -- Count DB matches
-        local countQuery = "SELECT COUNT(*) as count FROM players"
-        local queryParams = {}
-        local whereClause = ""
-
-        if search and search ~= "" then
-            local lowerSearch = "%" .. string.lower(search) .. "%"
-            whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
-            queryParams = { lowerSearch, lowerSearch, lowerSearch }
-
-            if #onlinePlayers > 0 then
-                local cids = {}
-                for _, p in ipairs(onlinePlayers) do
-                    cids[#cids + 1] = "'" .. p.cid .. "'"
-                end
-                whereClause = whereClause .. " AND citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
-            end
-        elseif #onlinePlayers > 0 then
-            local cids = {}
-            for _, p in ipairs(onlinePlayers) do
-                cids[#cids + 1] = "'" .. p.cid .. "'"
-            end
-            whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
+    -- Build Online Exclusion List (Strictly using citizenid string)
+    local onlineCidList = {}
+    for _, p in ipairs(onlinePlayers) do
+        if p.citizenid and p.citizenid ~= "N/A" then
+            onlineCidList[#onlineCidList + 1] = "'" .. p.citizenid .. "'"
         end
+    end
+    local onlineExclusion = #onlineCidList > 0 and (" AND citizenid NOT IN (" .. table.concat(onlineCidList, ",") .. ")") or ""
 
-        local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
-        totalRecords = totalOnline + (dbCount or 0)
+    -- 1. Get Total Record Count (Online + Filtered DB)
+    local countQuery = "SELECT COUNT(*) as count FROM players"
+    local queryParams = {}
+    local whereClause = ""
 
-        if slotsRemaining > 0 then
-            local selectQuery = "SELECT * FROM players" .. whereClause .. " LIMIT ? OFFSET ?"
-            local selectParams = { table.unpack(queryParams) }
-            selectParams[#selectParams + 1] = slotsRemaining
-            selectParams[#selectParams + 1] = dbOffset
+    if search and search ~= "" then
+        local lowerSearch = "%" .. string.lower(search) .. "%"
+        whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
+        queryParams = { lowerSearch, lowerSearch, lowerSearch }
+        whereClause = whereClause .. onlineExclusion
+    elseif onlineExclusion ~= "" then
+        whereClause = " WHERE " .. onlineExclusion:sub(6) -- Remove leading " AND"
+    end
 
-            local dbResults = MySQL.query.await(selectQuery, selectParams)
+    local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
+    totalRecords = totalOnline + (dbCount or 0)
 
+    -- 2. Fetch DB Page results if needed
+    if slotsRemaining > 0 then
+        local selectQuery = "SELECT * FROM players" .. whereClause .. " LIMIT ? OFFSET ?"
+        local selectParams = { table.unpack(queryParams) }
+        selectParams[#selectParams + 1] = slotsRemaining
+        selectParams[#selectParams + 1] = dbOffset
+
+        local dbResults = MySQL.query.await(selectQuery, selectParams)
+        if dbResults then
             for _, player in ipairs(dbResults) do
-                 -- Process DB Player
                 local charinfo = json.decode(player.charinfo) or {}
                 local jobinfo = json.decode(player.job) or {}
                 local ganginfo = json.decode(player.gang) or {}
@@ -154,12 +152,12 @@ local function getPlayers(page, pageSize, search)
                     local gradeName = "Desconhecido"
                     local gradeLevel = jobinfo.grade
                     if type(jobinfo.grade) == "table" then
-                         gradeName = jobinfo.grade.name
-                         gradeLevel = jobinfo.grade.level
+                        gradeName = jobinfo.grade.name
+                        gradeLevel = jobinfo.grade.level
                     else
-                         local gradeKey = tostring(jobinfo.grade)
-                         local gradeData = allJobs[jobinfo.name].grades[gradeKey]
-                         if gradeData then gradeName = gradeData.name end
+                        local gradeKey = tostring(jobinfo.grade)
+                        local gradeData = allJobs[jobinfo.name].grades[gradeKey]
+                        if gradeData then gradeName = gradeData.name end
                     end
                     job_obj = {
                         label = allJobs[jobinfo.name].label,
@@ -173,12 +171,12 @@ local function getPlayers(page, pageSize, search)
                     local gradeName = "Desconhecido"
                     local gradeLevel = ganginfo.grade
                     if type(ganginfo.grade) == "table" then
-                         gradeName = ganginfo.grade.name
-                         gradeLevel = ganginfo.grade.level
+                        gradeName = ganginfo.grade.name
+                        gradeLevel = ganginfo.grade.level
                     else
-                         local gradeKey = tostring(ganginfo.grade)
-                         local gradeData = allGangs[ganginfo.name].grades[gradeKey]
-                         if gradeData then gradeName = gradeData.name end
+                        local gradeKey = tostring(ganginfo.grade)
+                        local gradeData = allGangs[ganginfo.name].grades[gradeKey]
+                        if gradeData then gradeName = gradeData.name end
                     end
                     gang_obj = {
                         label = allGangs[ganginfo.name].label,
@@ -192,13 +190,9 @@ local function getPlayers(page, pageSize, search)
                     bucket = nil,
                     ping = nil,
                     name = (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or ""),
-                    cid = player.citizenid,
                     license = player.license,
-                    discord = nil,
-                    steam = nil,
                     job = job_obj,
                     gang = gang_obj,
-                    dob = charinfo.birthdate or "Desconhecido",
                     money = (function()
                         local m = {}
                         for k, v in pairs(moneyinfo) do
@@ -207,76 +201,53 @@ local function getPlayers(page, pageSize, search)
                         return m
                     end)(),
                     phone = charinfo.phone or "Desconhecido",
-                    vehicles = {}, -- Load later
-                    metadata = player.metadata,
+                    birthdate = charinfo.birthdate or "Desconhecido",
+                    vehicles = {},
+                    metadata = player.metadata and json.decode(player.metadata) or {},
+                    charinfo = charinfo,
+                    citizenid = player.citizenid or "N/A",
+                    cid = charinfo.cid or 0,
                     last_loggedout = player.last_logged_out,
                     online = false
                 }
             end
         end
-    else
-        -- Just count total records if we didn't query
-        -- We still need the count from DB to show correct pagination total
-        -- Repeat the count query logic or optimize?
-        -- For now, let's just run the count query always if we didn't run the select.
-        -- Actually, we can skip this if we know we are way past bounds, but we need Total for UI.
-         local countQuery = "SELECT COUNT(*) as count FROM players"
-         local queryParams = {}
-         local whereClause = ""
-        if search and search ~= "" then
-            local lowerSearch = "%" .. string.lower(search) .. "%"
-            whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
-            queryParams = { lowerSearch, lowerSearch, lowerSearch }
-            if #onlinePlayers > 0 then
-                local cids = {}
-                for _, p in ipairs(onlinePlayers) do
-                    cids[#cids + 1] = "'" .. p.cid .. "'"
-                end
-                whereClause = whereClause .. " AND citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
-            end
-        elseif #onlinePlayers > 0 then
-            local cids = {}
-            for _, p in ipairs(onlinePlayers) do
-                cids[#cids + 1] = "'" .. p.cid .. "'"
-            end
-            whereClause = " WHERE citizenid NOT IN (" .. table.concat(cids, ",") .. ")"
-        end
-        local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
-        totalRecords = totalOnline + (dbCount or 0)
     end
 
-    -- Populate Vehicles for the RESULT only (20 players)
+    -- 3. Populate Vehicles for the results (Batch query)
     if #resultPlayers > 0 then
-        local cids = {}
+        local targetCids = {}
         local cidMap = {}
         for i, p in ipairs(resultPlayers) do
-            cids[#cids + 1] = p.cid
-            cidMap[p.cid] = i
-            p.vehicles = {} -- Initialize
+            if p.citizenid and p.citizenid ~= "N/A" then
+                targetCids[#targetCids + 1] = p.citizenid
+                cidMap[p.citizenid] = i
+            end
+            p.vehicles = {}
         end
 
-        -- Batch query for all vehicles of these 20 players
-        local vResults = MySQL.query.await('SELECT * FROM player_vehicles WHERE citizenid IN (?)', { cids })
-        if vResults then
-            for _, v in ipairs(vResults) do
-                local pIndex = cidMap[v.citizenid]
-                if pIndex then
-                    local vehicleData = QBCore.Shared.Vehicles[v.vehicle] or {
-                        name = ("Veículo Desconhecido (%s)"):format(v.vehicle or "N/A"),
-                        brand = "N/A",
-                        model = v.vehicle or "N/A"
-                    }
-
-                    table.insert(resultPlayers[pIndex].vehicles, {
-                        cid = v.citizenid,
-                        label = vehicleData.name,
-                        brand = vehicleData.brand,
-                        model = vehicleData.model,
-                        plate = v.plate,
-                        fuel = v.fuel,
-                        engine = v.engine,
-                        body = v.body
-                    })
+        if #targetCids > 0 then
+            local vResults = MySQL.query.await('SELECT * FROM player_vehicles WHERE citizenid IN (?)', { targetCids })
+            if vResults then
+                for _, v in ipairs(vResults) do
+                    local pIndex = cidMap[v.citizenid]
+                    if pIndex then
+                        local vData = QBCore.Shared.Vehicles[v.vehicle] or {
+                            name = ("Desconhecido (%s)"):format(v.vehicle or "N/A"),
+                            brand = "N/A",
+                            model = v.vehicle or "N/A"
+                        }
+                        table.insert(resultPlayers[pIndex].vehicles, {
+                            cid = v.citizenid,
+                            label = vData.name,
+                            brand = vData.brand,
+                            model = vData.model,
+                            plate = v.plate,
+                            fuel = v.fuel,
+                            engine = v.engine,
+                            body = v.body
+                        })
+                    end
                 end
             end
         end

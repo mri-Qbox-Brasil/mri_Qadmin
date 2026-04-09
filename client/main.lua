@@ -150,6 +150,7 @@ end)
 
 -- Open UI Event
 RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
+    if not CheckPerms("qadmin.open") then return end
 	local locale = GetConvar('ox_locale', 'pt-br')
 	local path = ('locales/%s.json'):format(locale)
 	local raw = LoadResourceFile(GetCurrentResourceName(), path)
@@ -377,6 +378,11 @@ end)
 
 RegisterNUICallback("mri_Qadmin:server:SetVital", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:SetVital', data.targetId, data.vital, data.value)
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:GiveVehicle", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:GiveVehicle', data)
     cb('ok')
 end)
 

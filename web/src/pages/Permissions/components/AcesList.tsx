@@ -66,7 +66,7 @@ function AceGroup({ principal, items, onRemove, onToggle, players }: { principal
                                 <div className="flex flex-col">
                                     <span className="font-mono">{ace.object}</span>
                                     {ace.description && <span className="text-muted-foreground text-xs italic">{ace.description}</span>}
-                                    {isPending && <span className="text-[10px] italic opacity-70">...syncing</span>}
+                                    {isPending && <span className="text-[10px] italic opacity-70">{t('permissions_syncing')}</span>}
                                 </div>
 
                                 <button
@@ -88,7 +88,7 @@ function AceGroup({ principal, items, onRemove, onToggle, players }: { principal
 export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCountChange }: { searchQuery?: string, refreshTrigger?: number, onCountChange?: (n: number) => void }) {
     const { sendNui } = useNui()
     const { t } = useI18n()
-    const { players } = useAppState()
+    const { players, gameData } = useAppState()
     const [aces, setAces] = useState<Ace[]>([])
     const [loading, setLoading] = useState(false)
     const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1, description: '' })
@@ -207,9 +207,9 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
 
     return (
         <div className="flex flex-col h-full space-y-4">
-            <div className="bg-card p-4 rounded-lg border border-border shrink-0 grid grid-cols-12 gap-3 items-end">
-                <div className="col-span-6">
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_principal_label')}</label>
+            <div className="bg-card p-4 rounded-lg border border-border shrink-0 grid grid-cols-12 gap-3 items-end shadow-sm">
+                <div className="col-span-12 lg:col-span-4">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_principal_label')}</label>
                     <MriCreatableCombobox
                         options={[
                             { label: 'group.admin', value: 'group.admin' },
@@ -222,8 +222,8 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                         searchPlaceholder={t('actions_search_placeholder')}
                     />
                 </div>
-                <div className="col-span-6">
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_object_label')}</label>
+                <div className="col-span-12 lg:col-span-4">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_object_label')}</label>
                     <MriCreatableCombobox
                         options={[
                             ...aces.map(a => ({ label: a.object, value: a.object }))
@@ -234,19 +234,9 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                         searchPlaceholder={t('actions_search_placeholder')}
                     />
                 </div>
-
-                <div className="col-span-8">
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_desc_label')}</label>
-                    <MriInput
-                        value={newAce.description}
-                        onChange={(e) => setNewAce({ ...newAce, description: e.target.value })}
-                        placeholder="Ex: Temp Access"
-                        className="bg-input border-input h-9"
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('permissions_type_label')}</label>
-                    <div className="flex bg-muted/50 rounded-md p-1 h-9 border border-border">
+                <div className="col-span-12 lg:col-span-4">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_type_label')}</label>
+                    <div className="flex bg-muted/50 rounded-md p-1 h-10 border border-border">
                         <button
                             type="button"
                             onClick={() => setAllowType(1)}
@@ -273,8 +263,18 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                         </button>
                     </div>
                 </div>
-                <div className="col-span-2">
-                    <MriButton size="sm" className="h-9 w-full" onClick={handleAdd}>
+
+                <div className="col-span-12 lg:col-span-9">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_desc_label')}</label>
+                    <MriInput
+                        value={newAce.description}
+                        onChange={(e) => setNewAce({ ...newAce, description: e.target.value })}
+                        placeholder="Ex: Temp Access"
+                        className="bg-input border-input h-10"
+                    />
+                </div>
+                <div className="col-span-12 lg:col-span-3">
+                    <MriButton size="sm" className="h-10 w-full" onClick={handleAdd}>
                         <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
                     </MriButton>
                 </div>

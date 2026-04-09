@@ -17,12 +17,26 @@ export interface Player {
     health?: number
     armor?: number
     last_loggedout?: number | string
+    birthdate?: string
+    phone?: string
+    charinfo?: {
+        firstname: string
+        lastname: string
+        birthdate: string
+        gender: number
+        nationality: string
+        cid: number
+        account: string
+        phone: string
+        backstory?: string
+    }
     metadata?: {
         verified?: boolean
         hunger?: number
         thirst?: number
         stress?: number
         isdead?: boolean
+        position?: { x: number; y: number; z: number; heading: number }
     }
     money?: { name: string; amount: number }[]
     steam?: string

@@ -124,10 +124,30 @@ export default function Listeners() {
         on('setMessages', setMessages)
         on('updatePermissions', setPermissions)
 
+        // Global Fix for Scroll Lock in Portaled Dropdowns (Radix/Shadcn)
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node instanceof HTMLElement) {
+                        const target = (node.getAttribute('role') === 'dialog' && node.classList.contains('bg-popover')) 
+                            ? node 
+                            : node.querySelector('div[role="dialog"].bg-popover');
+                        
+                        if (target instanceof HTMLElement) {
+                            target.setAttribute('data-scroll-lock-ignore', 'true');
+                        }
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+
         // Request initial data to avoid race conditions
         sendNui('getData', {}, { ...MOCK_GAME_DATA, players: MOCK_PLAYERS }).then(onData)
 
         return () => {
+            observer.disconnect();
             off('setupUI', setupUI)
             off('updateActions', updateActions)
             off('setResourceData', setResourceData)

@@ -211,7 +211,17 @@ end)
 
 
 -- Get Vehicle Data
-lib.callback.register("mri_Qadmin:client:getvehData", function(vehicle)
+local function HexToRGB(hex)
+    hex = hex:gsub("#","")
+    if #hex ~= 6 then return {255, 255, 255} end
+    return {
+        tonumber("0x"..hex:sub(1,2)),
+        tonumber("0x"..hex:sub(3,4)),
+        tonumber("0x"..hex:sub(5,6))
+    }
+end
+
+lib.callback.register("mri_Qadmin:client:getvehData", function(vehicle, overrides)
     lib.requestModel(vehicle)
 
     local coords = vec(GetOffsetFromEntityInWorldCoords(cache.ped, 0.0, 2.0, 0.5), GetEntityHeading(cache.ped) + 90)
@@ -220,7 +230,23 @@ lib.callback.register("mri_Qadmin:client:getvehData", function(vehicle)
     local prop = {}
     if DoesEntityExist(veh) then
         SetEntityCollision(veh, false, false)
+        SetEntityVisible(veh, false, 0)
         FreezeEntityPosition(veh, true)
+
+        if overrides then
+            if overrides.plate then
+                SetVehicleNumberPlateText(veh, overrides.plate)
+            end
+            if overrides.color1 then
+                local rgb = HexToRGB(overrides.color1)
+                SetVehicleCustomPrimaryColour(veh, rgb[1], rgb[2], rgb[3])
+                SetVehicleCustomSecondaryColour(veh, rgb[1], rgb[2], rgb[3])
+            end
+            if overrides.maxTuned then
+                UpgradePerformance(veh)
+            end
+        end
+
         prop = QBCore.Functions.GetVehicleProperties(veh)
         Wait(500)
         DeleteVehicle(veh)
