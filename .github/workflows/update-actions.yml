@@ -1,0 +1,22 @@
+name: Update Actions Versions
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # Roda no primeiro dia de cada mês
+  workflow_dispatch:     # Permite rodar manualmente
+
+jobs:
+  update-actions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Run update script
+        run: chmod +x scripts/update-actions.sh && ./scripts/update-actions.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_TEAM: ${{ vars.PR_TEAM }}
