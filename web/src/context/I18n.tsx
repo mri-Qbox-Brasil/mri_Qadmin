@@ -27,10 +27,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
             try {
                 const resp: any = await sendNui('getTranslations', { locale: preferredLocale }, null)
                 if (!mounted) return
-                if (resp) {
+                if (resp && typeof resp === 'object' && Object.keys(resp).length > 0) {
                     if (resp.translations && typeof resp.translations === 'object') {
                         setTranslations({ ...(en as Translations), ...resp.translations })
-                    } else if (typeof resp === 'object') {
+                    } else {
                         setTranslations({ ...(en as Translations), ...resp })
                     }
 

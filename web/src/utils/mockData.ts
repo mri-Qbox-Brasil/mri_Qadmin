@@ -19,7 +19,19 @@ export const MOCK_PLAYERS = [
             hunger: 80,
             thirst: 90,
             stress: 10,
-            coords: { x: -768.58, y: -2443.77, w: 14.52 } // Updated as requested
+            coords: { x: -768.58, y: -2443.77, w: 14.52 },
+            position: { x: -768.58, y: -2443.77, z: 14.52, heading: 180.0 }
+        },
+        charinfo: {
+            firstname: "John",
+            lastname: "Doe",
+            birthdate: "1990-05-15",
+            gender: 0,
+            nationality: "American",
+            cid: 1,
+            account: "BRL9MRI12345678",
+            phone: "555-0101",
+            backstory: "A long-time resident of Los Santos, John has worked in many sectors before finding his place."
         },
         job: { label: "Police", name: "police", grade: { name: "Officer", level: 1 } },
         gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },

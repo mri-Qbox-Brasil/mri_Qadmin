@@ -35,6 +35,8 @@ CreateThread(function()
     refreshResources()
 end)
 
+_G.RefreshResources = refreshResources
+
 lib.callback.register('mri_Qadmin:callback:GetResources', function(_source)
     return refreshResources()
 end)

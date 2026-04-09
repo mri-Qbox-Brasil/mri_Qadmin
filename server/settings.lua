@@ -55,6 +55,7 @@ local function GetPrimitiveSettings()
     end
     return payload
 end
+_G.GetPrimitiveSettings = GetPrimitiveSettings
 
 -- Load settings on startup
 AddEventHandler('onResourceStart', function(resourceName)

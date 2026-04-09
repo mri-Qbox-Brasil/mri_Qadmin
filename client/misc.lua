@@ -79,12 +79,12 @@ local function CopyCoords(dataType)
 end
 
 RegisterNetEvent('mri_Qadmin:client:CopyCoords', function(type)
+    if not CheckPerms("qadmin.action." .. type) then return end
     CopyCoords(type)
 end)
 
--- Infinite Ammo
-local InfiniteAmmo = false
 RegisterNetEvent('mri_Qadmin:client:setInfiniteAmmo', function(data)
+    local InfiniteAmmo = false
     local actionData = CheckDataFromKey(data)
     if not actionData or not CheckPerms(actionData.perms) then return end
     InfiniteAmmo = not InfiniteAmmo
@@ -156,6 +156,7 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
 end)
 
 RegisterNetEvent('mri_Qadmin:client:SetAmmoAdmin', function()
+    if not CheckPerms("qadmin.command.setammo") then return end
     local weapon = GetSelectedPedWeapon(cache.ped)
     local ammo = 999
     if weapon ~= nil then

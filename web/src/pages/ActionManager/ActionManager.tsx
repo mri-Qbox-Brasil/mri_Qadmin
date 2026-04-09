@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react'
-import { MriButton, MriPageHeader, MriCard, MriActionModal, MriCompactSearch, MriSearchInput } from '@mriqbox/ui-kit'
-import { Settings as SettingsIcon, Plus, Trash2, Save, Code, Edit, Zap, X, RefreshCw } from 'lucide-react'
+import { MriButton, MriPageHeader, MriCard, MriCompactSearch } from '@mriqbox/ui-kit'
+import { Settings as SettingsIcon, Plus, Trash2, Save, Code, Wand2, RefreshCw, X } from 'lucide-react'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/hooks/useI18n'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { cn } from '@/lib/utils'
+import ActionWizard from './components/ActionWizard'
 
 export default function ActionManager() {
     const { t } = useI18n()
@@ -18,8 +19,10 @@ export default function ActionManager() {
     const [loading, setLoading] = useState(false)
 
     // Modals state
-    const [showCreateModal, setShowCreateModal] = useState(false)
-    const [newActionId, setNewActionId] = useState('')
+    const [showWizard, setShowWizard] = useState(false)
+    const [wizardData, setWizardData] = useState<any>(null)
+    const [wizardId, setWizardId] = useState<string | undefined>(undefined)
+    
     const [actionToDelete, setActionToDelete] = useState<string | null>(null)
 
     // Aggregate actions based on category
@@ -86,6 +89,12 @@ export default function ActionManager() {
     }
 
     const startEdit = (action: any) => {
+        setWizardData(action)
+        setWizardId(action.id)
+        setShowWizard(true)
+    }
+
+    const startAdvancedEdit = (action: any) => {
         setEditingId(action.id)
         // Clone and remove ID from the payload since ID is the key
         const payloadObj = { ...action }
@@ -93,31 +102,10 @@ export default function ActionManager() {
         setEditPayload(JSON.stringify(payloadObj, null, 2))
     }
 
-    const handleCreate = () => {
-        if (!newActionId.trim()) return
-
-        const cleanId = newActionId.trim().toLowerCase().replace(/\s+/g, '_')
-        setEditingId(cleanId)
-        setEditPayload(JSON.stringify({
-            label: t('action_manager_new_action') || "Nova Ação",
-            perms: "qadmin.page.actions",
-            dropdown: [
-                { label: "Player", option: "dropdown", data: "players", valueField: "id", labelField: "name" },
-                { label: "Reason", option: "text" },
-                {
-                    label: "Option",
-                    option: "dropdown",
-                    data: [
-                        { label: "Example 1", value: "1" },
-                        { label: "Example 2", value: "2" }
-                    ]
-                },
-                { label: "Confirm", option: "button", type: "server", event: "mri_Qadmin:server:ExampleEvent" }
-            ]
-        }, null, 2))
-
-        setShowCreateModal(false)
-        setNewActionId('')
+    const handleOpenCreate = () => {
+        setWizardData(null)
+        setWizardId(undefined)
+        setShowWizard(true)
     }
 
     return (
@@ -164,7 +152,7 @@ export default function ActionManager() {
                         size="icon"
                         variant="outline"
                         className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowCreateModal(true)}
+                        onClick={handleOpenCreate}
                         title={t('action_manager_create')}
                     >
                         <Plus className={cn("w-4 h-4", loading && "animate-spin")} />
@@ -245,8 +233,11 @@ export default function ActionManager() {
                                     </div>
 
                                     <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
-                                        <MriButton variant="outline" size="sm" onClick={() => startEdit(action)}>
-                                            <Edit className="w-4 h-4 mr-2" /> {t('action_manager_editor')}
+                                        <MriButton variant="ghost" size="icon" className="w-9 h-9" onClick={() => startAdvancedEdit(action)} title="Advanced Editor (JSON)">
+                                            <Code className="w-4 h-4" />
+                                        </MriButton>
+                                        <MriButton variant="brand" size="sm" onClick={() => startEdit(action)}>
+                                            <Wand2 className="w-4 h-4 mr-2" /> Wizard
                                         </MriButton>
                                         <MriButton variant="destructive" size="icon" className="w-9 h-9" onClick={() => setActionToDelete(action.id)}>
                                             <Trash2 className="w-4 h-4" />
@@ -265,28 +256,15 @@ export default function ActionManager() {
                 </div>
             </div>
 
-            {/* Create Modal */}
-            {showCreateModal && (
-                <MriActionModal
-                    title={t('action_manager_new_action')}
-                    icon={Zap}
-                    onClose={() => setShowCreateModal(false)}
-                    onConfirm={handleCreate}
-                    isConfirmDisabled={!newActionId.trim()}
-                >
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider pl-1">
-                            {t('action_manager_create_prompt') || 'Digite o ID (Key) da nova Action:'}
-                        </label>
-                        <MriSearchInput
-                            placeholder="ex: kick_player"
-                            width="w-full"
-                            value={newActionId}
-                            onChange={setNewActionId}
-                        />
-                    </div>
-                </MriActionModal>
-            )}
+            {/* Action Wizard */}
+            <ActionWizard
+                isOpen={showWizard}
+                onClose={() => setShowWizard(false)}
+                onFinish={handleRefresh}
+                initialData={wizardData}
+                editId={wizardId}
+                category={selectedCategory}
+            />
 
             {/* Delete Modal */}
             {actionToDelete && (

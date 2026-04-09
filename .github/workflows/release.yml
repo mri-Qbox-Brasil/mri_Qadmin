@@ -1,0 +1,45 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-id: 20
+          cache: 'npm'
+
+      - name: Install dependencies (Root)
+        run: npm ci
+
+      - name: Build Web
+        run: |
+          cd web
+          npm install
+          npm run build
+
+      - name: Create Release Archive
+        run: |
+          sudo apt-get install zip
+          zip -r mri_Qadmin.zip . -x "web/node_modules/*" "web/src/*" "web/public/*" "web/tests/*" ".git/*" ".github/*" "node_modules/*" ".vscode/*" "web/*.json" "web/*.config.js" "web/*.config.ts" ".releaserc*" "release.config.cjs" "package-lock.json"
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release

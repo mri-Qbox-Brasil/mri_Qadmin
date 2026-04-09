@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Dashboard from '@/pages/Dashboard/Dashboard'
 import Players from '@/pages/Players'
 import Items from '@/pages/Items'
@@ -43,6 +43,22 @@ export default function App() {
     const devParam = query ? query.get('devpanel') === '1' : false
     const devStorage = typeof window !== 'undefined' ? window.localStorage.getItem('ps:devOpen') === '1' : false
     const [visible, setVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
+    const [autoScale, setAutoScale] = useState(1)
+
+    useEffect(() => {
+        const updateScale = () => {
+            const width = window.innerWidth;
+            if (width > 1920) {
+                setAutoScale(width / 1920);
+            } else {
+                setAutoScale(1);
+            }
+        };
+
+        window.addEventListener('resize', updateScale);
+        updateScale();
+        return () => window.removeEventListener('resize', updateScale);
+    }, []);
 
     useEffect(() => {
         const handler = (e: any) => {
@@ -108,6 +124,20 @@ export default function App() {
             off('updateSettings', onSettingsUpdate)
         }
     }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
+
+    // Derived route based on permissions
+    const effectiveRoute = useMemo(() => {
+        if (route === 'dashboard') return 'dashboard'
+        if (route in PAGE_PERMISSIONS) {
+            const perm = PAGE_PERMISSIONS[route as keyof typeof PAGE_PERMISSIONS]
+            if (!hasPermission(myPermissions, perm)) return 'dashboard'
+        }
+        return route
+    }, [route, myPermissions])
+
+    // Sync state back to dashboard if access is revoked (Side effect)
+    // Removed setRoute in useEffect to avoid cascading renders. 
+    // effectiveRoute handles the correct view rendering.
 
     // Listen for NUI visibility messages from the client resource
     useEffect(() => {
@@ -186,7 +216,7 @@ export default function App() {
                 className="app-shell bg-background text-foreground"
                 style={{
                     display: visible ? 'flex' : 'none',
-                    transform: `scale(${scale / 100})`,
+                    transform: `scale(${(scale / 100) * autoScale})`,
                     transformOrigin: 'center'
                 }}
             >
@@ -201,25 +231,25 @@ export default function App() {
                         setRoute(r)
                     }
 
-                    return <Sidebar onRoute={handleRoute} currentRoute={route} />
+                    return <Sidebar onRoute={handleRoute} currentRoute={effectiveRoute} />
                 })()}
                 <div className="flex-1 p-2 overflow-hidden flex flex-col min-h-0 min-w-0">
-                    {route === 'resources' ? <Resources /> :
-                        route === 'players' ? <Players /> :
-                            route === 'actions' ? <Actions /> :
-                                route === 'action_manager' ? <ActionManager /> :
-                                    route === 'staffchat' ? <StaffChat /> :
-                                        route === 'commands' ? <Commands /> :
-                                            route === 'items' ? <Items /> :
-                                                route === 'bans' ? <Bans /> :
-                                                    route === 'vehicles' ? <Vehicles /> :
-                                                        route === 'groups' ? <Groups /> :
-                                                            route === 'credits' ? <Credits /> :
-                                                                route === 'settings' ? <Settings /> :
-                                                                    route === 'dashboard' ? <Dashboard /> :
-                                                                        route === 'permissions' ? <Permissions /> :
-                                                                            route === 'livemap' ? <LiveMapPage /> :
-                                                                                route === 'livescreens' ? <LiveScreensPage /> :
+                    {effectiveRoute === 'resources' ? <Resources /> :
+                        effectiveRoute === 'players' ? <Players /> :
+                            effectiveRoute === 'actions' ? <Actions /> :
+                                effectiveRoute === 'action_manager' ? <ActionManager /> :
+                                    effectiveRoute === 'staffchat' ? <StaffChat /> :
+                                        effectiveRoute === 'commands' ? <Commands /> :
+                                            effectiveRoute === 'items' ? <Items /> :
+                                                effectiveRoute === 'bans' ? <Bans /> :
+                                                    effectiveRoute === 'vehicles' ? <Vehicles /> :
+                                                        effectiveRoute === 'groups' ? <Groups /> :
+                                                            effectiveRoute === 'credits' ? <Credits /> :
+                                                                effectiveRoute === 'settings' ? <Settings /> :
+                                                                    effectiveRoute === 'dashboard' ? <Dashboard /> :
+                                                                        effectiveRoute === 'permissions' ? <Permissions /> :
+                                                                            effectiveRoute === 'livemap' ? <LiveMapPage /> :
+                                                                                effectiveRoute === 'livescreens' ? <LiveScreensPage /> :
                                                                                     null}
                 </div>
             </div>

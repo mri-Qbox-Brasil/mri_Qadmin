@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { MriPageHeader, MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
-import { Shield, Key, Users, RefreshCw, Wand2, X } from 'lucide-react'
+import { Shield, Key, Users, RefreshCw, Wand2, X, Sparkles } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 import AcesList from './components/AcesList'
 import PrincipalsList from './components/PrincipalsList'
 import { cn } from '@/lib/utils'
 import { useNui } from '@/context/NuiContext'
 import ConfirmAction from '@/components/players/ConfirmAction'
+import PermissionWizard from './components/PermissionWizard'
 
 export default function Permissions() {
     const { t } = useI18n()
@@ -16,6 +17,7 @@ export default function Permissions() {
     const [refreshTrigger, setRefreshTrigger] = useState(0)
     const [itemCount, setItemCount] = useState(0)
     const [showSeedConfirm, setShowSeedConfirm] = useState(false)
+    const [showWizard, setShowWizard] = useState(false)
 
     const handleRefresh = useCallback(() => {
         setRefreshTrigger(prev => prev + 1)
@@ -100,6 +102,16 @@ export default function Permissions() {
                     <MriButton
                         size="icon"
                         variant="outline"
+                        className="h-10 w-10 border-input bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary-foreground border-primary/20"
+                        onClick={() => setShowWizard(true)}
+                        title={t('permission_wizard_title')}
+                    >
+                        <Sparkles className="w-4 h-4" />
+                    </MriButton>
+
+                    <MriButton
+                        size="icon"
+                        variant="outline"
                         className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                         onClick={() => setShowSeedConfirm(true)}
                         title={t('permissions_seed_btn')}
@@ -140,6 +152,13 @@ export default function Permissions() {
                     text={t('permissions_seed_confirm')}
                     onConfirm={handleSeed}
                     onCancel={() => setShowSeedConfirm(false)}
+                />
+            )}
+            {showWizard && (
+                <PermissionWizard
+                    isOpen={showWizard}
+                    onClose={() => setShowWizard(false)}
+                    onFinish={handleRefresh}
                 />
             )}
         </div>

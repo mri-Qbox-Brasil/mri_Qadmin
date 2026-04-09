@@ -41,6 +41,7 @@ server_scripts {
     "server/wall.lua",
     "server/key_manager.lua",
     "server/webrtc.lua",
+    "server/data_sync.lua",
 }
 
 client_scripts {
@@ -70,12 +71,24 @@ dependencies {
     "oxmysql"
 }
 
+exports {
+    "HasPerms",
+    "CheckPerms",
+    "IsPlayerInPrincipal",
+    "GeneratePlate",
+    "GetActions", -- server
+    "ToggleUI", -- client
+    "OpenUI", -- client
+    "IsMenuVisible", -- client
+}
+
 
 files {
     "web/build/**",
     "web/build/map/tiles/**/*",
     "data/ped.lua",
     "data/object.lua",
+    "data/default_actions.lua",
     "locales/*.json",
 }
 

@@ -7,10 +7,11 @@ import { useAppState } from '@/context/AppState'
 import { MriButton, MriPageHeader, MriCompactSearch } from '@mriqbox/ui-kit'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
-import { Car, RefreshCw, X } from 'lucide-react'
+import { Car, RefreshCw, X, Gift } from 'lucide-react'
 
 import VehicleGridCard from '@/components/vehicles/VehicleGridCard'
 import StockModal from '@/components/vehicles/StockModal'
+import VehicleWizard from './Vehicles/components/VehicleWizard'
 import { MOCK_GAME_DATA } from '@/utils/mockData'
 
 
@@ -20,16 +21,18 @@ export default function Vehicles() {
     const { gameData, setGameData } = useAppState()
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(false)
+    const [showVehicleWizard, setShowVehicleWizard] = useState(false)
 
     const vehicles = React.useMemo(() => {
         return (gameData.vehicles || []).map(v => {
             const name = (v.name || v.label || '').trim()
+            const model = v.model || v.value || 'unknown'
             return {
-                model: v.model || v.value,
-                name: name,
+                model: model,
+                name: name || model,
                 brand: v.brand || '',
-                price: v.price || 0,
-                stock: v.stock || 0,
+                price: Number(v.price) || 0,
+                stock: Number(v.stock) || 0,
                 category: v.category || ''
             }
         }).sort((a, b) => (a.name || '').localeCompare(b.name || ''))
@@ -37,7 +40,7 @@ export default function Vehicles() {
 
     const vehicleOptions = React.useMemo(() => {
         return vehicles.map(v => ({
-            value: v.name || v.model,
+            value: v.model,
             label: `${v.name} (${v.model})`
         }))
     }, [vehicles])
@@ -119,15 +122,25 @@ export default function Vehicles() {
                         </MriButton>
                     )}
                 </div>
-                <MriButton
-                    size="icon"
-                    variant="outline"
-                    className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                    onClick={handleRefresh}
-                    disabled={loading}
-                >
-                    <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-                </MriButton>
+                <div className="flex items-center gap-2">
+                    <MriButton
+                        size="icon"
+                        variant="outline"
+                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowVehicleWizard(true)}
+                    >
+                        <Gift className="w-4 h-4" />
+                    </MriButton>
+                    <MriButton
+                        size="icon"
+                        variant="outline"
+                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                        onClick={handleRefresh}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                    </MriButton>
+                </div>
             </MriPageHeader>
 
             <div className="flex-1 overflow-hidden pt-4 p-2">
@@ -160,6 +173,12 @@ export default function Vehicles() {
                 isOpen={stockModal.show}
                 onClose={() => setStockModal({ show: false, vehicle: null })}
                 onConfirm={handleUpdateStock}
+            />
+
+            <VehicleWizard
+                isOpen={showVehicleWizard}
+                onClose={() => setShowVehicleWizard(false)}
+                onFinish={handleRefresh}
             />
         </div>
     )

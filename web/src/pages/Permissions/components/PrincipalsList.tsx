@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { MriButton, MriInput } from "@mriqbox/ui-kit";
 import {
     Trash2,
@@ -6,6 +6,11 @@ import {
     ChevronDown,
     ChevronRight,
     User,
+    Shield,
+    Users,
+    UserCircle,
+    Briefcase,
+    Skull,
 } from "lucide-react";
 import { useNui } from "@/context/NuiContext";
 import { MriColorPicker } from "@mriqbox/ui-kit";
@@ -18,6 +23,7 @@ import { useAppState } from "@/context/AppState";
 import { useI18n } from "@/hooks/useI18n";
 import { Virtuoso } from "react-virtuoso";
 import PermissionsSkeleton from "@/components/skeletons/PermissionsSkeleton";
+import { cn } from "@/lib/utils";
 
 interface Principal {
     id: number;
@@ -34,6 +40,7 @@ function PrincipalGroup({
     principalColors,
     localPrincipalColors,
     onColorChange,
+    gameData,
 }: {
     child: string;
     items: Principal[];
@@ -42,13 +49,30 @@ function PrincipalGroup({
     principalColors: Record<string, string>;
     localPrincipalColors: Record<string, string>;
     onColorChange: (p: string, c: string) => void;
+    gameData: any;
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const { t } = useI18n();
     const player = players.find(
-        (p) => child.includes(p.license) || p.license === child,
+        (p) => child.includes(p.license) || p.license === child || (p.citizenid && child.includes(p.citizenid)) || (p.cid && child.includes(p.cid)),
     );
-    const label = player ? `${player.name} (${child})` : child;
+    
+    let label = child;
+    if (player) {
+        label = `${player.name} (${child})`;
+    } else if (child.startsWith('job.')) {
+        const jobName = child.replace('job.', '');
+        const job = gameData.jobs.find((j: any) => j.name === jobName);
+        label = job ? `${job.label} (Job: ${jobName})` : child;
+    } else if (child.startsWith('gang.')) {
+        const gangName = child.replace('gang.', '');
+        const gang = gameData.gangs.find((g: any) => g.name === gangName);
+        label = gang ? `${gang.label} (Gang: ${gangName})` : child;
+    } else if (child.startsWith('char:')) {
+        const cid = child.replace('char:', '');
+        const pMatch = players.find(p => p.citizenid === cid || p.cid === cid);
+        label = pMatch ? `Character: ${pMatch.name} (${cid})` : `Character: ${cid}`;
+    }
 
     // Aggregate descriptions for the header summary
     const descriptions = items.map(p => p.description).filter(Boolean).join(', ')
@@ -108,12 +132,12 @@ function PrincipalGroup({
                                 key={p.id}
                                 className={`flex items-center gap-4 p-3 pl-9 hover:bg-muted/20 text-sm ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
-                                <span className="text-muted-foreground">inherited</span>
+                                <span className="text-muted-foreground">{t('permissions_inherited')}</span>
                                 <span className="font-mono font-bold text-primary">
                                     {p.parent}
                                     {isPending && (
                                         <span className="text-[10px] italic ml-2 opacity-70">
-                                            ...syncing
+                                            {t('permissions_syncing')}
                                         </span>
                                     )}
                                 </span>
@@ -169,10 +193,11 @@ export default function PrincipalsList({
 }) {
     const { sendNui } = useNui();
     const { t } = useI18n();
-    const { players } = useAppState();
+    const { players, gameData } = useAppState();
     const [principals, setPrincipals] = useState<Principal[]>([]);
     const [availableGroups, setAvailableGroups] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [targetType, setTargetType] = useState<'group' | 'player' | 'char' | 'job' | 'gang'>('group');
     const [newPrincipal, setNewPrincipal] = useState({
         child: "",
         parent: "",
@@ -323,66 +348,128 @@ export default function PrincipalsList({
         }, 500);
     };
 
+    const targetOptions = useMemo(() => {
+        if (targetType === 'player') {
+            return players.map(p => ({
+                label: `${p.name} (${t('label_license')}: ${p.license})`,
+                value: p.license
+            }));
+        }
+        if (targetType === 'char') {
+            return players.map(p => ({
+                label: `${p.name} (${t('label_char')}: ${p.citizenid || p.cid})`,
+                value: `char:${p.citizenid || p.cid}`
+            }));
+        }
+        if (targetType === 'job') {
+            return gameData.jobs.flatMap((j: any) => {
+                const base = { label: `${j.label} (${t('label_job')}: ${j.name})`, value: `job.${j.name}` };
+                const grades = (j.grades ? (Array.isArray(j.grades) ? j.grades : Object.values(j.grades)) : []).map((g: any) => ({
+                    label: `${j.label} - ${g.label || g.name} (${t('label_grade')}: ${g.level !== undefined ? g.level : g.name})`,
+                    value: `job.${j.name}.${g.level !== undefined ? g.level : g.name}`,
+                }));
+                return [base, ...grades];
+            });
+        }
+        if (targetType === 'gang') {
+            return gameData.gangs.flatMap((g: any) => {
+                const base = { label: `${g.label} (${t('label_gang')}: ${g.name})`, value: `gang.${g.name}` };
+                const grades = (g.grades ? (Array.isArray(g.grades) ? g.grades : Object.values(g.grades)) : []).map((gr: any) => ({
+                    label: `${g.label} - ${gr.label || gr.name} (${t('label_grade')}: ${gr.level !== undefined ? gr.level : gr.name})`,
+                    value: `gang.${g.name}.${gr.level !== undefined ? gr.level : gr.name}`,
+                }));
+                return [base, ...grades];
+            });
+        }
+        // Default group options
+        return [
+            { label: 'group.admin', value: 'group.admin' },
+            { label: 'group.mod', value: 'group.mod' },
+            ...principals.map((p) => ({ label: p.child, value: p.child })),
+        ].filter((v, i, a) => a.findIndex((t) => t.value === v.value) === i);
+    }, [targetType, players, gameData, principals, t]);
+
     return (
         <div className="flex flex-col h-full space-y-4">
-            <div className="flex gap-2 items-end bg-card p-4 rounded-lg border border-border shrink-0">
-                <div className="flex-1">
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        {t("permissions_child_label")}
-                    </label>
-                    <MriCreatableCombobox
-                        options={[
-                            ...players.map((p) => ({
-                                label: `${p.name} (${p.license})`,
-                                value: p.license as string,
-                            })),
-                            ...principals.map((p) => ({ label: p.child, value: p.child })),
-                        ].filter(
-                            (v, i, a) => a.findIndex((t) => t.value === v.value) === i,
-                        )}
-                        value={newPrincipal.child}
-                        onChange={(val) => setNewPrincipal({ ...newPrincipal, child: val })}
-                        placeholder={t("select_player_label")}
-                        searchPlaceholder={t("search_placeholder_players")}
-                    />
+            <div className="flex flex-col gap-3 bg-card p-4 rounded-lg border border-border shrink-0 shadow-sm">
+                <div className="grid grid-cols-5 gap-2">
+                    {[
+                        { id: 'group', label: t('category_group'), icon: Shield },
+                        { id: 'player', label: t('category_player'), icon: Users },
+                        { id: 'char', label: t('category_char'), icon: UserCircle },
+                        { id: 'job', label: t('category_job'), icon: Briefcase },
+                        { id: 'gang', label: t('category_gang'), icon: Skull },
+                    ].map((cat) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => {
+                                setTargetType(cat.id as any);
+                                setNewPrincipal({ ...newPrincipal, child: "" });
+                            }}
+                            className={cn(
+                                "flex items-center justify-center p-2 rounded-md border text-[10px] font-bold uppercase tracking-tight gap-2 transition-all",
+                                targetType === cat.id 
+                                    ? "border-primary bg-primary/10 text-primary shadow-sm" 
+                                    : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                            )}
+                        >
+                            <cat.icon className="w-3.5 h-3.5" />
+                            {cat.label}
+                        </button>
+                    ))}
                 </div>
-                <div className="flex-1">
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        {t("permissions_parent_label")}
-                    </label>
-                    <MriCreatableCombobox
-                        options={[
-                            { label: "group.admin", value: "group.admin" },
-                            { label: "group.mod", value: "group.mod" },
-                            ...availableGroups.map((g) => ({ label: g, value: g })),
-                            ...principals.map((p) => ({ label: p.parent, value: p.parent })),
-                        ].filter(
-                            (v, i, a) => a.findIndex((t) => t.value === v.value) === i,
-                        )}
-                        value={newPrincipal.parent}
-                        onChange={(val) =>
-                            setNewPrincipal({ ...newPrincipal, parent: val })
-                        }
-                        placeholder={t("select_placeholder")}
-                        searchPlaceholder={t("actions_search_placeholder")}
-                    />
+
+                <div className="flex gap-2 items-end mt-1">
+                    <div className="flex-1">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">
+                            {t("permissions_child_label")}
+                        </label>
+                        <MriCreatableCombobox
+                            options={targetOptions}
+                            value={newPrincipal.child}
+                            onChange={(val) => setNewPrincipal({ ...newPrincipal, child: val })}
+                            placeholder={t("select_player_label")}
+                            searchPlaceholder={t("search_placeholder_players")}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">
+                            {t("permissions_parent_label")}
+                        </label>
+                        <MriCreatableCombobox
+                            options={[
+                                { label: "group.admin", value: "group.admin" },
+                                { label: "group.mod", value: "group.mod" },
+                                ...availableGroups.map((g) => ({ label: g, value: g })),
+                                ...principals.map((p) => ({ label: p.parent, value: p.parent })),
+                            ].filter(
+                                (v, i, a) => a.findIndex((t) => t.value === v.value) === i,
+                            )}
+                            value={newPrincipal.parent}
+                            onChange={(val) =>
+                                setNewPrincipal({ ...newPrincipal, parent: val })
+                            }
+                            placeholder={t("select_placeholder")}
+                            searchPlaceholder={t("actions_search_placeholder")}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">
+                            {t("permissions_desc_label")}
+                        </label>
+                        <MriInput
+                            value={newPrincipal.description}
+                            onChange={(e) =>
+                                setNewPrincipal({ ...newPrincipal, description: e.target.value })
+                            }
+                            placeholder="Ex: Temp admin"
+                            className="bg-input border-input h-9"
+                        />
+                    </div>
+                    <MriButton size="sm" className="h-9 min-w-[100px]" onClick={handleAdd}>
+                        <Plus className="w-4 h-4 mr-1" /> {t("permissions_add_btn")}
+                    </MriButton>
                 </div>
-                <div className="flex-1">
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        {t("permissions_desc_label")}
-                    </label>
-                    <MriInput
-                        value={newPrincipal.description}
-                        onChange={(e) =>
-                            setNewPrincipal({ ...newPrincipal, description: e.target.value })
-                        }
-                        placeholder="Ex: Temp admin"
-                        className="bg-input border-input h-9"
-                    />
-                </div>
-                <MriButton size="sm" className="h-9" onClick={handleAdd}>
-                    <Plus className="w-4 h-4 mr-1" /> {t("permissions_add_btn")}
-                </MriButton>
             </div>
 
             <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
@@ -448,6 +535,7 @@ export default function PrincipalsList({
                                                 principalColors={principalColors}
                                                 localPrincipalColors={localPrincipalColors}
                                                 onColorChange={handleLocalColorChange}
+                                                gameData={gameData}
                                             />
                                         </div>
                                     )}

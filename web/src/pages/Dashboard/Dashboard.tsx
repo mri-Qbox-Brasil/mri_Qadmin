@@ -284,7 +284,7 @@ export default function Dashboard() {
 
             <div className="flex-1 flex flex-col py-4 px-2 no-scrollbar overflow-hidden">
                 {/* Stats Grid */}
-                <div className="grid grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <StatCard
                         icon={Wallet}
                         label={t('dashboard_cash_on_hand')}

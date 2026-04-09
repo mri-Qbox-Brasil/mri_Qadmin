@@ -12,7 +12,7 @@ local function formatNodes(perms)
 end
 
 --- @param perms string | table
-function CheckPerms(source, perms)
+function HasPerms(source, perms)
     local function checkNode(node)
         -- Primary check against the source directly
         if IsPlayerAceAllowed(source, node) then return true end
@@ -25,32 +25,62 @@ function CheckPerms(source, perms)
                 return true
             end
         end
+
+        -- This ensures character-level and job-level perms work even if ACE inheritance cache is lagging
+        local Player = QBCore.Functions.GetPlayer(source)
+        if Player then
+            local citizenid = Player.PlayerData.citizenid
+            local job = Player.PlayerData.job.name
+            local jobGrade = Player.PlayerData.job.grade.level or Player.PlayerData.job.grade
+            local gang = Player.PlayerData.gang.name
+            local gangGrade = Player.PlayerData.gang.grade.level or Player.PlayerData.gang.grade
+
+            -- Check Character Principal
+            if IsPrincipalAceAllowed('char:' .. citizenid, node) then return true end
+
+            -- Check Job & Grade Principals
+            if job and job ~= "unemployed" then
+                if IsPrincipalAceAllowed('job.' .. job, node) then return true end
+                if IsPrincipalAceAllowed(('job.%s.%s'):format(job, jobGrade), node) then return true end
+            end
+
+            -- Check Gang & Grade Principals
+            if gang and gang ~= "none" then
+                if IsPrincipalAceAllowed('gang.' .. gang, node) then return true end
+                if IsPrincipalAceAllowed(('gang.%s.%s'):format(gang, gangGrade), node) then return true end
+            end
+        end
+
         return false
     end
 
     -- Master Bypass
     if checkNode('qadmin.master') then
-        Debug(('[DEBUG] CheckPerms Source: %s, Nodes: %s | Bypass Master (Allowed)'):format(source, formatNodes(perms)))
         return true
     end
 
     -- Check Native ACEs
     if type(perms) == 'string' then
-        local allowed = checkNode(perms)
-        Debug(('[DEBUG] Checking String Ace [%s] for %s: %s'):format(perms, source, tostring(allowed)))
-        if allowed then return true end
+        if checkNode(perms) then return true end
     elseif type(perms) == 'table' then
         for _, p in pairs(perms) do
-            local allowed = checkNode(p)
-            Debug(('[DEBUG] Checking Table Ace [%s] for %s: %s'):format(p, source, tostring(allowed)))
-            if allowed then return true end
+            if checkNode(p) then return true end
         end
     end
 
-    -- Fail
-    Debug(('[DEBUG] CheckPerms FAILED for source %s'):format(source))
-    noPerms(source)
     return false
+end
+
+--- @param perms string | table
+function CheckPerms(source, perms)
+    local allowed = HasPerms(source, perms)
+    Debug(('[DEBUG] CheckPerms Source: %s, Nodes: %s | Result: %s'):format(source, formatNodes(perms), tostring(allowed)))
+
+    if not allowed then
+        noPerms(source)
+    end
+
+    return allowed
 end
 
 --- Check if a player (any identifier) belongs to a specific principal (group)
@@ -119,6 +149,14 @@ function CheckAlreadyPlate(plate)
     local result = MySQL.single.await("SELECT plate FROM player_vehicles WHERE plate = ?", { vPlate })
     if result and result.plate then return true end
     return false
+end
+
+function GeneratePlate()
+    local plate = string.upper(lib.string.random('AA AA 000')) -- Example format
+    if CheckAlreadyPlate(plate) then
+        return GeneratePlate()
+    end
+    return plate
 end
 
 lib.callback.register('mri_Qadmin:callback:CheckPerms', function(source, perms)

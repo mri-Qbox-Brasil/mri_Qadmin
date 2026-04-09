@@ -27,7 +27,11 @@ import MapModal from '@/components/players/MapModal'
 import ScreenModal from '@/components/players/ScreenModal'
 import {
     LayoutGrid, List, RefreshCw, ChevronLeft, User, Heart,
-    ExternalLink, Gift, Trash2, Skull, Ban, Eye, ShoppingBag,
+    ExternalLink, Gift, Trash2,    Contact,
+    Copy,
+    Fingerprint,
+    Skull,
+ Ban, Eye, ShoppingBag,
     Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
     Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon, X
 } from 'lucide-react'
@@ -160,7 +164,7 @@ export default function Players() {
             console.error("Sync error", err)
             setIsSyncing(false)
         }
-    }, [sendNui, setPlayers])
+    }, [sendNui, setPlayers, setIsSyncing])
 
     const fetchPlayers = useCallback(async (pageToFetch = 1, searchQuery = '', forceRefresh = false) => {
         if (searchQuery !== '') {
@@ -221,7 +225,6 @@ export default function Players() {
                 const found = data.find((x: any) => getPlayerKey(x) === getPlayerKey(selectedPlayer))
                 if (found) setSelectedPlayer(found)
             }
-
         } catch {
             // ignore
         } finally {
@@ -319,11 +322,11 @@ export default function Players() {
         return (
             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none flex flex-col items-center gap-2">
                 {loading ? (
-                    <div className="bg-background/80 backdrop-blur-sm p-3 rounded-full shadow-2xl border border-border/50 animate-in fade-in zoom-in duration-300 pointer-events-none">
+                    <div className="bg-background/80 p-3 rounded-full shadow-2xl border border-border/50 animate-in fade-in zoom-in duration-300 pointer-events-none">
                         <MriSpinner size="lg" />
                     </div>
                 ) : (
-                    <div className="flex items-center gap-3 text-xs bg-card/90 backdrop-blur-sm px-5 py-2.5 rounded-full shadow-2xl border border-primary/30 text-primary font-medium animate-pulse animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center gap-3 text-xs bg-card/90 px-5 py-2.5 rounded-full shadow-2xl border border-primary/30 text-primary font-medium animate-pulse animate-in slide-in-from-bottom-4 duration-500">
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                         <span>{t('loading_more')}</span>
                         <span className="bg-primary/10 px-2 py-0.5 rounded text-[10px] font-bold">
@@ -567,6 +570,34 @@ export default function Players() {
                                         onAction={(vital: any, label: string, val: number) => {
                                             setVitalAdjustModal({ vital, label, value: val })
                                         }}
+                                        onIconClick={(vital: string) => {
+                                            if (selectedPlayer) {
+                                                let resetVal = 100;
+                                                if (vital === 'health') resetVal = 200; // QBCore health standard
+                                                sendNui('mri_Qadmin:server:SetVital', {
+                                                    targetId: selectedPlayer.id,
+                                                    vital: vital,
+                                                    value: resetVal
+                                                })
+
+                                                // Optimistic update
+                                                const newPlayer = { ...selectedPlayer };
+                                                if (vital === 'health') newPlayer.health = resetVal;
+                                                if (vital === 'armor') newPlayer.armor = resetVal;
+
+                                                newPlayer.metadata = { 
+                                                    ...(newPlayer.metadata || {}), 
+                                                    [vital]: resetVal 
+                                                };
+
+                                                newPlayer.vitals = {
+                                                    ...(newPlayer.vitals || { health: 0, armor: 0, hunger: 0, thirst: 0, stress: 0 }),
+                                                    [vital]: resetVal
+                                                };
+
+                                                setSelectedPlayer(newPlayer);
+                                            }
+                                        }}
                                         labels={{
                                             health: t('vitals_health'),
                                             armor: t('vitals_armor'),
@@ -577,6 +608,91 @@ export default function Players() {
                                     />
                                 </section>
                             )}
+
+                            <section className="space-y-4">
+                                <MriSectionHeader icon={User} title={t('character_info') || 'Character Info'} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Identity Card */}
+                                    <div className="bg-card border border-border p-4 rounded-xl space-y-3 shadow-sm">
+                                        <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                                            <div className="p-1.5 rounded bg-primary/10 text-primary">
+                                                <Fingerprint className="w-4 h-4" />
+                                            </div>
+                                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('identity') || 'Identity'}</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('full_name') || 'Full Name'}</span>
+                                                <span className="font-medium">{selectedPlayer.charinfo?.firstname} {selectedPlayer.charinfo?.lastname}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('char_id') || 'Char ID (CID)'}</span>
+                                                <span className="font-mono text-xs bg-primary/10 text-primary px-1.5 rounded">{selectedPlayer.charinfo?.cid || selectedPlayer.cid || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('citizen_id') || 'Citizen ID'}</span>
+                                                <span className="font-mono text-xs bg-muted px-1.5 rounded">{selectedPlayer.citizenid || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('birthdate') || 'Birthdate'}</span>
+                                                <span>{selectedPlayer.charinfo?.birthdate || selectedPlayer.birthdate || (selectedPlayer as any).dob || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('gender') || 'Gender'}</span>
+                                                <span>{selectedPlayer.charinfo?.gender === 0 ? t('male') || 'Male' : t('female') || 'Female'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('nationality') || 'Nationality'}</span>
+                                                <span>{selectedPlayer.charinfo?.birthdate || selectedPlayer.birthdate || (selectedPlayer as any).dob || 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Contact & Misc Card */}
+                                    <div className="bg-card border border-border p-4 rounded-xl space-y-3 shadow-sm">
+                                        <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                                            <div className="p-1.5 rounded bg-primary/10 text-primary">
+                                                <Contact className="w-4 h-4" />
+                                            </div>
+                                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('contact_info') || 'Contact & Bank'}</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('phone') || 'Phone'}</span>
+                                                <span className="font-mono">{selectedPlayer.charinfo?.phone || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">{t('account') || 'Account'}</span>
+                                                <span className="font-mono text-xs truncate max-w-[120px]">{selectedPlayer.charinfo?.account || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-2 mt-2 border-t border-border/30">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">{t('last_position') || 'Last Position'}</span>
+                                                    <span className="font-mono text-[10px] text-primary/80">
+                                                        {selectedPlayer.metadata?.position 
+                                                            ? `${selectedPlayer.metadata.position.x.toFixed(1)}, ${selectedPlayer.metadata.position.y.toFixed(1)}, ${selectedPlayer.metadata.position.z.toFixed(1)}`
+                                                            : 'N/A'
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <button 
+                                                    className="p-2 rounded-md hover:bg-primary/10 text-primary transition-colors disabled:opacity-50"
+                                                    disabled={!selectedPlayer.metadata?.position}
+                                                    onClick={() => {
+                                                        const p = selectedPlayer.metadata?.position;
+                                                        if (p) {
+                                                            const text = `vector4(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}, ${p.heading.toFixed(2)})`;
+                                                            navigator.clipboard.writeText(text);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Copy className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
 
                             <section>
                                 <MriSectionHeader icon={Ban} title={t('actions_quick')} />
@@ -960,35 +1076,56 @@ export default function Players() {
                 )}
 
                 <MriVitalAdjustModal
-                    isOpen={!!vitalAdjustModal}
-                    onClose={() => setVitalAdjustModal(null)}
-                    onSubmit={(val: number) => {
-                        if (selectedPlayer && vitalAdjustModal) {
-                            let serverVal = val;
-                            if (vitalAdjustModal.vital === 'health') {
-                                serverVal = Math.round(val + 100);
+                    {...{
+                        isOpen: !!vitalAdjustModal,
+                        hideBlur: true,
+                        hideOverlay: true,
+                        onClose: () => setVitalAdjustModal(null),
+                        onSubmit: (val: number) => {
+                            if (selectedPlayer && vitalAdjustModal) {
+                                let serverVal = val;
+                                if (vitalAdjustModal.vital === 'health') {
+                                    serverVal = Math.round(val + 100);
+                                }
+                                sendNui('mri_Qadmin:server:SetVital', {
+                                    targetId: selectedPlayer.id,
+                                    vital: vitalAdjustModal.vital,
+                                    value: serverVal
+                                })
+                                // Optimistic update
+                                const vital = vitalAdjustModal.vital;
+                                const newPlayer = { ...selectedPlayer };
+                                if (vital === 'health') newPlayer.health = serverVal;
+                                if (vital === 'armor') newPlayer.armor = serverVal;
+                                
+                                newPlayer.metadata = { 
+                                    ...(newPlayer.metadata || {}), 
+                                    [vital]: serverVal 
+                                };
+                                
+                                newPlayer.vitals = {
+                                    ...(newPlayer.vitals || { health: 0, armor: 0, hunger: 0, thirst: 0, stress: 0 }),
+                                    [vital]: serverVal
+                                };
+                                
+                                setSelectedPlayer(newPlayer);
+                                setVitalAdjustModal(null)
                             }
-                            sendNui('mri_Qadmin:server:SetVital', {
-                                targetId: selectedPlayer.id,
-                                vital: vitalAdjustModal.vital,
-                                value: serverVal
-                            })
-                            setVitalAdjustModal(null)
+                        },
+                        vital: (vitalAdjustModal?.vital || 'health') as any,
+                        currentValue: vitalAdjustModal?.value || 0,
+                        playerName: selectedPlayer?.name || '',
+                        labels: {
+                            health: t('vitals_health'),
+                            armor: t('vitals_armor'),
+                            hunger: t('vitals_hunger'),
+                            thirst: t('vitals_thirst'),
+                            stress: t('vitals_stress'),
+                            newValue: t('new_value'),
+                            confirm: t('confirm'),
+                            cancel: t('cancel')
                         }
-                    }}
-                    vital={(vitalAdjustModal?.vital || 'health') as any}
-                    currentValue={vitalAdjustModal?.value || 0}
-                    playerName={selectedPlayer?.name || ''}
-                    labels={{
-                        health: t('vitals_health'),
-                        armor: t('vitals_armor'),
-                        hunger: t('vitals_hunger'),
-                        thirst: t('vitals_thirst'),
-                        stress: t('vitals_stress'),
-                        newValue: t('new_value'),
-                        confirm: t('confirm'),
-                        cancel: t('cancel')
-                    }}
+                    } as any}
                 />
 
                 <ScreenModal

@@ -117,11 +117,20 @@
 }
 
 #root {
-    height: 85%;
-    width: 85%;
+    height: 92%;
+    width: 95%;
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 1000px; /* Prevent collapse on very small widths */
+    min-height: 600px;
+}
+
+@media (min-width: 1600px) {
+    #root {
+        height: 85%;
+        width: 85%;
+    }
 }
 
 .app-shell {

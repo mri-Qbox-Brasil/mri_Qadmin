@@ -12,7 +12,8 @@ globals = {
     "GlobalState", "Entity", "Player", "LocalPlayer", "lib", "cache", "source",
     "joaat", "promise", "PerformHttpRequest", "vec", "vec2", "vec3", "vec4",
     "quat", "mat2", "mat3", "mat4", "RegisterServerCallback", "RegisterCommand",
-    "RegisterKeyMapping",
+    "RegisterKeyMapping", "TriggerLatentClientEvent", "SetVehicleCustomPrimaryColour",
+    "SetVehicleCustomSecondaryColour",
 
     -- Commonly used natives
     "GetPlayerPed", "GetEntityCoords", "GetEntityHeading", "GetEntityHealth", "GetPedArmour",
@@ -66,7 +67,10 @@ globals = {
     "QBCore", "Config", "locale", "_U", "Debug", "CheckPerms", "CheckDataFromKey",
     "GetValue", "PlayerData", "GetCoreData", "GetData", "ToggleUI", "Log",
     "broadcastMoneyUpdate", "IsPlayerInPrincipal", "CheckAlreadyPlate",
-    "RGBToHex", "CheckRoutingbucket", "GetPlayerESPColor", "DrawText3D"
+    "RGBToHex", "CheckRoutingbucket", "GetPlayerESPColor", "DrawText3D", "SetDataCache",
+    "GetServerData", "RefreshResources", "GetUserPermissions", "GetAllDynamicActions", "GetGroupsData",
+    "GetItemsList", "GetVehiclesList", "GetCommandsList", "GetPrimitiveSettings", "getPlayers",
+    "OpenUI", "IsMenuVisible", "GeneratePlate", "HasPerms"
 }
 
 -- Global ignores

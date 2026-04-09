@@ -1,4 +1,4 @@
-lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
+local function GetVehiclesList()
     local vehicles = {}
     local baseVehicles
 
@@ -38,6 +38,11 @@ lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
 
     table.sort(vehicles, function(a, b) return (a.name or "") < (b.name or "") end)
     return vehicles
+end
+_G.GetVehiclesList = GetVehiclesList
+
+lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
+    return GetVehiclesList()
 end)
 
 -- Admin Car
@@ -128,6 +133,63 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
             ("%s %s"):format(Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname)), "success", 5000)
     QBCore.Functions.Notify(Player.PlayerData.source, locale("givecar.success.target", plate:upper(), garage), "success",
         5000)
+end)
+
+-- Dedicated event for the Vehicle Wizard (Frontend)
+RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
+    local src = source
+    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
+        QBCore.Functions.Notify(src, locale("no_perms"), "error")
+        return
+    end
+
+    local playerId = tonumber(data.playerId)
+    local model = data.model
+    local garage = data.garage or Config.DefaultGarage
+    local props = data.props or {}
+    local plate = props.plate and props.plate:upper() or nil
+
+    local Player = QBCore.Functions.GetPlayer(playerId)
+    if not Player then
+        QBCore.Functions.Notify(src, locale("not_online"), "error")
+        return
+    end
+
+    if not plate or plate == "" then
+        plate = GeneratePlate()
+    end
+    props.plate = plate -- Put plate in overrides for client application
+
+    if CheckAlreadyPlate(plate) then
+        QBCore.Functions.Notify(src, locale("givecar.error.plates_alreadyused", plate), "error")
+        return
+    end
+
+    -- Fetch FULL default properties with NATIVE customization from the admin's client
+    local vehicleMods = lib.callback.await("mri_Qadmin:client:getvehData", src, model, props)
+    if not vehicleMods or not next(vehicleMods) then
+        vehicleMods = { model = model, plate = plate } -- Minimum Fallback
+    end
+
+    MySQL.insert.await(
+        'INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, garage, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        {
+            Player.PlayerData.license,
+            Player.PlayerData.citizenid,
+            model,
+            joaat(model),
+            json.encode(vehicleMods),
+            plate,
+            garage,
+            1
+        }
+    )
+
+    local vehName = QBCore.Shared.Vehicles[model] and QBCore.Shared.Vehicles[model].name or model
+    local targetName = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
+
+    QBCore.Functions.Notify(src, locale("givecar.success.source", vehName, targetName), "success")
+    QBCore.Functions.Notify(Player.PlayerData.source, locale("givecar.success.target", plate, garage), "success")
 end)
 
 -- Give Car

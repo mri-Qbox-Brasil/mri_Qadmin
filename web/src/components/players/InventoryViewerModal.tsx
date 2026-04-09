@@ -411,7 +411,7 @@ const InventorySlot = ({ target, onClose, onAddComparison, isSecondary, otherTar
     return (
         <div className={cn("flex flex-col min-h-[500px] p-6 relative bg-card", isSecondary && "border-l border-border")}>
             {confirm.show && (
-                <div className="absolute inset-0 z-[110] bg-background/60 backdrop-blur-[2px] flex items-center justify-center p-6 animate-in fade-in duration-200">
+                <div className="absolute inset-0 z-[110] bg-background/60 flex items-center justify-center p-6 animate-in fade-in duration-200">
                     <div className="w-full max-w-sm bg-card border border-border shadow-2xl rounded-lg p-6 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center gap-3 mb-4">
                             <div className={cn("p-2 rounded-full", confirm.type === 'danger' ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary")}>
@@ -541,7 +541,7 @@ const TargetSearch = ({ onSelect, onCancel }: { onSelect: (t: InventoryTarget) =
     const isNum = /^\d+$/.test(search.trim())
 
     return (
-        <div className="absolute inset-0 z-[120] bg-background/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="absolute inset-0 z-[120] bg-background/80 flex items-center justify-center p-6 animate-in fade-in duration-300">
             <div className="w-full max-w-md bg-card border border-border shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-xl p-6 border-primary/20">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-black uppercase tracking-tighter text-foreground/90">Abrir Inventário</h3>
