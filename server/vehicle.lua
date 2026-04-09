@@ -1,4 +1,4 @@
-lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
+local function GetVehiclesList()
     local vehicles = {}
     local baseVehicles
 
@@ -38,6 +38,11 @@ lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
 
     table.sort(vehicles, function(a, b) return (a.name or "") < (b.name or "") end)
     return vehicles
+end
+_G.GetVehiclesList = GetVehiclesList
+
+lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
+    return GetVehiclesList()
 end)
 
 -- Admin Car

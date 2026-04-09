@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
-    Wand2, Users, Shield, Key, CheckCircle2, 
+    Wand2, Shield, CheckCircle2, 
     ChevronRight, ChevronLeft, Zap, Info, 
     Plus, Trash2, Settings2, HelpCircle
 } from 'lucide-react';
@@ -25,7 +25,7 @@ interface ActionWizardProps {
 export default function ActionWizard({ isOpen, onClose, onFinish, initialData, editId, category = 'Actions' }: ActionWizardProps) {
     const { t } = useI18n();
     const { sendNui } = useNui();
-    const { gameData } = useAppState();
+    useAppState(); // Component uses context, but no specific values destructured here
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
 

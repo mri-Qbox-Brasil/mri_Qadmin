@@ -12,6 +12,14 @@ function ToggleUI(bool)
 	})
 end
 
+function IsMenuVisible()
+    return MenuVisible
+end
+
+function OpenUI()
+    ToggleUI(true)
+end
+
 
 --- @param perms table
 function CheckPerms(perms)

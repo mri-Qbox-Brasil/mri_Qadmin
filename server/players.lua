@@ -260,6 +260,8 @@ local function getPlayers(page, pageSize, search)
     }
 end
 
+_G.getPlayers = getPlayers
+
 lib.callback.register('mri_Qadmin:callback:GetPlayers', function(_source, page, limit, search)
     return getPlayers(page, limit, search)
 end)

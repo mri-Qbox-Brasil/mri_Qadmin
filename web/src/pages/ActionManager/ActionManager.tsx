@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
-import { MriButton, MriPageHeader, MriCard, MriActionModal, MriCompactSearch, MriSearchInput } from '@mriqbox/ui-kit'
-import { Settings as SettingsIcon, Plus, Trash2, Save, Code, Edit, Zap, X, RefreshCw, Wand2 } from 'lucide-react'
+import { MriButton, MriPageHeader, MriCard, MriCompactSearch } from '@mriqbox/ui-kit'
+import { Settings as SettingsIcon, Plus, Trash2, Save, Code, Wand2, RefreshCw, X } from 'lucide-react'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/hooks/useI18n'

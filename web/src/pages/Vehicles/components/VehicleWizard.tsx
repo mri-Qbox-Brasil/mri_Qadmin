@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import {
     Car, Users, Palette, Warehouse, CheckCircle2,
-    ChevronRight, ChevronLeft, Search, Gift,
+    ChevronRight, ChevronLeft, Gift,
     Monitor, Gauge, Hash, Info
 } from 'lucide-react';
 import {
     MriModal, MriButton, MriInput,
-    MriSelectSearch, MriCompactSearch, MriColorPicker
+    MriSelectSearch, MriColorPicker
 } from '@mriqbox/ui-kit';
 import { useI18n } from '@/hooks/useI18n';
 import { useAppState } from '@/context/AppState';

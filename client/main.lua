@@ -4,40 +4,62 @@ PlayerData = {}
 -- Functions
 local function setupMenu()
 	Wait(500)
+    Debug('Initiating consolidated setupMenu (Latent)...')
+    
 	PlayerData = QBCore.Functions.GetPlayerData()
-	local resources = lib.callback.await('mri_Qadmin:callback:GetResources', false)
-	local server = lib.callback.await('mri_Qadmin:callback:GetServerInfo', false)
-    local permissions = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
-    local actions = lib.callback.await('mri_Qadmin:callback:GetActions', false)
-
-    if actions and type(actions) == 'table' then
-        Config.Actions = actions.Actions or Config.Actions
-        Config.PlayerActions = actions.PlayerActions or Config.PlayerActions
-        Config.OtherActions = actions.OtherActions or Config.OtherActions
-    end
-
-	GetData()
-	SendNUIMessage({
-		action = "setupUI",
-		data = {
-			actions = Config.Actions,
-			playerActions = Config.PlayerActions,
-			otherActions = Config.OtherActions,
-			resources = resources,
-			playerData = PlayerData,
-			server = server,
-			vehicleImages = Config.VehicleImages,
-            permissions = permissions,
-            supportedLanguages = Config.SupportedLanguages,
-            webrtcUrl = Config.WebRTCUrl,
-            signalingProvider = Config.SignalingProvider,
-            descriptions = Config.Descriptions,
-            settingOptions = Config.Options,
-            inventory = Config.Inventory,
-            selfId = GetPlayerServerId(PlayerId())
-		}
-	})
+    
+    TriggerServerEvent('mri_Qadmin:server:GetInitialData')
 end
+
+local dataReceived = false
+RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
+    if initialData then
+        -- Update Config with settings from DB
+        if initialData.settings then
+            for k, v in pairs(initialData.settings) do
+                Config[k] = v
+            end
+        end
+
+        -- Update Actions
+        if initialData.actions then
+            Config.Actions = initialData.actions.Actions or Config.Actions
+            Config.PlayerActions = initialData.actions.PlayerActions or Config.PlayerActions
+            Config.OtherActions = initialData.actions.OtherActions or Config.OtherActions
+        end
+
+        -- Update local cache in client/data.lua
+        SetDataCache(initialData)
+        dataReceived = true
+        Debug('^2[mri_Qadmin] Initial data received via Latent Event and cached.^7')
+        
+        -- Automatically notify NUI that fresh data (items, vehicles, etc) is ready
+        GetData()
+
+        SendNUIMessage({
+            action = "setupUI",
+            data = {
+                actions = Config.Actions,
+                playerActions = Config.PlayerActions,
+                otherActions = Config.OtherActions,
+                resources = initialData and initialData.resources or {},
+                playerData = PlayerData,
+                server = initialData and initialData.serverInfo or {},
+                vehicleImages = Config.VehicleImages,
+                permissions = initialData and initialData.permissions or {},
+                supportedLanguages = Config.SupportedLanguages,
+                webrtcUrl = Config.WebRTCUrl,
+                signalingProvider = Config.SignalingProvider,
+                descriptions = Config.Descriptions,
+                settingOptions = Config.Options,
+                inventory = Config.Inventory,
+                selfId = GetPlayerServerId(PlayerId())
+            }
+        })
+    else
+        Debug('^1[ERROR] Failed to fetch initial data from server!^7')
+    end
+end)
 
 RegisterNUICallback('getServerInfo', function(_, cb)
     local serverInfo = lib.callback.await('mri_Qadmin:callback:GetServerInfo', false)
@@ -94,6 +116,10 @@ end)
 RegisterNUICallback("hideUI", function(_, cb)
 	ToggleUI(false)
 	cb({ status = "ok" })
+end)
+
+RegisterNUICallback("getData", function(_, cb)
+    cb(GetCoreData())
 end)
 
 local actionCooldowns = {}

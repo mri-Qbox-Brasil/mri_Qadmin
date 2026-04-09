@@ -654,9 +654,7 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
     end
 end)
 
--- CALLBACKS: MY PERMISSIONS
-lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
-    local src = source
+local function GetUserPermissions(src)
     local pages = {
         'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
         'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
@@ -697,7 +695,14 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
         table.insert(allowed, 'qadmin.master')
     end
 
-    Debug(('[mri_Qadmin] GetMyPermissions for Src %d (%s)'):format(src, GetPlayerName(src)))
+    return allowed
+end
+_G.GetUserPermissions = GetUserPermissions
+
+-- CALLBACKS: MY PERMISSIONS
+lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
+    local allowed = GetUserPermissions(source)
+    Debug(('[mri_Qadmin] GetMyPermissions for Src %d (%s)'):format(source, GetPlayerName(source)))
     Debug(('[mri_Qadmin] Allowed: %s'):format(json.encode(allowed)))
 
     return allowed

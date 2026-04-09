@@ -16,8 +16,7 @@ import {
     AlertCircle,
     UserCircle,
     Briefcase,
-    Skull,
-    Search
+    Skull
 } from 'lucide-react';
 import { useAppState } from '@/context/AppState';
 import { useI18n } from '@/hooks/useI18n';
@@ -30,12 +29,7 @@ interface PermissionWizardProps {
     onFinish: () => void;
 }
 
-const STEPS = [
-    { id: 1, title: 'Target', icon: Users },
-    { id: 2, title: 'Inheritance', icon: Shield },
-    { id: 3, title: 'Permissions', icon: Key },
-    { id: 4, title: 'Summary', icon: CheckCircle2 },
-];
+// Removed global STEPS to avoid shadowing lint error
 
 export default function PermissionWizard({ isOpen, onClose, onFinish }: PermissionWizardProps) {
     const { t } = useI18n();
@@ -99,7 +93,7 @@ export default function PermissionWizard({ isOpen, onClose, onFinish }: Permissi
             { label: 'group.support', value: 'group.support' },
             { label: 'group.user', value: 'group.user' },
         ];
-    }, [targetType, players, gameData]);
+    }, [targetType, players, gameData, t]);
 
     const groupOptions = useMemo(() => {
         return [
@@ -134,7 +128,7 @@ export default function PermissionWizard({ isOpen, onClose, onFinish }: Permissi
             else categories.other.actions.push(action);
         });
 
-        return Object.entries(categories).filter(([_, data]) => data.actions.length > 0);
+        return Object.entries(categories).filter(([, data]) => data.actions.length > 0);
     }, [gameData, t]);
 
     const handleNext = () => {

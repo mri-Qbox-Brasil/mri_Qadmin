@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Dashboard from '@/pages/Dashboard/Dashboard'
 import Players from '@/pages/Players'
 import Items from '@/pages/Items'
@@ -125,17 +125,19 @@ export default function App() {
         }
     }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
 
-    // Auto-Redirection Logic: Kick user to Dashboard if they lose access to current page
-    useEffect(() => {
-        if (route === 'dashboard') return
+    // Derived route based on permissions
+    const effectiveRoute = useMemo(() => {
+        if (route === 'dashboard') return 'dashboard'
         if (route in PAGE_PERMISSIONS) {
             const perm = PAGE_PERMISSIONS[route as keyof typeof PAGE_PERMISSIONS]
-            if (!hasPermission(myPermissions, perm)) {
-                console.log(`[mri_Qadmin] Access revoked for ${route}. Redirecting to dashboard.`)
-                setRoute('dashboard')
-            }
+            if (!hasPermission(myPermissions, perm)) return 'dashboard'
         }
-    }, [myPermissions, route])
+        return route
+    }, [route, myPermissions])
+
+    // Sync state back to dashboard if access is revoked (Side effect)
+    // Removed setRoute in useEffect to avoid cascading renders. 
+    // effectiveRoute handles the correct view rendering.
 
     // Listen for NUI visibility messages from the client resource
     useEffect(() => {
@@ -229,25 +231,25 @@ export default function App() {
                         setRoute(r)
                     }
 
-                    return <Sidebar onRoute={handleRoute} currentRoute={route} />
+                    return <Sidebar onRoute={handleRoute} currentRoute={effectiveRoute} />
                 })()}
                 <div className="flex-1 p-2 overflow-hidden flex flex-col min-h-0 min-w-0">
-                    {route === 'resources' ? <Resources /> :
-                        route === 'players' ? <Players /> :
-                            route === 'actions' ? <Actions /> :
-                                route === 'action_manager' ? <ActionManager /> :
-                                    route === 'staffchat' ? <StaffChat /> :
-                                        route === 'commands' ? <Commands /> :
-                                            route === 'items' ? <Items /> :
-                                                route === 'bans' ? <Bans /> :
-                                                    route === 'vehicles' ? <Vehicles /> :
-                                                        route === 'groups' ? <Groups /> :
-                                                            route === 'credits' ? <Credits /> :
-                                                                route === 'settings' ? <Settings /> :
-                                                                    route === 'dashboard' ? <Dashboard /> :
-                                                                        route === 'permissions' ? <Permissions /> :
-                                                                            route === 'livemap' ? <LiveMapPage /> :
-                                                                                route === 'livescreens' ? <LiveScreensPage /> :
+                    {effectiveRoute === 'resources' ? <Resources /> :
+                        effectiveRoute === 'players' ? <Players /> :
+                            effectiveRoute === 'actions' ? <Actions /> :
+                                effectiveRoute === 'action_manager' ? <ActionManager /> :
+                                    effectiveRoute === 'staffchat' ? <StaffChat /> :
+                                        effectiveRoute === 'commands' ? <Commands /> :
+                                            effectiveRoute === 'items' ? <Items /> :
+                                                effectiveRoute === 'bans' ? <Bans /> :
+                                                    effectiveRoute === 'vehicles' ? <Vehicles /> :
+                                                        effectiveRoute === 'groups' ? <Groups /> :
+                                                            effectiveRoute === 'credits' ? <Credits /> :
+                                                                effectiveRoute === 'settings' ? <Settings /> :
+                                                                    effectiveRoute === 'dashboard' ? <Dashboard /> :
+                                                                        effectiveRoute === 'permissions' ? <Permissions /> :
+                                                                            effectiveRoute === 'livemap' ? <LiveMapPage /> :
+                                                                                effectiveRoute === 'livescreens' ? <LiveScreensPage /> :
                                                                                     null}
                 </div>
             </div>

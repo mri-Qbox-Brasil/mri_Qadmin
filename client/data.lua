@@ -1,30 +1,34 @@
+local Cache = {}
+
 function GetCoreData()
-    print('[DEBUG] GetCoreData called. Config.WebRTCUrl:', Config.WebRTCUrl)
-    local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData', false)
-    if not groups then groups = { jobs = {}, gangs = {} } end
-
-    local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', false, 1, 300, '') or { data = {}, total = 0, pages = 1 }
-
+    Debug('GetCoreData called. Using consolidated cache.')
+    
     return {
-        items = lib.callback.await('mri_Qadmin:callback:GetItems', false) or {},
-        vehicles = lib.callback.await('mri_Qadmin:callback:GetVehicles', false) or {},
-        commands = lib.callback.await('mri_Qadmin:callback:GetCommands', false) or {},
-        resources = lib.callback.await('mri_Qadmin:callback:GetResources', false) or {},
-
-        jobs = groups.jobs or {},
-        gangs = groups.gangs or {},
-        pedlist = lib.callback.await('mri_Qadmin:callback:GetPedList', false) or {},
-        locations = lib.callback.await('mri_Qadmin:callback:GetLocations', false) or {},
+        items = Cache.items or {},
+        vehicles = Cache.vehicles or {},
+        commands = Cache.commands or {},
+        resources = Cache.resources or {},
+        jobs = Cache.groups and Cache.groups.jobs or {},
+        gangs = Cache.groups and Cache.groups.gangs or {},
+        pedlist = Cache.peds or {},
+        locations = Cache.locations or {},
         actions = Config.Actions,
         playerActions = Config.PlayerActions,
-        otherActions = Config.OtherActions,
+        otherActions = Cache.otherActions or Config.OtherActions,
         vehicleImages = Config.VehicleImages,
         webrtcUrl = Config.WebRTCUrl,
-        players = players.data,
-        playersTotal = players.total,
-        playersPages = players.pages
+        players = Cache.players and Cache.players.data or {},
+        playersTotal = Cache.players and Cache.players.total or 0,
+        playersPages = Cache.players and Cache.players.pages or 1
     }
 end
+
+function SetDataCache(data)
+    for k, v in pairs(data) do
+        Cache[k] = v
+    end
+end
+_G.SetDataCache = SetDataCache
 
 function GetData()
     local data = GetCoreData()

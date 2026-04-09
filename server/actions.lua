@@ -11,12 +11,12 @@ end
 _G.GetAllDynamicActions = GetAllDynamicActions
 
 local function LoadActions()
-    print('^2[mri_Qadmin] Iniciando o carregamento de Actions do DB...^7')
+    Debug('^2[mri_Qadmin] Iniciando o carregamento de Actions...^7')
 
-    -- Initialize Config tables if not done
-    Config.Actions = Config.Actions or {}
-    Config.PlayerActions = Config.PlayerActions or {}
-    Config.OtherActions = Config.OtherActions or {}
+    -- Initialize Config tables
+    Config.Actions = {}
+    Config.PlayerActions = {}
+    Config.OtherActions = {}
 
     -- 0. Ensure Table Exists
     MySQL.query.await([[
@@ -27,9 +27,9 @@ local function LoadActions()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
     ]])
 
-    -- 1. Automagically Seed/Synchronize Default Actions
+    -- 1. Load Defaults from file
     local resName = GetCurrentResourceName()
-    local seedFile = 'server/default_actions.lua'
+    local seedFile = 'data/default_actions.lua'
     local fileContent = LoadResourceFile(resName, seedFile)
 
     if fileContent then
@@ -38,42 +38,16 @@ local function LoadActions()
 
         if func then
             local defaults = func()
-            local parameters = {}
-
-            local function extractInserts(categoryName, actionsTable)
-                if not actionsTable then return end
-                for id, data in pairs(actionsTable) do
-                    local jsonString = json.encode(data)
-                    parameters[#parameters + 1] = {id, categoryName, jsonString}
-                end
-            end
-
-            extractInserts('Actions', defaults.Actions)
-            extractInserts('PlayerActions', defaults.PlayerActions)
-            extractInserts('OtherActions', defaults.OtherActions)
-
-            if #parameters > 0 then
-                -- Bulk Insert
-                MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_actions (`id`, `category`, `data`) VALUES ?', {parameters})
-                print(('^2[mri_Qadmin] Sincronização Automágica concluída: %d ações padrão plantadas no banco.^7'):format(#parameters))
-
-                -- Rename the file via native Lua file os system
-                local basePath = GetResourcePath(resName)
-                if basePath then
-                    local oldPath = basePath .. '/' .. seedFile
-                    local newPath = basePath .. '/server/default_actions_seeded.lua.bkp'
-                    os.rename(oldPath, newPath)
-                    print('^3[mri_Qadmin] Arquivo "default_actions.lua" renomeado para ".bkp" para não rodar novamente.^7')
-                end
-            else
-                print('^3[mri_Qadmin] default_actions.lua não retornou nenhuma action para sincronizar.^7')
-            end
+            if defaults.Actions then for k, v in pairs(defaults.Actions) do Config.Actions[k] = v end end
+            if defaults.PlayerActions then for k, v in pairs(defaults.PlayerActions) do Config.PlayerActions[k] = v end end
+            if defaults.OtherActions then for k, v in pairs(defaults.OtherActions) do Config.OtherActions[k] = v end end
+            Debug(('^2[mri_Qadmin] Ações padrão carregadas do arquivo: %s^7'):format(seedFile))
         else
             print('^1[mri_Qadmin] Erro ao compilar default_actions.lua: ' .. tostring(err) .. '^7')
         end
     end
 
-    -- 2. Load the actual state from DB into memory
+    -- 2. Load the actual state from DB into memory (Overrides)
     local dbActions = MySQL.query.await('SELECT * FROM mri_qadmin_actions')
 
     if dbActions and #dbActions > 0 then
@@ -90,7 +64,7 @@ local function LoadActions()
                 Config.OtherActions[id] = data
             end
         end
-        print(('^2[mri_Qadmin] Actions carregadas do DB para a memória: %s^7'):format(#dbActions))
+        Debug(('^2[mri_Qadmin] Overrides de Actions carregados do DB: %s^7'):format(#dbActions))
     end
 end
 

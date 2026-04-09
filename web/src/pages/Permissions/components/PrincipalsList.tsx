@@ -387,7 +387,7 @@ export default function PrincipalsList({
             { label: 'group.mod', value: 'group.mod' },
             ...principals.map((p) => ({ label: p.child, value: p.child })),
         ].filter((v, i, a) => a.findIndex((t) => t.value === v.value) === i);
-    }, [targetType, players, gameData, principals]);
+    }, [targetType, players, gameData, principals, t]);
 
     return (
         <div className="flex flex-col h-full space-y-4">

@@ -88,7 +88,7 @@ function AceGroup({ principal, items, onRemove, onToggle, players }: { principal
 export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCountChange }: { searchQuery?: string, refreshTrigger?: number, onCountChange?: (n: number) => void }) {
     const { sendNui } = useNui()
     const { t } = useI18n()
-    const { players, gameData } = useAppState()
+    const { players } = useAppState()
     const [aces, setAces] = useState<Ace[]>([])
     const [loading, setLoading] = useState(false)
     const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1, description: '' })

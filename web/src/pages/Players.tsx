@@ -33,10 +33,9 @@ import {
     Skull,
  Ban, Eye, ShoppingBag,
     Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
-    Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon, X, BookOpen
+    Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import pkg from '../../package.json'
 import { MOCK_PLAYERS } from '@/utils/mockData'
 import InventoryViewerModal from '@/components/players/InventoryViewerModal'
 
@@ -165,7 +164,7 @@ export default function Players() {
             console.error("Sync error", err)
             setIsSyncing(false)
         }
-    }, [sendNui, setPlayers])
+    }, [sendNui, setPlayers, setIsSyncing])
 
     const fetchPlayers = useCallback(async (pageToFetch = 1, searchQuery = '', forceRefresh = false) => {
         if (searchQuery !== '') {
@@ -226,7 +225,6 @@ export default function Players() {
                 const found = data.find((x: any) => getPlayerKey(x) === getPlayerKey(selectedPlayer))
                 if (found) setSelectedPlayer(found)
             }
-
         } catch {
             // ignore
         } finally {

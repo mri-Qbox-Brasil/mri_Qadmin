@@ -79,6 +79,70 @@ Concede o acesso de **Master Admin** (Painel Completo com controle total) de for
 - `mri_qadmin.addpermission char:ABC12345 group.mod` (Dá Mod para um personagem específico).
 - `mri_qadmin.addpermission job.police qadmin.action.revive` (Dá permissão de reviver para TODA a polícia).
 
+## 🚀 Instalação
+
+1.  Baixe a versão mais recente do MRI QAdmin.
+2.  Extraia para a pasta `resources` do seu servidor.
+3.  Importe o arquivo `database.sql` para o seu banco de dados.
+4.  Adicione `ensure mri_Qadmin` ao seu `server.cfg`.
+5.  Certifique-se de que o recurso tenha permissões para executar comandos de ACE (se necessário).
+
+## 🛠️ API / Exports para Desenvolvedores
+
+O MRI QAdmin expõe diversas funções úteis para integração com outros sistemas.
+
+### Server-side Exports
+
+#### `HasPerms(source, node)`
+Verifica se um jogador possui uma permissão ACE específica ou pertence a um grupo.
+```lua
+local hasAccess = exports.mri_Qadmin:HasPerms(source, 'qadmin.page.dashboard')
+```
+
+#### `CheckPerms(source, node)`
+Verifica a permissão e envia uma notificação de erro ao jogador caso ele não tenha acesso.
+```lua
+if exports.mri_Qadmin:CheckPerms(source, 'qadmin.action.revive') then
+    -- Executar revival
+end
+```
+
+#### `IsPlayerInPrincipal(source, principal)`
+Verifica se o jogador pertence a um principal (grupo) específico.
+```lua
+if exports.mri_Qadmin:IsPlayerInPrincipal(source, 'group.admin') then
+    print("O jogador é um administrador!")
+end
+```
+
+#### `GeneratePlate()`
+Gera uma placa de veículo aleatória de 8 caracteres que não existe no banco de dados.
+```lua
+local newPlate = exports.mri_Qadmin:GeneratePlate()
+```
+
+### Client-side Exports
+
+#### `ToggleUI(show)`
+Abre ou fecha o painel administrativo.
+```lua
+exports.mri_Qadmin:ToggleUI(true) -- Abre
+```
+
+#### `OpenUI()`
+Atalho para abrir o painel.
+```lua
+exports.mri_Qadmin:OpenUI()
+```
+
+#### `IsMenuVisible()`
+Retorna `true` se o painel estiver aberto na tela.
+```lua
+local isOpen = exports.mri_Qadmin:IsMenuVisible()
+```
+
+## 👏 Créditos e Agradecimentos
+
 ## 👏 Créditos e Agradecimentos
 
 Este projeto é uma versão fortemente modificada, aprimorada e modernizada inspirada no excelente **ps-adminmenu**.

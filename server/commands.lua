@@ -14,21 +14,28 @@ local function isCommandBlacklisted(commandName)
     return false
 end
 
-lib.callback.register('mri_Qadmin:callback:GetCommands', function()
-    if not CheckPerms(source, "qadmin.commands") then return {} end
+local function GetCommandsList(source)
+    if source and not CheckPerms(source, "qadmin.commands") then return {} end
 
     local allCommands = GetRegisteredCommands()
+    local results = {}
+    local added = {}
 
     for _, command in ipairs(allCommands) do
-        if not isCommandBlacklisted(command.name) and not addedCommands[command.name] then
-            commandsTable[#commandsTable + 1] = {
+        if not isCommandBlacklisted(command.name) and not added[command.name] then
+            results[#results + 1] = {
                 name = '/' .. command.name
             }
-            addedCommands[command.name] = true -- prevent duplicates
+            added[command.name] = true
         end
     end
 
-    return commandsTable
+    return results
+end
+_G.GetCommandsList = GetCommandsList
+
+lib.callback.register('mri_Qadmin:callback:GetCommands', function(source)
+    return GetCommandsList(source)
 end)
 
 -----------------------------------------------------------------------------------------------------------------------------------------
