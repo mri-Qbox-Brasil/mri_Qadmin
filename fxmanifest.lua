@@ -1,11 +1,11 @@
-fx_version "cerulean"
+fx_version "1.3.0"
 game "gta5"
 lua54 "yes"
 use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
 author "MRI Qbox Team"
-version "1.0.6"
+version "1.3.0"
 
 ox_lib "locale"
 
