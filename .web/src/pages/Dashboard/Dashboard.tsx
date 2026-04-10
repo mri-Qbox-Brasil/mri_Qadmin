@@ -87,9 +87,10 @@ export default function Dashboard() {
             const filteredMocks = currentSearch === ''
                 ? MOCK_PLAYERS
                 : MOCK_PLAYERS.filter((p: any) =>
-                    ((p.name || '').toLowerCase().includes((currentSearch as string).toLowerCase())) ||
-                    String(p.id).includes(currentSearch as string) ||
-                    ((p.cid || '').toLowerCase().includes((currentSearch as string).toLowerCase()))
+                    String(p.name || '').toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    String(p.license || '').toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    String(p.citizenid || '').toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    String(p.id).includes(currentSearch)
                 )
 
             const limit = 300
@@ -123,10 +124,10 @@ export default function Dashboard() {
         if (playersSearch) {
             const searchLower = playersSearch.toLowerCase()
             list = list.filter(p =>
-                (p.name || '').toLowerCase().includes(searchLower) ||
-                String(p.id).includes(playersSearch) ||
-                (p.cid || '').toLowerCase().includes(searchLower) ||
-                (p.license || '').toLowerCase().includes(searchLower)
+                String(p.name || '').toLowerCase().includes(searchLower) ||
+                String(p.license || '').toLowerCase().includes(searchLower) ||
+                String(p.citizenid || '').toLowerCase().includes(searchLower) ||
+                String(p.id).includes(playersSearch)
             )
         }
 
@@ -195,9 +196,10 @@ export default function Dashboard() {
                 const filteredMocks = playersSearch === ''
                     ? MOCK_PLAYERS
                     : MOCK_PLAYERS.filter((p: any) =>
-                        ((p.name || '').toLowerCase().includes(playersSearch.toLowerCase())) ||
-                        String(p.id).includes(playersSearch) ||
-                        ((p.cid || '').toLowerCase().includes(playersSearch.toLowerCase()))
+                        String(p.name || '').toLowerCase().includes(playersSearch.toLowerCase()) ||
+                        String(p.license || '').toLowerCase().includes(playersSearch.toLowerCase()) ||
+                        String(p.citizenid || '').toLowerCase().includes(playersSearch.toLowerCase()) ||
+                        String(p.id).includes(playersSearch)
                     )
 
                 const limit = 300
@@ -243,7 +245,8 @@ export default function Dashboard() {
             fetchPlayers()
             return () => { mounted = false }
         }
-    }, [sendNui, playersSearch, lastPlayersFetch, players.length, setPlayers, setPagination, setLastPlayersFetch, syncRemainingPages, pagination.search])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sendNui, playersSearch, lastPlayersFetch, setPlayers, setPagination, setLastPlayersFetch, syncRemainingPages])
 
 
 
