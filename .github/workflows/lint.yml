@@ -1,18 +1,6 @@
 name: Lint (Web & Lua)
 
 on:
-  push:
-    branches-ignore:
-      - main
-    paths:
-      - '.web/**'
-      - 'client/**'
-      - 'server/**'
-      - 'shared/**'
-      - 'locales/**'
-      - 'fxmanifest.lua'
-      - '.github/workflows/lint.yml'
-      - '.luacheckrc'
   pull_request:
     paths:
       - '.web/**'
@@ -23,6 +11,11 @@ on:
       - 'fxmanifest.lua'
       - '.github/workflows/lint.yml'
       - '.luacheckrc'
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint-web:
