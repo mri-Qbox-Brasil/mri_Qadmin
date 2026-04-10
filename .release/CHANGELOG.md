@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.4.0...v1.4.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* problemas no componente de busca ([a1a38ba](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/a1a38ba571adf5d280d374713d0c2975b43b3f94))
+
 # [1.4.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.3.3...v1.4.0) (2026-04-10)
 
 
