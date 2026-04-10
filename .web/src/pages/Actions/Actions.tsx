@@ -4,8 +4,9 @@ import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/hooks/useI18n'
 import ActionButton from './components/ActionButton'
 import ActionDropdown from './components/ActionDropdown'
-import { MriButton, MriPageHeader, MriCompactSearch } from '@mriqbox/ui-kit'
-import { Zap, RefreshCw, X, Star } from 'lucide-react'
+import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
+import { Zap, RefreshCw, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { VirtuosoGrid } from 'react-virtuoso'
 import ActionsSkeleton from '@/components/skeletons/ActionsSkeleton'
@@ -64,10 +65,6 @@ export default function Actions() {
         })).sort((a, b) => a.label.localeCompare(b.label))
     }, [gameData.actions])
 
-    const actionOptions = React.useMemo(() => actionList.map(a => ({
-        value: a.id,
-        label: a.label
-    })), [actionList])
 
     const filteredActions = actionList.filter((action: any) => {
         // Permission Check
@@ -109,24 +106,11 @@ export default function Actions() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('actions_search_placeholder')}
                         value={search}
                         onChange={(val) => setSearch(val)}
-                        options={actionOptions}
-                        searchPlaceholder={t('actions_search_placeholder')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {search && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setSearch('')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
                 <MriButton
                     size="icon"

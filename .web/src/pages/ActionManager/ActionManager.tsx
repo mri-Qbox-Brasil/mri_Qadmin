@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import { MriButton, MriPageHeader, MriCard, MriCompactSearch } from '@mriqbox/ui-kit'
-import { Settings as SettingsIcon, Plus, Trash2, Save, Code, Wand2, RefreshCw, X } from 'lucide-react'
+import { MriButton, MriPageHeader, MriCard } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
+import { Settings as SettingsIcon, Plus, Trash2, Save, Code, Wand2, RefreshCw } from 'lucide-react'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/hooks/useI18n'
@@ -45,15 +46,6 @@ export default function ActionManager() {
         }).sort((a, b) => a.id.localeCompare(b.id))
     }, [actionsSource, search])
 
-    const actionOptions = useMemo(() => {
-        const list = Array.isArray(actionsSource)
-            ? actionsSource.map((v, i) => ({ ...v, id: v.id || i.toString() }))
-            : Object.entries(actionsSource).map(([k, v]) => ({ ...(v as any), id: k }))
-        return list.map(a => ({
-            value: a.id,
-            label: a.label || a.id
-        }))
-    }, [actionsSource])
 
     const handleRefresh = async () => {
         setLoading(true)
@@ -118,25 +110,11 @@ export default function ActionManager() {
             >
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                        <MriCompactSearch
+                        <MriExpandableSearch
                             placeholder={t('search_placeholder_items')}
                             value={search}
                             onChange={setSearch}
-                            options={actionOptions}
-                            searchPlaceholder={t('search_placeholder_items')}
-                            className="w-8 h-8 border-border bg-card/60"
                         />
-                        {search && (
-                            <MriButton
-                                size="icon"
-                                variant="outline"
-                                className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                                onClick={() => setSearch('')}
-                                title={t('common_clear')}
-                            >
-                                <X size={16} />
-                            </MriButton>
-                        )}
                     </div>
                     <MriButton
                         size="icon"

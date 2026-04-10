@@ -164,6 +164,43 @@ function MapController({ centerOnMarkerId, markers }: { centerOnMarkerId?: strin
     return null
 }
 
+function MapBoundsController({ markers, search }: { markers: MapMarker[], search: string }) {
+    const map = useMap()
+    const lastSearchRef = useRef('')
+
+    useEffect(() => {
+        // Only trigger if search is active and has changed
+        if (!search || search.trim().length === 0) {
+            lastSearchRef.current = ''
+            return
+        }
+
+        if (markers.length === 0) return
+        
+        // We only want to trigger the automatic fitting when the search string itself changes
+        // or when we transition from 0 markers to some markers during a search
+        if (search !== lastSearchRef.current) {
+            lastSearchRef.current = search
+            
+            const points = markers.map(m => [m.y, m.x] as [number, number])
+            
+            if (points.length === 1) {
+                map.flyTo(points[0], 4, { animate: true, duration: 1 })
+            } else {
+                const bounds = L.latLngBounds(points)
+                map.flyToBounds(bounds, { 
+                    padding: [80, 80], 
+                    maxZoom: 4, 
+                    animate: true, 
+                    duration: 1.5 
+                })
+            }
+        }
+    }, [search, markers, map])
+
+    return null
+}
+
 export default function LiveMap({
     markers,
     centerOnMarkerId,
@@ -352,6 +389,7 @@ export default function LiveMap({
                     </Marker>
                 ))}
 
+                <MapBoundsController markers={filteredMarkers} search={search} />
                 <MapController centerOnMarkerId={centerMarker || centerOnMarkerId} markers={markers} />
                 <MapResetter resetTrigger={resetTrigger} initialZoom={initialZoom} />
 

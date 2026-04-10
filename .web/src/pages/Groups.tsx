@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
-import { MriButton, MriPageHeader, MriCompactSearch } from '@mriqbox/ui-kit'
-import { RefreshCw, Briefcase, Skull, X } from 'lucide-react'
+import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
+import { RefreshCw, Briefcase, Skull } from 'lucide-react'
 import ChangeGroupModal from '@/components/players/ChangeGroupModal'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { cn } from '@/lib/utils'
@@ -39,16 +40,6 @@ export default function Groups() {
     const [search, setSearch] = useState('')
     const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
-    const groupOptions = React.useMemo(() => {
-        const allGroups = [...data.jobs, ...data.gangs]
-        const members = allGroups.flatMap(g => g.members)
-        // Unique members by ID
-        const uniqueMembers = Array.from(new Map(members.map(m => [m.id, m])).values())
-        return uniqueMembers.map(m => ({
-            value: m.name || m.id,
-            label: `${m.name} (#${m.id})`
-        }))
-    }, [data])
 
     // Modals state
     const [editingMember, setEditingMember] = useState<{ member: GroupMember, type: 'job' | 'gang', groupName: string } | null>(null)
@@ -119,25 +110,11 @@ export default function Groups() {
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('groups')} icon={Briefcase}>
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('search_placeholder_players')}
                         value={search}
                         onChange={setSearch}
-                        options={groupOptions}
-                        searchPlaceholder={t('search_placeholder_players')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {search && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setSearch('')}
-                            title={t('common_clear')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
                 <MriButton onClick={fetchGroups} disabled={loading} size="icon" variant="outline" className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10">
                     <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />

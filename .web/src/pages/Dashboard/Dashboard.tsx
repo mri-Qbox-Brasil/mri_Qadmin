@@ -3,7 +3,8 @@ import { Player, SummaryData } from '@/types'
 
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
-import { MriPageHeader, MriCompactSearch, MriButton } from '@mriqbox/ui-kit'
+import { MriPageHeader } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { useAppState } from '@/context/AppState'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import DevLocaleSwitcher from '@/components/DevLocaleSwitcher'
@@ -15,8 +16,7 @@ import {
     Car,
     Gavel,
     User,
-    LayoutDashboard,
-    X
+    LayoutDashboard
 } from 'lucide-react'
 import { TableVirtuoso } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
@@ -64,14 +64,8 @@ export default function Dashboard() {
 
     const { sendNui, debugMode } = useNui()
     const { t } = useI18n()
-    const { setPlayers, players, setSelectedPlayer, setPagination, lastPlayersFetch, setLastPlayersFetch } = useAppState()
+    const { setPlayers, players, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch } = useAppState()
 
-    const playerOptions = useMemo(() => {
-        return players.map(p => ({
-            value: p.name || p.cid || p.id,
-            label: `${p.name || 'Unknown'} (#${p.id || p.cid})`
-        }))
-    }, [players])
 
     // Defer the players update so sorting doesn't block the UI thread during high-frequency sync updates
     const deferredPlayers = React.useDeferredValue(players)
@@ -186,8 +180,10 @@ export default function Dashboard() {
                 abortSyncRef.current = false
             }
 
-            if (playersSearch === '') {
+            const isSearchUpdate = playersSearch !== (pagination.search || '')
+            if (playersSearch === '' && !isSearchUpdate) {
                 const now = Date.now()
+                // Only skip if we already have players and it hasn't been a minute
                 if (now - lastPlayersFetch < 60000 && players.length > 0) {
                     setLoading(false)
                     return
@@ -217,7 +213,7 @@ export default function Dashboard() {
                 const pages: number = Array.isArray(response) ? 1 : (response.pages || 1)
 
                 setPlayers(data)
-                setPagination(prev => ({ ...prev, page: 1, total, totalPages: pages }))
+                setPagination(prev => ({ ...prev, page: 1, total, totalPages: pages, search: playersSearch }))
 
                 // Start Sync if needed
                 if (playersSearch === '' && pages > 1) {
@@ -247,7 +243,7 @@ export default function Dashboard() {
             fetchPlayers()
             return () => { mounted = false }
         }
-    }, [sendNui, playersSearch, lastPlayersFetch, players.length, setPlayers, setPagination, setLastPlayersFetch, syncRemainingPages])
+    }, [sendNui, playersSearch, lastPlayersFetch, players.length, setPlayers, setPagination, setLastPlayersFetch, syncRemainingPages, pagination.search])
 
 
 
@@ -259,25 +255,11 @@ export default function Dashboard() {
         <div className="h-full w-full flex flex-col rounded-r-xl overflow-hidden">
             <MriPageHeader title={t('nav_dashboard')} icon={LayoutDashboard}>
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('search_placeholder_players') || 'Search players...'}
                         value={playersSearch}
                         onChange={setPlayersSearch}
-                        options={playerOptions}
-                        searchPlaceholder={t('search_placeholder_players') || 'Search players...'}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {playersSearch && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setPlayersSearch('')}
-                            title={t('common_clear')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
                 {debugMode && <DevLocaleSwitcher className="w-40" />}
             </MriPageHeader>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { MriPageHeader, MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
-import { Shield, Key, Users, RefreshCw, Wand2, X, Sparkles } from 'lucide-react'
+import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
+import { Shield, Key, Users, RefreshCw, Wand2, Sparkles } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 import AcesList from './components/AcesList'
 import PrincipalsList from './components/PrincipalsList'
@@ -69,24 +70,11 @@ export default function Permissions() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <MriCompactSearch
+                        <MriExpandableSearch
                             placeholder={t('search_placeholder_items')}
                             value={search}
                             onChange={(val) => setSearch(val)}
-                            options={[]} // We will leave options empty or fetch common groups
-                            searchPlaceholder={t('search_placeholder_items')}
-                            className="w-8 h-8 border-border bg-card/60"
                         />
-                        {search && (
-                            <MriButton
-                                size="icon"
-                                variant="outline"
-                                className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                                onClick={() => setSearch('')}
-                            >
-                                <X size={16} />
-                            </MriButton>
-                        )}
                     </div>
 
                     <MriButton

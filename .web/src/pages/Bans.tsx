@@ -1,8 +1,9 @@
 import React from 'react'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
-import { MriButton, MriPageHeader, MriCompactSearch } from '@mriqbox/ui-kit'
-import { RefreshCw, Gavel, X } from 'lucide-react'
+import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
+import { RefreshCw, Gavel } from 'lucide-react'
 import { MOCK_GAME_DATA } from '@/utils/mockData'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { TableVirtuoso } from 'react-virtuoso'
@@ -106,12 +107,6 @@ export default function Bans() {
         }
     }
 
-    const banOptions = React.useMemo(() => {
-        return bans.map(b => ({
-            value: b.name || b.id,
-            label: `${b.name || 'Unknown'} (${b.id})`
-        }))
-    }, [bans])
 
     const filteredBans = React.useMemo(() => {
         if (search && !isInitialLoad.current) return bans // If searching, server already filtered it
@@ -133,25 +128,11 @@ export default function Bans() {
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('nav_bans')} icon={Gavel} countLabel={t('records')} count={filteredBans.length}>
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('search_placeholder_players')}
                         value={search}
                         onChange={setSearch}
-                        options={banOptions}
-                        searchPlaceholder={t('search_placeholder_players')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {search && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setSearch('')}
-                            title={t('common_clear')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
                 <MriButton onClick={() => fetchBans()} disabled={loading} size="icon" variant="outline" className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10">
                     <RefreshCw className={cn("h-4 w-4", loading && 'animate-spin')} />
