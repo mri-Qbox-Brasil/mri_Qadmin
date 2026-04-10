@@ -3,6 +3,7 @@ export const MOCK_PLAYERS = [
     {
         id: 1,
         name: "John Doe",
+        citizenid: "BRL9MRI12345",
         license: "license:1234567890abcdef",
         discord: "discord:123456789012345678",
         ip: "127.0.0.1",
@@ -48,6 +49,7 @@ export const MOCK_PLAYERS = [
     {
         id: 2,
         name: "Jane Smith",
+        citizenid: "BRL9MRI67890",
         license: "license:0987654321fedcba",
         discord: "discord:987654321098765432",
         ip: "192.168.1.1",
@@ -70,6 +72,7 @@ export const MOCK_PLAYERS = [
     {
         id: 3,
         name: "Offline User",
+        citizenid: "BRL9MRI00000",
         license: "license:offlineuser123",
         last_loggedout: Date.now() - 86400000, // 1 day ago
         online: false,

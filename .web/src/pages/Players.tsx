@@ -188,9 +188,10 @@ export default function Players() {
             const filteredMocks = searchQuery === ''
                 ? (MOCK_PLAYERS as any[])
                 : (MOCK_PLAYERS as any[]).filter((p: any) =>
-                    (String(p.name || '').toLowerCase().includes(searchLower)) ||
-                    String(p.id).includes(searchQuery) ||
-                    (String(p.cid || '').toLowerCase().includes(searchLower))
+                    String(p.name || '').toLowerCase().includes(searchLower) ||
+                    String(p.license || '').toLowerCase().includes(searchLower) ||
+                    String(p.citizenid || '').toLowerCase().includes(searchLower) ||
+                    String(p.id).includes(searchQuery)
                 )
 
             const limit = 300
@@ -230,7 +231,8 @@ export default function Players() {
         } finally {
             setLoading(false)
         }
-    }, [pagination.search, lastPlayersFetch, players.length, sendNui, setPlayers, setLastPlayersFetch, setPagination, selectedPlayer, getPlayerKey, syncRemainingPages, setSelectedPlayer])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pagination.search, lastPlayersFetch, sendNui, setPlayers, setLastPlayersFetch, setPagination, getPlayerKey, syncRemainingPages, setSelectedPlayer])
 
 
     const refreshPlayers = useCallback(() => fetchPlayers(pagination.page, search, true), [fetchPlayers, pagination.page, search])
