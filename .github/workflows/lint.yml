@@ -2,6 +2,8 @@ name: Lint (Web & Lua)
 
 on:
   push:
+    branches-ignore:
+      - main
     paths:
       - '.web/**'
       - 'client/**'
