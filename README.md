@@ -60,6 +60,7 @@ O MRI QAdmin utiliza um modelo avançado de controle de acesso (Hybrid ACL) que 
 - **Emprego/Gangue (`job.name` / `gang.name`)**: Permissões automáticas baseadas no cargo atual do jogador (ex: `job.police`).
 
 ### Hierarquia e Precedência
+
 A hierarquia lógica recomendada é `Licença > Grupo > Personagem > Job`. As permissões são acumulativas e injetadas dinamicamente na sessão do jogador ao logar ou trocar de cargo/personagem, sem necessidade de reconexão.
 
 ## 💻 Comandos e Permissões (Console de Servidor)
@@ -67,14 +68,18 @@ A hierarquia lógica recomendada é `Licença > Grupo > Personagem > Job`. As pe
 Você pode gerenciar permissões fundamentais usando o terminal (console) do próprio servidor:
 
 ### `mri_qadmin.setmaster [id/license]`
+
 Concede o acesso de **Master Admin** (Painel Completo com controle total) de forma imediata e permanente.
 **Exemplos:**
+
 - `mri_qadmin.setmaster 1` (ID online)
 - `mri_qadmin.setmaster license:1234...` (License)
 
 ### `mri_qadmin.addpermission [id/license/prefix] [permissão_ou_grupo]`
-*(Avançado)* Concede uma permissão ou grupo permanentemente no banco de dados.
+
+_(Avançado)_ Concede uma permissão ou grupo permanentemente no banco de dados.
 **Exemplos:**
+
 - `mri_qadmin.addpermission license:abcd... group.admin` (Adiciona ao Grupo Admin).
 - `mri_qadmin.addpermission char:ABC12345 group.mod` (Dá Mod para um personagem específico).
 - `mri_qadmin.addpermission job.police qadmin.action.revive` (Dá permissão de reviver para TODA a polícia).
@@ -94,13 +99,17 @@ O MRI QAdmin expõe diversas funções úteis para integração com outros siste
 ### Server-side Exports
 
 #### `HasPerms(source, node)`
+
 Verifica se um jogador possui uma permissão ACE específica ou pertence a um grupo.
+
 ```lua
 local hasAccess = exports.mri_Qadmin:HasPerms(source, 'qadmin.page.dashboard')
 ```
 
 #### `CheckPerms(source, node)`
+
 Verifica a permissão e envia uma notificação de erro ao jogador caso ele não tenha acesso.
+
 ```lua
 if exports.mri_Qadmin:CheckPerms(source, 'qadmin.action.revive') then
     -- Executar revival
@@ -108,7 +117,9 @@ end
 ```
 
 #### `IsPlayerInPrincipal(source, principal)`
+
 Verifica se o jogador pertence a um principal (grupo) específico.
+
 ```lua
 if exports.mri_Qadmin:IsPlayerInPrincipal(source, 'group.admin') then
     print("O jogador é um administrador!")
@@ -116,7 +127,9 @@ end
 ```
 
 #### `GeneratePlate()`
+
 Gera uma placa de veículo aleatória de 8 caracteres que não existe no banco de dados.
+
 ```lua
 local newPlate = exports.mri_Qadmin:GeneratePlate()
 ```
@@ -124,24 +137,28 @@ local newPlate = exports.mri_Qadmin:GeneratePlate()
 ### Client-side Exports
 
 #### `ToggleUI(show)`
+
 Abre ou fecha o painel administrativo.
+
 ```lua
 exports.mri_Qadmin:ToggleUI(true) -- Abre
 ```
 
 #### `OpenUI()`
+
 Atalho para abrir o painel.
+
 ```lua
 exports.mri_Qadmin:OpenUI()
 ```
 
 #### `IsMenuVisible()`
+
 Retorna `true` se o painel estiver aberto na tela.
+
 ```lua
 local isOpen = exports.mri_Qadmin:IsMenuVisible()
 ```
-
-## 👏 Créditos e Agradecimentos
 
 ## 👏 Créditos e Agradecimentos
 
@@ -152,6 +169,7 @@ Expressamos nossa sincera gratidão à equipe do [Project Sloth](https://github.
 
 Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.
 Você pode compartilhar e adaptar o material, sob as condições que:
+
 - Você dê os devidos créditos.
 - Você **NÃO PODE** usar este material para fins comerciais (não pode ser vendido).
 - Se você modificar, você deve distribuir suas contribuições sob a mesma licença.
