@@ -1,0 +1,14 @@
+name: "MRI Qadmin CodeQL Config"
+
+# Include paths for analysis, even hidden ones like .web
+paths:
+  - .web
+  - client
+  - server
+  - shared
+
+# We can also exclude paths if needed
+paths-ignore:
+  - "**/node_modules/**"
+  - ".web/build/**"
+  - "dist/**"
