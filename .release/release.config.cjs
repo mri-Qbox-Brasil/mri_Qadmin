@@ -12,14 +12,13 @@ module.exports = {
         [
             "@semantic-release/npm",
             {
-                npmPublish: false,
-                pkgRoot: "../.web"
+                npmPublish: false
             }
         ],
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "sed -i -E 's/version \\\".*\\\"/version \\\"${nextRelease.version}\\\"/g' ../fxmanifest.lua && cd ../.web && pnpm version ${nextRelease.version} --no-git-tag-version && pnpm install && pnpm build && cd .. && zip -r mri_Qadmin.zip . -x \".web/node_modules/*\" \".web/src/*\" \".web/public/*\" \".web/tests/*\" \".git/*\" \".github/*\" \"node_modules/*\" \".vscode/*\" \".web/*.json\" \".web/*.config.js\" \".web/*.config.ts\" \".releaserc*\" \".release/*\" \"../CHANGELOG.md\" \"package.json\" \"package-lock.json\""
+                "prepareCmd": "sed -i -E 's/version \\\".*\\\"/version \\\"${nextRelease.version}\\\"/g' ../fxmanifest.lua && sed -i -E 's/\\\"version\\\": \\\".*\\\"/\\\"version\\\": \\\"${nextRelease.version}\\\"/g' ../.web/package.json && cd ../.web && pnpm install && pnpm build && cd .. && zip -r mri_Qadmin.zip . -x \".web/node_modules/*\" \".web/src/*\" \".web/public/*\" \".web/tests/*\" \".git/*\" \".github/*\" \"node_modules/*\" \".vscode/*\" \".web/*.json\" \".web/*.config.js\" \".web/*.config.ts\" \".releaserc*\" \".release/*\" \"CHANGELOG.md\" \"package.json\" \"package-lock.json\""
             }
         ],
         [

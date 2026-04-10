@@ -70,7 +70,7 @@ globals = {
     "RGBToHex", "CheckRoutingbucket", "GetPlayerESPColor", "DrawText3D", "SetDataCache",
     "GetServerData", "RefreshResources", "GetUserPermissions", "GetAllDynamicActions", "GetGroupsData",
     "GetItemsList", "GetVehiclesList", "GetCommandsList", "GetPrimitiveSettings", "getPlayers",
-    "OpenUI", "IsMenuVisible", "GeneratePlate", "HasPerms"
+    "OpenUI", "IsMenuVisible", "GeneratePlate", "HasPerms", "GetGroundSafe"
 }
 
 -- Global ignores
