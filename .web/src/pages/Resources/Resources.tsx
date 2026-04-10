@@ -6,7 +6,7 @@ import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import ResourceCard from './components/ResourceCard'
 import Changelog from './components/Changelog'
-import { Database, RefreshCw, Container, X } from 'lucide-react'
+import { Database, RefreshCw, Container } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Virtuoso } from 'react-virtuoso'

@@ -3,7 +3,7 @@ import { Player, SummaryData } from '@/types'
 
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
-import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
+import { MriPageHeader } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { useAppState } from '@/context/AppState'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
@@ -16,8 +16,7 @@ import {
     Car,
     Gavel,
     User,
-    LayoutDashboard,
-    X
+    LayoutDashboard
 } from 'lucide-react'
 import { TableVirtuoso } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
@@ -244,7 +243,7 @@ export default function Dashboard() {
             fetchPlayers()
             return () => { mounted = false }
         }
-    }, [sendNui, playersSearch, lastPlayersFetch, players.length, setPlayers, setPagination, setLastPlayersFetch, syncRemainingPages])
+    }, [sendNui, playersSearch, lastPlayersFetch, players.length, setPlayers, setPagination, setLastPlayersFetch, syncRemainingPages, pagination.search])
 
 
 

@@ -7,7 +7,7 @@ import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
-import { Package, Box, RefreshCw, X } from 'lucide-react'
+import { Package, Box, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import GiveItemModal from '@/components/players/GiveItemModal'

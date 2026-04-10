@@ -33,7 +33,7 @@ import {
     Skull,
  Ban, Eye, ShoppingBag,
     Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
-    Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon, X
+    Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'

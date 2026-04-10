@@ -18,10 +18,11 @@ export const MriExpandableSearch: React.FC<MriExpandableSearchProps> = ({
     const [isExpanded, setIsExpanded] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    // Expand if value is not empty (e.g. on load or if search was already set)
-    useEffect(() => {
+    const [prevValue, setPrevValue] = useState(value)
+    if (value !== prevValue) {
+        setPrevValue(value)
         if (value) setIsExpanded(true)
-    }, [value])
+    }
 
     const handleToggle = () => {
         if (!isExpanded) {
