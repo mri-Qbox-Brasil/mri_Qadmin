@@ -23,7 +23,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 25
-          cache: 'npm'
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v5
@@ -32,17 +33,6 @@ jobs:
 
       - name: Install dependencies (Root)
         run: npm ci
-
-      - name: Build Web
-        run: |
-          cd web
-          pnpm install
-          pnpm run build
-
-      - name: Create Release Archive
-        run: |
-          sudo apt-get install zip
-          zip -r mri_Qadmin.zip . -x "web/node_modules/*" "web/src/*" "web/public/*" "web/tests/*" ".git/*" ".github/*" "node_modules/*" ".vscode/*" "web/*.json" "web/*.config.js" "web/*.config.ts" ".releaserc*" "release.config.cjs" "package-lock.json"
 
       - name: Release
         env:

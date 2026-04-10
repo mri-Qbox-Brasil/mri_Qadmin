@@ -13,13 +13,13 @@ module.exports = {
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "sed -i -E 's/version \\\".*\\\"/version \\\"${nextRelease.version}\\\"/g' fxmanifest.lua && sed -i -E 's/\\\"version\\\": \\\".*\\\"/\\\"version\\\": \\\"${nextRelease.version}\\\"/g' web/package.json"
+                "prepareCmd": "sed -i -E 's/version \\\".*\\\"/version \\\"${nextRelease.version}\\\"/g' fxmanifest.lua && pnpm -C web version ${nextRelease.version} --no-git-tag-version && cd web && pnpm install && pnpm build && cd .. && zip -r mri_Qadmin.zip . -x \"web/node_modules/*\" \"web/src/*\" \"web/public/*\" \"web/tests/*\" \".git/*\" \".github/*\" \"node_modules/*\" \".vscode/*\" \"web/*.json\" \"web/*.config.js\" \"web/*.config.ts\" \".releaserc*\" \"release.config.cjs\" \"package-lock.json\""
             }
         ],
         [
             "@semantic-release/git",
             {
-                assets: ["package.json", "fxmanifest.lua", "CHANGELOG.md"],
+                assets: ["package.json", "web/package.json", "fxmanifest.lua", "CHANGELOG.md", "web/build/**"],
                 message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
             }
         ],
