@@ -47,11 +47,12 @@ RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
         return
     end
 
-    local groundFound, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z + 100.0, false)
+    local groundFound, groundZ = GetGroundSafe(coords.x, coords.y, coords.z + 100.0)
     local spawnZ = groundFound and groundZ + 0.5 or coords.z + 0.5
 
     local vehicle = CreateVehicle(hash, coords.x, coords.y, spawnZ, heading, true, false)
     TaskWarpPedIntoVehicle(cache.ped, vehicle, -1)
+    ToggleUI(false)
 
     Wait(100)
 

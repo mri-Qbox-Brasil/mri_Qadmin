@@ -114,31 +114,7 @@ local function TeleportToGround()
     if not ped or not DoesEntityExist(ped) then return end
     local coords = GetEntityCoords(ped)
 
-    -- Try Raycast first (more reliable and avoids native bugs)
-    local rayCast = StartShapeTestRay(coords.x, coords.y, coords.z + 5.0, coords.x, coords.y, coords.z - 500.0, 4294967295, ped, 0)
-    local retval, hit, endCoords
-    
-    for _ = 1, 50 do
-        retval, hit, endCoords = GetShapeTestResult(rayCast)
-        if retval ~= 1 then break end
-        Wait(0)
-    end
-
-    local found = hit == 1
-    local z = found and endCoords.z or 0.0
-
-    -- If raycast fails, try GetGroundZFor_3dCoord as fallback, wrapped in pcall
-    if not found then
-        -- Wrap in pcall because some servers have broken global overrides for this native
-        local success, resFound, resZ = pcall(function()
-            return GetGroundZFor_3dCoord(coords.x + 0.0, coords.y + 0.0, coords.z + 0.0, false)
-        end)
-        
-        if success then
-            found = resFound
-            z = resZ
-        end
-    end
+    local found, z = GetGroundSafe(coords.x, coords.y, coords.z)
 
     if found then
         SetEntityCoords(ped, coords.x, coords.y, z + 1.1, false, false, false, false)
