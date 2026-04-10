@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import LiveMap from '@/components/map/LiveMap'
 import { useNui } from '@/context/NuiContext'
-import { MriPageHeader, MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
+import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { Map as MapIcon, ShieldCheck, User, Skull, RefreshCcw, Settings, Sun, Moon, Map as MapTypeIcon, Globe, X, Grid } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 import ScreenModal from '@/components/players/ScreenModal'
@@ -75,10 +76,6 @@ export default function LiveMapPage() {
     }, [fetchMarkers])
 
 
-    const searchOptions = React.useMemo(() => markers.map(m => ({
-        value: String(m.id),
-        label: `${m.name} (#${m.id})`,
-    })), [markers]);
 
     const handleResetMap = () => {
         setSearch('')
@@ -173,27 +170,14 @@ export default function LiveMapPage() {
                             </div>
                         )}
                     </div>
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('livemap_search_placeholder')}
-                        value={selectedPlayerId}
-                        onChange={(id) => {
-                            setSelectedPlayerId(id)
-                            if (id) setSearch('') // Clear free text search if selecting a player
+                        value={search}
+                        onChange={(val) => {
+                            setSearch(val)
+                            if (val) setSelectedPlayerId('') // Clear focused player if searching
                         }}
-                        options={searchOptions}
-                        searchPlaceholder={t('livemap_search_input_placeholder')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {selectedPlayerId && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10"
-                            onClick={() => setSelectedPlayerId('')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                     <MriButton
                         variant="outline"
                         size="icon"

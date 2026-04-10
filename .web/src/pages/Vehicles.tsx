@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { MriButton, MriPageHeader, MriCompactSearch } from '@mriqbox/ui-kit'
+import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import { Car, RefreshCw, X, Gift } from 'lucide-react'
@@ -38,12 +39,6 @@ export default function Vehicles() {
         }).sort((a, b) => (a.name || '').localeCompare(b.name || ''))
     }, [gameData.vehicles])
 
-    const vehicleOptions = React.useMemo(() => {
-        return vehicles.map(v => ({
-            value: v.model,
-            label: `${v.name} (${v.model})`
-        }))
-    }, [vehicles])
 
     const [stockModal, setStockModal] = useState<{ show: boolean, vehicle: any }>({ show: false, vehicle: null })
 
@@ -102,25 +97,11 @@ export default function Vehicles() {
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('title_vehicles') || "Vehicles"} icon={Car} countLabel={t('records')} count={filteredVehicles.length}>
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('search_placeholder_vehicles')}
                         value={search}
                         onChange={setSearch}
-                        options={vehicleOptions}
-                        searchPlaceholder={t('search_placeholder_vehicles')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {search && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setSearch('')}
-                            title={t('common_clear')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
                 <div className="flex items-center gap-2">
                     <MriButton

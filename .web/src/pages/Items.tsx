@@ -3,7 +3,8 @@ import { VirtuosoGrid } from 'react-virtuoso'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { MriPageHeader, MriButton, MriCompactSearch } from '@mriqbox/ui-kit'
+import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import { Package, Box, RefreshCw, X } from 'lucide-react'
@@ -52,12 +53,6 @@ export default function Items() {
         )
     }, [items, search])
 
-    const itemOptions = React.useMemo(() => {
-        return items.map(i => ({
-            value: i.name || i.item,
-            label: `${i.name}`
-        }))
-    }, [items])
 
     const [selectedItem, setSelectedItem] = useState<any | null>(null)
 
@@ -74,25 +69,11 @@ export default function Items() {
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('title_items') || "Items"} icon={Package} countLabel={t('records')} count={filtered.length}>
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('search_placeholder_items')}
                         value={search}
                         onChange={setSearch}
-                        options={itemOptions}
-                        searchPlaceholder={t('search_placeholder_items')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {search && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setSearch('')}
-                            title={t('common_clear')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
                 <MriButton
                     size="icon"

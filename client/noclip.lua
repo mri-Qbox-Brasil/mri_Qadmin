@@ -111,29 +111,37 @@ end
 
 -- Teleport to ground safely
 local function TeleportToGround()
+    if not ped or not DoesEntityExist(ped) then return end
     local coords = GetEntityCoords(ped)
-    local found, z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, false)
 
+    -- Try Raycast first (more reliable and avoids native bugs)
+    local rayCast = StartShapeTestRay(coords.x, coords.y, coords.z + 5.0, coords.x, coords.y, coords.z - 500.0, 4294967295, ped, 0)
+    local retval, hit, endCoords
+    
+    for _ = 1, 50 do
+        retval, hit, endCoords = GetShapeTestResult(rayCast)
+        if retval ~= 1 then break end
+        Wait(0)
+    end
+
+    local found = hit == 1
+    local z = found and endCoords.z or 0.0
+
+    -- If raycast fails, try GetGroundZFor_3dCoord as fallback, wrapped in pcall
     if not found then
-        -- Fallback to Raycast if native fails
-        local rayCast = StartShapeTestRay(coords.x, coords.y, coords.z + 2.0, coords.x, coords.y, -1000.0, 4294967295, ped, 0)
-        local retval, hit, hitCoords
-
-        -- Wait for raycast result
-        for _ = 1, 100 do -- max 100 frames (~1.5s) timeout
-            retval, hit, hitCoords = GetShapeTestResult(rayCast)
-            if retval ~= 1 then break end
-            Wait(0)
-        end
-
-        if hit == 1 then
-            found = true
-            z = hitCoords.z
+        -- Wrap in pcall because some servers have broken global overrides for this native
+        local success, resFound, resZ = pcall(function()
+            return GetGroundZFor_3dCoord(coords.x + 0.0, coords.y + 0.0, coords.z + 0.0, false)
+        end)
+        
+        if success then
+            found = resFound
+            z = resZ
         end
     end
 
     if found then
-        SetEntityCoords(ped, coords.x, coords.y, z + 1.0, false, false, false, false)
+        SetEntityCoords(ped, coords.x, coords.y, z + 1.1, false, false, false, false)
     end
 end
 

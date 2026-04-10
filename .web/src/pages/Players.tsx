@@ -5,13 +5,13 @@ import {
     MriButton,
     MriPageHeader,
     MriSpinner,
-    MriCompactSearch,
     MriEconomyCard,
     MriGridActionButton,
     MriSectionHeader,
     MriPlayerVitals,
     MriVitalAdjustModal
 } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso'
 import { Player } from '@/types'
 import PlayersSkeleton from '@/components/skeletons/PlayersSkeleton'
@@ -310,12 +310,6 @@ export default function Players() {
         })
     }, [players, search, filterGroup])
 
-    const playerOptions = useMemo(() => {
-        return players.map(p => ({
-            value: p.name || p.cid || p.id,
-            label: `${p.name || 'Unknown'} (#${p.id || p.cid})`
-        }))
-    }, [players])
 
     const SyncFooter = () => {
         if (!loading && !isSyncing) return null
@@ -418,25 +412,11 @@ export default function Players() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('search_by_name_id_or_license')}
                         value={search}
                         onChange={setSearch}
-                        options={playerOptions}
-                        searchPlaceholder={t('search_by_name_id_or_license')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {search && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setSearch('')}
-                            title={t('common_clear')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
 
                 <MriButton

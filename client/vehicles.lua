@@ -42,6 +42,11 @@ RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
     local coords = GetEntityCoords(cache.ped)
     local heading = GetEntityHeading(cache.ped)
 
+    -- Type safety check for coordinates
+    if type(coords.x) ~= "number" or type(coords.y) ~= "number" or type(coords.z) ~= "number" then
+        return
+    end
+
     local groundFound, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z + 100.0, false)
     local spawnZ = groundFound and groundZ + 0.5 or coords.z + 0.5
 

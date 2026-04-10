@@ -2,7 +2,8 @@ import React, { useState } from 'react'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
-import { MriButton, MriPageHeader, MriCompactSearch } from '@mriqbox/ui-kit'
+import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
+import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { Terminal, Command, Copy, RefreshCw, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { VirtuosoGrid } from 'react-virtuoso'
@@ -32,12 +33,6 @@ export default function Commands() {
         navigator.clipboard.writeText(text)
     }
 
-    const commandOptions = React.useMemo(() => {
-        return commands.map((cmd: any) => ({
-            value: cmd.name,
-            label: cmd.name
-        }))
-    }, [commands])
 
     const handleRefresh = async () => {
         setLoading(true)
@@ -55,25 +50,11 @@ export default function Commands() {
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('nav_commands')} icon={Terminal} countLabel={t('records')} count={filteredCommands.length}>
                 <div className="flex items-center gap-2">
-                    <MriCompactSearch
+                    <MriExpandableSearch
                         placeholder={t('commands_search_placeholder')}
                         value={search}
                         onChange={setSearch}
-                        options={commandOptions}
-                        searchPlaceholder={t('commands_search_placeholder')}
-                        className="w-8 h-8 border-border bg-card/60"
                     />
-                    {search && (
-                        <MriButton
-                            size="icon"
-                            variant="outline"
-                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                            onClick={() => setSearch('')}
-                            title={t('common_clear')}
-                        >
-                            <X size={16} />
-                        </MriButton>
-                    )}
                 </div>
                 <MriButton
                     size="icon"
