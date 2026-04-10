@@ -1,3 +1,12 @@
+## [1.3.2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.3.1...v1.3.2) (2026-04-10)
+
+
+### Bug Fixes
+
+* relase scripts ([bb0408e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/bb0408ef340360900f83f1078a73605350e2914c))
+* release ([fcde182](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/fcde182ce6da72e1a477a26e226c4bd7695405e4))
+* release ([b31a0a5](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/b31a0a5eee4e2bb6f87ef78fcdf122427c2c16bf))
+
 ## [1.3.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.3.0...v1.3.1) (2026-04-09)
 
 
