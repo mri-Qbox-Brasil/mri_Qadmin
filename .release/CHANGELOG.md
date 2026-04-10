@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.3.3...v1.4.0) (2026-04-10)
+
+
+### Bug Fixes
+
+* lint/build ([df8ffb5](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/df8ffb528ac7f98355d82bb5cb3a5524de81a329))
+
+
+### Features
+
+* melhora sistema de busca, corrige erro de lua no noclip e adiciona auto-fit no mapa ([03e1e56](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/03e1e5693351b1c541ad89180272d11776f59868))
+
 ## [1.3.3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.3.2...v1.3.3) (2026-04-10)
 
 
