@@ -84,12 +84,12 @@ exports {
 
 
 files {
-    "web/build/**",
-    "web/build/map/tiles/**/*",
+    ".web/build/**",
+    ".web/build/map/tiles/**/*",
     "data/ped.lua",
     "data/object.lua",
     "data/default_actions.lua",
     "locales/*.json",
 }
 
-ui_page "web/build/index.html"
+ui_page ".web/build/index.html"

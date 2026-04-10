@@ -3,7 +3,7 @@ name: Lint (Web & Lua)
 on:
   push:
     paths:
-      - 'web/**'
+      - '.web/**'
       - 'client/**'
       - 'server/**'
       - 'shared/**'
@@ -13,7 +13,7 @@ on:
       - '.luacheckrc'
   pull_request:
     paths:
-      - 'web/**'
+      - '.web/**'
       - 'client/**'
       - 'server/**'
       - 'shared/**'
@@ -40,14 +40,14 @@ jobs:
         with:
           node-version: 25
           cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: .web/pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: web
+        working-directory: .web
         run: pnpm install --no-frozen-lockfile
 
       - name: Run ESLint
-        working-directory: web
+        working-directory: .web
         run: pnpm run lint
 
   lint-lua:

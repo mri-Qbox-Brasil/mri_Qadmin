@@ -1,7 +1,7 @@
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
-import { LayoutDashboard, Users, Box, Terminal, Zap, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon } from 'lucide-react'
+import { LayoutDashboard, Users, Box, Terminal, Zap, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon, SquareCode } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 import pkg from '../../package.json'
@@ -48,7 +48,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
         { icon: Zap, label: t('nav_action_manager'), route: 'action_manager' },
         { icon: Info, label: t('nav_credits'), route: 'credits' },
         { icon: Box, label: '', divider: true },
-        { icon: Zap, label: t('nav_devmode'), route: 'devmode' },
+        { icon: SquareCode, label: t('nav_devmode'), route: 'devmode' },
     ].filter(item => {
         if (item.divider) return true
         if (!item.route) return true
