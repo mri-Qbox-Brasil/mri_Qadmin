@@ -69,19 +69,32 @@ RegisterNUICallback('getServerInfo', function(_, cb)
     cb(serverInfo)
 end)
 
+local translationCache = {}
+
+local function GetTranslations(locale)
+    locale = locale or GetConvar('ox_locale', 'pt-br')
+    if translationCache[locale] then return translationCache[locale], locale end
+
+    local path = ('locales/%s.json'):format(locale)
+    local raw = LoadResourceFile(GetCurrentResourceName(), path)
+    if raw then
+        local ok, tbl = pcall(json.decode, raw)
+        if ok and tbl then
+            translationCache[locale] = tbl
+            return tbl, locale
+        end
+    end
+    return nil, locale
+end
+
 -- Provide translations to the frontend when requested (frontend calls this on mount)
 RegisterNUICallback('getTranslations', function(data, cb)
-	local locale = (data and data.locale) or GetConvar('ox_locale', 'pt-br')
-	local path = ('locales/%s.json'):format(locale)
-	local raw = LoadResourceFile(GetCurrentResourceName(), path)
-	if raw then
-		local ok, tbl = pcall(json.decode, raw)
-		if ok and tbl then
-			cb({ translations = tbl, locale = locale })
-			return
-		end
-	end
-	cb(nil)
+    local tbl, locale = GetTranslations(data and data.locale)
+    if tbl then
+        cb({ translations = tbl, locale = locale })
+    else
+        cb(nil)
+    end
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetBans", function(_data, cb)
@@ -175,26 +188,22 @@ end)
 -- Open UI Event
 RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
     if not CheckPerms("qadmin.open") then return end
-	local locale = GetConvar('ox_locale', 'pt-br')
-	local path = ('locales/%s.json'):format(locale)
-	local raw = LoadResourceFile(GetCurrentResourceName(), path)
-	if raw then
-		local ok, tbl = pcall(json.decode, raw)
-		if ok and tbl then
-			SendNUIMessage({ action = 'setTranslations', data = { translations = tbl, locale = locale } })
-		end
-	end
-	ToggleUI(true)
-	-- resend translations shortly after opening UI in case the NUI wasn't ready yet
-	CreateThread(function()
-		Wait(120)
-		if raw then
-			local ok2, tbl2 = pcall(json.decode, raw)
-			if ok2 and tbl2 then
-				SendNUIMessage({ action = 'setTranslations', data = { translations = tbl2, locale = locale } })
-			end
-		end
-	end)
+    
+    local tbl, locale = GetTranslations()
+    if tbl then
+        SendNUIMessage({ action = 'setTranslations', data = { translations = tbl, locale = locale } })
+    end
+
+    ToggleUI(true)
+    
+    -- resend translations shortly after opening UI in case the NUI wasn't ready yet
+    -- using cached data to avoid redundant disk I/O
+    if tbl then
+        CreateThread(function()
+            Wait(150)
+            SendNUIMessage({ action = 'setTranslations', data = { translations = tbl, locale = locale } })
+        end)
+    end
 end)
 
 -- Close UI Event
