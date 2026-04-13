@@ -14,7 +14,9 @@ local function LoadPermissions()
         Debug('[mri_Qadmin] Added description column to mri_qadmin_aces')
     end
 
-    -- Cleanup Duplicates first
+    -- Cleanup Duplicates and Inconsistent Identifiers first
+    MySQL.query.await("UPDATE mri_qadmin_principals SET child = REPLACE(child, 'license:license2:', 'license2:') WHERE child LIKE 'license:license2:%'")
+    MySQL.query.await("UPDATE mri_qadmin_principals SET child = REPLACE(child, 'license:license:', 'license:') WHERE child LIKE 'license:license:%'")
     MySQL.query.await('DELETE t1 FROM mri_qadmin_principals t1 INNER JOIN mri_qadmin_principals t2 WHERE t1.id > t2.id AND t1.child = t2.child AND t1.parent = t2.parent')
     MySQL.query.await('DELETE t1 FROM mri_qadmin_aces t1 INNER JOIN mri_qadmin_aces t2 WHERE t1.id > t2.id AND t1.principal = t2.principal AND t1.object = t2.object')
 
@@ -23,13 +25,8 @@ local function LoadPermissions()
 
 
     for _, p in ipairs(dbPrincipals) do
-        local child = p.child
+        local child = NormalizePrincipal(p.child)
         local parent = p.parent
-
-        -- Fix: Ensure identifier prefix if missing for license-style strings
-        if not string.find(child, 'identifier.') and (string.find(child, 'license:') or string.find(child, 'license2:')) then
-             child = 'identifier.' .. child
-        end
 
         -- ACE Consistency: Ensure 'group.' prefix for parents that aren't identifiers/char/job/gang
         if not string.find(parent, 'group.') and not string.find(parent, 'identifier.') and not string.find(parent, 'char:') and not string.find(parent, 'job.') and not string.find(parent, 'gang.') then
@@ -131,16 +128,15 @@ RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
     local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
 
     if hasQBCoreAdmin and not found['group.admin'] then
-        Debug(('[mri_Qadmin] Auto-Sync: Jogador %s (%s) possui permissão de base (QBCore admin/god). Sincronizando com group.admin do painel...'):format(GetPlayerName(src), license))
-
-        local fullLicense = 'license:' .. license
+        local normalizedId = NormalizeIdentifier(license)
+        Debug(('[mri_Qadmin] Auto-Sync: Jogador %s (%s) possui permissão de base (QBCore admin/god). Sincronizando com group.admin do painel...'):format(GetPlayerName(src), normalizedId))
 
         -- Insert into the database to persist this link
-        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {fullLicense, 'group.admin', 'Auto-Sync (QBCore Admin)'})
+        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedId, 'group.admin', 'Auto-Sync (QBCore Admin)'})
 
         -- Apply the principal to the runtime cache immediately
         found['group.admin'] = true
-        lib.addPrincipal('identifier.license:' .. fullLicense, 'group.admin')
+        lib.addPrincipal(NormalizePrincipal(normalizedId), 'group.admin')
     end
 
     for parent, _ in pairs(found) do
@@ -354,32 +350,19 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
         parent = 'group.' .. parent
     end
 
-    -- Check if exists
-    local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {child, parent})
-    if exists then
-        Debug('[mri_Qadmin] Principal already exists in DB. Skipping insert.')
-    else
-        local success, result = pcall(function()
-            return MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {child, parent, description})
-        end)
-
-        if not success then
-            Debug('[mri_Qadmin] DB ERROR during AddPrincipal: ' .. tostring(result))
-            TriggerClientEvent('QBCore:Notify', src, 'Database Error: Check Server Console', 'error')
-            return
-        end
-        Debug('[mri_Qadmin] DB Insert Success. ID: ' .. tostring(result))
-    end
-
     -- SAFETY: Normalize identifiers
-    -- If it's a license/steam/discord/etc, ensure it has 'identifier.' prefix for lib.addPrincipal
-    -- BUT if it's 'char:xxx', it IS a principal itself, so don't prefix it with 'identifier.'
-    if string.find(child, ':') and not string.find(child, 'identifier%.') and not string.find(child, 'char:') and not string.find(child, 'group%.') then
-        Debug(('[mri_Qadmin] Executing Safety Command: lib.addPrincipal identifier.%s %s'):format(child, parent))
-        lib.addPrincipal('identifier.' .. child, parent)
+    local normalizedChild = NormalizeIdentifier(child)
+    local normalizedPrincipal = NormalizePrincipal(child)
+
+    -- Check if normalized principal already exists in DB to prevent duplicates
+    local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {normalizedChild, parent})
+    if exists then
+        Debug('[mri_Qadmin] Principal already exists in DB (normalized). skipping insert.')
     else
-        lib.addPrincipal(child, parent)
+        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedChild, parent, description})
     end
+
+    lib.addPrincipal(normalizedPrincipal, parent)
 
     -- Try to find if 'child' is an online player and expand to all their identifiers
     local allOnlinePlayers = QBCore.Functions.GetPlayers()
@@ -434,35 +417,27 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
         Debug(('[mri_Qadmin] Found Principal to delete: %s -> %s'):format(data.child, data.parent))
         MySQL.query.await('DELETE FROM mri_qadmin_principals WHERE id = ?', {id})
 
-        -- Also need to remove the ACL entry
-        Debug(('[mri_Qadmin] RemovePrincipal: Data Child: "%s" Parent: "%s"'):format(data.child, data.parent))
+        local normalizedChild = NormalizeIdentifier(data.child)
+        local principalToRemove = NormalizePrincipal(data.child)
 
-        -- Remove "identifier.license:xxx"
-        Debug(('[mri_Qadmin] Executing: lib.removePrincipal identifier.%s %s'):format(data.child, data.parent))
-        lib.removePrincipal('identifier.' .. data.child, data.parent)
-
-        -- Remove "license:xxx"
-        Debug(('[mri_Qadmin] Executing: lib.removePrincipal %s %s'):format(data.child, data.parent))
-        lib.removePrincipal(data.child, data.parent)
+        -- Remove ACL entry using normalized principal
+        Debug(('[mri_Qadmin] Executing: lib.removePrincipal %s %s'):format(principalToRemove, data.parent))
+        lib.removePrincipal(principalToRemove, data.parent)
 
         -- Force refresh for the specific client if they are online to be sure
         local onlinePlayersForSync = QBCore.Functions.GetPlayers()
         for _, playerSrc in ipairs(onlinePlayersForSync) do
              local pObj = QBCore.Functions.GetPlayer(playerSrc)
              if pObj then
-                 -- Debug matching
-                 local fullLicense = 'license:'..pObj.PlayerData.license
-                 -- print(('[mri_Qadmin] Checking player %s (License: %s Full: %s) against %s'):format(pObj.PlayerData.name, pObj.PlayerData.license, fullLicense, data.child))
-
-                 if pObj.PlayerData.license == data.child or fullLicense == data.child then
+                 if NormalizeIdentifier(pObj.PlayerData.license) == normalizedChild then
                      Debug(('[mri_Qadmin] Targeting online player %s (Src: %s) for update'):format(pObj.PlayerData.name, playerSrc))
                      TriggerClientEvent('QBCore:Notify', playerSrc, 'Suas permissões foram atualizadas.', 'primary')
 
-                     -- Try removing explicit runtime identifiers too just in case
+                     -- Remove from all identifiers just in case
                      local num = GetNumPlayerIdentifiers(playerSrc)
                      for i = 0, num-1 do
                         local ident = GetPlayerIdentifier(playerSrc, i)
-                        lib.removePrincipal('identifier.' .. ident, data.parent)
+                        lib.removePrincipal(NormalizePrincipal(ident), data.parent)
                      end
                  end
              end
@@ -723,18 +698,21 @@ lib.addCommand('mri_qadmin.setmaster', {
     end
 
     -- 1. Insert into DB (As an Ace for Master bypass, and also add them to group.admin)
+    local normalizedLicense = NormalizeIdentifier(license)
+    local masterPrincipal = NormalizePrincipal(license)
+
     local function doInsert()
         -- Add to group.admin just in case
-        local existsGrp = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {license, 'group.admin'})
+        local existsGrp = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {normalizedLicense, 'group.admin'})
         if not existsGrp then
-            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {license, 'group.admin', 'Master Admin (Console)'})
+            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedLicense, 'group.admin', 'Master Admin (Console)'})
         end
 
-        local existsAce = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {'identifier.'..license, 'qadmin.master'})
+        local existsAce = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {masterPrincipal, 'qadmin.master'})
         if existsAce then
             print('^3[mri_Qadmin] Master Ace already exists in DB.^7')
         else
-            MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {'identifier.'..license, 'qadmin.master', 1, 'Master Admin (Console)'})
+            MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {masterPrincipal, 'qadmin.master', 1, 'Master Admin (Console)'})
             print('^2[mri_Qadmin] Added Master to database.^7')
         end
     end
@@ -744,9 +722,9 @@ lib.addCommand('mri_qadmin.setmaster', {
         doInsert()
 
         -- 2. Apply immediately
-        lib.addPrincipal('identifier.' .. license, 'group.admin')
-        lib.addAce('identifier.' .. license, 'qadmin.master', true)
-        print(('^2[mri_Qadmin] Executed: lib.addAce identifier.%s qadmin.master true^7'):format(license))
+        lib.addPrincipal(masterPrincipal, 'group.admin')
+        lib.addAce(masterPrincipal, 'qadmin.master', true)
+        print(('^2[mri_Qadmin] Executed: lib.addAce %s qadmin.master true^7'):format(masterPrincipal))
 
         -- 3. If online, notify and reload
         local players = QBCore.Functions.GetPlayers()
@@ -792,12 +770,13 @@ lib.addCommand('mri_qadmin.addpermission', {
     end
 
     -- 1. Insert into DB
+    local normalizedId = NormalizeIdentifier(license)
     local function doInsert()
-        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {license, permission})
+        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {normalizedId, permission})
         if exists then
             print('^3[mri_Qadmin] Principal already exists in DB.^7')
         else
-            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {license, permission, 'Added via Console'})
+            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedId, permission, 'Added via Console'})
             print('^2[mri_Qadmin] Added to database.^7')
         end
     end

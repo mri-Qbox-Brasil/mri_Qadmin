@@ -189,6 +189,38 @@ function RGBToHex(rgbStr)
     return string.format("#%02x%02x%02x", tonumber(r), tonumber(g), tonumber(b))
 end
 
+--- @param id string
+--- @return string | nil
+function NormalizeIdentifier(id)
+    if not id or id == "" then return nil end
+    local str = tostring(id)
+    -- Remove duplicated license prefix (e.g., license:license2: -> license2:)
+    if string.find(str, "license:license2:") then
+        str = string.gsub(str, "license:license2:", "license2:")
+    end
+    -- Support for license:license: (accidental double prefixing)
+    if string.find(str, "license:license:") then
+        str = string.gsub(str, "license:license:", "license:")
+    end
+    -- Remove 'identifier.' prefix if present (we want the "raw" but prefixed identifier for the DB)
+    str = string.gsub(str, "identifier%.", "")
+    return str
+end
+
+--- @param id string
+--- @return string | nil
+function NormalizePrincipal(id)
+    local str = NormalizeIdentifier(id)
+    if not str then return nil end
+    
+    -- If it's a license, steam, discord, etc (contains : but not group., job., gang. or char:), 
+    -- and doesn't already have 'identifier.' prefix, add it for FiveM native ACE compatibility.
+    if string.find(str, ":") and not string.find(str, "char:") and not string.find(str, "group%.") and not string.find(str, "job%.") and not string.find(str, "gang%.") then
+        return "identifier." .. str
+    end
+    return str
+end
+
 --- Retorna uma lista de IDs de jogadores (source) que possuem permissão administrativa
 --- @return table
 function GetAdminPlayers()
