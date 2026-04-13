@@ -1,4 +1,4 @@
-fx_version "1.4.1"
+fx_version 'cerulean'
 game "gta5"
 lua54 "yes"
 use_experimental_fxv2_oal "yes"
@@ -16,11 +16,11 @@ shared_scripts {
 
 server_scripts {
     "@oxmysql/lib/MySQL.lua",
+    "server/db.lua",
     "server/main.lua",
     "server/utils.lua",
     "server/chat.lua",
     "server/commands.lua",
-    "server/db.lua",
     "server/groups.lua",
     "server/inventory.lua",
     "server/inventory_callback.lua",
@@ -84,12 +84,12 @@ exports {
 
 
 files {
-    ".web/build/**",
-    ".web/build/map/tiles/**/*",
+    "web/build/**",
+    "web/build/map/tiles/**/*",
     "data/ped.lua",
     "data/object.lua",
     "data/default_actions.lua",
     "locales/*.json",
 }
 
-ui_page ".web/build/index.html"
+ui_page "web/build/index.html"

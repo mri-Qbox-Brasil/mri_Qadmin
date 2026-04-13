@@ -57,13 +57,6 @@ local function GetPrimitiveSettings()
 end
 _G.GetPrimitiveSettings = GetPrimitiveSettings
 
--- Load settings on startup
-AddEventHandler('onResourceStart', function(resourceName)
-    if GetCurrentResourceName() == resourceName then
-        LoadSettings()
-    end
-end)
-
 -- API for NUI to read settings (only primitive ones)
 lib.callback.register('mri_Qadmin:callback:GetSettings', function(source)
     if not IsPlayerAceAllowed(source, 'qadmin.page.settings') then return {} end
@@ -97,4 +90,8 @@ end)
 -- Send settings to client when they fully load
 AddEventHandler('mri_Qadmin:server:PlayerPermissionsReady', function(src)
     TriggerClientEvent('mri_Qadmin:client:UpdateSettings', src, GetPrimitiveSettings())
+end)
+
+RegisterNetEvent('mri_Qadmin:db:ready', function()
+    LoadSettings()
 end)
