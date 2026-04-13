@@ -1,3 +1,11 @@
+## [1.4.3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.4.2...v1.4.3) (2026-04-13)
+
+
+### Bug Fixes
+
+* problemas com a versão ([d696cce](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/d696ccea3ffad01d38c6b140adbb2a73c6579104))
+* problemas com a versão ([ab0fff6](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/ab0fff6f4aeafb7931db84f63d46b91023f723ae))
+
 ## [1.4.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.4.0...v1.4.1) (2026-04-10)
 
 ### Bug Fixes
