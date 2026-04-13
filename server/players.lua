@@ -443,13 +443,16 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
         tPlayer.Functions.SetMetaData(vital, tonumber(value))
     end
 
-    -- Broadcast update immediate
-    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
-        id = tonumber(targetId),
-        health = (vital == "health") and tonumber(value) or GetEntityHealth(ped),
-        armor = (vital == "armor") and tonumber(value) or GetPedArmour(ped),
-        metadata = tPlayer.PlayerData.metadata
-    })
+    -- Broadcast update immediate to admins only
+    local admins = GetAdminPlayers()
+    for _, adminId in ipairs(admins) do
+        TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', adminId, {
+            id = tonumber(targetId),
+            health = (vital == "health") and tonumber(value) or GetEntityHealth(ped),
+            armor = (vital == "armor") and tonumber(value) or GetPedArmour(ped),
+            metadata = tPlayer.PlayerData.metadata
+        })
+    end
 
     -- Notify staff
     QBCore.Functions.Notify(src, locale("vitals_set_success"):format(vital, value, targetId), "success")
@@ -461,23 +464,27 @@ local function broadcastVitalsUpdate(playerId)
     if not player then return end
 
     local ped = GetPlayerPed(playerId)
-    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
-        id = playerId,
-        health = GetEntityHealth(ped),
-        armor = GetPedArmour(ped),
-        metadata = player.PlayerData.metadata
-    })
+    local admins = GetAdminPlayers()
+    for _, adminId in ipairs(admins) do
+        TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', adminId, {
+            id = playerId,
+            health = GetEntityHealth(ped),
+            armor = GetPedArmour(ped),
+            metadata = player.PlayerData.metadata
+        })
+    end
 end
 
 -- Sync Vitals from Client (e.g., from HUD events)
 RegisterNetEvent("mri_Qadmin:server:SyncVitals", function(vitals)
     local src = source
+    if not CheckPerms(src, 'qadmin.open') then return end
+
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return end
 
-    -- This is now a simple broadcast bridge. We do NOT call SetMetaData here
-    -- to avoid infinite HUD update loops and persistent data overwrites.
-    -- Direct changes are only made via 'mri_Qadmin:server:SetVital' (buttons).
+    -- This is now a simple broadcast bridge for admins.
+    -- Dynamic data (health/armor) is fetched from ped for security.
 
     local metadataClone = {}
     for k, v in pairs(player.PlayerData.metadata) do
@@ -487,12 +494,15 @@ RegisterNetEvent("mri_Qadmin:server:SyncVitals", function(vitals)
         metadataClone[k] = tonumber(v)
     end
 
-    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
-        id = src,
-        health = GetEntityHealth(GetPlayerPed(src)),
-        armor = GetPedArmour(GetPlayerPed(src)),
-        metadata = metadataClone
-    })
+    local admins = GetAdminPlayers()
+    for _, adminId in ipairs(admins) do
+        TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', adminId, {
+            id = src,
+            health = GetEntityHealth(GetPlayerPed(src)),
+            armor = GetPedArmour(GetPlayerPed(src)),
+            metadata = metadataClone
+        })
+    end
 end)
 
 -- Sync Death Status from Client

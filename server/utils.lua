@@ -188,3 +188,16 @@ function RGBToHex(rgbStr)
     if not r or not g or not b then return nil end
     return string.format("#%02x%02x%02x", tonumber(r), tonumber(g), tonumber(b))
 end
+
+--- Retorna uma lista de IDs de jogadores (source) que possuem permissão administrativa
+--- @return table
+function GetAdminPlayers()
+    local admins = {}
+    local players = QBCore.Functions.GetPlayers()
+    for _, src in ipairs(players) do
+        if HasPerms(src, 'qadmin.open') then
+            admins[#admins + 1] = src
+        end
+    end
+    return admins
+end
