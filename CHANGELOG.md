@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.5.0...v1.6.0) (2026-04-13)
+
+
+### Features
+
+* melhorias no wall e adição da lista de peds padrão ([c3b2b38](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/c3b2b38fa3edb1d5593b874b1d76d6795448b409))
+
 # [1.5.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.4.3...v1.5.0) (2026-04-13)
 
 
