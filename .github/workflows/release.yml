@@ -34,13 +34,16 @@ jobs:
         with:
           node-version: 25
           cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: |
+            web/pnpm-lock.yaml
+            .release/package.json
 
       - name: Install dependencies (Release tools)
         working-directory: .release
-        run: npm ci
+        run: pnpm install --no-frozen-lockfile
 
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.release/node_modules/.bin/semantic-release --extends .release/release.config.cjs
+          NODE_PATH: ${{ github.workspace }}/.release/node_modules
+        run: ./.release/node_modules/.bin/semantic-release --extends ./.release/release.config.cjs
