@@ -2,8 +2,18 @@
 
 local watching = {} -- [inventoryId] = { [adminSrc] = true }
 
+local inventoryCooldowns = {}
+
 local function NotifyAdmins(inventoryId)
     if not watching[inventoryId] then return end
+
+    -- Throttling: evita enviar notificações repetidas para o mesmo inventário em menos de 500ms
+    local now = GetGameTimer()
+    if inventoryCooldowns[inventoryId] and (now - inventoryCooldowns[inventoryId] < 500) then
+        return
+    end
+    inventoryCooldowns[inventoryId] = now
+
     for adminSrc, _ in pairs(watching[inventoryId]) do
         TriggerClientEvent('mri_Qadmin:client:InventoryUpdated', adminSrc, inventoryId)
     end

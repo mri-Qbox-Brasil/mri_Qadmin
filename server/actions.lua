@@ -102,8 +102,12 @@ RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
 
     Debug(('[mri_Qadmin] Action %s atualizada/criada por %s (Cat: %s)'):format(id, GetPlayerName(src), category))
 
-    -- Broadcast update to everyone
-    TriggerClientEvent('mri_Qadmin:client:UpdateActions', -1, GetAllDynamicActions())
+    -- Broadcast update to admins only
+    local admins = GetAdminPlayers()
+    local actionsData = GetAllDynamicActions()
+    for _, adminId in ipairs(admins) do
+        TriggerClientEvent('mri_Qadmin:client:UpdateActions', adminId, actionsData)
+    end
     QBCore.Functions.Notify(src, 'Ação salva e sincronizada!', 'success')
 end)
 
@@ -122,7 +126,11 @@ RegisterNetEvent('mri_Qadmin:server:DeleteAction', function(id, category)
 
     Debug(('[mri_Qadmin] Action %s deletada por %s'):format(id, GetPlayerName(src)))
 
-    -- Broadcast update to everyone
-    TriggerClientEvent('mri_Qadmin:client:UpdateActions', -1, GetAllDynamicActions())
+    -- Broadcast update to admins only
+    local admins = GetAdminPlayers()
+    local actionsData = GetAllDynamicActions()
+    for _, adminId in ipairs(admins) do
+        TriggerClientEvent('mri_Qadmin:client:UpdateActions', adminId, actionsData)
+    end
     QBCore.Functions.Notify(src, 'Ação deletada com sucesso!', 'success')
 end)
