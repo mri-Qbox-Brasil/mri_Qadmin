@@ -13,7 +13,8 @@ local localWallSettings = {
     showGang = true,
     showVehicle = true,
     showWeapon = true,
-    font = 4
+    font = 4,
+    showBackground = true
 }
 
 local function LoadLocalSettings()
@@ -57,23 +58,6 @@ AddEventHandler(GlobalState["mri_wall"]..":toggleWall",function(val)
         wall_users = {}
     end
 end)
-
--- function DrawText3D(x,y,z, text, r,g,b, scale)
---     local onScreen,_x,_y=World3dToScreen2d(x,y,z)
---     if onScreen then
---         SetTextFont(4)
---         SetTextProportional(1)
---         SetTextScale(scale or 0.3, scale or 0.3)
---         SetTextColour(r, g, b, 255)
---         SetTextEntry("STRING")
---         SetTextCentre(1)
---         for i = 1, string.len(text), 90 do
---             local sub = string.sub(text, i, i + 89)
---             AddTextComponentString(sub)
---         end
---         DrawText(_x,_y)
---     end
--- end
 
 local function GetLineCountAndMaxLenght(text)
     local count = 0
@@ -122,11 +106,16 @@ function DrawText3D(data)
         local count, length = GetLineCountAndMaxLenght(text)
         local padding = 0.005
         local lineHeight = 0.017 * (scale / 0.28)
-        local w = (length * 0.0055 * (scale / 0.28)) + (padding * 2)
+        local w = (length * 0.0055 * (scale / 0.28)) + (padding * 4)
         local h = (count * lineHeight) + (padding * 2)
         local yOffset = (count * lineHeight) / 2
 
+        -- Background
         DrawRect(0.0, yOffset, w, h, 0, 0, 0, data.bgAlpha or 150)
+
+        -- Decorative Side Bar (Left)
+        local barWidth = 0.0015 * (scale / 0.28)
+        DrawRect(-(w/2) + (barWidth/2), yOffset, barWidth, h, data.br or 0, data.bg or 150, data.bb or 255, 255)
     end
 
     ClearDrawOrigin()
@@ -150,6 +139,8 @@ local function DrawModernESP(coords, info, color, dist)
     if onScreen then
         -- Text Content
         local text = ("~w~[%s] %s | ~y~%dm"):format(info.id, info.name, math.floor(dist))
+        if info.principals and info.principals ~= "" then text = text .. ("\n~y~[Princ: %s]"):format(info.principals) end
+        if info.wallstats then text = text .. "\n~g~[WALL ON]" end
         if info.weapon and localWallSettings.showWeapon then text = text .. ("\n~s~%s"):format(info.weapon) end
         if info.job and localWallSettings.showJob then text = text .. ("\n~y~%s"):format(info.job) end
         if info.gang and localWallSettings.showGang then text = text .. ("\n~p~%s"):format(info.gang) end
@@ -196,6 +187,31 @@ local function DrawModernESP(coords, info, color, dist)
         -- Top of the rect is _y - height/2. Add padding for the first line.
         DrawText(_x, _y - (height / 2) + padding)
     end
+end
+
+local function DrawClassicESP(coords, info, color, dist)
+    local zOffsetInfo = info.vehicle and 1.8 or 1.25
+    local zOffsetExtra = info.vehicle and 1.4 or 0.85
+
+    -- Main Info
+    DrawText3D({
+        coords = {coords.x, coords.y, coords.z + zOffsetInfo},
+        text = info.infoText,
+        background = localWallSettings.showBackground,
+        r = 255, g = 255, b = 255, a = 255,
+        br = color.r, bg = color.g, bb = color.b, -- Bar color
+        scale = 0.28
+    })
+
+    -- Extra Info
+    DrawText3D({
+        coords = {coords.x, coords.y, coords.z + zOffsetExtra},
+        text = info.extraText,
+        background = localWallSettings.showBackground,
+        r = 255, g = 255, b = 255, a = 255,
+        br = color.r, bg = color.g, bb = color.b, -- Bar color
+        scale = 0.24
+    })
 end
 
 local function DrawSkeleton(ped, color)
@@ -340,6 +356,8 @@ Citizen.CreateThread(function()
                                 weapon = (Weapons[tostring(weaponHash)] or "Unknown") .. " [" .. ammo .. "]",
                                 vehicle = vehicleName,
                                 forward = GetEntityForwardVector(ped),
+                                principals = user.found_principals,
+                                wallstats = user.wallstats,
                                 dist = dist,
                                 visible = true
                             }
@@ -381,10 +399,7 @@ Citizen.CreateThread(function()
                     if localWallSettings.style == "modern" then
                         DrawModernESP(targetCoords, data, data.color, data.dist)
                     else
-                        local zOffsetInfo = data.vehicle and 1.8 or 1.25
-                        local zOffsetExtra = data.vehicle and 1.4 or 0.85
-                        DrawText3D({coords = {targetCoords.x, targetCoords.y, targetCoords.z + zOffsetInfo}, text = data.infoText, r = 255, g = 255, b = 255, a = 255, scale = 0.28})
-                        DrawText3D({coords = {targetCoords.x, targetCoords.y, targetCoords.z + zOffsetExtra}, text = data.extraText, r = 255, g = 255, b = 255, a = 255, scale = 0.28})
+                        DrawClassicESP(targetCoords, data, data.color, data.dist)
                     end
 
                     if localWallSettings.skeleton then

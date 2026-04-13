@@ -625,6 +625,24 @@ export default function Settings() {
                                                 </label>
                                             </div>
 
+                                            <div className="flex items-center justify-between p-5 bg-muted/20 border border-border rounded-xl hover:bg-muted/30 transition-all group cursor-default">
+                                                <div className="space-y-1.5">
+                                                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                                                        {t('settings_wall_show_background')}
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground italic">{t('settings_wall_show_background_desc')}</p>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer scale-110">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="sr-only peer"
+                                                        checked={localWallSettings.localSettings?.showBackground ?? true}
+                                                        onChange={(e) => saveLocalWallSetting('showBackground', e.target.checked)}
+                                                    />
+                                                    <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary border border-border"></div>
+                                                </label>
+                                            </div>
+
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:col-span-2 gap-4">
                                                 <div className="flex items-center justify-between p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-all">
                                                     <span className="text-xs font-bold text-foreground">{t('settings_wall_show_job') || "Mostrar Emprego"}</span>

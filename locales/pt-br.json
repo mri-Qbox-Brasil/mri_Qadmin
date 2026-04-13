@@ -380,7 +380,7 @@
     "bucket": "Bucket",
     "permissions_title": "Gerenciador de Permissões",
     "permissions_inheritance": "Herança",
-    "permissions_aces": "Permissões",
+    "permissions_aces": "Permisões",
     "permissions_inheritance_title": "Herança & Grupos",
     "permissions_inheritance_desc": "Gerencie quais 'principals' herdam permissões de outros (ex: adicionar um jogador a um grupo).",
     "permissions_aces_title": "Entradas de Controle de Acesso (Aces)",
@@ -430,6 +430,7 @@
     "vitals_stress": "Estresse",
     "vitals_status_alive": "Vivo",
     "vitals_status_dead": "Morto",
+    "vitals_status_verified": "Confiável",
     "vitals_section_title": "Estado de Saúde e Vitais",
     "vitals_set_success": "Vital %s definido para %s para o ID %s",
     "confirm_vital_action": "Deseja realizar a ação para o vital: %s?",
@@ -605,5 +606,7 @@
     "settings_wall_show_gang": "Mostrar Gangue",
     "settings_wall_show_vehicle": "Mostrar Veículo",
     "settings_wall_show_weapon": "Mostrar Arma",
-    "settings_wall_font": "Fonte do ESP"
+    "settings_wall_font": "Fonte do ESP",
+    "settings_wall_show_background": "Exibir Fundo (Classic)",
+    "settings_wall_show_background_desc": "Ativa o fundo escuro com detalhe lateral para melhor leitura no modo clássico."
 }

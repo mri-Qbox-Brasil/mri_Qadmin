@@ -605,5 +605,7 @@
     "settings_wall_show_gang": "Show Gang",
     "settings_wall_show_vehicle": "Show Vehicle",
     "settings_wall_show_weapon": "Show Weapon",
-    "settings_wall_font": "ESP Font"
+    "settings_wall_font": "ESP Font",
+    "settings_wall_show_background": "Show Background (Classic)",
+    "settings_wall_show_background_desc": "Enables the dark background with side detail for better readability in classic mode."
 }
