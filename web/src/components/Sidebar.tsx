@@ -1,7 +1,7 @@
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
-import { LayoutDashboard, Users, Box, Terminal, Zap, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon, SquareCode } from 'lucide-react'
+import { LayoutDashboard, Users, Box, Terminal, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon, SquareCode } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 import pkg from '../../package.json'
@@ -45,7 +45,6 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
         { icon: Container, label: t('nav_resources'), route: 'resources' },
         { icon: Box, label: '', divider: true },
         { icon: Settings, label: t('nav_settings'), route: 'settings' },
-        { icon: Zap, label: t('nav_action_manager'), route: 'action_manager' },
         { icon: Info, label: t('nav_credits'), route: 'credits' },
         { icon: Box, label: '', divider: true },
         { icon: SquareCode, label: t('nav_devmode'), route: 'devmode' },
@@ -95,7 +94,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
                         <ThemeIcon className="w-4 h-4" />
                     </button>
                 </div>
-                
+
                 <div className={cn(
                     "flex px-1 items-center",
                     !menuWide ? "justify-center" : "justify-start"

@@ -6,13 +6,15 @@ import ActionButton from './components/ActionButton'
 import ActionDropdown from './components/ActionDropdown'
 import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
-import { Zap, RefreshCw, Star } from 'lucide-react'
+import { Zap, RefreshCw, Star, Settings as SettingsIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
 import { VirtuosoGrid } from 'react-virtuoso'
 import ActionsSkeleton from '@/components/skeletons/ActionsSkeleton'
 import { hasPermission } from '@/utils/permissions'
 import { MOCK_GAME_DATA } from '@/utils/mockData'
+import ActionManager, { ActionManagerRef } from '../ActionManager/ActionManager'
+import { Plus } from 'lucide-react'
 
 export default function Actions() {
     const { gameData, setGameData, myPermissions } = useAppState()
@@ -20,8 +22,10 @@ export default function Actions() {
     const { t } = useI18n()
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(false)
-    const [filter, setFilter] = useState<'all' | 'favorites'>('all')
+    const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'manager'>('all')
+    const [selectedCategory, setSelectedCategory] = useState<'All' | 'Actions' | 'PlayerActions' | 'OtherActions'>('All')
     const [favorites, setFavorites] = useState<Record<string, boolean>>({})
+    const managerRef = React.useRef<ActionManagerRef>(null)
 
     useEffect(() => {
         // Load favorites from local storage
@@ -55,16 +59,31 @@ export default function Actions() {
     }
 
     const actionList = React.useMemo(() => {
-        const actions = gameData.actions || []
-        const list = Array.isArray(actions)
-            ? actions.map((v, i) => ({ ...v, id: v.id || i.toString() }))
-            : Object.entries(actions).map(([k, v]) => ({ ...(v as any), id: k }))
+        const sourceMap = {
+            'Actions': gameData.actions,
+            'PlayerActions': gameData.playerActions,
+            'OtherActions': gameData.otherActions
+        }
+        
+        let actions: any[] = []
+        if (selectedCategory === 'All') {
+            actions = [
+                ...(Array.isArray(gameData.actions) ? gameData.actions.map(a => ({ ...a, category: 'Actions' })) : Object.entries(gameData.actions || {}).map(([k, v]) => ({ ...(v as any), id: k, category: 'Actions' }))),
+                ...(Array.isArray(gameData.playerActions) ? gameData.playerActions.map(a => ({ ...a, category: 'PlayerActions' })) : Object.entries(gameData.playerActions || {}).map(([k, v]) => ({ ...(v as any), id: k, category: 'PlayerActions' }))),
+                ...(Array.isArray(gameData.otherActions) ? gameData.otherActions.map(a => ({ ...a, category: 'OtherActions' })) : Object.entries(gameData.otherActions || {}).map(([k, v]) => ({ ...(v as any), id: k, category: 'OtherActions' })))
+            ]
+        } else {
+            const rawSource = sourceMap[selectedCategory as keyof typeof sourceMap] || []
+            actions = Array.isArray(rawSource)
+                ? rawSource.map((v, i) => ({ ...v, id: v.id || i.toString(), category: selectedCategory }))
+                : Object.entries(rawSource).map(([k, v]) => ({ ...(v as any), id: k, category: selectedCategory }))
+        }
 
-        return list.map(action => ({
+        return actions.map(action => ({
             ...action,
             label: (action.label || '').trim()
         })).sort((a, b) => a.label.localeCompare(b.label))
-    }, [gameData.actions])
+    }, [gameData, selectedCategory])
 
 
     const filteredActions = actionList.filter((action: any) => {
@@ -74,7 +93,7 @@ export default function Actions() {
 
         const matchesSearch = action.label.toLowerCase().includes(search.toLowerCase())
         if (!matchesSearch) return false
-        if (filter === 'favorites') {
+        if (activeTab === 'favorites') {
             return favorites[action.id]
         }
         return true
@@ -82,17 +101,34 @@ export default function Actions() {
 
     const actionTabs: MriTabItem[] = [
         { id: 'all', label: t('actions_filter_all'), icon: Zap },
-        { id: 'favorites', label: t('actions_filter_favorites'), icon: Star, className: filter === 'favorites' ? 'text-yellow-500 hover:text-yellow-400' : '' },
+        { id: 'favorites', label: t('actions_filter_favorites'), icon: Star, className: activeTab === 'favorites' ? 'text-yellow-500 hover:text-yellow-400' : '' },
+        { id: 'manager', label: t('nav_action_manager'), icon: SettingsIcon },
+    ]
+
+    const categoryTabs: MriTabItem[] = [
+        { id: 'All', label: t('all') || 'All' },
+        { id: 'Actions', label: t('category_actions') || 'Actions' },
+        { id: 'PlayerActions', label: t('category_playeractions') || 'Player Actions' },
+        { id: 'OtherActions', label: t('category_otheractions') || 'Other Actions' },
     ]
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('nav_actions')} countLabel={t('records')} count={actionList.length} icon={Zap}>
-                <MriTabs
-                    items={actionTabs}
-                    value={filter}
-                    onChange={(val) => setFilter(val)}
-                />
+            <MriPageHeader title={t('nav_actions')} countLabel={activeTab !== 'manager' ? t('records') : undefined} count={activeTab !== 'manager' ? actionList.length : undefined} icon={Zap}>
+                <div className="flex items-center gap-4">
+                    <MriTabs
+                        items={actionTabs}
+                        value={activeTab}
+                        onChange={(val) => setActiveTab(val as any)}
+                    />
+                    <div className="w-px h-6 bg-border mx-2" /> {/* Divider */}
+                    <MriTabs
+                        items={categoryTabs}
+                        variant="pills"
+                        value={selectedCategory}
+                        onChange={(val) => setSelectedCategory(val as any)}
+                    />
+                </div>
 
                 <div className="flex items-center gap-2">
                     <MriExpandableSearch
@@ -100,19 +136,31 @@ export default function Actions() {
                         value={search}
                         onChange={(val) => setSearch(val)}
                     />
+                    <MriButton
+                        size="icon"
+                        variant="outline"
+                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                        onClick={handleRefresh}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                    </MriButton>
+                    {activeTab === 'manager' && (
+                        <MriButton
+                            size="icon"
+                            variant="brand"
+                            className="h-10 w-10"
+                            onClick={() => managerRef.current?.handleOpenCreate()}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </MriButton>
+                    )}
                 </div>
-                <MriButton
-                    size="icon"
-                    variant="outline"
-                    className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                    onClick={handleRefresh}
-                    disabled={loading}
-                >
-                    <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-                </MriButton>
             </MriPageHeader>
 
-            {loading && actionList.length === 0 ? (
+            {activeTab === 'manager' ? (
+                <ActionManager ref={managerRef} isEmbedded search={search} selectedCategory={selectedCategory} />
+            ) : loading && actionList.length === 0 ? (
                 <ActionsSkeleton />
             ) : filteredActions.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">

@@ -16,7 +16,6 @@ import Vehicles from '@/pages/Vehicles'
 import Groups from '@/pages/Groups'
 import Credits from '@/pages/Credits'
 import Settings from '@/pages/Settings'
-import ActionManager from '@/pages/ActionManager/ActionManager'
 import Permissions from '@/pages/Permissions/Permissions'
 import LiveMapPage from './pages/LiveMapPage'
 import LiveScreensPage from './pages/LiveScreensPage'
@@ -34,7 +33,7 @@ import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
 // ... existing imports
 
 export default function App() {
-    const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'action_manager' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
+    const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'commands' | 'actions' | 'items' | 'bans' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens'>('dashboard')
     const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings } = useAppState()
     const { on, off, sendNui } = useNui()
     const { scale } = useTheme()
@@ -237,8 +236,7 @@ export default function App() {
                     {effectiveRoute === 'resources' ? <Resources /> :
                         effectiveRoute === 'players' ? <Players /> :
                             effectiveRoute === 'actions' ? <Actions /> :
-                                effectiveRoute === 'action_manager' ? <ActionManager /> :
-                                    effectiveRoute === 'staffchat' ? <StaffChat /> :
+                                effectiveRoute === 'staffchat' ? <StaffChat /> :
                                         effectiveRoute === 'commands' ? <Commands /> :
                                             effectiveRoute === 'items' ? <Items /> :
                                                 effectiveRoute === 'bans' ? <Bans /> :
