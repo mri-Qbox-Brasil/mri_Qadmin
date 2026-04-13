@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.6.0...v1.6.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* wall classic ([9cbb2fe](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/9cbb2fe347bdd1c74c8c1b2638df8ebecc5232dc))
+
 # [1.6.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.5.0...v1.6.0) (2026-04-13)
 
 
