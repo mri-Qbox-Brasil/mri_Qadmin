@@ -21,21 +21,21 @@ local function getPlayers(page, pageSize, search)
         allGangs = QBCore.Shared.Gangs
     end
 
-    -- Process Online Players First
+    -- Process Online Players First (Optimized: Filter first, process details only for current page)
+    local filteredOnlineIds = {}
+    local lowerSearch = search and string.lower(search) or nil
+    local searchId = tonumber(search)
+
     for k, v in pairs(GetPlayers) do
         local playerData = v.PlayerData
         if playerData and playerData.charinfo then
             local charinfo = playerData.charinfo
             local name = (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or "")
-            local license = QBCore.Functions.GetIdentifier(k, 'license')
             local citizenid = playerData.citizenid or "N/A"
+            local license = QBCore.Functions.GetIdentifier(k, 'license')
      
-            -- Filter Online Players if search is active
             local match = true
-            if search and search ~= "" then
-                local lowerSearch = string.lower(search)
-                local searchId = tonumber(search)
-
+            if lowerSearch and lowerSearch ~= "" then
                 local nameMatch = string.find(string.lower(name), lowerSearch, 1, true)
                 local licenseMatch = license and string.find(string.lower(license), lowerSearch, 1, true)
                 local cidMatch = citizenid and string.find(string.lower(citizenid), lowerSearch, 1, true)
@@ -47,56 +47,61 @@ local function getPlayers(page, pageSize, search)
             end
 
             if match then
-                onlinePlayers[#onlinePlayers + 1] = {
-                    id = k,
-                    name = name,
-                    birthdate = charinfo.birthdate or "N/A",
-                    phone = charinfo.phone or "N/A",
-                    bucket = GetPlayerRoutingBucket(k),
-                    ping = GetPlayerPing(k),
-                    cid = charinfo.cid or 0,
-                    citizenid = citizenid,
-                    license = license,
-                    license2 = QBCore.Functions.GetIdentifier(k, 'license2'),
-                    discord = QBCore.Functions.GetIdentifier(k, 'discord'),
-                    steam = QBCore.Functions.GetIdentifier(k, 'steam'),
-                    fivem = QBCore.Functions.GetIdentifier(k, 'fivem'),
-                    ip = QBCore.Functions.GetIdentifier(k, 'ip'),
-                    job = playerData.job,
-                    gang = playerData.gang,
-                    money = (function()
-                        local m = {}
-                        if playerData.money then
-                            for mk, mv in pairs(playerData.money) do
-                                table.insert(m, { name = mk, amount = mv })
-                            end
-                        end
-                        return m
-                    end)(),
-                    health = GetEntityHealth(GetPlayerPed(k)),
-                    armor = GetPedArmour(GetPlayerPed(k)),
-                    vehicles = {},
-                    metadata = playerData.metadata or {},
-                    charinfo = charinfo,
-                    last_loggedout = playerData.lastLoggedOut,
-                    online = true
-                }
+                filteredOnlineIds[#filteredOnlineIds + 1] = k
             end
         end
     end
 
-    -- Sort online players by ID
-    table.sort(onlinePlayers, function(a, b) return a.id < b.id end)
+    -- Sort online player IDs
+    table.sort(filteredOnlineIds)
 
-    local totalOnline = #onlinePlayers
+    local totalOnline = #filteredOnlineIds
     local resultPlayers = {}
 
-    -- Fill from Online Players
+    -- Fill from Online Players (Only process detailed data for the current page)
     local onlineStartIndex = offset + 1
     local onlineEndIndex = offset + pageSize
 
     for i = onlineStartIndex, math.min(onlineEndIndex, totalOnline) do
-        resultPlayers[#resultPlayers + 1] = onlinePlayers[i]
+        local k = filteredOnlineIds[i]
+        local v = GetPlayers[k]
+        local playerData = v.PlayerData
+        local charinfo = playerData.charinfo
+
+        resultPlayers[#resultPlayers + 1] = {
+            id = k,
+            name = (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or ""),
+            birthdate = charinfo.birthdate or "N/A",
+            phone = charinfo.phone or "N/A",
+            bucket = GetPlayerRoutingBucket(k),
+            ping = GetPlayerPing(k),
+            cid = charinfo.cid or 0,
+            citizenid = playerData.citizenid or "N/A",
+            license = QBCore.Functions.GetIdentifier(k, 'license'),
+            license2 = QBCore.Functions.GetIdentifier(k, 'license2'),
+            discord = QBCore.Functions.GetIdentifier(k, 'discord'),
+            steam = QBCore.Functions.GetIdentifier(k, 'steam'),
+            fivem = QBCore.Functions.GetIdentifier(k, 'fivem'),
+            ip = QBCore.Functions.GetIdentifier(k, 'ip'),
+            job = playerData.job,
+            gang = playerData.gang,
+            money = (function()
+                local m = {}
+                if playerData.money then
+                    for mk, mv in pairs(playerData.money) do
+                        table.insert(m, { name = mk, amount = mv })
+                    end
+                end
+                return m
+            end)(),
+            health = GetEntityHealth(GetPlayerPed(k)),
+            armor = GetPedArmour(GetPlayerPed(k)),
+            vehicles = {},
+            metadata = playerData.metadata or {},
+            charinfo = charinfo,
+            last_loggedout = playerData.lastLoggedOut,
+            online = true
+        }
     end
 
     -- Calculate how many slots left for DB players
@@ -107,13 +112,13 @@ local function getPlayers(page, pageSize, search)
     local dbOffset = math.max(0, offset - totalOnline)
 
     -- Build Online Exclusion List (Strictly using citizenid string)
-    local onlineCidList = {}
-    for _, p in ipairs(onlinePlayers) do
-        if p.citizenid and p.citizenid ~= "N/A" then
-            onlineCidList[#onlineCidList + 1] = "'" .. p.citizenid .. "'"
+    local onlineCids = {}
+    for _, k in ipairs(filteredOnlineIds) do
+        local p = GetPlayers[k]
+        if p and p.PlayerData and p.PlayerData.citizenid then
+            onlineCids[#onlineCids + 1] = p.PlayerData.citizenid
         end
     end
-    local onlineExclusion = #onlineCidList > 0 and (" AND citizenid NOT IN (" .. table.concat(onlineCidList, ",") .. ")") or ""
 
     -- 1. Get Total Record Count (Online + Filtered DB)
     local countQuery = "SELECT COUNT(*) as count FROM players"
@@ -124,9 +129,14 @@ local function getPlayers(page, pageSize, search)
         local lowerSearch = "%" .. string.lower(search) .. "%"
         whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
         queryParams = { lowerSearch, lowerSearch, lowerSearch }
-        whereClause = whereClause .. onlineExclusion
-    elseif onlineExclusion ~= "" then
-        whereClause = " WHERE " .. onlineExclusion:sub(6) -- Remove leading " AND"
+        
+        if #onlineCids > 0 then
+            whereClause = whereClause .. " AND citizenid NOT IN (?)"
+            queryParams[#queryParams + 1] = onlineCids
+        end
+    elseif #onlineCids > 0 then
+        whereClause = " WHERE citizenid NOT IN (?)"
+        queryParams = { onlineCids }
     end
 
     local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
