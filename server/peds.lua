@@ -1,5 +1,4 @@
-lib.callback.register('mri_Qadmin:callback:GetPedList', function()
+lib.callback.register('mri_Qadmin:callback:GetPedList', function(source)
     if not CheckPerms(source, 'mod') then return {} end
-    -- TODO: Get peds
-    return {}
+    return Peds or {}
 end)

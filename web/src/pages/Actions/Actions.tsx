@@ -8,6 +8,7 @@ import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { Zap, RefreshCw, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
 import { VirtuosoGrid } from 'react-virtuoso'
 import ActionsSkeleton from '@/components/skeletons/ActionsSkeleton'
 import { hasPermission } from '@/utils/permissions'
@@ -79,31 +80,19 @@ export default function Actions() {
         return true
     })
 
+    const actionTabs: MriTabItem[] = [
+        { id: 'all', label: t('actions_filter_all'), icon: Zap },
+        { id: 'favorites', label: t('actions_filter_favorites'), icon: Star, className: filter === 'favorites' ? 'text-yellow-500 hover:text-yellow-400' : '' },
+    ]
+
     return (
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('nav_actions')} countLabel={t('records')} count={actionList.length} icon={Zap}>
-                <div className="flex gap-2 bg-muted rounded-lg p-1 border border-border">
-                    <button
-                        onClick={() => setFilter('all')}
-                        className={cn(
-                            "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-2",
-                            filter === 'all' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        <Zap className="w-3.5 h-3.5" />
-                        {t('actions_filter_all')}
-                    </button>
-                    <button
-                        onClick={() => setFilter('favorites')}
-                        className={cn(
-                            "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-2",
-                            filter === 'favorites' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                        {t('actions_filter_favorites')}
-                    </button>
-                </div>
+                <MriTabs
+                    items={actionTabs}
+                    value={filter}
+                    onChange={(val) => setFilter(val)}
+                />
 
                 <div className="flex items-center gap-2">
                     <MriExpandableSearch

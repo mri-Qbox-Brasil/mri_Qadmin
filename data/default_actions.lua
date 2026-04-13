@@ -1,4 +1,4 @@
-﻿return {
+return {
     Actions = {
         ["admin_car"] = {
             label = "Admin Car",
@@ -132,7 +132,7 @@
             perms = "qadmin.action.set_ped",
             dropdown = {
                 { label = "Player",     option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Ped Models", option = "dropdown", data = "pedlist" },
+                { label = "Ped Models", option = "dropdown", data = "pedlist", valueField = "model", labelField = "label" },
                 { label = "Confirmar",    option = "button", type = "server", event = "mri_Qadmin:server:setPed" },
             },
         },

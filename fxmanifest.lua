@@ -12,6 +12,8 @@ ox_lib "locale"
 shared_scripts {
     "@ox_lib/init.lua",
     "shared/**/*.lua",
+    "data/weapons.lua",
+    "data/ped.lua",
 }
 
 server_scripts {
@@ -89,6 +91,7 @@ files {
     "data/ped.lua",
     "data/object.lua",
     "data/default_actions.lua",
+    "data/weapons.lua",
     "locales/*.json",
 }
 

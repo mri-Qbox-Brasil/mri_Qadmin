@@ -16,7 +16,7 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         items = GetItemsList(),
         vehicles = GetVehiclesList(),
         commands = GetCommandsList(src),
-        peds = {},
+        peds = Peds or {},
         locations = {},
         settings = GetPrimitiveSettings(),
         players = getPlayers(1, 100, "")

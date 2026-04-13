@@ -3,45 +3,37 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local wall_users = {}
 local wall = false
 local walldistance = 500 -- OneSync Infinity Max Distance
-local armas = {
-    [tostring(GetHashKey('WEAPON_ANIMAL'))] = 'Animal', [tostring(GetHashKey('WEAPON_COUGAR'))] = 'Cougar', [tostring(GetHashKey('WEAPON_ADVANCEDRIFLE'))] = 'Advanced Rifle',
-    [tostring(GetHashKey('WEAPON_APPISTOL'))] = 'AP Pistol', [tostring(GetHashKey('WEAPON_ASSAULTRIFLE'))] = 'Assault Rifle', [tostring(GetHashKey('WEAPON_ASSAULTRIFLE_MK2'))] = 'Assault Rifke Mk2',
-    [tostring(GetHashKey('WEAPON_ASSAULTSHOTGUN'))] = 'Assault Shotgun', [tostring(GetHashKey('WEAPON_ASSAULTSMG'))] = 'Assault SMG', [tostring(GetHashKey('WEAPON_AUTOSHOTGUN'))] = 'Automatic Shotgun',
-    [tostring(GetHashKey('WEAPON_BULLPUPRIFLE'))] = 'Bullpup Rifle', [tostring(GetHashKey('WEAPON_BULLPUPRIFLE_MK2'))] = 'Bullpup Rifle Mk2',[tostring(GetHashKey('WEAPON_BULLPUPSHOTGUN'))] = 'Bullpup Shotgun',
-    [tostring(GetHashKey('WEAPON_CARBINERIFLE'))] = 'Carbine Rifle', [tostring(GetHashKey('WEAPON_CARBINERIFLE_MK2'))] = 'Carbine Rifle Mk2', [tostring(GetHashKey('WEAPON_COMBATMG'))] = 'Combat MG',
-    [tostring(GetHashKey('WEAPON_COMBATMG_MK2'))] = 'Combat MG Mk2', [tostring(GetHashKey('WEAPON_COMBATPDW'))] = 'Combat PDW', [tostring(GetHashKey('WEAPON_COMBATPISTOL'))] = 'Combat Pistol',
-    [tostring(GetHashKey('WEAPON_COMPACTRIFLE'))] = 'Compact Rifle', [tostring(GetHashKey('WEAPON_DBSHOTGUN'))] = 'Double Barrel Shotgun', [tostring(GetHashKey('WEAPON_DOUBLEACTION'))] = 'Double Action Revolver',
-    [tostring(GetHashKey('WEAPON_FLAREGUN'))] = 'Flare gun', [tostring(GetHashKey('WEAPON_GUSENBERG'))] = 'Gusenberg', [tostring(GetHashKey('WEAPON_HEAVYPISTOL'))] = 'Heavy Pistol',
-    [tostring(GetHashKey('WEAPON_HEAVYSHOTGUN'))] = 'Heavy Shotgun', [tostring(GetHashKey('WEAPON_HEAVYSNIPER'))] = 'Heavy Sniper', [tostring(GetHashKey('WEAPON_HEAVYSNIPER_MK2'))] = 'Heavy Sniper',
-    [tostring(GetHashKey('WEAPON_MACHINEPISTOL'))] = 'Machine Pistol', [tostring(GetHashKey('WEAPON_MARKSMANPISTOL'))] = 'Marksman Pistol', [tostring(GetHashKey('WEAPON_MARKSMANRIFLE'))] = 'Marksman Rifle',
-    [tostring(GetHashKey('WEAPON_MARKSMANRIFLE_MK2'))] = 'Marksman Rifle Mk2', [tostring(GetHashKey('WEAPON_MG'))] = 'MG', [tostring(GetHashKey('WEAPON_MICROSMG'))] = 'Micro SMG',
-    [tostring(GetHashKey('WEAPON_MINIGUN'))] = 'Minigun', [tostring(GetHashKey('WEAPON_MINISMG'))] = 'Mini SMG', [tostring(GetHashKey('WEAPON_MUSKET'))] = 'Musket',
-    [tostring(GetHashKey('WEAPON_PISTOL'))] = 'Pistol', [tostring(GetHashKey('WEAPON_PISTOL_MK2'))] = 'Pistol Mk2', [tostring(GetHashKey('WEAPON_PISTOL50'))] = 'Pistol .50',
-    [tostring(GetHashKey('WEAPON_PUMPSHOTGUN'))] = 'Pump Shotgun', [tostring(GetHashKey('WEAPON_PUMPSHOTGUN_MK2'))] = 'Pump Shotgun Mk2', [tostring(GetHashKey('WEAPON_RAILGUN'))] = 'Railgun',
-    [tostring(GetHashKey('WEAPON_REVOLVER'))] = 'Revolver', [tostring(GetHashKey('WEAPON_REVOLVER_MK2'))] = 'Revolver Mk2', [tostring(GetHashKey('WEAPON_SAWNOFFSHOTGUN'))] = 'Sawnoff Shotgun',
-    [tostring(GetHashKey('WEAPON_SMG'))] = 'SMG', [tostring(GetHashKey('WEAPON_SMG_MK2'))] = 'SMG Mk2', [tostring(GetHashKey('WEAPON_SNIPERRIFLE'))] = 'Sniper Rifle',
-    [tostring(GetHashKey('WEAPON_SNSPISTOL'))] = 'SNS Pistol', [tostring(GetHashKey('WEAPON_SNSPISTOL_MK2'))] = 'SNS Pistol Mk2', [tostring(GetHashKey('WEAPON_SPECIALCARBINE'))] = 'Special Carbine',
-    [tostring(GetHashKey('WEAPON_SPECIALCARBINE_MK2'))] = 'Special Carbine Mk2', [tostring(GetHashKey('WEAPON_STINGER'))] = 'Stinger', [tostring(GetHashKey('WEAPON_STUNGUN'))] = 'Stungun',
-    [tostring(GetHashKey('WEAPON_VINTAGEPISTOL'))] = 'Vintage Pistol', [tostring(GetHashKey('VEHICLE_WEAPON_PLAYER_LASER'))] = 'Vehicle Lasers',
-    [tostring(GetHashKey('WEAPON_FIRE'))] = 'Fire', [tostring(GetHashKey('WEAPON_FLARE'))] = 'Flare', [tostring(GetHashKey('WEAPON_FLAREGUN'))] = 'Flaregun',
-    [tostring(GetHashKey('WEAPON_MOLOTOV'))] = 'Molotov', [tostring(GetHashKey('WEAPON_PETROLCAN'))] = 'Petrol Can', [tostring(GetHashKey('WEAPON_HELI_CRASH'))] = 'Helicopter Crash',
-    [tostring(GetHashKey('WEAPON_RAMMED_BY_CAR'))] = 'Rammed by Vehicle', [tostring(GetHashKey('WEAPON_RUN_OVER_BY_CAR'))] = 'Ranover by Vehicle', [tostring(GetHashKey('VEHICLE_WEAPON_SPACE_ROCKET'))] = 'Vehicle Space Rocket',
-    [tostring(GetHashKey('VEHICLE_WEAPON_TANK'))] = 'Tank', [tostring(GetHashKey('WEAPON_AIRSTRIKE_ROCKET'))] = 'Airstrike Rocket', [tostring(GetHashKey('WEAPON_AIR_DEFENCE_GUN'))] = 'Air Defence Gun',
-    [tostring(GetHashKey('WEAPON_COMPACTLAUNCHER'))] = 'Compact Launcher', [tostring(GetHashKey('WEAPON_EXPLOSION'))] = 'Explosion', [tostring(GetHashKey('WEAPON_FIREWORK'))] = 'Firework',
-    [tostring(GetHashKey('WEAPON_GRENADE'))] = 'Grenade', [tostring(GetHashKey('WEAPON_GRENADELAUNCHER'))] = 'Grenade Launcher', [tostring(GetHashKey('WEAPON_HOMINGLAUNCHER'))] = 'Homing Launcher',
-    [tostring(GetHashKey('WEAPON_PASSENGER_ROCKET'))] = 'Passenger Rocket', [tostring(GetHashKey('WEAPON_PIPEBOMB'))] = 'Pipe bomb', [tostring(GetHashKey('WEAPON_PROXMINE'))] = 'Proximity Mine',
-    [tostring(GetHashKey('WEAPON_RPG'))] = 'RPG', [tostring(GetHashKey('WEAPON_STICKYBOMB'))] = 'Sticky Bomb', [tostring(GetHashKey('WEAPON_VEHICLE_ROCKET'))] = 'Vehicle Rocket',
-    [tostring(GetHashKey('WEAPON_BZGAS'))] = 'BZ Gas', [tostring(GetHashKey('WEAPON_FIREEXTINGUISHER'))] = 'Fire Extinguisher', [tostring(GetHashKey('WEAPON_SMOKEGRENADE'))] = 'Smoke Grenade',
-    [tostring(GetHashKey('WEAPON_BATTLEAXE'))] = 'Battleaxe', [tostring(GetHashKey('WEAPON_BOTTLE'))] = 'Bottle', [tostring(GetHashKey('WEAPON_KNIFE'))] = 'Knife',
-    [tostring(GetHashKey('WEAPON_MACHETE'))] = 'Machete', [tostring(GetHashKey('WEAPON_SWITCHBLADE'))] = 'Switch Blade', [tostring(GetHashKey('OBJECT'))] = 'Object',
-    [tostring(GetHashKey('VEHICLE_WEAPON_ROTORS'))] = 'Vehicle Rotors', [tostring(GetHashKey('WEAPON_BALL'))] = 'Ball', [tostring(GetHashKey('WEAPON_BAT'))] = 'Bat',
-    [tostring(GetHashKey('WEAPON_CROWBAR'))] = 'Crowbar', [tostring(GetHashKey('WEAPON_FLASHLIGHT'))] = 'Flashlight', [tostring(GetHashKey('WEAPON_GOLFCLUB'))] = 'Golfclub',
-    [tostring(GetHashKey('WEAPON_HAMMER'))] = 'Hammer', [tostring(GetHashKey('WEAPON_HATCHET'))] = 'Hatchet', [tostring(GetHashKey('WEAPON_HIT_BY_WATER_CANNON'))] = 'Water Cannon',
-    [tostring(GetHashKey('WEAPON_KNUCKLE'))] = 'Knuckle', [tostring(GetHashKey('WEAPON_NIGHTSTICK'))] = 'Night Stick', [tostring(GetHashKey('WEAPON_POOLCUE'))] = 'Pool Cue',
-    [tostring(GetHashKey('WEAPON_SNOWBALL'))] = 'Snowball', [tostring(GetHashKey('WEAPON_WRENCH'))] = 'Wrench', [tostring(GetHashKey('WEAPON_DROWNING'))] = 'Drowned',
-    [tostring(GetHashKey('WEAPON_DROWNING_IN_VEHICLE'))] = 'Drowned in Vehicle', [tostring(GetHashKey('WEAPON_BARBED_WIRE'))] = 'Barbed Wire', [tostring(GetHashKey('WEAPON_BLEEDING'))] = 'Bleed',
-    [tostring(GetHashKey('WEAPON_ELECTRIC_FENCE'))] = 'Electric Fence', [tostring(GetHashKey('WEAPON_EXHAUSTION'))] = 'Exhaustion', [tostring(GetHashKey('WEAPON_FALL'))] = 'Falling'
+
+-- Local Preferences (KVP)
+local localWallSettings = {
+    style = "classic",
+    tracer = "bottom",
+    skeleton = false,
+    showJob = true,
+    showGang = true,
+    showVehicle = true,
+    showWeapon = true,
+    font = 4
 }
+
+local function LoadLocalSettings()
+    local kvp = GetResourceKvpString("mri_qadmin_wall_prefs")
+    if kvp then
+        local data = json.decode(kvp)
+        if data then
+            for k, v in pairs(data) do
+                localWallSettings[k] = v
+            end
+        end
+    end
+end
+LoadLocalSettings()
+
+local function SaveLocalSettings()
+    SetResourceKvp("mri_qadmin_wall_prefs", json.encode(localWallSettings))
+end
+-- Weapons data is now loaded from data/weapons.lua
+
 
 RegisterNetEvent(GlobalState["mri_wall"]..":toggleWall")
 RegisterNetEvent('mri_wall:updateWallUsers')
@@ -66,20 +58,194 @@ AddEventHandler(GlobalState["mri_wall"]..":toggleWall",function(val)
     end
 end)
 
-function DrawText3D(x,y,z, text, r,g,b)
-    local onScreen,_x,_y=World3dToScreen2d(x,y,z)
+-- function DrawText3D(x,y,z, text, r,g,b, scale)
+--     local onScreen,_x,_y=World3dToScreen2d(x,y,z)
+--     if onScreen then
+--         SetTextFont(4)
+--         SetTextProportional(1)
+--         SetTextScale(scale or 0.3, scale or 0.3)
+--         SetTextColour(r, g, b, 255)
+--         SetTextEntry("STRING")
+--         SetTextCentre(1)
+--         for i = 1, string.len(text), 90 do
+--             local sub = string.sub(text, i, i + 89)
+--             AddTextComponentString(sub)
+--         end
+--         DrawText(_x,_y)
+--     end
+-- end
+
+local function GetLineCountAndMaxLenght(text)
+    local count = 0
+    local maxLenght = 0
+    for line in text:gmatch("([^\n]*)\n?") do
+        count = count + 1
+        local lenght = string.len(line)
+        if lenght > maxLenght then maxLenght = lenght end
+    end
+    return count, maxLenght
+end
+
+function DrawText3D(data)
+    if not data or not data.coords then return end
+
+    local coords = data.coords
+    local x, y, z
+    if type(coords) == 'vector3' then
+        x, y, z = coords.x, coords.y, coords.z
+    elseif type(coords) == 'table' and coords.x then
+        x, y, z = coords.x, coords.y, coords.z
+    elseif type(coords) == 'table' and coords[1] then
+        x, y, z = coords[1], coords[2], coords[3]
+    end
+
+    if not x or not y or not z then return end
+
+    local text = data.text or ""
+    local scale = data.scale or 0.28
+
+    SetTextScale(scale, scale)
+    SetTextFont(data.font or localWallSettings.font or 0)
+    SetTextProportional(1)
+    SetTextColour(data.r or 255, data.g or 255, data.b or 255, data.a or 255)
+    SetTextEntry("STRING")
+    SetTextCentre(true)
+
+    for i = 1, #text, 99 do
+        AddTextComponentString(string.sub(text, i, i + 98))
+    end
+
+    SetDrawOrigin(x, y, z, 0)
+    DrawText(0.0, 0.0)
+
+    if data.background ~= false then
+        local count, length = GetLineCountAndMaxLenght(text)
+        local padding = 0.005
+        local lineHeight = 0.017 * (scale / 0.28)
+        local w = (length * 0.0055 * (scale / 0.28)) + (padding * 2)
+        local h = (count * lineHeight) + (padding * 2)
+        local yOffset = (count * lineHeight) / 2
+
+        DrawRect(0.0, yOffset, w, h, 0, 0, 0, data.bgAlpha or 150)
+    end
+
+    ClearDrawOrigin()
+end
+
+local function DrawRect3D(x, y, z, width, height, r, g, b, a)
+    local onScreen, _x, _y = World3dToScreen2d(x, y, z)
     if onScreen then
-        SetTextFont(4)
-        SetTextProportional(1)
-        SetTextScale(0.3, 0.3)
-        SetTextColour(r, g, b, 255)
-        SetTextEntry("STRING")
-        SetTextCentre(1)
-        for i = 1, string.len(text), 90 do
-            local sub = string.sub(text, i, i + 89)
-            AddTextComponentString(sub)
+        DrawRect(_x, _y, width, height, r, g, b, a)
+    end
+end
+
+local function DrawModernESP(coords, info, color, dist)
+    local scale = 1.0 - (dist / walldistance)
+    if scale < 0.2 then scale = 0.2 end
+
+    local zOffset = info.vehicle and 1.8 or 1.25
+    local x, y, z = coords.x, coords.y, coords.z + zOffset
+    local onScreen, _x, _y = World3dToScreen2d(x, y, z)
+
+    if onScreen then
+        -- Text Content
+        local text = ("~w~[%s] %s | ~y~%dm"):format(info.id, info.name, math.floor(dist))
+        if info.weapon and localWallSettings.showWeapon then text = text .. ("\n~s~%s"):format(info.weapon) end
+        if info.job and localWallSettings.showJob then text = text .. ("\n~y~%s"):format(info.job) end
+        if info.gang and localWallSettings.showGang then text = text .. ("\n~p~%s"):format(info.gang) end
+        if info.vehicle and localWallSettings.showVehicle then text = text .. ("\n~o~%s"):format(info.vehicle) end
+
+        local count, length = GetLineCountAndMaxLenght(text)
+
+        -- Dimensions
+        local textScale = 0.28 * scale
+        local lineHeight = 0.017 * (textScale / 0.28)
+        local padding = 0.005
+
+        local width = (length * 0.0055 * (textScale / 0.28)) + (padding * 4)
+        local barHeight = 0.012 * scale
+        local textBlockHeight = count * lineHeight
+        local height = textBlockHeight + (padding * 3) + barHeight
+
+        -- Background (Centered at _y)
+        DrawRect(_x, _y, width, height, 0, 0, 0, 180)
+
+        -- Health Bar (relative to _y)
+        local healthY = _y + (height / 2) - (padding) - (barHeight / 2)
+        DrawRect(_x, healthY, width * 0.92, 0.005 * scale, 50, 0, 0, 200)
+        local healthWidth = (width * 0.92) * (math.min(info.health, 200) / 200.0)
+        DrawRect(_x - (width * 0.46) + (healthWidth / 2), healthY, healthWidth, 0.005 * scale, 0, 255, 0, 255)
+
+        -- Armor Bar (If has any, simple overlap)
+        if info.armour > 0 then
+             local armourY = healthY + (0.004 * scale)
+             local armorWidth = (width * 0.92) * (math.min(info.armour, 100) / 100.0)
+             DrawRect(_x - (width * 0.46) + (armorWidth / 2), armourY, armorWidth, 0.003 * scale, 0, 150, 255, 255)
         end
-        DrawText(_x,_y)
+
+        -- Render Text
+        SetTextScale(textScale, textScale)
+        SetTextFont(localWallSettings.font or 0)
+        SetTextProportional(1)
+        SetTextColour(255, 255, 255, 255)
+        SetTextEntry("STRING")
+        SetTextCentre(true)
+        for i = 1, #text, 99 do
+            AddTextComponentString(string.sub(text, i, i + 98))
+        end
+        -- Top of the rect is _y - height/2. Add padding for the first line.
+        DrawText(_x, _y - (height / 2) + padding)
+    end
+end
+
+local function DrawSkeleton(ped, color)
+    local bones = {
+        {"head", "neck"},
+        {"neck", "spine2"},
+        {"spine2", "spine1"},
+        {"spine1", "spine0"},
+        {"spine0", "pelvis"},
+        -- Braço Esquerdo
+        {"spine2", "l_shoulder"},
+        {"l_shoulder", "l_elbow"},
+        {"l_elbow", "l_hand"},
+        -- Braço Direito
+        {"spine2", "r_shoulder"},
+        {"r_shoulder", "r_elbow"},
+        {"r_elbow", "r_hand"},
+        -- Perna Esquerda
+        {"pelvis", "l_thigh"},
+        {"l_thigh", "l_knee"},
+        -- Perna Direita
+        {"pelvis", "r_thigh"},
+        {"r_thigh", "r_knee"}
+    }
+
+    local boneIds = {
+        head = 31086,
+        neck = 39317,
+        spine2 = 24843,
+        spine1 = 24842,
+        spine0 = 23553,
+        pelvis = 11816,
+        l_shoulder = 45509,
+        l_elbow = 61163,
+        l_hand = 18905,
+        r_shoulder = 40269,
+        r_elbow = 28252,
+        r_hand = 57005,
+        l_thigh = 58271,
+        l_knee = 2108,
+        l_foot = 14201,
+        r_thigh = 51826,
+        r_knee = 36864,
+        r_foot = 52301
+    }
+
+    for _, bonePair in ipairs(bones) do
+        local b1 = GetPedBoneCoords(ped, boneIds[bonePair[1]], 0.0, 0.0, 0.0)
+        local b2 = GetPedBoneCoords(ped, boneIds[bonePair[2]], 0.0, 0.0, 0.0)
+        DrawLine(b1.x, b1.y, b1.z, b2.x, b2.y, b2.z, color.r, color.g, color.b, 255)
     end
 end
 
@@ -104,31 +270,37 @@ Citizen.CreateThread(function()
             sleep = 250 -- Lógica de atualização (4x por segundo)
             local activePlayers = GetActivePlayers()
             local cam = GetGameplayCamCoord()
-            
+
             for _, id in ipairs(activePlayers) do
                 if NetworkIsPlayerActive(id) then
                     local src = GetPlayerServerId(id)
                     local srcStr = tostring(src)
                     local ped = GetPlayerPed(id)
-                    
+
                     if ped ~= 0 and wall_users[srcStr] then
                         local coords = GetEntityCoords(ped, true)
                         local dist = #(coords - cam)
-                        
+
                         if dist <= walldistance then
                             local user = wall_users[srcStr]
                             local health = math.floor(GetEntityHealth(ped))
                             local armour = GetPedArmour(ped)
                             local weaponHash = GetSelectedPedWeapon(ped)
+                            local ammo = GetAmmoInPedWeapon(ped, weaponHash)
+                            local vehicle = GetVehiclePedIsIn(ped, false)
+                            local vehicleName = vehicle ~= 0 and GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))) or nil
                             local model = GetEntityModel(ped)
                             local invisible = not IsEntityVisible(ped)
-                            
+
                             -- Build Text Strings Once
                             local infoText = ("~w~[%s] %s - ~w~%s\n~w~Health:~g~ %d ~w~| Armour:~b~ %d"):format(
                                 user.citizenid or "N/A", src, user.name or "N/A", health, armour
                             )
-                            
+
                             local extraText = ""
+                            if user.job and localWallSettings.showJob then extraText = extraText .. "\n~y~Job: ~w~" .. user.job end
+                            if user.gang and localWallSettings.showGang then extraText = extraText .. "\n~p~Gang: ~w~" .. user.gang end
+                            if vehicleName and localWallSettings.showVehicle then extraText = extraText .. "\n~o~Veíc: ~w~" .. vehicleName end
                             if invisible then extraText = extraText .. "\n~r~INVISÍVEL~w~" end
                             if model ~= 1885233650 and model ~= -1667301416 then
                                 extraText = extraText .. "\n~w~Model: ~r~" .. model .. "~w~"
@@ -137,10 +309,10 @@ Citizen.CreateThread(function()
                             if user.found_principals and user.found_principals ~= "" then
                                 extraText = extraText .. "\n~w~[Princ: ~y~" .. user.found_principals .. "~w~]"
                             end
-                            if armas[tostring(weaponHash)] then
-                                extraText = extraText .. ("\n~w~ %s"):format(armas[tostring(weaponHash)]:upper())
+                            if Weapons[tostring(weaponHash)] and localWallSettings.showWeapon then
+                                extraText = extraText .. ("\n~w~ %s"):format(Weapons[tostring(weaponHash)]:upper())
                             end
-                            
+
                             -- Determine Color (Pre-calculada)
                             local color
                             if invisible then
@@ -152,13 +324,23 @@ Citizen.CreateThread(function()
                             else
                                 color = GetColor(user.default_color, {r=0, g=0, b=255})
                             end
-                            
+
                             playersData[src] = {
                                 ped = ped,
                                 coords = coords,
                                 infoText = infoText,
                                 extraText = extraText,
                                 color = color,
+                                health = health,
+                                armour = armour,
+                                name = user.name or "N/A",
+                                job = user.job,
+                                gang = user.gang,
+                                id = src,
+                                weapon = (Weapons[tostring(weaponHash)] or "Unknown") .. " [" .. ammo .. "]",
+                                vehicle = vehicleName,
+                                forward = GetEntityForwardVector(ped),
+                                dist = dist,
                                 visible = true
                             }
                         else
@@ -169,7 +351,7 @@ Citizen.CreateThread(function()
                     end
                 end
             end
-            
+
             -- Cleanup disconnected players from cache
             for src, _ in pairs(playersData) do
                 local playerIdx = GetPlayerFromServerId(src)
@@ -190,17 +372,43 @@ Citizen.CreateThread(function()
         if wall then
             sleep = 0
             local myCoords = GetEntityCoords(PlayerPedId(), true)
-            
+
             for src, data in pairs(playersData) do
                 if data.visible then
                     local targetPed = data.ped
-                    local targetCoords = GetEntityCoords(targetPed, true) -- Coords must stay in fast thread for smooth movement
-                    
-                    DrawText3D(targetCoords.x, targetCoords.y, targetCoords.z + 1.2, data.infoText, 255, 255, 255)
-                    DrawText3D(targetCoords.x, targetCoords.y, targetCoords.z + 0.8, data.extraText, 255, 255, 255)
-                    
+                    local targetCoords = GetEntityCoords(targetPed, true)
+
+                    if localWallSettings.style == "modern" then
+                        DrawModernESP(targetCoords, data, data.color, data.dist)
+                    else
+                        local zOffsetInfo = data.vehicle and 1.8 or 1.25
+                        local zOffsetExtra = data.vehicle and 1.4 or 0.85
+                        DrawText3D({coords = {targetCoords.x, targetCoords.y, targetCoords.z + zOffsetInfo}, text = data.infoText, r = 255, g = 255, b = 255, a = 255, scale = 0.28})
+                        DrawText3D({coords = {targetCoords.x, targetCoords.y, targetCoords.z + zOffsetExtra}, text = data.extraText, r = 255, g = 255, b = 255, a = 255, scale = 0.28})
+                    end
+
+                    if localWallSettings.skeleton then
+                        DrawSkeleton(targetPed, data.color)
+                    end
+
+                    -- Looking Direction Tracer (View Tracer)
+                    local headCoords = GetPedBoneCoords(targetPed, 31086, 0.0, 0.0, 0.0)
+                    headCoords = vector3(headCoords.x, headCoords.y, headCoords.z)
+                    local forwardCoords = headCoords + (data.forward * 2.0)
+                    DrawLine(headCoords.x, headCoords.y, headCoords.z, forwardCoords.x, forwardCoords.y, forwardCoords.z, 255, 255, 255, 255)
+
                     local c = data.color
-                    DrawLine(targetCoords.x, targetCoords.y, targetCoords.z, myCoords.x, myCoords.y, myCoords.z, c.r, c.g, c.b, 255)
+                    local startCoords
+                    if localWallSettings.tracer == "center" then
+                        startCoords = GetGameplayCamCoord()
+                    elseif localWallSettings.tracer == "top" then
+                        startCoords = vector3(myCoords.x, myCoords.y, myCoords.z + 2.0)
+                    else -- bottom
+                        startCoords = myCoords
+                    end
+
+                    local tracerTarget = GetPedBoneCoords(targetPed, 11816, 0.0, 0.0, 0.0) -- Pelvis
+                    DrawLine(tracerTarget.x, tracerTarget.y, tracerTarget.z, startCoords.x, startCoords.y, startCoords.z, c.r, c.g, c.b, 255)
                 end
             end
         end
@@ -214,7 +422,32 @@ end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetWallSettings", function(_data, cb)
     local results = lib.callback.await('mri_Qadmin:callback:GetWallSettings', false)
+    if results then
+        results.localSettings = localWallSettings
+    end
     cb(results or {})
+end)
+
+RegisterNUICallback("mri_Qadmin:client:SaveLocalWallSetting", function(data, cb)
+    if data and data.key then
+        local value = data.value
+        -- Extract value if it's an object from MriSelectSearch
+        if type(value) == 'table' then
+            value = value.value
+        end
+
+        -- Convert to number if it's a numeric setting (like font or style if numeric)
+        local numValue = tonumber(value)
+        if numValue then
+            value = numValue
+        end
+
+        localWallSettings[data.key] = value
+        SaveLocalSettings()
+        cb('ok')
+    else
+        cb('error')
+    end
 end)
 
 RegisterNUICallback("mri_Qadmin:server:SaveWallSetting", function(data, cb)

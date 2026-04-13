@@ -80,6 +80,8 @@ local function updateWallInfos(source, silent)
         local charInfo = Player.PlayerData.charinfo
         local name = charInfo.firstname .. " " .. charInfo.lastname
         wall_infos[srcStr].name = (name ~= nil and name ~= "") and name or "N/A"
+        wall_infos[srcStr].job = Player.PlayerData.job.label .. " (" .. Player.PlayerData.job.grade.name .. ")"
+        wall_infos[srcStr].gang = (Player.PlayerData.gang.name ~= "none") and (Player.PlayerData.gang.label .. " (" .. Player.PlayerData.gang.grade.name .. ")") or nil
         wall_infos[srcStr].wallstats = false
         local gColor, gPrincipals = GetPlayerESPColor(source)
         wall_infos[srcStr].group_color = gColor

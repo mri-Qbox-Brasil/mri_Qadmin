@@ -5,6 +5,7 @@ import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { Map as MapIcon, ShieldCheck, User, Skull, RefreshCcw, Settings, Sun, Moon, Map as MapTypeIcon, Globe, Grid } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
+import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
 import ScreenModal from '@/components/players/ScreenModal'
 import { cn } from '@/lib/utils'
 
@@ -85,42 +86,36 @@ export default function LiveMapPage() {
         fetchMarkers() // Trigger immediate data refresh
     }
 
+    const mapFilters: MriTabItem[] = [
+        { id: 'staff', label: t('livemap_filter_staff'), icon: ShieldCheck },
+        { id: 'players', label: t('livemap_filter_players'), icon: User },
+        { id: 'dead', label: t('livemap_filter_dead'), icon: Skull },
+    ]
+
+    const mapStyleTabs: MriTabItem[] = [
+        { id: 'atlas', label: t('livemap_style_atlas'), icon: MapTypeIcon },
+        { id: 'grid', label: t('livemap_style_grid'), icon: Grid },
+        { id: 'satellite', label: t('livemap_style_satellite'), icon: Globe },
+    ]
+
     return (
         <div className="h-full flex flex-col rounded-r-xl overflow-hidden">
             <MriPageHeader title={t('nav_livemap') || "Live Map"} icon={MapIcon}>
                 <div className="flex items-center gap-3">
-                    <div className="flex gap-2 bg-muted rounded-lg p-1 border border-border mt-[-1px]">
-                        <button
-                            onClick={() => setFilters(f => ({ ...f, staff: !f.staff }))}
-                            className={cn(
-                                "px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2",
-                                filters.staff ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <ShieldCheck className={cn("w-3.5 h-3.5 transition-colors", filters.staff ? "text-white" : "text-muted-foreground")} />
-                            {t('livemap_filter_staff')}
-                        </button>
-                        <button
-                            onClick={() => setFilters(f => ({ ...f, players: !f.players }))}
-                            className={cn(
-                                "px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2",
-                                filters.players ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <User className={cn("w-3.5 h-3.5 transition-colors", filters.players ? "text-white" : "text-muted-foreground")} />
-                            {t('livemap_filter_players')}
-                        </button>
-                        <button
-                            onClick={() => setFilters(f => ({ ...f, dead: !f.dead }))}
-                            className={cn(
-                                "px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2",
-                                filters.dead ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <Skull className={cn("w-3.5 h-3.5 transition-colors", filters.dead ? "text-white" : "text-muted-foreground")} />
-                            {t('livemap_filter_dead')}
-                        </button>
-                    </div>
+                    <MriTabs
+                        items={mapFilters}
+                        type="multiple"
+                        value={Object.entries(filters).filter(([, v]) => v).map(([k]) => k)}
+                        onChange={(val: string[]) => {
+                            const newFilters = { staff: false, players: false, dead: false }
+                            val.forEach((id: any) => {
+                                if (id === 'staff' || id === 'players' || id === 'dead') {
+                                    newFilters[id] = true
+                                }
+                            })
+                            setFilters(newFilters)
+                        }}
+                    />
                     <div className="relative">
                         {showSettings && (
                             <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border p-4 rounded-xl shadow-2xl z-50 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
@@ -140,32 +135,13 @@ export default function LiveMapPage() {
                                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                                         <MapTypeIcon size={12} /> {t('livemap_style')}
                                     </div>
-                                    <div className="flex bg-black/40 p-1 rounded-lg border border-white/5">
-                                        <MriButton
-                                            variant={mapType === 'atlas' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            className="flex-1 h-8 text-[10px] font-bold gap-1.5"
-                                            onClick={() => setMapType('atlas')}
-                                        >
-                                            <MapTypeIcon size={12} /> {t('livemap_style_atlas')}
-                                        </MriButton>
-                                        <MriButton
-                                            variant={mapType === 'grid' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            className="flex-1 h-8 text-[10px] font-bold gap-1.5"
-                                            onClick={() => setMapType('grid')}
-                                        >
-                                            <Grid size={12} /> {t('livemap_style_grid')}
-                                        </MriButton>
-                                        <MriButton
-                                            variant={mapType === 'satellite' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            className="flex-1 h-8 text-[10px] font-bold gap-1.5"
-                                            onClick={() => setMapType('satellite')}
-                                        >
-                                            <Globe size={12} /> {t('livemap_style_satellite')}
-                                        </MriButton>
-                                    </div>
+                                    <MriTabs
+                                        items={mapStyleTabs}
+                                        value={mapType}
+                                        onChange={(val) => setMapType(val)}
+                                        className="bg-black/40 border-white/5"
+                                        itemClassName="flex-1 h-8 text-[10px]"
+                                    />
                                 </div>
                             </div>
                         )}

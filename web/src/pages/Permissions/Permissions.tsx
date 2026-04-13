@@ -5,8 +5,8 @@ import { Shield, Key, Users, RefreshCw, Wand2, Sparkles } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 import AcesList from './components/AcesList'
 import PrincipalsList from './components/PrincipalsList'
-import { cn } from '@/lib/utils'
 import { useNui } from '@/context/NuiContext'
+import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import PermissionWizard from './components/PermissionWizard'
 
@@ -37,6 +37,11 @@ export default function Permissions() {
         setTimeout(handleRefresh, 1000)
     }
 
+    const permissionTabs: MriTabItem[] = [
+        { id: 'principals', label: t('permissions_inheritance'), icon: Users },
+        { id: 'aces', label: t('permissions_aces'), icon: Key },
+    ]
+
     return (
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader
@@ -46,28 +51,11 @@ export default function Permissions() {
                 countLabel={activeTab === 'principals' ? t('permissions_inheritance') : t('permissions_aces')}
             >
                 <div className="flex items-center gap-3">
-                    <div className="flex gap-2 bg-muted rounded-lg p-1 border border-border">
-                        <button
-                            onClick={() => setActiveTab('principals')}
-                            className={cn(
-                                "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-2",
-                                activeTab === 'principals' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <Users className="w-3.5 h-3.5" />
-                            {t('permissions_inheritance')}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('aces')}
-                            className={cn(
-                                "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-2",
-                                activeTab === 'aces' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <Key className="w-3.5 h-3.5" />
-                            {t('permissions_aces')}
-                        </button>
-                    </div>
+                    <MriTabs
+                        items={permissionTabs}
+                        value={activeTab}
+                        onChange={setActiveTab}
+                    />
 
                     <div className="flex items-center gap-2">
                         <MriExpandableSearch
