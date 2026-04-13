@@ -63,12 +63,6 @@ end
 -- EVENTS & CALLBACKS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-RegisterNetEvent('onResourceStart', function(resourceName)
-    if GetCurrentResourceName() == resourceName then
-        LoadPermissions()
-    end
-end)
-
 RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
     local src = source
     local player = QBCore.Functions.GetPlayer(src)
@@ -828,4 +822,8 @@ lib.addCommand('mri_qadmin.addpermission', {
             end
         end
     end)
+end)
+
+RegisterNetEvent('mri_Qadmin:db:ready', function()
+    LoadPermissions()
 end)

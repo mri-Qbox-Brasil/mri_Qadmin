@@ -11,12 +11,6 @@ local function notifyPlayers()
     end
 end
 
-RegisterNetEvent("onResourceStart", function(resourceName)
-    if GetCurrentResourceName() == resourceName then
-        messages = MySQL.query.await("SELECT * FROM mri_qadmin_chat", {}) or {}
-    end
-end)
-
 RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, fullname)
     local src = source
     -- Allow if admin OR has specific staffchat permission
@@ -99,4 +93,8 @@ end)
 lib.callback.register("mri_Qadmin:callback:GetMessages", function(source)
     if not IsPlayerAceAllowed(source, 'qadmin.page.staffchat') then return {} end
     return messages
+end)
+
+RegisterNetEvent('mri_Qadmin:db:ready', function()
+    messages = MySQL.query.await("SELECT * FROM mri_qadmin_chat", {}) or {}
 end)
