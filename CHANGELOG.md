@@ -1,3 +1,20 @@
+# [1.5.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.4.3...v1.5.0) (2026-04-13)
+
+
+### Bug Fixes
+
+* problemas de permissões duplicadas ([a09c83f](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/a09c83fe8e3ce42929bab713023e001985976d46))
+
+
+### Features
+
+* melhora performance de queries ([bb38ae5](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/bb38ae583bc62045a0f87174c733f242fe282f51))
+* melhora performance do wall ([34cc968](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/34cc968a6dcd21a15730a9f31ea3495aa713f65b))
+* melhora segurança ao enviar dados ([5f712d2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/5f712d295600437c4c03e677cb720790d1f75730))
+* melhorias de performance e segurança em ações/inventory_callback ([25db848](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/25db8481e16a86bef2a98343efe934b21fd8b03c))
+* melhorias gerais de performance no client ([02ae38e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/02ae38eadbd1d3dd6748b29e1e2f098a5824c560))
+* melhorias no processamento de itens ([152bd40](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/152bd4053c562aecc9af1fc5c9f60e8cc5fa99ec))
+
 ## [1.4.3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.4.2...v1.4.3) (2026-04-13)
 
 
