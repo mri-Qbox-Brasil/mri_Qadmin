@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.6.1...v1.7.0) (2026-04-13)
+
+
+### Features
+
+* **web:** unificação do cabeçalho de ações e implementação do filtro "Tudo" ([198fdc3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/198fdc3491cbab8a9f9d84bed6e1388dd4bd2d60))
+
 ## [1.6.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.6.0...v1.6.1) (2026-04-13)
 
 
