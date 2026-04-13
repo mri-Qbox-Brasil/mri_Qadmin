@@ -84,88 +84,129 @@ function DrawText3D(x,y,z, text, r,g,b)
 end
 
 
-local function ParseRGB(str)
-    if not str or type(str) ~= "string" then return 0, 0, 255 end
+local playersData = {}
+local lastCacheUpdate = 0
+
+-- Pre-parse RGB strings into tables to avoid regex in draw loop
+local function GetColor(str, default)
+    if not str or str == "" then return default end
     local r, g, b = str:match("(%d+),%s*(%d+),%s*(%d+)")
-    return tonumber(r) or 0, tonumber(g) or 0, tonumber(b) or 255
+    if r and g and b then
+        return {r = tonumber(r), g = tonumber(g), b = tonumber(b)}
+    end
+    return default
 end
 
-Citizen.CreateThread(
-    function()
-        while true do
-            local time = 2000
-            if wall then
-                local ped_id = PlayerPedId()
-                local c1 = GetEntityCoords(ped_id, true)
-                local cam = GetGameplayCamCoord()
-
-                for _, id in ipairs(GetActivePlayers()) do
-                    if NetworkIsPlayerActive(id) then
-                        local src = GetPlayerServerId(id)
-                        local nped_id = GetPlayerPed(id)
-
-                        -- Use string key for looku
-                        local srcStr = tostring(src)
-
-                        if nped_id ~= -1 and wall_users[srcStr] ~= nil then
-                            local c2 = GetEntityCoords(nped_id, true)
-                            if #(c2 - cam) <= walldistance then
-                                local armour = GetPedArmour(nped_id)
-                                local health = math.floor(GetEntityHealth(nped_id))
-                                local armahash = GetSelectedPedWeapon(nped_id)
-                                local skin = GetEntityModel(nped_id)
-                                local inv = not IsEntityVisible(nped_id)
-
-                                local defaultText = "~w~[" .. (wall_users[srcStr].citizenid or "N/A") .. "] " .. src .. " - ~w~" .. (wall_users[srcStr].name or "N/A") .. "\n~w~Health:~g~ " .. health .. " ~w~| Armour:~b~ " .. armour .. "~w~"
-                                local extraText = "\n"
-
-                                if inv then
-                                    extraText = extraText .. "\n~r~INVISÍVEL~w~"
-                                end
-
-                                if skin ~= 1885233650 and skin ~= -1667301416 then
-                                    extraText = extraText .. "\n~w~Model: ~r~" .. skin .. "~w~"
-                                end
-
-                                if wall_users[srcStr].wallstats == true then
-                                    extraText = extraText .. "\n~w~[~g~WALL ON~w~]"
-                                end
-
-                                -- Debug Principal Display
-                                if wall_users[srcStr].found_principals and wall_users[srcStr].found_principals ~= "" then
-                                    extraText = extraText .. "\n~w~[Princ: ~y~" .. wall_users[srcStr].found_principals .. "~w~]"
-                                end
-
-                                if armas[tostring(armahash)] then
-                                    extraText = extraText .. "\n~w~ " .. (armas[tostring(armahash)] or "Arma Desconhecida"):upper()
-                                end
-
-                                DrawText3D(c2.x, c2.y, c2.z + 1.2, defaultText)
-                                DrawText3D(c2.x, c2.y, c2.z + 0.8, extraText)
-
-                                 -- Dynamic Color Selection
-                                 local r, g, b
-
-                                if inv then -- Invisivel (Prioridade Máxima)
-                                    r, g, b = ParseRGB(wall_users[srcStr].inv_color or "255, 255, 0")
-                                elseif health < 101 then -- Morto
-                                    r, g, b = ParseRGB(wall_users[srcStr].dead_color or "255, 0, 0")
-                                elseif wall_users[srcStr].group_color then -- Cor de Permissão
-                                    r, g, b = ParseRGB(wall_users[srcStr].group_color)
-                                else -- Vivo / Padrão
-                                    r, g, b = ParseRGB(wall_users[srcStr].default_color or "0, 0, 255")
-                                end
-                                DrawLine(c2.x, c2.y, c2.z, c1.x, c1.y, c1.z, r, g, b, 255)
+Citizen.CreateThread(function()
+    while true do
+        local sleep = 1000
+        if wall then
+            sleep = 250 -- Lógica de atualização (4x por segundo)
+            local activePlayers = GetActivePlayers()
+            local cam = GetGameplayCamCoord()
+            
+            for _, id in ipairs(activePlayers) do
+                if NetworkIsPlayerActive(id) then
+                    local src = GetPlayerServerId(id)
+                    local srcStr = tostring(src)
+                    local ped = GetPlayerPed(id)
+                    
+                    if ped ~= 0 and wall_users[srcStr] then
+                        local coords = GetEntityCoords(ped, true)
+                        local dist = #(coords - cam)
+                        
+                        if dist <= walldistance then
+                            local user = wall_users[srcStr]
+                            local health = math.floor(GetEntityHealth(ped))
+                            local armour = GetPedArmour(ped)
+                            local weaponHash = GetSelectedPedWeapon(ped)
+                            local model = GetEntityModel(ped)
+                            local invisible = not IsEntityVisible(ped)
+                            
+                            -- Build Text Strings Once
+                            local infoText = ("~w~[%s] %s - ~w~%s\n~w~Health:~g~ %d ~w~| Armour:~b~ %d"):format(
+                                user.citizenid or "N/A", src, user.name or "N/A", health, armour
+                            )
+                            
+                            local extraText = ""
+                            if invisible then extraText = extraText .. "\n~r~INVISÍVEL~w~" end
+                            if model ~= 1885233650 and model ~= -1667301416 then
+                                extraText = extraText .. "\n~w~Model: ~r~" .. model .. "~w~"
                             end
+                            if user.wallstats then extraText = extraText .. "\n~w~[~g~WALL ON~w~]" end
+                            if user.found_principals and user.found_principals ~= "" then
+                                extraText = extraText .. "\n~w~[Princ: ~y~" .. user.found_principals .. "~w~]"
+                            end
+                            if armas[tostring(weaponHash)] then
+                                extraText = extraText .. ("\n~w~ %s"):format(armas[tostring(weaponHash)]:upper())
+                            end
+                            
+                            -- Determine Color (Pre-calculada)
+                            local color
+                            if invisible then
+                                color = GetColor(user.inv_color, {r=255, g=255, b=0})
+                            elseif health < 101 then
+                                color = GetColor(user.dead_color, {r=255, g=0, b=0})
+                            elseif user.group_color then
+                                color = GetColor(user.group_color, {r=0, g=0, b=255})
+                            else
+                                color = GetColor(user.default_color, {r=0, g=0, b=255})
+                            end
+                            
+                            playersData[src] = {
+                                ped = ped,
+                                coords = coords,
+                                infoText = infoText,
+                                extraText = extraText,
+                                color = color,
+                                visible = true
+                            }
+                        else
+                            playersData[src] = nil
                         end
+                    else
+                        playersData[src] = nil
                     end
                 end
-                time = 2
             end
-            Wait(time)
+            
+            -- Cleanup disconnected players from cache
+            for src, _ in pairs(playersData) do
+                local playerIdx = GetPlayerFromServerId(src)
+                if playerIdx == -1 then playersData[src] = nil end
+            end
+        else
+            playersData = {}
+            sleep = 1000
         end
+        Wait(sleep)
     end
-)
+end)
+
+-- Rendering Thread (High frequency, low logic)
+Citizen.CreateThread(function()
+    while true do
+        local sleep = 1000
+        if wall then
+            sleep = 0
+            local myCoords = GetEntityCoords(PlayerPedId(), true)
+            
+            for src, data in pairs(playersData) do
+                if data.visible then
+                    local targetPed = data.ped
+                    local targetCoords = GetEntityCoords(targetPed, true) -- Coords must stay in fast thread for smooth movement
+                    
+                    DrawText3D(targetCoords.x, targetCoords.y, targetCoords.z + 1.2, data.infoText, 255, 255, 255)
+                    DrawText3D(targetCoords.x, targetCoords.y, targetCoords.z + 0.8, data.extraText, 255, 255, 255)
+                    
+                    local c = data.color
+                    DrawLine(targetCoords.x, targetCoords.y, targetCoords.z, myCoords.x, myCoords.y, myCoords.z, c.r, c.g, c.b, 255)
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)
 
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- NUI CALLBACKS
