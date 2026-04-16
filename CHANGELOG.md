@@ -1,3 +1,11 @@
+# [1.8.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.7.0...v1.8.0) (2026-04-16)
+
+
+### Features
+
+* configurações do mapa no CDN ([d870116](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/d8701160a23109d0bb1114342979986d0181fa9a))
+* map tiles no CDN ([81f9b0e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/81f9b0e80927f09c143558b3c179d8c1ed7bdb08))
+
 # [1.7.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.6.1...v1.7.0) (2026-04-13)
 
 
