@@ -94,9 +94,10 @@ export default function App() {
         if (isEnvBrowser()) {
             setGameData(MOCK_GAME_DATA)
             setPlayers(MOCK_PLAYERS)
+            setSettings({ MapBaseUrl: 'https://assets.mriqbox.com.br/admin/map/' }) // Mock CDN for browser dev
             setMyPermissions(['qadmin.page.*', 'action.*']) // Full access to pages and actions in dev
         }
-    }, [setGameData, setPlayers, setMyPermissions])
+    }, [setGameData, setPlayers, setMyPermissions, setSettings])
 
     // Correct implementation:
     const { setPermissionRefreshTrigger } = useAppState()

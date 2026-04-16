@@ -239,7 +239,7 @@ export default function LiveMap({
         const baseUrl = settings.MapBaseUrl
         if (baseUrl && baseUrl.trim() !== "") {
             const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
-            return `${cleanBase}map/tiles_${mapType}/{z}/{x}/{y}.webp`
+            return `${cleanBase}tiles_${mapType}/{z}/{x}/{y}.webp`
         }
         return `./map/tiles_${mapType}/{z}/{x}/{y}.webp`
     }, [settings.MapBaseUrl, mapType])

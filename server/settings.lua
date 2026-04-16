@@ -58,15 +58,14 @@ end
 _G.GetPrimitiveSettings = GetPrimitiveSettings
 
 -- API for NUI to read settings (only primitive ones)
-lib.callback.register('mri_Qadmin:callback:GetSettings', function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.settings') then return {} end
+lib.callback.register('mri_Qadmin:callback:GetSettings', function(_)
     return GetPrimitiveSettings()
 end)
 
 -- API for NUI to update settings
 RegisterNetEvent('mri_Qadmin:server:UpdateSetting', function(key, value)
     local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.settings') then return end
+    if not HasPerms(src, 'qadmin.page.settings') then return end
 
     local t = type(value)
 
