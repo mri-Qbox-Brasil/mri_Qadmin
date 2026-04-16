@@ -60,7 +60,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
 end)
 
 RegisterNUICallback('getServerInfo', function(_, cb)
-    local serverInfo = lib.callback.await('mri_Qadmin:callback:GetServerInfo', false)
+    local serverInfo = lib.callback.await('mri_Qadmin:callback:GetServerInfo')
     if not serverInfo then
         Debug("Erro: Nenhum dado recebido do servidor.")
         cb({ error = "Erro ao carregar informações do servidor." })
@@ -98,7 +98,7 @@ RegisterNUICallback('getTranslations', function(data, cb)
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetBans", function(_data, cb)
-    local bans = lib.callback.await('mri_Qadmin:callback:GetBans', false)
+    local bans = lib.callback.await('mri_Qadmin:callback:GetBans')
     cb(bans)
 end)
 
@@ -181,7 +181,7 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
 end)
 
 RegisterNUICallback("update_vehicle_stock", function(data, cb)
-    local success = lib.callback.await("mri_Qadmin:server:UpdateVehicleStock", false, "update_vehicle_stock", data.selectedData)
+    local success = lib.callback.await("mri_Qadmin:server:UpdateVehicleStock", "update_vehicle_stock", data.selectedData)
     cb({ status = success and "ok" or "error" })
 end)
 
@@ -213,36 +213,36 @@ end)
 
 -- Change resource state
 RegisterNUICallback("setResourceState", function(data, cb)
-	local resources = lib.callback.await('mri_Qadmin:callback:ChangeResourceState', false, data)
+	local resources = lib.callback.await('mri_Qadmin:callback:ChangeResourceState', data)
 	cb(resources)
 end)
 
 -- Get players
 RegisterNUICallback("getPlayers", function(data, cb)
-	local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', false, data.page, data.limit, data.search)
+	local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', data.page, data.limit, data.search)
 	cb(players)
 end)
 
 -- Get Groups
 RegisterNUICallback("getGroupsData", function(_, cb)
-	local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData', false)
+	local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData')
 	cb(groups)
 end)
 
 -- Get Player Coords
 RegisterNUICallback("GetPlayerCoords", function(data, cb)
-    local coords = lib.callback.await('mri_Qadmin:callback:GetPlayerCoords', false, data.targetIds)
+    local coords = lib.callback.await('mri_Qadmin:callback:GetPlayerCoords', data.targetIds)
     cb(coords)
 end)
 
 RegisterNUICallback("GetAllPlayerCoords", function(_, cb)
-    local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords', false)
+    local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords')
     cb(coords)
 end)
 
 
 RegisterNUICallback("GetPlayerVitals", function(data, cb)
-    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerVitals', false, data.targetId)
+    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerVitals', data.targetId)
     cb(res)
 end)
 
@@ -287,7 +287,7 @@ RegisterNetEvent('mri_Qadmin:client:UpdateResourceState', function(data)
 end)
 
 RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
-    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
+    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
     SendNUIMessage({
         action = "updatePermissions",
         data = perms or {}
@@ -365,17 +365,17 @@ end)
 
 -- Permissions Callbacks Matcher
 RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(_, cb)
-    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
+    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
     cb(perms or {})
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(_, cb)
-    local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals', false)
+    local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals')
     cb(principals or {})
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetAces", function(_, cb)
-    local aces = lib.callback.await('mri_Qadmin:callback:GetAces', false)
+    local aces = lib.callback.await('mri_Qadmin:callback:GetAces')
     cb(aces or {})
 end)
 
@@ -390,7 +390,7 @@ RegisterNUICallback("toggle_ace", function(data, cb)
 end)
 
 RegisterNUICallback("add_principal", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:AddPrincipal', data.child, data.parent, data.description)
+    TriggerServerEvent('mri_Qadmin:server:AddPrincipal', data.child, data.parent)
     cb('ok')
 end)
 
@@ -400,7 +400,7 @@ RegisterNUICallback("remove_principal", function(data, cb)
 end)
 
 RegisterNUICallback("add_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:AddAce', data.principal, data.object, data.allow, data.description)
+    TriggerServerEvent('mri_Qadmin:server:AddAce', data.principal, data.object, data.allow)
     cb('ok')
 end)
 
@@ -420,7 +420,7 @@ RegisterNUICallback("mri_Qadmin:server:GiveVehicle", function(data, cb)
 end)
 
 RegisterNUICallback("getSettings", function(_, cb)
-    local settings = lib.callback.await('mri_Qadmin:callback:GetSettings', false)
+    local settings = lib.callback.await('mri_Qadmin:callback:GetSettings')
     cb(settings or {})
 end)
 

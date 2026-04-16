@@ -274,11 +274,13 @@ RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow, 
 
     -- Check if exists
     local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {principal, object})
+    local finalDesc = description or "N/A"
+    
     if exists then
         Debug(('[mri_Qadmin] Ace already exists (ID: %s). Updating allow state and description.'):format(exists.id))
-        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ?, description = ? WHERE id = ?', {allow and 1 or 0, description, exists.id})
+        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ?, description = ? WHERE id = ?', {allow and 1 or 0, finalDesc, exists.id})
     else
-        MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {principal, object, allow and 1 or 0, description})
+        MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {principal, object, allow and 1 or 0, finalDesc})
     end
 
     local allowState = allow and true or false
@@ -353,13 +355,14 @@ RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, descr
     -- SAFETY: Normalize identifiers
     local normalizedChild = NormalizeIdentifier(child)
     local normalizedPrincipal = NormalizePrincipal(child)
+    local finalDesc = description or "N/A"
 
     -- Check if normalized principal already exists in DB to prevent duplicates
     local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {normalizedChild, parent})
     if exists then
         Debug('[mri_Qadmin] Principal already exists in DB (normalized). skipping insert.')
     else
-        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedChild, parent, description})
+        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedChild, parent, finalDesc})
     end
 
     lib.addPrincipal(normalizedPrincipal, parent)
@@ -505,12 +508,22 @@ RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
 end)
 
 local function verifyAndAdd(group, ace, allow, description)
+    if type(ace) == 'table' then
+        local count = 0
+        for _, v in ipairs(ace) do
+            if verifyAndAdd(group, v, allow, description) then
+                count = count + 1
+            end
+        end
+        return count > 0
+    end
+
     local allowInt = (allow == 1 or allow == true) and 1 or 0
     local allowState = (allowInt == 1)
 
     local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {group, ace})
     if not exists then
-         MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {group, ace, allowInt, description})
+         MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {group, ace, allowInt, description or "N/A"})
          lib.addAce(group, ace, allowState)
          return true
     else

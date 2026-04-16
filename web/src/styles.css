@@ -12,9 +12,10 @@
         --card-foreground: 0 0% 98%;
         --popover: 240 10% 6%;
         --popover-foreground: 0 0% 98%;
-        --primary: 160 100% 45%;
-        /* #00E396 - Neon Green */
-        --primary-foreground: 144 100% 10%;
+        --primary: 217 91% 60%;
+        /* #3b82f6 - Vibrant Blue */
+        --primary-rgb: 59, 130, 246;
+        --primary-foreground: 222 47% 11%;
         /* Dark text on neon green */
         --secondary: 240 5% 15%;
         /* Darker secondary */
@@ -154,11 +155,19 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
+    @apply bg-primary/20 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
+    @apply bg-primary/40;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full hover:bg-primary/50;
 }
 
 @layer utilities {

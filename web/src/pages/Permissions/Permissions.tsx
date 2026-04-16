@@ -19,10 +19,16 @@ export default function Permissions() {
     const [itemCount, setItemCount] = useState(0)
     const [showSeedConfirm, setShowSeedConfirm] = useState(false)
     const [showWizard, setShowWizard] = useState(false)
+    const [selectedPrincipal, setSelectedPrincipal] = useState<string>('group.admin')
 
     const handleRefresh = useCallback(() => {
         setRefreshTrigger(prev => prev + 1)
     }, [])
+
+    const handleRequestEditAce = (principal: string) => {
+        setSelectedPrincipal(principal)
+        setActiveTab('aces')
+    }
 
     useEffect(() => {
         const onRefresh = () => handleRefresh()
@@ -97,26 +103,41 @@ export default function Permissions() {
                 </div>
             </MriPageHeader>
 
-            <div className="flex-1 overflow-hidden p-6 flex flex-col">
-                <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
+            <div className="flex-1 overflow-hidden p-6 flex flex-col relative" key={activeTab}>
+                {/* Background decorative elements */}
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10" />
+
+                <div className="max-w-6xl mx-auto w-full h-full flex flex-col">
                     {activeTab === 'principals' ? (
-                        <div className="flex flex-col h-full space-y-4 overflow-hidden">
-                            <div>
-                                <h2 className="text-lg font-bold">{t('permissions_inheritance_title')}</h2>
+                        <div className="flex flex-col h-full space-y-6 overflow-hidden">
+                            <div className="px-1">
+                                <h2 className="text-2xl font-bold tracking-tight">{t('permissions_inheritance_title')}</h2>
                                 <p className="text-muted-foreground text-sm">{t('permissions_inheritance_desc')}</p>
                             </div>
                             <div className="flex-1 overflow-hidden">
-                                <PrincipalsList searchQuery={search} refreshTrigger={refreshTrigger} onCountChange={setItemCount} />
+                                <PrincipalsList 
+                                    searchQuery={search} 
+                                    refreshTrigger={refreshTrigger} 
+                                    onCountChange={setItemCount} 
+                                    onRequestEdit={handleRequestEditAce}
+                                />
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col h-full space-y-4 overflow-hidden">
-                            <div>
-                                <h2 className="text-lg font-bold">{t('permissions_aces_title')}</h2>
+                        <div className="flex flex-col h-full space-y-6 overflow-hidden">
+                            <div className="px-1">
+                                <h2 className="text-2xl font-bold tracking-tight">{t('permissions_aces_title')}</h2>
                                 <p className="text-muted-foreground text-sm">{t('permissions_aces_desc')}</p>
                             </div>
                             <div className="flex-1 overflow-hidden">
-                                <AcesList searchQuery={search} refreshTrigger={refreshTrigger} onCountChange={setItemCount} />
+                                <AcesList 
+                                    searchQuery={search} 
+                                    refreshTrigger={refreshTrigger} 
+                                    onCountChange={setItemCount} 
+                                    selectedPrincipal={selectedPrincipal}
+                                    setSelectedPrincipal={setSelectedPrincipal}
+                                />
                             </div>
                         </div>
                     )}

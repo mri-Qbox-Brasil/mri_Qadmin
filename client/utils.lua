@@ -23,7 +23,7 @@ end
 
 --- @param perms table
 function CheckPerms(perms)
-	return lib.callback.await('mri_Qadmin:callback:CheckPerms', false, perms)
+	return lib.callback.await('mri_Qadmin:callback:CheckPerms', perms)
 end
 
 function CheckDataFromKey(key)

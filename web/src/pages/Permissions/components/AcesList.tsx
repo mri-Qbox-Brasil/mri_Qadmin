@@ -1,17 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { MriButton, MriInput } from '@mriqbox/ui-kit'
-import { Trash2, Plus, ChevronDown, ChevronRight, Shield } from 'lucide-react'
+import { Trash2, Plus, Shield, Search, Info, Settings, LayoutGrid } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
-import Spinner from '@/components/Spinner'
 import { isEnvBrowser } from '@/utils/misc'
 import { MOCK_ACES } from '@/utils/mockData'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { MriCreatableCombobox } from '@mriqbox/ui-kit'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
-import { Virtuoso } from 'react-virtuoso'
 import PermissionsSkeleton from '@/components/skeletons/PermissionsSkeleton'
 import { cn } from '@/lib/utils'
+import { getPermissionInfo, CATEGORIES } from '../utils/categorization'
+import PermissionCard from './PermissionCard'
 
 interface Ace {
     id: number
@@ -21,89 +21,30 @@ interface Ace {
     description?: string
 }
 
-function AceGroup({ principal, items, onRemove, onToggle, players }: { principal: string, items: Ace[], onRemove: (a: Ace) => void, onToggle: (a: Ace) => void, players: any[] }) {
-    const [isOpen, setIsOpen] = useState(false)
-    const { t } = useI18n()
-
-    // Resolve name if principal is a player identifier
-    const player = players.find(p => principal.includes(p.license) || p.license === principal || principal.includes(p.citizenid))
-    const label = player ? `${player.name} (${principal})` : principal
-
-    // Aggregate descriptions
-    const descriptions = items.map(p => p.description).filter(Boolean).join(', ')
-
-    return (
-        <div className="border border-border rounded-md bg-card overflow-hidden">
-            <div
-                className="flex items-center gap-2 p-3 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                <Shield className="w-4 h-4 text-primary" />
-                <span className="font-mono text-sm font-medium">{label}</span>
-                {descriptions && <span className="text-xs text-muted-foreground italic truncate max-w-[200px]">- {descriptions}</span>}
-                <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full ml-auto shrink-0">
-                    {items.length} {t('permissions_aces').toLowerCase()}
-                </span>
-            </div>
-
-            {isOpen && (
-                <div className="divide-y divide-border/50">
-                    {items.map(ace => {
-                        const isPending = ace.id > 10000000000
-                        return (
-                            <div key={ace.id} className={`flex items-center gap-4 p-3 pl-9 hover:bg-muted/20 text-sm ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); if (!isPending) onToggle(ace) }}
-                                    disabled={isPending}
-                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded transition-colors ${ace.allow
-                                        ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                                        : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                                        } ${isPending ? 'group-hover:bg-transparent' : ''}`}
-                                >
-                                    {ace.allow ? t('permissions_allow') : t('permissions_deny')}
-                                </button>
-                                <div className="flex flex-col">
-                                    <span className="font-mono">{ace.object}</span>
-                                    {ace.description && <span className="text-muted-foreground text-xs italic">{ace.description}</span>}
-                                    {isPending && <span className="text-[10px] italic opacity-70">{t('permissions_syncing')}</span>}
-                                </div>
-
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); if (!isPending) onRemove(ace); }}
-                                    className={`ml-auto transition-colors ${isPending ? 'text-muted-foreground/30' : 'text-muted-foreground hover:text-red-500'}`}
-                                    disabled={isPending}
-                                >
-                                    {isPending ? <Spinner size="sm" /> : <Trash2 className="w-4 h-4" />}
-                                </button>
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
-        </div>
-    )
-}
-
-export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCountChange }: { searchQuery?: string, refreshTrigger?: number, onCountChange?: (n: number) => void }) {
+export default function AcesList({ 
+    searchQuery = '', 
+    refreshTrigger = 0, 
+    onCountChange,
+    selectedPrincipal,
+    setSelectedPrincipal
+}: { 
+    searchQuery?: string, 
+    refreshTrigger?: number, 
+    onCountChange?: (n: number) => void,
+    selectedPrincipal: string,
+    setSelectedPrincipal: (val: string) => void
+}) {
     const { sendNui } = useNui()
     const { t } = useI18n()
     const { players } = useAppState()
     const [aces, setAces] = useState<Ace[]>([])
     const [loading, setLoading] = useState(false)
-    const [newAce, setNewAce] = useState({ principal: '', object: '', allow: 1, description: '' })
-    const [allowType, setAllowType] = useState(1)
+    const [newAce, setNewAce] = useState({ object: '', allow: 1, description: '' })
 
     const [confirm, setConfirm] = useState<{
-        type: "add" | "remove";
+        type: "add" | "remove" | "toggle";
         ace?: Ace;
     } | null>(null);
-
-    // Correctly report count to parent when aces change
-    useEffect(() => {
-        onCountChange?.(aces.length);
-    }, [aces, onCountChange]);
-
 
     const fetchAces = useCallback(async () => {
         setLoading(true);
@@ -118,7 +59,6 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
             const data = await sendNui("mri_Qadmin:callback:GetAces");
             const list = Array.isArray(data) ? data : [];
             setAces(list);
-            // onCountChange handled in useEffect
         } catch (e) {
             console.error(e);
         } finally {
@@ -130,224 +70,206 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
         fetchAces();
     }, [refreshTrigger, fetchAces]);
 
-    const handleAdd = async () => {
-        if (!newAce.principal || !newAce.object) return;
-        setConfirm({ type: "add" });
-    };
+    useEffect(() => {
+        onCountChange?.(aces.length);
+    }, [aces, onCountChange]);
 
-    const handleRemove = async (ace: Ace) => {
-        setConfirm({ type: "remove", ace });
+    const handleAdd = async () => {
+        if (!selectedPrincipal || !newAce.object) return;
+        setConfirm({ type: "add" });
     };
 
     const handleToggle = async (ace: Ace) => {
         // Optimistic update
+        const newAllow = ace.allow ? 0 : 1;
         setAces((prev) =>
-            prev.map((a) => (a.id === ace.id ? { ...a, allow: a.allow ? 0 : 1 } : a)),
+            prev.map((a) => (a.id === ace.id ? { ...a, allow: newAllow } : a)),
         );
 
         if (isEnvBrowser()) return;
-
         await sendNui('toggle_ace', { id: ace.id })
     }
 
     const executeAction = async () => {
         if (!confirm) return;
 
-        if (isEnvBrowser()) {
-            if (confirm.type === 'add') {
-                const mockId = Math.floor(Math.random() * 10000)
-                const newItem = {
-                    id: mockId,
-                    principal: newAce.principal,
-                    object: newAce.object,
-                    allow: allowType,
-                    description: newAce.description
-                }
-                setAces([...aces, newItem])
-                setNewAce({ principal: '', object: '', allow: 1, description: '' })
-            } else if (confirm.type === 'remove' && confirm.ace) {
-                setAces(aces.filter(a => a.id !== confirm.ace?.id))
-            }
-            setConfirm(null)
-            return
-        }
-
         if (confirm.type === 'add') {
-            // Optimistic Add
-            const tempId = Date.now()
             const newItem = {
-                id: tempId,
-                principal: newAce.principal,
+                id: Date.now(),
+                principal: selectedPrincipal,
                 object: newAce.object,
-                allow: allowType === 1 ? 1 : 0,
+                allow: newAce.allow ? 1 : 0,
                 description: newAce.description
             }
 
-            // Optimistic state update with deduplication check?
-            // Actually just append, let the list render dedupe it or let server sync fix it.
             setAces(prev => [...prev, newItem])
-            setNewAce({ principal: '', object: '', allow: 1, description: '' })
+            setNewAce({ object: '', allow: 1, description: '' })
 
-            await sendNui('add_ace', {
-                principal: newAce.principal,
-                object: newAce.object,
-                allow: allowType === 1,
-                description: newAce.description
-            })
+            if (!isEnvBrowser()) {
+                await sendNui('add_ace', {
+                    principal: selectedPrincipal,
+                    object: newAce.object,
+                    allow: newAce.allow === 1
+                })
+            }
         } else if (confirm.type === 'remove' && confirm.ace) {
-            // Optimistic Remove
             const removeId = confirm.ace.id
             setAces(prev => prev.filter(a => a.id !== removeId))
-
-            await sendNui("remove_ace", { id: confirm.ace.id });
+            if (!isEnvBrowser()) await sendNui("remove_ace", { id: removeId });
         }
 
         setConfirm(null)
     }
 
+    // Filter and Group
+    const filteredAces = useMemo(() => {
+        let list = aces.filter(a => a.principal === selectedPrincipal);
+        if (searchQuery) {
+            const s = searchQuery.toLowerCase();
+            list = list.filter(a => 
+                a.object.toLowerCase().includes(s) || 
+                (a.description && a.description.toLowerCase().includes(s))
+            );
+        }
+        return list;
+    }, [aces, selectedPrincipal, searchQuery]);
+
+    const categorizedAces = useMemo(() => {
+        const sections: Ace[] = [];
+        const actions: Record<string, Ace[]> = {};
+
+        filteredAces.forEach(ace => {
+            const info = getPermissionInfo(ace.object);
+            if (ace.object.startsWith('qadmin.page.')) {
+                sections.push(ace);
+            } else {
+                if (!actions[info.category]) actions[info.category] = [];
+                actions[info.category].push(ace);
+            }
+        });
+
+        return { sections, actions };
+    }, [filteredAces]);
+
+    const principalOptions = useMemo(() => {
+        const acePrincipals = Array.from(new Set(aces.map(a => a.principal)));
+        const playerPrincipals = players.map(p => p.license);
+        
+        const combined = Array.from(new Set([
+            'group.admin',
+            'group.mod',
+            ...acePrincipals,
+            ...playerPrincipals
+        ]));
+
+        return combined.map(u => {
+            const playerInfo = players.find(p => p.license === u);
+            return { 
+                label: playerInfo ? `${playerInfo.name} (${u})` : u, 
+                value: u 
+            };
+        });
+    }, [aces, players]);
+
+    if (loading && aces.length === 0) return <PermissionsSkeleton />;
+
     return (
-        <div className="flex flex-col h-full space-y-4">
-            <div className="bg-card p-4 rounded-lg border border-border shrink-0 grid grid-cols-12 gap-3 items-end shadow-sm">
-                <div className="col-span-12 lg:col-span-4">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_principal_label')}</label>
+        <div className="flex flex-col h-full space-y-6">
+            {/* Header / Selector */}
+            <div className="flex flex-col md:flex-row items-start md:items-end gap-6 bg-card/30 p-6 rounded-2xl border border-border/50 shadow-sm backdrop-blur-sm">
+                <div className="flex-1 w-full max-w-sm">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-2 block tracking-widest px-1">
+                        {t('permissions_principal_label')}
+                    </label>
                     <MriCreatableCombobox
-                        options={[
-                            { label: 'group.admin', value: 'group.admin' },
-                            { label: 'group.mod', value: 'group.mod' },
-                            ...aces.map(a => ({ label: a.principal, value: a.principal }))
-                        ].filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)} // Unique
-                        value={newAce.principal}
-                        onChange={(val) => setNewAce({ ...newAce, principal: val })}
+                        options={principalOptions}
+                        value={selectedPrincipal}
+                        onChange={setSelectedPrincipal}
                         placeholder={t('select_placeholder')}
-                        searchPlaceholder={t('actions_search_placeholder')}
                     />
-                </div>
-                <div className="col-span-12 lg:col-span-4">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_object_label')}</label>
-                    <MriCreatableCombobox
-                        options={[
-                            ...aces.map(a => ({ label: a.object, value: a.object }))
-                        ].filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)}
-                        value={newAce.object}
-                        onChange={(val) => setNewAce({ ...newAce, object: val })}
-                        placeholder={t('select_placeholder')}
-                        searchPlaceholder={t('actions_search_placeholder')}
-                    />
-                </div>
-                <div className="col-span-12 lg:col-span-4">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_type_label')}</label>
-                    <div className="flex bg-muted/50 rounded-md p-1 h-10 border border-border">
-                        <button
-                            type="button"
-                            onClick={() => setAllowType(1)}
-                            className={cn(
-                                "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
-                                allowType === 1
-                                    ? "bg-green-500 text-white shadow-sm scale-[1.02]"
-                                    : "text-muted-foreground hover:bg-muted"
-                            )}
-                        >
-                            {t('permissions_allow')}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setAllowType(0)}
-                            className={cn(
-                                "flex-1 flex items-center justify-center text-[10px] uppercase tracking-wider font-extrabold rounded transition-all duration-200",
-                                allowType === 0
-                                    ? "bg-red-500 text-white shadow-sm scale-[1.02]"
-                                    : "text-muted-foreground hover:bg-muted"
-                            )}
-                        >
-                            {t('permissions_deny')}
-                        </button>
-                    </div>
                 </div>
 
-                <div className="col-span-12 lg:col-span-9">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground mb-1 block tracking-widest">{t('permissions_desc_label')}</label>
-                    <MriInput
-                        value={newAce.description}
-                        onChange={(e) => setNewAce({ ...newAce, description: e.target.value })}
-                        placeholder="Ex: Temp Access"
-                        className="bg-input border-input h-10"
-                    />
-                </div>
-                <div className="col-span-12 lg:col-span-3">
-                    <MriButton size="sm" className="h-10 w-full" onClick={handleAdd}>
-                        <Plus className="w-4 h-4 mr-1" /> {t('permissions_add_btn')}
+                <div className="flex items-center gap-2 mb-1">
+                    <MriButton 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-10 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                        onClick={() => {/* Open Add Modal or expand bar */}}
+                    >
+                        <Plus className="w-4 h-4 mr-1.5" /> {t('permissions_add_btn')}
                     </MriButton>
                 </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg flex flex-col gap-1 p-2 flex-1 overflow-hidden">
-                <div className="h-full">
-                    {loading && aces.length === 0 ? (
-                        <PermissionsSkeleton />
-                    ) : aces.length === 0 ? (
-                        <div className="p-8 text-center text-muted-foreground">
-                            {t('permissions_no_aces')}
+            {/* Scrollable Grid Area */}
+            <div className="flex-1 overflow-y-auto pr-2 space-y-8 custom-scrollbar">
+                {/* Section Permissions */}
+                {categorizedAces.sections.length > 0 && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 px-1">
+                            <LayoutGrid className="w-4 h-4 text-primary" />
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/80">
+                                Section Permissions
+                            </h3>
                         </div>
-                    ) : (
-                        (() => {
-                            // Filter first
-                            const filtered = aces.filter((a) => {
-                                const search = searchQuery.toLowerCase();
-                                if (!search) return true;
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {categorizedAces.sections.map(ace => {
+                                const info = getPermissionInfo(ace.object);
                                 return (
-                                    a.principal.toLowerCase().includes(search) ||
-                                    a.object.toLowerCase().includes(search) ||
-                                    (a.description &&
-                                        a.description.toLowerCase().includes(search))
+                                    <PermissionCard
+                                        key={ace.id}
+                                        title={ace.object.replace('qadmin.page.', '').replace('_', ' ')}
+                                        description={ace.description || `Access to ${ace.object.split('.').pop()} section`}
+                                        icon={info.icon}
+                                        active={ace.allow === 1}
+                                        onToggle={() => handleToggle(ace)}
+                                    />
                                 );
-                            });
+                            })}
+                        </div>
+                    </div>
+                )}
 
-                            if (filtered.length === 0 && searchQuery) {
-                                return (
-                                    <div className="p-8 text-center text-muted-foreground">
-                                        {t('permissions_no_matches').replace('%s', searchQuery)}
-                                    </div>
-                                );
-                            }
+                {/* Action Permissions grouped by Category */}
+                {Object.entries(categorizedAces.actions).map(([catId, items]) => {
+                    const category = CATEGORIES[catId] || CATEGORIES.other;
+                    return (
+                        <div key={catId} className="space-y-4">
+                            <div className="flex items-center gap-2 px-1">
+                                <category.icon className="w-4 h-4 text-primary" />
+                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/80">
+                                    {category.label}
+                                </h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {items.map(ace => {
+                                    const info = getPermissionInfo(ace.object);
+                                    return (
+                                        <PermissionCard
+                                            key={ace.id}
+                                            title={info.label || ace.object.replace('command.', '').replace('_', ' ')}
+                                            description={ace.description || info.desc || `Control ${ace.object.split('.').pop()}`}
+                                            icon={info.icon}
+                                            active={ace.allow === 1}
+                                            onToggle={() => handleToggle(ace)}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
 
-                            // Group by principal
-                            const grouped = filtered.reduce(
-                                (acc, curr) => {
-                                    if (!acc[curr.principal]) acc[curr.principal] = [];
-                                    acc[curr.principal].push(curr);
-                                    return acc;
-                                },
-                                {} as Record<string, Ace[]>,
-                            );
-
-                            const groupedEntries: { principal: string; items: Ace[] }[] = Object.entries(grouped).map(([principal, items]) => {
-                                const uniqueMap = new Map<string, Ace>()
-                                items.forEach(item => {
-                                    uniqueMap.set(item.object, { ...item })
-                                })
-                                return { principal, items: Array.from(uniqueMap.values()) }
-                            });
-
-                            return (
-                                <Virtuoso
-                                    style={{ height: '100%' }}
-                                    data={groupedEntries}
-                                    itemContent={(_: number, { principal, items }: { principal: string; items: Ace[] }) => (
-                                        <div className="pb-3">
-                                            <AceGroup
-                                                principal={principal}
-                                                items={items}
-                                                onRemove={handleRemove}
-                                                onToggle={handleToggle}
-                                                players={players}
-                                            />
-                                        </div>
-                                    )}
-                                />
-                            )
-                        })()
-                    )}
-                </div>
+                {filteredAces.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center">
+                            <Shield className="w-8 h-8 opacity-20" />
+                        </div>
+                        <p className="text-sm italic">
+                            {searchQuery ? t('permissions_no_matches').replace('%s', searchQuery) : "No permissions found for this principal."}
+                        </p>
+                    </div>
+                )}
             </div>
 
             {confirm && (
@@ -356,7 +278,7 @@ export default function AcesList({ searchQuery = '', refreshTrigger = 0, onCount
                         confirm.type === "add"
                             ? t('permissions_confirm_add_ace')
                                 .replace('%s', newAce.object)
-                                .replace('%s', newAce.principal)
+                                .replace('%s', selectedPrincipal)
                             : t('permissions_confirm_remove_ace')
                                 .replace('%s', confirm.ace?.object || "")
                                 .replace('%s', confirm.ace?.principal || "")

@@ -156,8 +156,7 @@ export default function PermissionWizard({ isOpen, onClose, onFinish }: Permissi
             if (finalParent) {
                 await sendNui('add_principal', {
                     child: finalTarget,
-                    parent: finalParent,
-                    description: description || 'Wizard created'
+                    parent: finalParent
                 });
             }
 
@@ -167,8 +166,7 @@ export default function PermissionWizard({ isOpen, onClose, onFinish }: Permissi
                 await sendNui('add_ace', {
                     principal: finalTarget,
                     object: action,
-                    allow: value === 'allow',
-                    description: description || 'Wizard created'
+                    allow: value === 'allow'
                 });
             }
 
