@@ -7,6 +7,7 @@ import { MriButton, MriPlayerVitals, MriVitalAdjustModal } from '@mriqbox/ui-kit
 import { Eye, ShieldCheck, User, Car, Plane, Ship, Bike, Helicopter, Motorbike, Plus, Minus, Info, SquareTerminal } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useI18n } from '@/hooks/useI18n'
+import { useAppState } from '@/context/AppState'
 
 interface MapMarker {
     id: string | number
@@ -232,6 +233,16 @@ export default function LiveMap({
     }
 
     const { sendNui } = useNui()
+    const { settings } = useAppState()
+
+    const tileUrl = useMemo(() => {
+        const baseUrl = settings.MapBaseUrl
+        if (baseUrl && baseUrl.trim() !== "") {
+            const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+            return `${cleanBase}map/tiles_${mapType}/{z}/{x}/{y}.webp`
+        }
+        return `./map/tiles_${mapType}/{z}/{x}/{y}.webp`
+    }, [settings.MapBaseUrl, mapType])
 
     const markerRefs = useRef<Record<string, any>>({})
 
@@ -325,7 +336,7 @@ export default function LiveMap({
                 style={{ height: '100%', width: '100%', borderRadius: '0.75rem', zIndex: 0, overflow: 'hidden' }}
             >
                 <TileLayer
-                    url={`./map/tiles_${mapType}/{z}/{x}/{y}.webp`}
+                    url={tileUrl}
                     noWrap={true}
                     tileSize={256}
                     minZoom={0}

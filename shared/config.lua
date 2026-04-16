@@ -20,6 +20,7 @@ Config.Debug = false -- Set to true to enable debug prints
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"
 Config.VehicleImages = "" -- Custom URL for vehicle images (e.g. "https://cdn.example.com/vehicles/")
+Config.MapBaseUrl = "https://assets.mriqbox.com.br/admin/map/" -- Custom URL for map tiles (GitHub Pages or other CDN)
 -- Signaling backend: "fivem-native" | "websocket" (uses mri_Qsignaling / wss URL) | "cloudflare-sfu"
 Config.SignalingProvider = "fivem-native"
 Config.WebRTCUrl = "wss://YOUR_SERVER_IP:3002" -- used only when SignalingProvider = "websocket" (mri_Qsignaling port 3002)
@@ -37,6 +38,7 @@ Config.Descriptions = {
     Debug = "Ativa logs detalhados (Prints) de rastreamento no console F8 e na janela TxAdmin/Servidor.",
     DefaultGarage = "Nome exato da garagem padrão (DB) usada quando carros são 'dados' e salvos a um jogador na aba de Doar.",
     VehicleImages = "Caso use imagens customizadas no seu Frontend de Inventário, defina a URL inteira aqui. Deixar vazio puxa do docs.fivem (webRTC local).",
+    MapBaseUrl = "URL base externa para carregar os tiles do mapa (ex: https://mri-qbox-brasil.github.io/mapas/). Se vazio, usa arquivos locais.",
     SignalingProvider = "Backend do webrtc. 'fivem-native' (sem servidor externo), 'websocket' (requer nodeJS mri_Qsignaling rodando) ou 'cloudflare-sfu'.",
     WebRTCUrl = "Endpoint obrigatório caso o SignalingProvider esteja como 'websocket'. Geralmente é wss://seu-ip:porta.",
     Keybindings = "Permitir ou proibir que as teclas configuradas abram o painel. Se false, só abrirá via comandos (/adm)."
