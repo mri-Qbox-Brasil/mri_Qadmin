@@ -84,18 +84,31 @@ export const MOCK_PLAYERS = [
     }
 ];
 
-export const MOCK_ACES = [
-    { id: 1, principal: 'group.admin', object: 'command.noclip', allow: 1 },
-    { id: 2, principal: 'group.admin', object: 'command.givecar', allow: 1 },
-    { id: 3, principal: 'group.mod', object: 'command.kick', allow: 1 },
-    { id: 4, principal: 'identifier.steam:11000010a3c2b1d', object: 'command.god', allow: 0 },
+export const MOCK_GROUPS = [
+    {
+        id: 'admin',
+        label: 'Administrador',
+        description: 'Grupo padrão de gestão completa.',
+        permissions: ['qadmin.page.dashboard', 'qadmin.page.players', 'qadmin.page.groups', 'qadmin.page.permissions', 'qadmin.action.revive', 'qadmin.action.teleport_to_player']
+    },
+    {
+        id: 'moderador',
+        label: 'Moderador I',
+        description: 'Atendimento de tickets básicos.',
+        permissions: ['qadmin.page.dashboard', 'qadmin.page.players', 'qadmin.action.freeze_player', 'qadmin.action.spectate_player']
+    },
+    {
+        id: 'suporte',
+        label: 'Suporte Técnico',
+        description: 'Ajuda a jogadores novatos.',
+        permissions: ['qadmin.page.dashboard', 'qadmin.page.staffchat', 'qadmin.action.heal']
+    }
 ];
 
-export const MOCK_PRINCIPALS = [
-    { id: 1, child: 'identifier.steam:11000010a3c2b1d', parent: 'group.admin' },
-    { id: 2, child: 'identifier.license:abc1234567890', parent: 'group.mod' },
-    { id: 3, child: 'group.admin', parent: 'group.mod' },
-];
+export const MOCK_CHARACTER_GROUPS = {
+    'BRL9MRI12345': ['admin', 'moderador'],
+    'BRL9MRI67890': ['suporte']
+};
 
 export const MOCK_GAME_DATA = {
     items: [

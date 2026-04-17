@@ -187,17 +187,28 @@ end)
 
 -- Open UI Event
 RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
-    if not CheckPerms("qadmin.open") then return end
+    print('^3[mri_Qadmin] Tentativa de abrir painel iniciada...^7')
+    
+    local hasPerm = CheckPerms("qadmin.open")
+    print('^3[mri_Qadmin] Check qadmin.open: ' .. tostring(hasPerm) .. '^7')
+    
+    if not hasPerm then 
+        print('^1[mri_Qadmin] Acesso negado pela verificação de qadmin.open!^7')
+        return 
+    end
     
     local tbl, locale = GetTranslations()
     if tbl then
+        print('^2[mri_Qadmin] Traduções carregadas: ' .. locale .. '^7')
         SendNUIMessage({ action = 'setTranslations', data = { translations = tbl, locale = locale } })
+    else
+        print('^1[mri_Qadmin] AVISO: Falha ao carregar traduções, procedendo sem elas.^7')
     end
 
+    print('^2[mri_Qadmin] Chamando ToggleUI(true)...^7')
     ToggleUI(true)
     
-    -- resend translations shortly after opening UI in case the NUI wasn't ready yet
-    -- using cached data to avoid redundant disk I/O
+    -- resend translations shortly after opening UI
     if tbl then
         CreateThread(function()
             Wait(150)
@@ -219,19 +230,19 @@ end)
 
 -- Get players
 RegisterNUICallback("getPlayers", function(data, cb)
-	local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', data.page, data.limit, data.search)
+	local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', false, data.page, data.limit, data.search)
 	cb(players)
 end)
 
 -- Get Groups
-RegisterNUICallback("getGroupsData", function(_, cb)
-	local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData')
-	cb(groups)
+RegisterNUICallback("mri_Qadmin:callback:GetGroups", function(_, cb)
+    local groups = lib.callback.await('mri_Qadmin:callback:GetGroups')
+    cb(groups or {})
 end)
 
 -- Get Player Coords
 RegisterNUICallback("GetPlayerCoords", function(data, cb)
-    local coords = lib.callback.await('mri_Qadmin:callback:GetPlayerCoords', data.targetIds)
+    local coords = lib.callback.await('mri_Qadmin:callback:GetPlayerCoords', false, data.targetIds)
     cb(coords)
 end)
 
@@ -242,7 +253,7 @@ end)
 
 
 RegisterNUICallback("GetPlayerVitals", function(data, cb)
-    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerVitals', data.targetId)
+    local res = lib.callback.await('mri_Qadmin:callback:GetPlayerVitals', false, data.targetId)
     cb(res)
 end)
 
@@ -384,28 +395,28 @@ RegisterNUICallback("seed_pages", function(_, cb)
     cb('ok')
 end)
 
-RegisterNUICallback("toggle_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:ToggleAce', data.id)
+RegisterNUICallback("mri_Qadmin:server:SaveGroup", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:SaveGroup', data.id, data.label, data.description)
     cb('ok')
 end)
 
-RegisterNUICallback("add_principal", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:AddPrincipal', data.child, data.parent)
+RegisterNUICallback("mri_Qadmin:server:DeleteGroup", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:DeleteGroup', data.id)
     cb('ok')
 end)
 
-RegisterNUICallback("remove_principal", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:RemovePrincipal', data.id)
+RegisterNUICallback("mri_Qadmin:server:UpdateGroupPermissions", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:UpdateGroupPermissions', data.id, data.permissions)
     cb('ok')
 end)
 
-RegisterNUICallback("add_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:AddAce', data.principal, data.object, data.allow)
-    cb('ok')
+RegisterNUICallback("mri_Qadmin:callback:GetCharacterGroups", function(data, cb)
+    local groups = lib.callback.await('mri_Qadmin:callback:GetCharacterGroups', false, data.citizenid)
+    cb(groups or {})
 end)
 
-RegisterNUICallback("remove_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:RemoveAce', data.id)
+RegisterNUICallback("mri_Qadmin:server:UpdateCharacterGroups", function(data, cb)
+    TriggerServerEvent('mri_Qadmin:server:UpdateCharacterGroups', data.citizenid, data.groups)
     cb('ok')
 end)
 

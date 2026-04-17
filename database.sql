@@ -5,19 +5,29 @@ CREATE TABLE IF NOT EXISTS mri_qadmin_chat (
     createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS mri_qadmin_aces (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    principal VARCHAR(255) NOT NULL,
-    object VARCHAR(255) NOT NULL,
-    allow INT NOT NULL DEFAULT 1, -- 1 = allow, 0 = deny
-    description VARCHAR(255) DEFAULT NULL
+CREATE TABLE IF NOT EXISTS mri_qadmin_groups (
+    id VARCHAR(50) PRIMARY KEY, -- 'admin', 'mod', etc.
+    label VARCHAR(100) NOT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS mri_qadmin_principals (
+CREATE TABLE IF NOT EXISTS mri_qadmin_group_permissions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    child VARCHAR(255) NOT NULL,
-    parent VARCHAR(255) NOT NULL,
-    description VARCHAR(255) DEFAULT NULL
+    group_id VARCHAR(50) NOT NULL,
+    permission VARCHAR(255) NOT NULL,
+    FOREIGN KEY (group_id) REFERENCES mri_qadmin_groups(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS mri_qadmin_character_groups (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    citizenid VARCHAR(50) NOT NULL,
+    group_id VARCHAR(50) NOT NULL,
+    FOREIGN KEY (group_id) REFERENCES mri_qadmin_groups(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS mri_qadmin_masters (
+    license VARCHAR(100) PRIMARY KEY
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS mri_qadmin_wall_colors (

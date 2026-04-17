@@ -22,8 +22,7 @@ export default function GroupOverviewCard({
     onEdit,
     onDelete
 }: GroupOverviewCardProps) {
-    const [expanded, setExpanded] = useState(false)
-    const displayedPerms = expanded ? permissions : permissions.slice(0, 5)
+    const displayedPerms = permissions.slice(0, 5)
 
     return (
         <div className="group relative flex flex-col p-5 rounded-2xl border border-border bg-card/40 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 h-full">
@@ -82,13 +81,10 @@ export default function GroupOverviewCard({
             </div>
 
             {permissions.length > 5 && (
-                <div className="mt-4 pt-4 border-t border-border/30 text-center">
-                    <button 
-                        onClick={() => setExpanded(!expanded)}
-                        className="text-[10px] font-bold uppercase text-primary hover:underline"
-                    >
-                        {expanded ? 'Show Less' : `+ View ${permissions.length - 5} more`}
-                    </button>
+                <div className="mt-4 pt-3 border-t border-border/30 text-center">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground/50">
+                        + {permissions.length - 5} permissões não exibidas
+                    </span>
                 </div>
             )}
         </div>

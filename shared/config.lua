@@ -15,7 +15,7 @@ Config.SupportedLanguages = {
 Config.Keybindings = true
 Config.AdminKey = "0"
 Config.NoclipKey = "9"
-Config.Debug = false -- Set to true to enable debug prints
+Config.Debug = true -- Set to true to enable debug prints
 
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"

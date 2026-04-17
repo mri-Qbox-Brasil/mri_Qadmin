@@ -111,3 +111,25 @@ export const getPermissionInfo = (permission: string) => {
 
     return { category: 'other', icon: Lock };
 };
+
+export const getFriendlyPermissionName = (permission: string) => {
+    const info = PERMISSION_MAP[permission];
+    if (info?.label) return info.label;
+
+    if (permission.startsWith('qadmin.page.')) {
+        const page = permission.replace('qadmin.page.', '');
+        return page.charAt(0).toUpperCase() + page.slice(1);
+    }
+    
+    if (permission.startsWith('qadmin.action.') || permission.startsWith('action.')) {
+        const action = permission.replace('qadmin.action.', '').replace('action.', '').replace(/_/g, ' ');
+        return action.charAt(0).toUpperCase() + action.slice(1);
+    }
+
+    if (permission.startsWith('command.')) {
+        const cmd = permission.replace('command.', '');
+        return `/${cmd}`;
+    }
+
+    return permission;
+};
