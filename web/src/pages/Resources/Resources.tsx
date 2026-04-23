@@ -76,10 +76,10 @@ export default function Resources() {
         <div className="w-full h-full flex overflow-hidden bg-background">
             {/* Resource List */}
             <div className="w-1/2 h-full flex flex-col border-r border-border overflow-hidden">
-                <MriPageHeader title={t('nav_resources')} icon={Container} countLabel={t('records')} count={filteredResources.length}>
+                <MriPageHeader title={t('qadmin.page.resources')} icon={Container} countLabel={t('credits.records')} count={filteredResources.length}>
                     <div className="flex items-center gap-2">
                         <MriExpandableSearch
-                            placeholder={t('resources_search_placeholder')}
+                            placeholder={t('resources.search_placeholder')}
                             value={search}
                             onChange={setSearch}
                         />
@@ -99,7 +99,7 @@ export default function Resources() {
                     {filteredResources.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                             <Database className="w-10 h-10 opacity-20" />
-                            <p>{t('resources_none_found')}</p>
+                            <p>{t('resources.none_found')}</p>
                         </div>
                     ) : (
                         <Virtuoso

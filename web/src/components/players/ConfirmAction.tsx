@@ -6,7 +6,7 @@ export default function ConfirmAction({ text, onConfirm, onCancel }: { text: str
     const { t } = useI18n()
     return (
         <MriActionModal
-            title={t('confirm_title')}
+            title={t('confirm.title')}
             icon={AlertTriangle}
             variant="destructive"
             onClose={onCancel}

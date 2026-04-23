@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MriActionModal, MriInput, MriSelectSearch } from '@mriqbox/ui-kit'
+import { MriActionModal, MriInput, MriSelect } from '@mriqbox/ui-kit'
 import { Gift } from 'lucide-react'
 
 import { useI18n } from '@/hooks/useI18n'
@@ -52,7 +52,7 @@ export default function GiveItemModal({
 
     return (
         <MriActionModal
-            title={t('modal_give_item_title').replace('%s', '')}
+            title={t('item.give.title').replace('%s', '')}
             icon={Gift}
             onClose={onClose}
             onConfirm={() => onSubmit(playerId, item, amount)}
@@ -61,20 +61,20 @@ export default function GiveItemModal({
 
             {!disablePlayerSelect ? (
                 <div className="mb-4">
-                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('select_player_label')}</label>
-                    <MriSelectSearch
+                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('common.search_player')}</label>
+                    <MriSelect
                         options={playerOptions}
                         value={String(playerId)}
                         onChange={setPlayerId}
-                        placeholder={t('select_player_label')}
-                        searchPlaceholder={t('search_by_name_id_or_license')}
-                        emptyMessage={t('no_player_available')}
+                        placeholder={t('common.search_player')}
+                        searchPlaceholder={t('common.search_player')}
+                        emptyMessage={t('common.no_results')}
                     />
                 </div>
             ) : null}
 
             <div className="mb-4">
-                <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_item_name')}</label>
+                <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('item.labels.name')}</label>
                 {disableItemSelect ? (
                     <MriInput
                         value={initialItemLabel || itemOptions.find(o => String(o.value).toLowerCase() === String(item).toLowerCase())?.label || item || ''}
@@ -82,17 +82,17 @@ export default function GiveItemModal({
                         className="opacity-70 bg-background border-border h-10"
                     />
                 ) : (
-                    <MriSelectSearch
+                    <MriSelect
                         options={itemOptions}
                         value={item}
                         onChange={setItem}
-                        placeholder={t('search_placeholder_items')}
-                        searchPlaceholder={t('search_placeholder_items')}
+                        placeholder={t('common.search')}
+                        searchPlaceholder={t('common.search')}
                     />
                 )}
             </div>
 
-            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('quantity_label')}</label>
+            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('item.labels.quantity')}</label>
             <MriInput type="number" value={amount} onChange={e => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
         </MriActionModal>
     )

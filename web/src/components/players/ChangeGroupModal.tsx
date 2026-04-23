@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
-import { MriInput, MriSelectSearch, MriActionModal } from '@mriqbox/ui-kit'
+import { MriInput, MriSelect, MriActionModal } from '@mriqbox/ui-kit'
 import { Briefcase, Shield } from 'lucide-react'
 
 export default function ChangeGroupModal({
@@ -18,11 +18,10 @@ export default function ChangeGroupModal({
     onSubmit: (group: string, grade: number) => void
 }) {
     const { gameData } = useAppState()
+    const { t } = useI18n()
 
     const [group, setGroup] = useState(defaultGroup)
     const [grade, setGrade] = useState(defaultGrade)
-
-    const { t } = useI18n()
 
     const groupOptions = (type === 'job' ? gameData.jobs : gameData.gangs).map((g: any) => ({
         label: g.label,
@@ -41,36 +40,45 @@ export default function ChangeGroupModal({
 
     return (
         <MriActionModal
-            title={type === 'job' ? t('set_job') : t('set_gang')}
+            title={type === 'job' ? t('player.actions.job.set') : t('player.actions.gang.set')}
             icon={type === 'job' ? Briefcase : Shield}
             onClose={onClose}
             onConfirm={() => { onSubmit(group, grade); onClose(); }}
         >
-            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_name')}</label>
-            <div className="mb-4">
-                <MriSelectSearch
-                    options={groupOptions}
-                    value={group}
-                    onChange={(val) => { setGroup(val); setGrade(0); }} // Reset grade on group change
-                    placeholder={t('select_placeholder')}
-                    searchPlaceholder={t('actions_search_placeholder')}
-                />
-            </div>
-
-            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_grade')}</label>
-            {gradeOptions.length > 0 ? (
-                <div className="mb-6">
-                    <MriSelectSearch
-                        options={gradeOptions}
-                        value={grade}
-                        onChange={(val) => setGrade(Number(val))}
-                        placeholder={t('select_placeholder')}
-                        searchPlaceholder={t('actions_search_placeholder')}
+            <div className="space-y-4">
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+                        {type === 'job' ? t('player.actions.job.label') : t('player.actions.gang.label')}
+                    </label>
+                    <MriSelect
+                        options={groupOptions}
+                        value={group}
+                        onChange={(val) => { setGroup(val); setGrade(0); }}
+                        placeholder={t('actions.search_placeholder')}
                     />
                 </div>
-            ) : (
-                <MriInput type="number" value={grade} onChange={e => setGrade(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
-            )}
+
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+                        {type === 'job' ? t('player.actions.job.grade') : t('player.actions.gang.grade')}
+                    </label>
+                    {gradeOptions.length > 0 ? (
+                        <MriSelect
+                            options={gradeOptions}
+                            value={grade}
+                            onChange={(val) => setGrade(Number(val))}
+                            placeholder={t('actions.search_placeholder')}
+                        />
+                    ) : (
+                        <MriInput 
+                            type="number" 
+                            value={grade} 
+                            onChange={e => setGrade(Number((e.target as HTMLInputElement).value))} 
+                            className="bg-background border-border h-10" 
+                        />
+                    )}
+                </div>
+            </div>
         </MriActionModal>
     )
 }

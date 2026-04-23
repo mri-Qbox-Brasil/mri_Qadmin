@@ -77,7 +77,7 @@ export default function GroupList({
                                     </div>
                                     <div>
                                         <span className="font-bold text-lg text-foreground">{group.label}</span>
-                                        <p className="text-xs text-muted-foreground font-mono">ID: {group.name} • {t('groups_members').replace('%s', String(group.members.length))}</p>
+                                        <p className="text-xs text-muted-foreground font-mono">ID: {group.name} • {t('groups.members').replace('%s', String(group.members.length))}</p>
                                     </div>
                                 </div>
 
@@ -89,7 +89,7 @@ export default function GroupList({
                             {isExpanded && (
                                 <div className="border-t border-border bg-muted/30">
                                     {group.members.length === 0 ? (
-                                        <div className="p-4 text-center text-sm text-muted-foreground">{t('groups_no_members')}</div>
+                                        <div className="p-4 text-center text-sm text-muted-foreground">{t('groups.no_members')}</div>
                                     ) : (
                                         <div className="divide-y divide-border/50">
                                             {group.members.map(member => (

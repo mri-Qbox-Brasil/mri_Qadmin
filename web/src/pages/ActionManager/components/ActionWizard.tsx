@@ -6,12 +6,13 @@ import {
 } from 'lucide-react';
 import { 
     MriModal, MriButton, MriInput, 
-    MriCreatableCombobox, MriSelectSearch 
+    MriSelect 
 } from '@mriqbox/ui-kit';
 import { useI18n } from '@/hooks/useI18n';
 import { useAppState } from '@/context/AppState';
 import { useNui } from '@/context/NuiContext';
 import { cn } from '@/lib/utils';
+import { PERMISSION_MAP } from '@/pages/Permissions/utils/categorization';
 
 interface ActionWizardProps {
     isOpen: boolean;
@@ -30,11 +31,11 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
     const [loading, setLoading] = useState(false);
 
     const STEPS = useMemo(() => [
-        { id: 1, title: t('action_wizard_step_info'), icon: Info },
-        { id: 2, title: t('action_wizard_step_execution'), icon: Zap },
-        { id: 3, title: t('action_wizard_step_permissions'), icon: Shield },
-        { id: 4, title: t('action_wizard_step_fields'), icon: Settings2 },
-        { id: 5, title: t('action_wizard_step_review'), icon: CheckCircle2 },
+        { id: 1, title: t('action_wizard.steps.info'), icon: Info },
+        { id: 2, title: t('action_wizard.steps.execution'), icon: Zap },
+        { id: 3, title: t('action_wizard.steps.permissions'), icon: Shield },
+        { id: 4, title: t('action_wizard.steps.fields'), icon: Settings2 },
+        { id: 5, title: t('action_wizard.steps.review'), icon: CheckCircle2 },
     ], [t]);
 
     // Form State
@@ -138,7 +139,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-6 border-b border-border pb-4">
                     <Wand2 className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-bold">{editId ? `Edit Action: ${editId}` : t('action_wizard_title')}</h2>
+                    <h2 className="text-xl font-bold">{editId ? `Edit Action: ${editId}` : t('action_wizard.title')}</h2>
                 </div>
 
                 {/* Stepper Header */}
@@ -181,28 +182,28 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <h3 className="text-sm font-bold">{t('action_wizard_id')}</h3>
+                                    <h3 className="text-sm font-bold">{t('action_wizard.fields.id')}</h3>
                                     <MriInput
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
                                         placeholder="ex: kick_player"
                                         disabled={!!editId}
                                     />
-                                    <p className="text-[10px] text-muted-foreground italic">{t('action_wizard_id_desc')}</p>
+                                    <p className="text-[10px] text-muted-foreground italic">{t('action_wizard.descriptions.id')}</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-sm font-bold">{t('action_wizard_label')}</h3>
+                                    <h3 className="text-sm font-bold">{t('action_wizard.fields.label')}</h3>
                                     <MriInput
                                         value={label}
                                         onChange={(e) => setLabel(e.target.value)}
                                         placeholder="ex: Kick Player"
                                     />
-                                    <p className="text-[10px] text-muted-foreground italic">{t('action_wizard_label_desc')}</p>
+                                    <p className="text-[10px] text-muted-foreground italic">{t('action_wizard.descriptions.label')}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <h3 className="text-sm font-bold">{t('action_wizard_icon')}</h3>
+                                    <h3 className="text-sm font-bold">{t('action_wizard.fields.icon')}</h3>
                                     <MriInput
                                         value={icon}
                                         onChange={(e) => setIcon(e.target.value)}
@@ -210,13 +211,13 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-sm font-bold">{t('action_wizard_category')}</h3>
-                                    <MriSelectSearch
+                                    <h3 className="text-sm font-bold">{t('action_wizard.fields.category')}</h3>
+                                    <MriSelect
                                         value={category}
                                         options={[
-                                            { label: t('action_category_general'), value: 'Actions' },
-                                            { label: t('action_category_player'), value: 'PlayerActions' },
-                                            { label: t('action_category_other'), value: 'OtherActions' },
+                                            { label: t('action_wizard.categories.general'), value: 'Actions' },
+                                            { label: t('action_wizard.categories.player'), value: 'PlayerActions' },
+                                            { label: t('action_wizard.categories.other'), value: 'OtherActions' },
                                         ]}
                                         onChange={() => {}} // Disabled but needed by component
                                         disabled={true} 
@@ -230,7 +231,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
                             <div className="space-y-4">
                                 <div>
-                                    <h3 className="text-sm font-bold mb-2">{t('action_wizard_event_type')}</h3>
+                                    <h3 className="text-sm font-bold mb-2">{t('action_wizard.fields.event_type')}</h3>
                                     <div className="grid grid-cols-3 gap-2">
                                         {['server', 'client', 'command'].map(type => (
                                             <button
@@ -248,7 +249,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-sm font-bold">{t('action_wizard_event_name')}</h3>
+                                    <h3 className="text-sm font-bold">{t('action_wizard.fields.event_name')}</h3>
                                     <MriInput
                                         value={event}
                                         onChange={(e) => setEvent(e.target.value)}
@@ -262,19 +263,19 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                     {currentStep === 3 && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
                             <div className="space-y-2">
-                                <h3 className="text-sm font-bold">{t('action_wizard_perm_label')}</h3>
-                                <MriCreatableCombobox
-                                    options={[
-                                        { label: 'qadmin.page.actions', value: 'qadmin.page.actions' },
-                                        { label: 'qadmin.action.kick', value: 'qadmin.action.kick' },
-                                        { label: 'qadmin.action.ban', value: 'qadmin.action.ban' },
-                                    ]}
+                                <h3 className="text-sm font-bold">{t('action_wizard.fields.perm_label')}</h3>
+                                <MriSelect
+                                    creatable
+                                    options={Object.entries(PERMISSION_MAP).map(([key, val]) => ({
+                                        label: val.label ? `${key} — ${val.label}` : key,
+                                        value: key,
+                                    }))}
                                     value={perms}
                                     onChange={setPerms}
                                     placeholder="Nó de permissão ACE"
                                 />
                                 <p className="text-xs text-muted-foreground mt-2">
-                                    {t('action_wizard_perm_desc')}
+                                    {t('action_wizard.descriptions.perm')}
                                 </p>
                             </div>
                         </div>
@@ -284,11 +285,11 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-sm font-bold">{t('action_wizard_fields_q')}</h3>
-                                    <p className="text-xs text-muted-foreground">{t('action_wizard_fields_desc')}</p>
+                                    <h3 className="text-sm font-bold">{t('action_wizard.dynamic_fields.question')}</h3>
+                                    <p className="text-xs text-muted-foreground">{t('action_wizard.dynamic_fields.description')}</p>
                                 </div>
                                 <MriButton size="sm" onClick={handleAddField} className="gap-2">
-                                    <Plus className="w-4 h-4" /> {t('action_wizard_add_field')}
+                                    <Plus className="w-4 h-4" /> {t('action_wizard.dynamic_fields.add')}
                                 </MriButton>
                             </div>
 
@@ -304,24 +305,24 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                         
                                         <div className="grid grid-cols-2 gap-4 pt-2">
                                             <div className="space-y-1">
-                                                <label className="text-[10px] font-bold uppercase text-muted-foreground">{t('action_wizard_field_label')}</label>
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground">{t('action_wizard.dynamic_fields.field_label')}</label>
                                                 <MriInput
                                                     value={field.label}
                                                     onChange={(e) => updateField(index, { label: e.target.value })}
-                                                    placeholder={t('action_wizard_field_label_placeholder')}
+                                                    placeholder={t('action_wizard.dynamic_fields.field_label_placeholder')}
                                                 />
                                             </div>
                                             <div className="space-y-1">
-                                                <label className="text-[10px] font-bold uppercase text-muted-foreground">{t('action_wizard_field_type')}</label>
-                                                <MriSelectSearch
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground">{t('action_wizard.dynamic_fields.field_type')}</label>
+                                                <MriSelect
                                                     value={field.option}
                                                     onChange={(val: string) => updateField(index, { option: val })}
                                                     options={[
-                                                        { label: t('action_field_type_text'), value: 'text' },
-                                                        { label: t('action_field_type_number'), value: 'number' },
-                                                        { label: t('action_field_type_dropdown'), value: 'dropdown' },
-                                                        { label: t('action_field_type_button'), value: 'button' },
-                                                        { label: t('action_field_type_checkbox'), value: 'checkbox' },
+                                                        { label: t('action_wizard.field_types.text'), value: 'text' },
+                                                        { label: t('action_wizard.field_types.number'), value: 'number' },
+                                                        { label: t('action_wizard.field_types.dropdown'), value: 'dropdown' },
+                                                        { label: t('action_wizard.field_types.button'), value: 'button' },
+                                                        { label: t('action_wizard.field_types.checkbox'), value: 'checkbox' },
                                                     ]}
                                                 />
                                             </div>
@@ -330,21 +331,21 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                         {field.option === 'dropdown' && (
                                             <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-1">
                                                 <div className="space-y-1">
-                                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">{t('action_wizard_field_source')}</label>
-                                                    <MriSelectSearch
+                                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">{t('action_wizard.dynamic_fields.field_source')}</label>
+                                                    <MriSelect
                                                         value={field.data}
                                                         onChange={(val: string) => updateField(index, { data: val })}
                                                         options={[
-                                                            { label: t('action_source_players'), value: 'players' },
-                                                            { label: t('action_source_jobs'), value: 'jobs' },
-                                                            { label: t('action_source_gangs'), value: 'gangs' },
-                                                            { label: t('action_source_items'), value: 'items' },
-                                                            { label: t('action_source_custom'), value: 'custom' },
+                                                            { label: t('action_wizard.field_sources.players'), value: 'players' },
+                                                            { label: t('action_wizard.field_sources.jobs'), value: 'jobs' },
+                                                            { label: t('action_wizard.field_sources.gangs'), value: 'gangs' },
+                                                            { label: t('action_wizard.field_sources.items'), value: 'items' },
+                                                            { label: t('action_wizard.field_sources.custom'), value: 'custom' },
                                                         ]}
                                                     />
                                                 </div>
                                                 <div className="flex items-end text-[10px] italic text-muted-foreground pb-2">
-                                                    {t('action_wizard_field_source_help')}
+                                                    {t('action_wizard.dynamic_fields.field_source_help')}
                                                 </div>
                                             </div>
                                         )}
@@ -371,7 +372,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
                             <div className="p-4 bg-muted/30 rounded-lg border border-border">
                                 <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
-                                    <CheckCircle2 className="w-5 h-5 text-green-500" /> {t('action_wizard_confirm_title')}
+                                    <CheckCircle2 className="w-5 h-5 text-green-500" /> {t('action_wizard.confirm_title')}
                                 </h3>
                                 <pre className="text-[11px] font-mono bg-black/20 p-4 rounded-md overflow-x-auto max-h-[350px]">
                                     {JSON.stringify(generatedJson, null, 2)}
@@ -389,12 +390,12 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                         disabled={currentStep === 1 || loading}
                         className="gap-2"
                     >
-                        <ChevronLeft className="w-4 h-4" /> {t('permission_wizard_back')}
+                        <ChevronLeft className="w-4 h-4" /> {t('permission_wizard.back')}
                     </MriButton>
 
                     <div className="flex gap-2">
                         <MriButton variant="outline" onClick={onClose} disabled={loading}>
-                            {t('cancel_label')}
+                            {t('common.cancel_label')}
                         </MriButton>
                         {currentStep < 5 ? (
                             <MriButton
@@ -402,7 +403,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                 disabled={!id || !label}
                                 className="gap-2 min-w-[100px]"
                             >
-                                {t('permission_wizard_next')} <ChevronRight className="w-4 h-4" />
+                                {t('permission_wizard.next')} <ChevronRight className="w-4 h-4" />
                             </MriButton>
                         ) : (
                             <MriButton
@@ -410,7 +411,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                 loading={loading}
                                 className="gap-2 bg-primary text-primary-foreground min-w-[120px]"
                             >
-                                {t('action_wizard_save_success')} <Wand2 className="w-4 h-4" />
+                                {t('action_wizard.save_success')} <Wand2 className="w-4 h-4" />
                             </MriButton>
                         )}
                     </div>
@@ -419,3 +420,4 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
         </MriModal>
     );
 }
+

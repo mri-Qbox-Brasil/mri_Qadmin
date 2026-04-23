@@ -100,21 +100,23 @@ export default function Actions() {
     })
 
     const actionTabs: MriTabItem[] = [
-        { id: 'all', label: t('actions_filter_all'), icon: Zap },
-        { id: 'favorites', label: t('actions_filter_favorites'), icon: Star, className: activeTab === 'favorites' ? 'text-yellow-500 hover:text-yellow-400' : '' },
-        { id: 'manager', label: t('nav_action_manager'), icon: SettingsIcon },
+        { id: 'all', label: t('actions.filter.all'), icon: Zap },
+        { id: 'favorites', label: t('actions.filter.favorites'), icon: Star, className: activeTab === 'favorites' ? 'text-yellow-500 hover:text-yellow-400' : '' },
+        ...(hasPermission(myPermissions, 'qadmin.action.manage_actions') ? [
+            { id: 'manager', label: t('nav.action_manager'), icon: SettingsIcon }
+        ] : []),
     ]
 
     const categoryTabs: MriTabItem[] = [
         { id: 'All', label: t('all') || 'All' },
-        { id: 'Actions', label: t('category_actions') || 'Actions' },
-        { id: 'PlayerActions', label: t('category_playeractions') || 'Player Actions' },
-        { id: 'OtherActions', label: t('category_otheractions') || 'Other Actions' },
+        { id: 'Actions', label: t('categories.actions') || 'Actions' },
+        { id: 'PlayerActions', label: t('categories.player_actions') || 'Player Actions' },
+        { id: 'OtherActions', label: t('categories.other_actions') || 'Other Actions' },
     ]
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('nav_actions')} countLabel={activeTab !== 'manager' ? t('records') : undefined} count={activeTab !== 'manager' ? actionList.length : undefined} icon={Zap}>
+            <MriPageHeader title={t('qadmin.page.actions')} countLabel={activeTab !== 'manager' ? t('credits.records') : undefined} count={activeTab !== 'manager' ? actionList.length : undefined} icon={Zap}>
                 <div className="flex items-center gap-4">
                     <MriTabs
                         items={actionTabs}
@@ -132,7 +134,7 @@ export default function Actions() {
 
                 <div className="flex items-center gap-2">
                     <MriExpandableSearch
-                        placeholder={t('actions_search_placeholder')}
+                        placeholder={t('actions.search_placeholder')}
                         value={search}
                         onChange={(val) => setSearch(val)}
                     />
@@ -145,7 +147,7 @@ export default function Actions() {
                     >
                         <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
                     </MriButton>
-                    {activeTab === 'manager' && (
+                    {activeTab === 'manager' && hasPermission(myPermissions, 'qadmin.action.manage_actions') && (
                         <MriButton
                             size="icon"
                             variant="brand"

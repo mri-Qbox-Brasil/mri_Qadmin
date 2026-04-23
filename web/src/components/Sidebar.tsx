@@ -1,7 +1,7 @@
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
-import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
-import { LayoutDashboard, Users, Box, Terminal, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Ban, Info, Briefcase, Shield, Container, Moon, SquareCode } from 'lucide-react'
+import { MriSidebar, MriSidebarItem, MriScrollArea } from '@mriqbox/ui-kit'
+import { LayoutDashboard, Users, Box, Terminal, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 import pkg from '../../package.json'
@@ -29,30 +29,28 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor
 
     const items: MriSidebarItem[] = [
-        { icon: LayoutDashboard, label: t('nav_dashboard'), route: 'dashboard' },
-        { icon: MapIcon, label: t('nav_livemap') || 'Live Map', route: 'livemap' },
-        { icon: Monitor, label: t('nav_livescreens') || 'Live Screens', route: 'livescreens' },
+        { icon: LayoutDashboard, label: t('qadmin.page.dashboard'), route: 'dashboard' },
+        { icon: MapIcon, label: t('qadmin.page.livemap') || 'Live Map', route: 'livemap' },
+        { icon: Monitor, label: t('qadmin.page.livescreens') || 'Live Screens', route: 'livescreens' },
+        { icon: Users, label: t('qadmin.page.players'), route: 'players' },
+        { icon: Briefcase, label: t('qadmin.page.groups'), route: 'groups' },
+        { icon: MessageSquare, label: t('qadmin.page.staffchat'), route: 'staffchat' },
+        { icon: Box, label: t('qadmin.page.items'), route: 'items' },
+        { icon: Car, label: t('qadmin.page.vehicles'), route: 'vehicles' },
+        { icon: Wand2, label: t('qadmin.page.actions'), route: 'actions' },
+        { icon: Shield, label: t('qadmin.page.permissions') || 'Permissions', route: 'permissions' },
+        { icon: Container, label: t('qadmin.page.resources'), route: 'resources' },
+        { icon: ScrollText, label: t('qadmin.page.logs') || 'Logs', route: 'logs' },
         { icon: Box, label: '', divider: true },
-        { icon: Users, label: t('nav_players'), route: 'players' },
-        { icon: Briefcase, label: t('nav_groups'), route: 'groups' },
-        { icon: Ban, label: t('nav_bans'), route: 'bans' },
-        { icon: MessageSquare, label: t('nav_staffchat'), route: 'staffchat' },
-        { icon: Box, label: t('nav_items'), route: 'items' },
-        { icon: Car, label: t('nav_vehicles'), route: 'vehicles' },
-        { icon: Terminal, label: t('nav_commands'), route: 'commands' },
-        { icon: Wand2, label: t('nav_actions'), route: 'actions' },
-        { icon: Shield, label: t('nav_permissions') || 'Permissions', route: 'permissions' },
-        { icon: Container, label: t('nav_resources'), route: 'resources' },
-        { icon: Box, label: '', divider: true },
-        { icon: Settings, label: t('nav_settings'), route: 'settings' },
-        { icon: Info, label: t('nav_credits'), route: 'credits' },
-        { icon: Box, label: '', divider: true },
-        { icon: SquareCode, label: t('nav_devmode'), route: 'devmode' },
+        { icon: Settings, label: t('nav.settings'), route: 'settings' },
+        { icon: Info, label: t('nav.credits'), route: 'credits' },
+        { icon: SquareCode, label: t('qadmin.page.devmode'), route: 'devmode' },
     ].filter(item => {
         if (item.divider) return true
         if (!item.route) return true
         // Check if permission exists for route
         if (item.route in PAGE_PERMISSIONS) {
+            console.log(item.route, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
             return hasPermission(myPermissions, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
         }
         return true
@@ -60,7 +58,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
 
     return (
         <div className="flex flex-col h-full bg-card border-r border-border">
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <MriScrollArea className="flex-1 min-h-0">
                 <MriSidebar
                     items={items}
                     activeRoute={currentRoute}
@@ -68,7 +66,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
                     collapsed={!menuWide}
                     onToggleCollapse={() => setMenuWide(!menuWide)}
                 />
-            </div>
+            </MriScrollArea>
 
             <div className={cn(
                 "p-3 border-t border-border flex flex-col gap-2 transition-all duration-300",
@@ -80,7 +78,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
                 )}>
                     {menuWide && (
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">
-                            {t('settings_theme_mode') || "Theme"}
+                            {t('settings.theme.mode') || "Theme"}
                         </span>
                     )}
                     <button
@@ -89,7 +87,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
                             "p-2 rounded-lg transition-all hover:bg-muted text-muted-foreground hover:text-primary active:scale-95",
                             !menuWide && "w-10 h-10 flex items-center justify-center bg-secondary/30"
                         )}
-                        title={t(`settings_theme_${theme}`)}
+                        title={t(`settings.theme.${theme}`)}
                     >
                         <ThemeIcon className="w-4 h-4" />
                     </button>

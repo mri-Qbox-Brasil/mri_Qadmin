@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MriInput, MriSelectSearch, MriActionModal } from '@mriqbox/ui-kit'
+import { MriInput, MriActionModal, MriSelect } from '@mriqbox/ui-kit'
 import { Wallet } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 
@@ -9,31 +9,34 @@ export default function MoneyModal({ isGiving, onClose, onSubmit, defaultType = 
     const { t } = useI18n()
 
     const typeOptions = availableTypes.length > 0 ? availableTypes : [
-        { label: t('option_cash'), value: 'cash' },
-        { label: t('option_bank'), value: 'bank' },
-        { label: t('option_crypto'), value: 'crypto' },
+        { label: t('player.actions.money.types.cash'), value: 'cash' },
+        { label: t('player.actions.money.types.bank'), value: 'bank' },
+        { label: t('player.actions.money.types.crypto'), value: 'crypto' },
     ]
 
     return (
         <MriActionModal
-            title={isGiving ? t('money_modal_give') : t('money_modal_remove')}
+            title={isGiving ? t('player.actions.money.give') : t('player.actions.money.remove')}
             icon={Wallet}
             onClose={onClose}
             onConfirm={() => onSubmit(moneyType, amount)}
-            confirmLabel={isGiving ? t('send') : t('remove')}
+            confirmLabel={isGiving ? t('player.actions.money.give') : t('player.actions.money.remove')}
         >
-            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_type')}</label>
-            <div className="mb-4">
-                <MriSelectSearch
-                    options={typeOptions}
-                    value={moneyType}
-                    onChange={(val) => setMoneyType(val as any)}
-                    placeholder={t('select_placeholder')}
-                />
-            </div>
+            <div className="space-y-4">
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('player.actions.money.type')}</label>
+                    <MriSelect
+                        options={typeOptions}
+                        value={moneyType}
+                        onChange={(val) => setMoneyType(val as any)}
+                    />
+                </div>
 
-            <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('label_amount')}</label>
-            <MriInput type="number" value={amount} onChange={(e) => setAmount(Number((e.target as HTMLInputElement).value))} className="mb-6 bg-background border-border h-10" />
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('player.actions.money.amount')}</label>
+                    <MriInput type="number" value={amount} onChange={(e) => setAmount(Number((e.target as HTMLInputElement).value))} className="bg-background border-border h-10" />
+                </div>
+            </div>
         </MriActionModal>
     )
 }

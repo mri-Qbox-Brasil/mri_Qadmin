@@ -3,6 +3,7 @@ import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { MriButton } from '@mriqbox/ui-kit'
 import { Play, Square, RotateCw } from 'lucide-react'
+import { hasPermission } from '@/utils/permissions'
 
 interface ButtonStateProps {
     resource: string
@@ -12,7 +13,8 @@ interface ButtonStateProps {
 
 export default function ButtonState({ resource, state }: ButtonStateProps) {
     const { sendNui } = useNui()
-    const { setGameData } = useAppState()
+    const { setGameData, myPermissions } = useAppState()
+    const canDo = (perm: string) => hasPermission(myPermissions, perm)
 
     const changeState = async (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -34,8 +36,9 @@ export default function ButtonState({ resource, state }: ButtonStateProps) {
         <MriButton
             variant="ghost"
             size="icon"
-            className="h-6 w-6 hover:bg-primary hover:text-primary-foreground"
+            className="h-6 w-6 hover:bg-primary hover:text-primary-foreground disabled:opacity-30"
             onClick={changeState}
+            disabled={!canDo('qadmin.action.change_resource')}
         >
             <IconComponent className="h-4 w-4" />
         </MriButton>

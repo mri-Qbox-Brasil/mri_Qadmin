@@ -115,7 +115,7 @@ export default function LiveScreensPage() {
 
     return (
         <div className="h-full flex flex-col bg-background relative overflow-hidden">
-            <MriPageHeader title={t('livescreens_title') || "Live Screens Dashboard"} icon={Monitor} />
+            <MriPageHeader title={t('livescreens.title') || "Live Screens Dashboard"} icon={Monitor} />
 
             <div className="flex-1 pt-4 p-2 overflow-hidden flex flex-col gap-4 relative">
                 {/* Active feeds grid */}
@@ -123,17 +123,17 @@ export default function LiveScreensPage() {
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-bold flex items-center gap-2">
                             <Video className="w-5 h-5 text-red-500" />
-                            {t('livescreens_active') || "Active Feeds"} ({watching.length})
+                            {t('livescreens.active') || "Active Feeds"} ({watching.length})
                         </h2>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Wifi className="w-3 h-3" />
-                            {t('livescreens_webrtc') || "WebRTC Live"}
+                            {t('livescreens.webrtc') || "WebRTC Live"}
                         </div>
                     </div>
 
                     {watching.length === 0 ? (
                         <div className="h-40 flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
-                            {t('livescreens_empty') || "Select players below to watch their screen"}
+                            {t('livescreens.empty') || "Select players below to watch their screen"}
                         </div>
                     ) : (
                         <div className={cn(
@@ -211,7 +211,7 @@ export default function LiveScreensPage() {
                 {/* Player selector */}
                 {!maximizedId && (
                     <div className="h-1/3 border rounded-xl p-4 overflow-hidden flex flex-col bg-card shrink-0">
-                        <h3 className="font-semibold mb-2">{t('livescreens_available') || "Available Players"}</h3>
+                        <h3 className="font-semibold mb-2">{t('livescreens.available') || "Available Players"}</h3>
                         <div className="overflow-auto flex-1">
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                                 {players.map(p => {

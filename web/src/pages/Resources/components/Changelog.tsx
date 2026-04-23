@@ -72,7 +72,7 @@ export default function Changelog() {
 
     if (loading) return (
         <div className="flex flex-col h-full overflow-hidden">
-            <MriPageHeader title={t('server_changelog')} icon={History} countLabel={t('records')} count={changelogs.length}>
+            <MriPageHeader title={t('credits.server_changelog')} icon={History} countLabel={t('credits.records')} count={changelogs.length}>
             </MriPageHeader>
             <div className="p-4 w-full h-full">
                 <Spinner />
@@ -82,11 +82,11 @@ export default function Changelog() {
 
     if (error) return (
         <div className="flex flex-col h-full overflow-hidden">
-            <MriPageHeader title={t('server_changelog')} icon={History} countLabel={t('records')} count={changelogs.length}>
+            <MriPageHeader title={t('credits.server_changelog')} icon={History} countLabel={t('credits.records')} count={changelogs.length}>
             </MriPageHeader>
             <div className="p-4 w-full h-full">
                 <div className="flex-1 flex items-center justify-center bg-muted/50 rounded-xl border border-border border-dashed text-red-500">
-                    {t('server_changelog_error')}
+                    {t('credits.changelog_error_server')}
                 </div>
             </div>
         </div>
@@ -94,7 +94,7 @@ export default function Changelog() {
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <MriPageHeader title={t('server_changelog')} icon={History} countLabel={t('records')} count={changelogs.length}>
+            <MriPageHeader title={t('credits.server_changelog')} icon={History} countLabel={t('credits.records')} count={changelogs.length}>
             </MriPageHeader>
 
             <div className="flex-1 overflow-auto space-y-3 p-4 no-scrollbar">

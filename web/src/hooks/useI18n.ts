@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-export type Translations = Record<string, string>
+export type Translations = { [key: string]: string | Translations }
 
 export interface I18nContextValue {
     t: (key: string, vars?: Record<string, any> | any[]) => string

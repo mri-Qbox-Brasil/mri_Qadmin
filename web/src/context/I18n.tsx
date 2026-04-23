@@ -71,8 +71,21 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         return str.replace(/\{(.*?)\}/g, (_, k) => String((vars as Record<string, any>)[k] ?? ''))
     }
 
+    function getNestedValue(obj: Translations, path: string): string | undefined {
+        const parts = path.split('.')
+        let current: any = obj
+        for (const part of parts) {
+            if (current === undefined || current === null || typeof current !== 'object') return undefined
+            current = current[part]
+        }
+        return typeof current === 'string' ? current : undefined
+    }
+
     function t(key: string, vars?: Record<string, any> | any[]) {
-        const raw = translations[key] ?? (en as Translations)[key] ?? key
+        const raw = getNestedValue(translations, key) 
+            ?? getNestedValue(en as Translations, key) 
+            ?? key
+
         try {
             return interpolate(raw, vars)
         } catch {

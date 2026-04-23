@@ -1,6 +1,8 @@
 import { MriButton, MriStatusBadge } from '@mriqbox/ui-kit'
 import { useI18n } from '@/hooks/useI18n'
 import { Ban, Unlock } from 'lucide-react'
+import { useAppState } from '@/context/AppState'
+import { hasPermission } from '@/utils/permissions'
 
 interface Ban {
     id: string
@@ -20,10 +22,11 @@ interface BanListRowProps {
 
 export default function BanListRow({ ban, onUnban }: BanListRowProps) {
     const { t } = useI18n()
+    const { myPermissions } = useAppState()
 
     const formatDate = (ts: number) => {
-        if (!ts) return t('na')
-        if (ts === 2147483647) return t('ban_duration_permanent')
+        if (!ts) return t('common.na')
+        if (ts === 2147483647) return t('player.actions.ban.permanent')
         return new Date(ts * 1000).toLocaleString()
     }
 
@@ -50,10 +53,11 @@ export default function BanListRow({ ban, onUnban }: BanListRowProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => onUnban(ban)}
+                    disabled={!hasPermission(myPermissions, 'qadmin.action.unban_player')}
                     className="h-8 text-muted-foreground hover:text-green-400 hover:bg-green-500/10 transition-colors whitespace-nowrap"
                 >
                     <Unlock className="h-4 w-4 mr-2" />
-                    {t('unban')}
+                    {t('player.actions.unban')}
                 </MriButton>
             </td>
         </>

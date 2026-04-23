@@ -8,7 +8,6 @@ import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import GridSkeleton from '@/components/skeletons/GridSkeleton'
 
 import { Package, Box, RefreshCw } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 import GiveItemModal from '@/components/players/GiveItemModal'
 import ItemGridCard from '@/components/items/ItemGridCard'
@@ -67,10 +66,10 @@ export default function Items() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('title_items') || "Items"} icon={Package} countLabel={t('records')} count={filtered.length}>
+            <MriPageHeader title={t('item.title') || "Items"} icon={Package} countLabel={t('common.records')} count={filtered.length}>
                 <div className="flex items-center gap-2">
                     <MriExpandableSearch
-                        placeholder={t('search_placeholder_items')}
+                        placeholder={t('common.search')}
                         value={search}
                         onChange={setSearch}
                     />
@@ -80,9 +79,10 @@ export default function Items() {
                     variant="outline"
                     className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                     onClick={handleRefresh}
+                    isLoading={loading}
                     disabled={loading}
                 >
-                    <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                    {!loading && <RefreshCw className="w-4 h-4" />}
                 </MriButton>
             </MriPageHeader>
 
@@ -92,7 +92,7 @@ export default function Items() {
                 ) : filtered.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                         <Box className="w-12 h-12 opacity-20" />
-                        <p>{t('items_none_found')}</p>
+                        <p>{t('item.none_found')}</p>
                     </div>
                 ) : (
                     <VirtuosoGrid

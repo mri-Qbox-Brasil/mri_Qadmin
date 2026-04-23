@@ -9,7 +9,6 @@ import ConfirmAction from '@/components/players/ConfirmAction'
 import { TableVirtuoso } from 'react-virtuoso'
 import BansSkeleton from '@/components/skeletons/BansSkeleton'
 
-import { cn } from '@/lib/utils'
 
 import BanListRow from '@/components/bans/BanListRow'
 
@@ -126,7 +125,7 @@ export default function Bans() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('nav_bans')} icon={Gavel} countLabel={t('records')} count={filteredBans.length}>
+            <MriPageHeader title={t('nav.bans')} icon={Gavel} countLabel={t('credits.records')} count={filteredBans.length}>
                 <div className="flex items-center gap-2">
                     <MriExpandableSearch
                         placeholder={t('search_placeholder_players')}
@@ -134,8 +133,15 @@ export default function Bans() {
                         onChange={setSearch}
                     />
                 </div>
-                <MriButton onClick={() => fetchBans()} disabled={loading} size="icon" variant="outline" className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10">
-                    <RefreshCw className={cn("h-4 w-4", loading && 'animate-spin')} />
+                <MriButton 
+                    onClick={() => fetchBans()} 
+                    isLoading={loading}
+                    disabled={loading} 
+                    size="icon" 
+                    variant="outline" 
+                    className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10"
+                >
+                    {!loading && <RefreshCw className="h-4 w-4" />}
                 </MriButton>
             </MriPageHeader>
 
@@ -153,12 +159,12 @@ export default function Bans() {
                         data={filteredBans}
                         fixedHeaderContent={() => (
                             <tr className="bg-card border-b border-border text-xs uppercase font-bold text-muted-foreground tracking-wider">
-                                <th className="px-6 py-4 text-left font-bold w-[20%]">{t('bans_name')}</th>
-                                <th className="px-6 py-4 text-left font-bold w-[30%]">{t('bans_reason')}</th>
-                                <th className="px-6 py-4 text-left font-bold w-[15%]">{t('bans_expire')}</th>
-                                <th className="px-6 py-4 text-left font-bold w-[15%]">{t('bans_banned_by')}</th>
-                                <th className="px-6 py-4 text-left font-bold hidden 2xl:table-cell w-[15%]">{t('bans_license')}</th>
-                                <th className="px-6 py-4 text-center font-bold w-[100px]">{t('bans_action')}</th>
+                                <th className="px-6 py-4 text-left font-bold w-[20%]">{t('player.actions.ban.labels.name')}</th>
+                                <th className="px-6 py-4 text-left font-bold w-[30%]">{t('player.actions.ban.labels.reason_label')}</th>
+                                <th className="px-6 py-4 text-left font-bold w-[15%]">{t('player.actions.ban.labels.expire_label')}</th>
+                                <th className="px-6 py-4 text-left font-bold w-[15%]">{t('player.actions.ban.labels.banned_by_label')}</th>
+                                <th className="px-6 py-4 text-left font-bold hidden 2xl:table-cell w-[15%]">{t('player.actions.ban.labels.license')}</th>
+                                <th className="px-6 py-4 text-center font-bold w-[100px]">{t('player.actions.ban.labels.action')}</th>
                             </tr>
                         )}
                         components={{

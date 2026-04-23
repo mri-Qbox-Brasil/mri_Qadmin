@@ -87,20 +87,20 @@ export default function LiveMapPage() {
     }
 
     const mapFilters: MriTabItem[] = [
-        { id: 'staff', label: t('livemap_filter_staff'), icon: ShieldCheck },
-        { id: 'players', label: t('livemap_filter_players'), icon: User },
-        { id: 'dead', label: t('livemap_filter_dead'), icon: Skull },
+        { id: 'staff', label: t('livemap.filters.staff'), icon: ShieldCheck },
+        { id: 'players', label: t('livemap.filters.players'), icon: User },
+        { id: 'dead', label: t('livemap.filters.dead'), icon: Skull },
     ]
 
     const mapStyleTabs: MriTabItem[] = [
-        { id: 'atlas', label: t('livemap_style_atlas'), icon: MapTypeIcon },
-        { id: 'grid', label: t('livemap_style_grid'), icon: Grid },
-        { id: 'satellite', label: t('livemap_style_satellite'), icon: Globe },
+        { id: 'atlas', label: t('livemap.style.atlas'), icon: MapTypeIcon },
+        { id: 'grid', label: t('livemap.style.grid'), icon: Grid },
+        { id: 'satellite', label: t('livemap.style.satellite'), icon: Globe },
     ]
 
     return (
         <div className="h-full flex flex-col rounded-r-xl overflow-hidden">
-            <MriPageHeader title={t('nav_livemap') || "Live Map"} icon={MapIcon}>
+            <MriPageHeader title={t('qadmin.page.livemap') || "Live Map"} icon={MapIcon}>
                 <div className="flex items-center gap-3">
                     <MriTabs
                         items={mapFilters}
@@ -121,7 +121,7 @@ export default function LiveMapPage() {
                             <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border p-4 rounded-xl shadow-2xl z-50 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
                                 <div className="flex flex-col gap-3">
                                     <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                        <span className="flex items-center gap-2"><Sun size={12} /> {t('livemap_map_brightness')}</span>
+                                        <span className="flex items-center gap-2"><Sun size={12} /> {t('livemap.map_brightness')}</span>
                                         <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded">{Math.round(brightness * 100)}%</span>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ export default function LiveMapPage() {
                                 <div className="h-px bg-border" />
                                 <div className="flex flex-col gap-3">
                                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                        <MapTypeIcon size={12} /> {t('livemap_style')}
+                                        <MapTypeIcon size={12} /> {t('livemap.style.label')}
                                     </div>
                                     <MriTabs
                                         items={mapStyleTabs}
@@ -147,7 +147,7 @@ export default function LiveMapPage() {
                         )}
                     </div>
                     <MriExpandableSearch
-                        placeholder={t('livemap_search_placeholder')}
+                        placeholder={t('livemap.search_placeholder')}
                         value={search}
                         onChange={(val) => {
                             setSearch(val)
@@ -159,7 +159,7 @@ export default function LiveMapPage() {
                         size="icon"
                         className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10"
                         onClick={handleResetMap}
-                        title={t('common_refresh')}
+                        title={t('common.refresh')}
                     >
                         <RefreshCcw className="w-4 h-4" />
                     </MriButton>

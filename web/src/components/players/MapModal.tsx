@@ -78,12 +78,12 @@ export default function MapModal({ isOpen, onClose, trackedPlayerId, initialName
                 whiteSpace: 'nowrap',
                 borderWidth: '0'
             }}>
-                <h2>{t('live_map_tracking') || 'Live Map Tracking'}</h2>
+                <h2>{t('actions.live_map_tracking') || 'Live Map Tracking'}</h2>
                 <p>{t('live_map_description') || 'Tracking player position on the map'}</p>
             </div>
             <div className="flex items-center justify-between p-4 border-b border-border bg-card">
                 <div className="flex items-center gap-2 font-bold text-lg">
-                    {t('live_map_tracking') || 'Live Map Tracking'}
+                    {t('actions.live_map_tracking') || 'Live Map Tracking'}
                     <span className="text-muted-foreground text-sm font-normal">
                         - {markers[0]?.name || initialName || `ID: ${trackedPlayerId}`}
                     </span>

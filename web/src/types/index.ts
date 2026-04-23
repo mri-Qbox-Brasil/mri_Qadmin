@@ -51,6 +51,13 @@ export interface Player {
         thirst: number
         stress: number
     }
+    ban?: {
+        id: string | number
+        reason: string
+        expire: number
+        bannedby: string
+        isPermanent: boolean
+    } | null
 }
 
 export interface SummaryData {

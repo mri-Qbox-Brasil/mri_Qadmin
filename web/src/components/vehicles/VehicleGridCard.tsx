@@ -2,6 +2,8 @@ import { MriButton, MriCopyButton, MriStatusBadge } from '@mriqbox/ui-kit'
 import VehicleImage from '@/pages/Vehicles/components/VehicleImage'
 import { useI18n } from '@/hooks/useI18n'
 import { DollarSign, Tag } from 'lucide-react'
+import { useAppState } from '@/context/AppState'
+import { hasPermission } from '@/utils/permissions'
 
 interface Vehicle {
     model: string
@@ -20,6 +22,7 @@ interface VehicleGridCardProps {
 
 export default function VehicleGridCard({ vehicle, onSpawn, onUpdateStock }: VehicleGridCardProps) {
     const { t } = useI18n()
+    const { myPermissions } = useAppState()
 
     return (
         <div className="bg-card border border-border rounded-xl flex flex-col hover:border-primary/50 hover:bg-muted transition-all group overflow-hidden relative">
@@ -67,22 +70,26 @@ export default function VehicleGridCard({ vehicle, onSpawn, onUpdateStock }: Veh
                     </div>
                 </div>
 
-                <div className="flex gap-2">
-                    <MriButton
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 h-8 text-xs border-input text-muted-foreground hover:text-foreground bg-transparent hover:bg-muted"
-                        onClick={() => onUpdateStock(vehicle)}
-                    >
-                        {t('btn_stock')}
-                    </MriButton>
-                    <MriButton
-                        size="sm"
-                        className="flex-1 h-8 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50 text-foreground"
-                        onClick={() => onSpawn(vehicle.model)}
-                    >
-                        {t('btn_spawn')}
-                    </MriButton>
+                <div className="flex gap-2 min-h-8">
+                    {hasPermission(myPermissions, 'qadmin.action.manage_vehicles') && (
+                        <MriButton
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 h-8 text-xs border-input text-muted-foreground hover:text-foreground bg-transparent hover:bg-muted"
+                            onClick={() => onUpdateStock(vehicle)}
+                        >
+                            {t('common.btn_stock')}
+                        </MriButton>
+                    )}
+                    {hasPermission(myPermissions, 'qadmin.action.spawn_vehicle') && (
+                        <MriButton
+                            size="sm"
+                            className="flex-1 h-8 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50 text-foreground"
+                            onClick={() => onSpawn(vehicle.model)}
+                        >
+                            {t('btn_spawn')}
+                        </MriButton>
+                    )}
                 </div>
             </div>
         </div>

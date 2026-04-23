@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '@/hooks/useI18n'
-import { MriSelectSearch } from '@mriqbox/ui-kit'
+import { MriSelect } from '@mriqbox/ui-kit'
 import { cn } from '@/lib/utils'
 
 export default function DevLocaleSwitcher({ className }: { className?: string }) {
@@ -27,7 +27,7 @@ export default function DevLocaleSwitcher({ className }: { className?: string })
 
     return (
         <div className={cn("min-w-[140px]", className)}>
-            <MriSelectSearch
+            <MriSelect
                 options={options}
                 value={locale}
                 onChange={applyLocale}

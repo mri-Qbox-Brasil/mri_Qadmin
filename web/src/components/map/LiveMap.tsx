@@ -130,13 +130,13 @@ const Legend = () => {
     return (
         <div className="absolute bottom-6 left-6 z-[1000] bg-card/80 border border-border p-3 rounded-xl shadow-2xl flex flex-col gap-2 min-w-[140px] pointer-events-auto">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-2">
-                <Info size={12} /> {t('livemap_legend')}
+                <Info size={12} /> {t('livemap.legend')}
             </div>
             <div className="flex items-center gap-3 text-xs">
-                <div className="w-3 h-3 rounded-full bg-primary" /> {t('vitals_status_alive')}
+                <div className="w-3 h-3 rounded-full bg-primary" /> {t('vitals.status.alive')}
             </div>
             <div className="flex items-center gap-3 text-xs opacity-50">
-                <div className="w-3 h-3 rounded-full bg-muted-foreground" /> {t('vitals_status_dead')}
+                <div className="w-3 h-3 rounded-full bg-muted-foreground" /> {t('vitals.status.dead')}
             </div>
         </div>
     )
@@ -318,7 +318,7 @@ export default function LiveMap({
                         variant="secondary"
                         className="h-10 w-10 shadow-xl border border-border bg-card/80"
                         onClick={() => setUiVisible(true)}
-                        title={t('livemap_show_interface')}
+                        title={t('livemap.show_interface')}
                     >
                         <Eye className="w-5 h-5" />
                     </MriButton>
@@ -369,11 +369,11 @@ export default function LiveMap({
                                     size="mini"
                                     onAction={(vital: any, label: any, val: any) => setShowVital({ markerId: marker.id, vital, label, value: val, playerName: marker.name })}
                                     labels={{
-                                        health: t('vitals_health'),
-                                        armor: t('vitals_armor'),
-                                        hunger: t('vitals_hunger'),
-                                        thirst: t('vitals_thirst'),
-                                        stress: t('vitals_stress')
+                                        health: t('vitals.health'),
+                                        armor: t('vitals.armor'),
+                                        hunger: t('vitals.hunger'),
+                                        thirst: t('vitals.thirst'),
+                                        stress: t('vitals.stress')
                                     }}
                                 />
 
@@ -391,7 +391,7 @@ export default function LiveMap({
                                                 onViewScreen?.(marker.id, marker.name);
                                             }}
                                         >
-                                            <SquareTerminal size={14} /> {t('livemap_view_screen')}
+                                            <SquareTerminal size={14} /> {t('livemap.view_screen')}
                                         </MriButton>
                                     )}
                                 </div>
@@ -428,12 +428,12 @@ export default function LiveMap({
                                 setShowVital(null)
                             }}
                             labels={{
-                                health: t('vitals_health'),
-                                armor: t('vitals_armor'),
-                                hunger: t('vitals_hunger'),
-                                thirst: t('vitals_thirst'),
-                                stress: t('vitals_stress'),
-                                newValue: t('new_value'),
+                                health: t('vitals.health'),
+                                armor: t('vitals.armor'),
+                                hunger: t('vitals.hunger'),
+                                thirst: t('vitals.thirst'),
+                                stress: t('vitals.stress'),
+                                newValue: t('common.new_value'),
                                 confirm: t('confirm'),
                                 cancel: t('cancel')
                             }}
