@@ -1,0 +1,75 @@
+{
+    "Categories": [
+        {
+            "db": true,
+            "relay": false,
+            "discord": true,
+            "label": "👤 Players",
+            "id": "players"
+        },
+        {
+            "db": false,
+            "relay": true,
+            "discord": true,
+            "label": "🔨 Bans",
+            "id": "bans"
+        },
+        {
+            "db": false,
+            "relay": false,
+            "discord": true,
+            "label": "🎒 Inventário",
+            "id": "inventory"
+        },
+        {
+            "db": false,
+            "relay": true,
+            "discord": true,
+            "label": "🚗 Veículos",
+            "id": "vehicles"
+        },
+        {
+            "db": false,
+            "relay": true,
+            "discord": false,
+            "label": "💰 Dinheiro",
+            "id": "money"
+        },
+        {
+            "db": true,
+            "relay": false,
+            "discord": false,
+            "label": "⚙️ Servidor",
+            "id": "server"
+        },
+        {
+            "db": true,
+            "relay": false,
+            "discord": false,
+            "label": "🛡️ Permissões",
+            "id": "permissions"
+        },
+        {
+            "db": true,
+            "relay": false,
+            "discord": false,
+            "label": "💬 Chat",
+            "id": "chat"
+        },
+        {
+            "db": true,
+            "relay": false,
+            "discord": false,
+            "label": "🖥️ Sistema",
+            "id": "system"
+        }
+    ],
+    "ResourceMode": "blacklist",
+    "Webhooks": {
+        "Fallback": ""
+    },
+    "MaxMemory": 500,
+    "ResourceEntries": [],
+    "DBEnabled": true,
+    "ForwardEvent": ""
+}
