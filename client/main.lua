@@ -87,6 +87,11 @@ local function GetTranslations(locale)
     return nil, locale
 end
 
+-- Forward new log entries to the NUI panel in real-time
+RegisterNetEvent('mri_Qadmin:client:NewLog', function(log)
+    SendNUIMessage({ action = 'newLog', data = log })
+end)
+
 -- Provide translations to the frontend when requested (frontend calls this on mount)
 RegisterNUICallback('getTranslations', function(data, cb)
     local tbl, locale = GetTranslations(data and data.locale)
@@ -396,18 +401,18 @@ RegisterNUICallback("seed_pages", function(_, cb)
 end)
 
 RegisterNUICallback("mri_Qadmin:server:SaveGroup", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:SaveGroup', data.id, data.label, data.description)
-    cb('ok')
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:SaveGroup', false, data.id, data.label, data.description)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
 RegisterNUICallback("mri_Qadmin:server:DeleteGroup", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:DeleteGroup', data.id)
-    cb('ok')
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:DeleteGroup', false, data.id)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
 RegisterNUICallback("mri_Qadmin:server:UpdateGroupPermissions", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:UpdateGroupPermissions', data.id, data.permissions)
-    cb('ok')
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:UpdateGroupPermissions', false, data.id, data.permissions)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetCharacterGroups", function(data, cb)
@@ -416,8 +421,8 @@ RegisterNUICallback("mri_Qadmin:callback:GetCharacterGroups", function(data, cb)
 end)
 
 RegisterNUICallback("mri_Qadmin:server:UpdateCharacterGroups", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:UpdateCharacterGroups', data.citizenid, data.groups)
-    cb('ok')
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:UpdateCharacterGroups', false, data.citizenid, data.groups)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
 RegisterNUICallback("mri_Qadmin:server:SetVital", function(data, cb)
@@ -447,6 +452,49 @@ end)
 
 RegisterNUICallback("mri_Qadmin:server:DeleteAction", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:DeleteAction', data.id, data.category)
+    cb('ok')
+end)
+
+-- Dashboard self-action callbacks
+RegisterNUICallback("mri_Qadmin:server:ReviveSelf", function(_, cb)
+    if not CheckPerms('qadmin.action.revive_self') then cb('denied'); return end
+    TriggerServerEvent('mri_Qadmin:server:ReviveSelf')
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:ClearChat", function(_, cb)
+    if not CheckPerms('qadmin.action.clear_chat') then cb('denied'); return end
+    TriggerServerEvent('mri_Qadmin:server:ClearChat')
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:GotoWaypoint", function(_, cb)
+    if not CheckPerms('qadmin.action.goto_waypoint') then cb('denied'); return end
+    local wp = GetFirstBlipInfoId(8)
+    if DoesBlipExist(wp) then
+        local coords = GetBlipCoords(wp)
+        local z = coords.z
+        local found, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, true)
+        if found then z = groundZ end
+        SetEntityCoords(cache.ped, coords.x, coords.y, z + 0.5, false, false, false, false)
+    else
+        QBCore.Functions.Notify(locale('notifications.no_waypoint') or 'Nenhum waypoint definido.', 'error')
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:FixVehicle", function(_, cb)
+    if not CheckPerms('qadmin.action.fix_self_vehicle') then cb('denied'); return end
+    local veh = GetVehiclePedIsIn(cache.ped, false)
+    if veh ~= 0 then
+        SetVehicleFixed(veh)
+        SetVehicleDeformationFixed(veh)
+        SetVehicleEngineHealth(veh, 1000.0)
+        SetVehicleBodyHealth(veh, 1000.0)
+        SetVehiclePetrolTankHealth(veh, 1000.0)
+    else
+        QBCore.Functions.Notify(locale('notifications.not_in_vehicle') or 'Você não está em um veículo.', 'error')
+    end
     cb('ok')
 end)
 

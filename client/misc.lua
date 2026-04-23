@@ -24,13 +24,13 @@ RegisterNetEvent('mri_Qadmin:client:ToggleGodmode', function(data)
 
     if godmode then
 
-        QBCore.Functions.Notify(locale("godmode", "Ativado"), 'primary')
+        QBCore.Functions.Notify(locale("notifications.godmode", "Ativado"), 'primary')
         while godmode do
             Wait(0)
             SetPlayerInvincible(cache.playerId, true)
         end
         SetPlayerInvincible(cache.playerId, false)
-        QBCore.Functions.Notify(locale("godmode", "Desativado"), 'primary')
+        QBCore.Functions.Notify(locale("notifications.godmode", "Desativado"), 'primary')
     end
 end)
 
@@ -40,7 +40,7 @@ RegisterNetEvent('mri_Qadmin:client:KillPlayer', function(data, selectedData)
     if not actionData or not CheckPerms(actionData.perms) then return end
     local player = selectedData["Player"].value
     SetEntityHealth(cache.ped, 0)
-    QBCore.Functions.Notify(locale("kill_player", player), 'success')
+    QBCore.Functions.Notify(locale("notifications.kill_player", player), 'success')
 end)
 
 RegisterNetEvent('mri_Qadmin:client:ForceKill', function()
@@ -149,9 +149,9 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
 
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
-        QBCore.Functions.Notify(locale("set_weapon_ammo", tostring(ammo)), 'success')
+        QBCore.Functions.Notify(locale("notifications.set_weapon_ammo", tostring(ammo)), 'success')
     else
-        QBCore.Functions.Notify(locale("no_weapon"), 'error')
+        QBCore.Functions.Notify(locale("notifications.no_weapon"), 'error')
     end
 end)
 
@@ -161,9 +161,9 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmoAdmin', function()
     local ammo = 999
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
-        QBCore.Functions.Notify(locale("set_weapon_ammo", tostring(ammo)), 'success')
+        QBCore.Functions.Notify(locale("notifications.set_weapon_ammo", tostring(ammo)), 'success')
     else
-        QBCore.Functions.Notify(locale("no_weapon"), 'error')
+        QBCore.Functions.Notify(locale("notifications.no_weapon"), 'error')
     end
 end)
 
@@ -189,7 +189,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleDev', function(dataKey)
     TriggerEvent('mri_Qadmin:client:ToggleNearbyScanner')    -- toggle Nearby Scanner (auto-on)
 
 
-    QBCore.Functions.Notify(locale("toggle_dev"), 'success')
+    QBCore.Functions.Notify(locale("notifications.toggle_dev"), 'success')
 end)
 
 -- Deactivate DevMode on BACKSPACE if menu is closed
@@ -213,7 +213,7 @@ end)
 -- Key Bindings
 local toogleAdmin = lib.addKeybind({
     name = 'mri:toogleAdmin',
-    description = locale("command_admin_desc"),
+    description = locale("commands.admin_desc"),
     defaultKey = Config.AdminKey,
     onPressed = function(_)
         ExecuteCommand('adm')
@@ -225,7 +225,7 @@ local toogleAdmin = lib.addKeybind({
 
 local toogleNoclip = lib.addKeybind({
     name = 'mri:toogleNoclip',
-    description = locale("command_noclip_desc"),
+    description = locale("commands.noclip_desc"),
     defaultKey = Config.NoclipKey,
     onPressed = function(_)
         ExecuteCommand('nc')

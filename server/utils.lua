@@ -1,7 +1,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
 local function noPerms(source)
-    QBCore.Functions.Notify(source, locale('no_perms') or "Permissões insuficientes.", 'error')
+    QBCore.Functions.Notify(source, locale('notifications.no_perms') or "Permissões insuficientes.", 'error')
 end
 
 local function formatNodes(perms)
@@ -229,7 +229,7 @@ function CheckRoutingbucket(source, target)
     if sourceBucket == targetBucket then return end
 
     SetPlayerRoutingBucket(source, targetBucket)
-    QBCore.Functions.Notify(source, locale("bucket_set", targetBucket), 'error', 7500)
+    QBCore.Functions.Notify(source, locale("notifications.bucket_set", targetBucket), 'error', 7500)
 end
 
 --- Convert "R, G, B" string to "#RRGGBB" hex
