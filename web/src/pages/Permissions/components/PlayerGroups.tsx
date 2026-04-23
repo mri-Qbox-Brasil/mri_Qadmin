@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Search, Loader2, MapPin, User, ChevronLeft, Heart } from 'lucide-react'
-import { MriButton, MriInput } from '@mriqbox/ui-kit'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Loader2, MapPin, User, ChevronLeft } from 'lucide-react'
+import { MriButton } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
 import { GroupData } from './GroupManager'
 import { isEnvBrowser } from '@/utils/misc'
@@ -17,11 +17,10 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
     const [playersList, setPlayersList] = useState<Player[]>([])
     const [activePlayer, setActivePlayer] = useState<Player | null>(null)
     
-    const [playerGroups, setPlayerGroups] = useState<string[]>([])
     const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set())
 
     // Fetch players on mount or search
-    const fetchPlayers = async (query: string) => {
+    const fetchPlayers = useCallback(async (query: string) => {
         setSearchingPlayers(true)
         try {
             const limit = 40;
@@ -46,7 +45,7 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
         } finally {
             setSearchingPlayers(false)
         }
-    }
+    }, [sendNui])
 
     // Debounce search using prop
     useEffect(() => {
@@ -54,7 +53,7 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
             if (!activePlayer) fetchPlayers(searchQuery)
         }, 500)
         return () => clearTimeout(timer)
-    }, [searchQuery, activePlayer])
+    }, [searchQuery, activePlayer, fetchPlayers])
 
 
     const loadPlayerGroups = async (player: Player) => {
@@ -64,14 +63,13 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
             let result: string[] = []
             
             if (isEnvBrowser()) {
-                // @ts-ignore
+                // @ts-expect-error Mock data might not match type perfectly
                 result = MOCK_CHARACTER_GROUPS[cid] || []
             } else {
                 result = await sendNui<string[]>('mri_Qadmin:callback:GetCharacterGroups', { citizenid: cid }) || []
             }
 
             setActivePlayer(player)
-            setPlayerGroups(result)
             setSelectedGroups(new Set(result))
         } catch (e) {
             console.error(e)
@@ -90,8 +88,10 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
     const handleSave = async () => {
         if (!activePlayer?.citizenid) return
         setLoading(true)
-        await sendNui('mri_Qadmin:server:UpdateCharacterGroups', { citizenid: activePlayer.citizenid, groups: Array.from(selectedGroups) })
-        await loadPlayerGroups(activePlayer)
+        const response: any = await sendNui('mri_Qadmin:server:UpdateCharacterGroups', { citizenid: activePlayer.citizenid, groups: Array.from(selectedGroups) })
+        if (response?.status === 'ok') {
+            await loadPlayerGroups(activePlayer)
+        }
         setLoading(false)
     }
 

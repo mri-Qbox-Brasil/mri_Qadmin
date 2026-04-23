@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
-import { Shield, Key, Users, RefreshCw, Wand2, UserPlus } from 'lucide-react'
+import { Shield, Key, RefreshCw, Wand2, UserPlus } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
@@ -17,6 +17,8 @@ export default function Permissions() {
     const [activeTab, setActiveTab] = useState<'groups' | 'players'>('groups')
     const [search, setSearch] = useState('')
     const [refreshTrigger, setRefreshTrigger] = useState(0)
+    const [refreshing, setRefreshing] = useState(false)
+    const [seeding, setSeeding] = useState(false)
     const [groups, setGroups] = useState<GroupData[]>([])
     const [showSeedConfirm, setShowSeedConfirm] = useState(false)
 
@@ -29,12 +31,9 @@ export default function Permissions() {
         on('refreshPermissionsLists', onRefresh)
         return () => off('refreshPermissionsLists', onRefresh)
     }, [on, off, handleRefresh])
-    
-    useEffect(() => {
-        loadGroups()
-    }, [refreshTrigger])
 
-    const loadGroups = async () => {
+    const loadGroups = useCallback(async () => {
+        setRefreshing(true)
         try {
             if (isEnvBrowser()) {
                 setGroups(MOCK_GROUPS)
@@ -44,13 +43,24 @@ export default function Permissions() {
             setGroups(data || [])
         } catch (e) {
             console.error(e)
+        } finally {
+            setRefreshing(false)
         }
-    }
+    }, [sendNui])
+
+    useEffect(() => {
+        loadGroups()
+    }, [refreshTrigger, loadGroups])
 
     const handleSeed = async () => {
-        await sendNui('seed_pages') // Usually triggers an action
-        setShowSeedConfirm(false)
-        setTimeout(handleRefresh, 1000)
+        setSeeding(true)
+        try {
+            await sendNui('seed_pages') // Usually triggers an action
+            setShowSeedConfirm(false)
+            setTimeout(handleRefresh, 1000)
+        } finally {
+            setSeeding(false)
+        }
     }
 
     const permissionTabs: MriTabItem[] = [
@@ -61,7 +71,7 @@ export default function Permissions() {
     return (
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader
-                title={t('permissions_title')}
+                title={t('permissions.title')}
                 icon={Key}
                 count={groups.length}
                 countLabel={'Grupos Cadastrados'}
@@ -84,21 +94,23 @@ export default function Permissions() {
                     <MriButton
                         size="icon"
                         variant="outline"
+                        isLoading={refreshing}
                         className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                         onClick={handleRefresh}
-                        title={t('refresh')}
+                        title={t('common.refresh')}
                     >
-                        <RefreshCw className="w-4 h-4" />
+                        {!refreshing && <RefreshCw className="w-4 h-4" />}
                     </MriButton>
 
                     <MriButton
                         size="icon"
                         variant="outline"
+                        isLoading={seeding}
                         className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                         onClick={() => setShowSeedConfirm(true)}
                         title="Aplicar Permissões Padrão"
                     >
-                        <Wand2 className="w-4 h-4" />
+                        {!seeding && <Wand2 className="w-4 h-4" />}
                     </MriButton>
                 </div>
             </MriPageHeader>
@@ -112,19 +124,19 @@ export default function Permissions() {
                     {activeTab === 'groups' ? (
                         <div className="flex flex-col h-full overflow-hidden">
                             <div className="flex-1 overflow-hidden">
-                                <GroupManager 
-                                    searchQuery={search} 
-                                    refreshTrigger={refreshTrigger} 
+                                <GroupManager
+                                    searchQuery={search}
+                                    refreshTrigger={refreshTrigger}
                                     groups={groups}
-                                    onCountChange={() => loadGroups()} 
+                                    onCountChange={() => loadGroups()}
                                 />
                             </div>
                         </div>
                     ) : (
                         <div className="flex flex-col h-full overflow-hidden">
                             <div className="flex-1 overflow-y-auto">
-                                <PlayerGroups 
-                                    groups={groups} 
+                                <PlayerGroups
+                                    groups={groups}
                                     searchQuery={search}
                                 />
                             </div>

@@ -68,15 +68,68 @@ end
 -- FUNCTIONS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
+local ALL_KNOWN_QADMIN_PERMS = (function()
+    local pages = {
+        'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
+        'commands', 'actions', 'permissions', 'resources', 'settings', 'devmode', 'livemap', 'livescreens',
+        'logs', 'statistics', 'reports', 'terminal', 'staff_point'
+    }
+    local actions = {
+        'qadmin.action.revive', 'qadmin.action.revive_all', 'qadmin.action.revive_self',
+        'qadmin.action.kill_player', 'qadmin.action.ban_player',
+        'qadmin.action.unban_player', 'qadmin.action.kick_player', 'qadmin.action.warn_player',
+        'qadmin.action.verify_player', 'qadmin.action.delete_character', 'qadmin.action.set_job',
+        'qadmin.action.set_gang', 'qadmin.action.give_money', 'qadmin.action.remove_money',
+        'qadmin.action.set_bucket', 'qadmin.action.give_item', 'qadmin.action.clear_inventory',
+        'qadmin.action.open_inventory', 'qadmin.action.view_inventory', 'qadmin.action.modify_inventory',
+        'qadmin.action.open_trunk', 'qadmin.action.open_stash',
+        'qadmin.action.delete_vehicle', 'qadmin.action.spawn_vehicle', 'qadmin.action.admincar',
+        'qadmin.action.change_plate', 'qadmin.action.change_vehicle_state',
+        'qadmin.action.fix_vehicle', 'qadmin.action.fix_self_vehicle', 'qadmin.action.spectate_player',
+        'qadmin.action.freeze_player', 'qadmin.action.teleport_to_player', 'qadmin.action.bring_player',
+        'qadmin.action.teleport_back', 'qadmin.action.drunk_player', 'qadmin.action.blackout',
+        'qadmin.action.toggle_cuffs', 'qadmin.action.clothing_menu', 'qadmin.action.staff_clothing',
+        'qadmin.action.set_ped', 'qadmin.action.noclip', 'qadmin.action.god_mode',
+        'qadmin.action.invisibility', 'qadmin.action.invisible', 'qadmin.action.tag',
+        'qadmin.action.announcements', 'qadmin.action.clear_chat', 'qadmin.action.goto_waypoint',
+        'qadmin.action.info_admin', 'qadmin.action.server_time', 'qadmin.action.change_resource',
+        'qadmin.action.enable_wall', 'qadmin.action.screen_capture', 'qadmin.action.change_vehicle_property',
+        'qadmin.action.view_detailed_logs', 'qadmin.action.manage_reports', 'qadmin.action.delete_report',
+        'qadmin.action.staff_clock_in', 'qadmin.action.staff_clock_out', 'qadmin.commands',
+        'qadmin.action.track_player', 'qadmin.action.set_vital', 'qadmin.action.view_player_identifiers',
+        'qadmin.action.manage_vehicles', 'qadmin.action.copy_inventory', 'qadmin.action.manage_actions',
+        'qadmin.action.staff_chat_send', 'qadmin.action.toggle_mock_mode', 'qadmin.action.manage_settings',
+        'qadmin.action.manage_wall', 'qadmin.action.mute_player', 'qadmin.action.refuel_vehicle'
+    }
+    local all = {'qadmin.open', 'qadmin.master'}
+    for _, p in ipairs(pages) do all[#all + 1] = 'qadmin.page.' .. p end
+    for _, a in ipairs(actions) do all[#all + 1] = a end
+    -- Config-driven action perms
+    if Config.Actions then for _, v in pairs(Config.Actions) do if v.perms then all[#all + 1] = v.perms end end end
+    if Config.PlayerActions then for _, v in pairs(Config.PlayerActions) do if v.perms then all[#all + 1] = v.perms end end end
+    if Config.OtherActions then for _, v in pairs(Config.OtherActions) do if v.perms then all[#all + 1] = v.perms end end end
+    return all
+end)()
+
+local function ClearGroupAces(groupId)
+    local principal = 'group.' .. groupId
+    for _, perm in ipairs(ALL_KNOWN_QADMIN_PERMS) do
+        lib.removeAce(principal, perm, true)
+    end
+end
+
 local function LoadPermissions()
     RunMigration()
 
     -- Load Groups and their Aces
     local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups') or {}
     for _, g in ipairs(groups) do
+        -- Wipe all known ACEs first so removed permissions don't persist across restarts
+        ClearGroupAces(g.id)
+
         -- FORCE qadmin.open for any managed group
         lib.addAce('group.' .. g.id, 'qadmin.open', true)
-        
+
         local perms = MySQL.query.await('SELECT * FROM mri_qadmin_group_permissions WHERE group_id = ?', {g.id}) or {}
         for _, p in ipairs(perms) do
             if p.permission ~= 'qadmin.master' then
@@ -214,122 +267,155 @@ lib.callback.register('mri_Qadmin:callback:GetCharacterGroups', function(source,
     return list
 end)
 
-RegisterNetEvent('mri_Qadmin:server:SaveGroup', function(id, label, description)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') and not IsPlayerAceAllowed(src, 'qadmin.master') then return end
+lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label, description)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then 
+        return false, "Acesso Negado." 
+    end
 
     local cleanId = id:lower():gsub("%s+", "_")
-    local exists = MySQL.single.await('SELECT id FROM mri_qadmin_groups WHERE id = ?', {cleanId})
-    if exists then
-        MySQL.update.await('UPDATE mri_qadmin_groups SET label = ?, description = ? WHERE id = ?', {label, description, cleanId})
-        TriggerClientEvent('QBCore:Notify', src, 'Grupo atualizado', 'success')
-    else
-        MySQL.insert.await('INSERT INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {cleanId, label, description})
-        TriggerClientEvent('QBCore:Notify', src, 'Grupo criado', 'success')
-    end
-    BroadcastPermissionUpdate()
-end)
-
-RegisterNetEvent('mri_Qadmin:server:DeleteGroup', function(id)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') and not IsPlayerAceAllowed(src, 'qadmin.master') then return end
     
-    local perms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {id})
-    for _, p in ipairs(perms) do
-        lib.removeAce('group.'..id, p.permission, true)
-    end
-    
-    local charGroups = MySQL.query.await('SELECT citizenid FROM mri_qadmin_character_groups WHERE group_id = ?', {id})
-    for _, cg in ipairs(charGroups) do
-        lib.removePrincipal('char:'..cg.citizenid, 'group.'..id)
-    end
-
-    MySQL.query.await('DELETE FROM mri_qadmin_groups WHERE id = ?', {id})
-    TriggerClientEvent('QBCore:Notify', src, 'Grupo removido', 'success')
-    BroadcastPermissionUpdate()
-end)
-
-RegisterNetEvent('mri_Qadmin:server:UpdateGroupPermissions', function(groupId, permissionsArray)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') and not IsPlayerAceAllowed(src, 'qadmin.master') then return end
-
-    local oldPerms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {groupId})
-    for _, p in ipairs(oldPerms) do
-        lib.removeAce('group.'..groupId, p.permission, true)
-    end
-    MySQL.query.await('DELETE FROM mri_qadmin_group_permissions WHERE group_id = ?', {groupId})
-
-    for _, p in ipairs(permissionsArray) do
-        if p ~= 'qadmin.master' then
-            MySQL.insert.await('INSERT INTO mri_qadmin_group_permissions (group_id, permission) VALUES (?, ?)', {groupId, p})
-            lib.addAce('group.'..groupId, p, true)
+    local ok, err = pcall(function()
+        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_groups WHERE id = ?', {cleanId})
+        if exists then
+            MySQL.update.await('UPDATE mri_qadmin_groups SET label = ?, description = ? WHERE id = ?', {label, description, cleanId})
+            TriggerClientEvent('QBCore:Notify', source, 'Grupo atualizado', 'success')
+        else
+            MySQL.insert.await('INSERT INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {cleanId, label, description})
+            TriggerClientEvent('QBCore:Notify', source, 'Grupo criado', 'success')
         end
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao salvar grupo:^7', err)
+        return false, "Erro ao salvar grupo no banco de dados."
     end
-    
-    TriggerClientEvent('QBCore:Notify', src, 'Permissões do grupo atualizadas.', 'success')
+
+    AddLog(source, 'mri_Qadmin', 'permissions', 'info', ('Grupo: grupo "%s" criado/atualizado'):format(cleanId), { group = cleanId, label = label })
     BroadcastPermissionUpdate()
+    return true
 end)
 
-RegisterNetEvent('mri_Qadmin:server:UpdateCharacterGroups', function(citizenid, groupsArray)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') and not IsPlayerAceAllowed(src, 'qadmin.master') then return end
-
-    local oldGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid})
-    for _, og in ipairs(oldGroups) do
-        lib.removePrincipal('char:'..citizenid, 'group.'..og.group_id)
-    end
-    MySQL.query.await('DELETE FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid})
-
-    for _, gId in ipairs(groupsArray) do
-        MySQL.insert.await('INSERT INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, gId})
-        lib.addPrincipal('char:'..citizenid, 'group.'..gId)
+lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then 
+        return false, "Acesso Negado." 
     end
     
-    TriggerClientEvent('QBCore:Notify', src, 'Grupos do jogador atualizados.', 'success')
+    local ok, err = pcall(function()
+        local perms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {id})
+        if perms then
+            for _, p in ipairs(perms) do
+                lib.removeAce('group.'..id, p.permission, true)
+            end
+        end
+        
+        local charGroups = MySQL.query.await('SELECT citizenid FROM mri_qadmin_character_groups WHERE group_id = ?', {id})
+        if charGroups then
+            for _, cg in ipairs(charGroups) do
+                lib.removePrincipal('char:'..cg.citizenid, 'group.'..id)
+            end
+        end
+
+        MySQL.query.await('DELETE FROM mri_qadmin_groups WHERE id = ?', {id})
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao deletar grupo:^7', err)
+        return false, "Erro ao deletar grupo do banco de dados."
+    end
+
+    TriggerClientEvent('QBCore:Notify', source, 'Grupo removido', 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupo: grupo "%s" removido'):format(id), { group = id })
     BroadcastPermissionUpdate()
+    return true
+end)
+
+lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(source, groupId, permissionsArray)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then 
+        return false, "Acesso Negado." 
+    end
+
+    Debug(('[mri_Qadmin] Iniciando atualização de permissões para grupo: %s'):format(groupId))
+
+    local ok, err = pcall(function()
+        local oldPerms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {groupId})
+        if oldPerms then
+            for _, p in ipairs(oldPerms) do
+                lib.removeAce('group.'..groupId, p.permission, true)
+            end
+        end
+        MySQL.query.await('DELETE FROM mri_qadmin_group_permissions WHERE group_id = ?', {groupId})
+
+        for _, p in ipairs(permissionsArray) do
+            if p ~= 'qadmin.master' then
+                MySQL.insert.await('INSERT INTO mri_qadmin_group_permissions (group_id, permission) VALUES (?, ?)', {groupId, p})
+                lib.addAce('group.'..groupId, p, true)
+            end
+        end
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao atualizar permissões do grupo:^7', err)
+        return false, "Erro ao salvar no banco de dados."
+    end
+    
+    TriggerClientEvent('QBCore:Notify', source, 'Permissões do grupo atualizadas.', 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Permissões: grupo "%s" teve permissões atualizadas (%d perms)'):format(groupId, #permissionsArray), { group = groupId, count = #permissionsArray })
+    BroadcastPermissionUpdate()
+    return true
+end)
+
+lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source, citizenid, groupsArray)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then 
+        return false, "Acesso Negado." 
+    end
+
+    Debug(('[mri_Qadmin] Atualizando grupos para citizenid: %s'):format(citizenid))
+
+    local ok, err = pcall(function()
+        local oldGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid})
+        if oldGroups then
+            for _, og in ipairs(oldGroups) do
+                lib.removePrincipal('char:'..citizenid, 'group.'..og.group_id)
+            end
+        end
+        MySQL.query.await('DELETE FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid})
+
+        for _, gId in ipairs(groupsArray) do
+            MySQL.insert.await('INSERT INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, gId})
+            lib.addPrincipal('char:'..citizenid, 'group.'..gId)
+        end
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao atualizar grupos do personagem:^7', err)
+        return false, "Erro ao salvar no banco de dados."
+    end
+    
+    TriggerClientEvent('QBCore:Notify', source, 'Grupos do jogador atualizados.', 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupos: personagem %s teve grupos atualizados: %s'):format(citizenid, table.concat(groupsArray, ', ')), { citizenid = citizenid, groups = groupsArray })
+    BroadcastPermissionUpdate()
+    return true
 end)
 
 local function GetUserPermissions(src)
-    local pages = {
-        'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
-    }
-
     local allowed = {}
-    
-    -- 1. Essential Panel Perms
-    table.insert(allowed, 'qadmin.page.dashboard') -- Always allow dashboard
-    if HasPerms(src, 'qadmin.open') then table.insert(allowed, 'qadmin.open') end
 
-    -- 1. Check Pages
-    for _, page in ipairs(pages) do
-        local node = 'qadmin.page.' .. page
+    -- Check all known permissions dynamically
+    for _, node in ipairs(ALL_KNOWN_QADMIN_PERMS) do
         if HasPerms(src, node) then
-            table.insert(allowed, node)
-        end
-    end
-
-    -- 2. Check Actions
-    if Config.Actions then
-        for k, v in pairs(Config.Actions) do
-            if HasPerms(src, v.perms) then
-                table.insert(allowed, 'action.' .. k)
+            -- For Config actions, map them to 'action.xxx' for frontend compatibility if they don't start with qadmin.
+            -- This preserves legacy behavior while supporting native qadmin. nodes
+            if not string.find(node, 'qadmin%.') then
+                -- Try to find the key in config
+                local found = false
+                if Config.Actions then for k, v in pairs(Config.Actions) do if v.perms == node then table.insert(allowed, 'action.'..k) found = true break end end end
+                if not found and Config.PlayerActions then for k, v in pairs(Config.PlayerActions) do if v.perms == node then table.insert(allowed, 'action.'..k) found = true break end end end
+                
+                if not found then table.insert(allowed, node) end
+            else
+                table.insert(allowed, node)
             end
         end
-    end
-
-    -- 3. Check Player Actions
-    if Config.PlayerActions then
-        for k, v in pairs(Config.PlayerActions) do
-            if HasPerms(src, v.perms) then
-                table.insert(allowed, 'action.' .. k)
-            end
-        end
-    end
-
-    -- 4. Master bypass
-    if HasPerms(src, 'qadmin.master') then
-        table.insert(allowed, 'qadmin.master')
     end
 
     Debug(('[mri_Qadmin] Permissions for Source %s: %d nodes found'):format(src, #allowed))
@@ -441,7 +527,7 @@ lib.addCommand('mri_qadmin.debugperms', {
     
     local pages = {
         'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
+        'commands', 'actions', 'permissions', 'resources', 'settings', 'devmode', 'livemap', 'livescreens'
     }
 
     print('PAGES:')
@@ -566,22 +652,33 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
 
     local pages = {
         'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
+        'commands', 'actions', 'permissions', 'resources', 'settings', 'devmode', 'livemap', 'livescreens',
+        'logs', 'statistics', 'reports', 'terminal', 'staff_point'
     }
     for _, page in ipairs(pages) do addSafe('qadmin.page.' .. page) end
 
     local corePermissions = {
         'qadmin.action.revive', 'qadmin.action.kill_player', 'qadmin.action.ban_player',
-        'qadmin.action.kick_player', 'qadmin.action.warn_player', 'qadmin.action.verify_player',
-        'qadmin.action.set_job', 'qadmin.action.set_gang', 'qadmin.action.give_money',
-        'qadmin.action.remove_money', 'qadmin.action.set_bucket', 'qadmin.action.give_item',
-        'qadmin.action.clear_inventory', 'qadmin.action.delete_vehicle', 'qadmin.action.spectate_player',
+        'qadmin.action.unban_player', 'qadmin.action.kick_player', 'qadmin.action.warn_player',
+        'qadmin.action.verify_player', 'qadmin.action.delete_character', 'qadmin.action.set_job',
+        'qadmin.action.set_gang', 'qadmin.action.give_money', 'qadmin.action.remove_money',
+        'qadmin.action.set_bucket', 'qadmin.action.give_item', 'qadmin.action.clear_inventory',
+        'qadmin.action.open_inventory', 'qadmin.action.open_trunk', 'qadmin.action.open_stash',
+        'qadmin.action.delete_vehicle', 'qadmin.action.spawn_vehicle', 'qadmin.action.admincar',
+        'qadmin.action.change_plate', 'qadmin.action.fix_vehicle', 'qadmin.action.spectate_player',
         'qadmin.action.freeze_player', 'qadmin.action.teleport_to_player', 'qadmin.action.bring_player',
         'qadmin.action.teleport_back', 'qadmin.action.drunk_player', 'qadmin.action.blackout',
-        'qadmin.action.toggle_cuffs', 'qadmin.action.clothing_menu', 'qadmin.action.set_ped',
-        'qadmin.action.unban_player', 'qadmin.action.spawn_vehicle', 'qadmin.action.open_inventory',
-        'qadmin.action.open_trunk', 'qadmin.action.open_stash', 'qadmin.action.admincar',
-        'qadmin.action.delete_character', 'qadmin.action.change_resource'
+        'qadmin.action.toggle_cuffs', 'qadmin.action.clothing_menu', 'qadmin.action.staff_clothing',
+        'qadmin.action.set_ped', 'qadmin.action.noclip', 'qadmin.action.god_mode',
+        'qadmin.action.invisibility', 'qadmin.action.tag', 'qadmin.action.announcements',
+        'qadmin.action.info_admin', 'qadmin.action.server_time', 'qadmin.action.change_resource',
+        'qadmin.action.enable_wall', 'qadmin.action.screen_capture', 'qadmin.action.change_vehicle_property',
+        'qadmin.action.view_detailed_logs', 'qadmin.action.manage_reports', 'qadmin.action.delete_report',
+        'qadmin.action.staff_clock_in', 'qadmin.action.staff_clock_out', 'qadmin.commands',
+        'qadmin.action.track_player', 'qadmin.action.set_vital', 'qadmin.action.view_player_identifiers',
+        'qadmin.action.manage_vehicles', 'qadmin.action.copy_inventory', 'qadmin.action.manage_actions',
+        'qadmin.action.staff_chat_send', 'qadmin.action.toggle_mock_mode', 'qadmin.action.manage_settings',
+        'qadmin.action.manage_wall'
     }
     for _, perms in ipairs(corePermissions) do addSafe(perms) end
 

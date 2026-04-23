@@ -3,7 +3,6 @@ export const PAGE_PERMISSIONS = {
     dashboard: 'qadmin.page.dashboard',
     players: 'qadmin.page.players',
     groups: 'qadmin.page.groups',
-    bans: 'qadmin.page.bans',
     staffchat: 'qadmin.page.staffchat',
     items: 'qadmin.page.items',
     vehicles: 'qadmin.page.vehicles',
@@ -12,10 +11,10 @@ export const PAGE_PERMISSIONS = {
     permissions: 'qadmin.page.permissions',
     resources: 'qadmin.page.resources',
     settings: 'qadmin.page.settings',
-    action_manager: 'qadmin.page.settings',
-    credits: 'qadmin.page.credits',
+    action_manager: 'qadmin.action.manage_actions',
     livemap: 'qadmin.page.livemap',
     livescreens: 'qadmin.page.livescreens',
+    logs: 'qadmin.page.logs',
     devmode: 'qadmin.page.devmode',
 }
 

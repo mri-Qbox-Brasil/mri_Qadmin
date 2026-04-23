@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Plus, Users, Shield, Loader2 } from 'lucide-react'
+import { Plus, Users, Shield } from 'lucide-react'
 import { MriButton, MriInput, MriActionModal } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
+import { useAppState } from '@/context/AppState'
 import GroupOverviewCard from './GroupOverviewCard'
 import GroupEditor from './GroupEditor'
 import { PERMISSION_MAP, getFriendlyPermissionName } from '../utils/categorization'
@@ -13,7 +14,7 @@ export interface GroupData {
     permissions: string[];
 }
 
-export default function GroupManager({ searchQuery, refreshTrigger, onCountChange, groups }: { searchQuery: string, refreshTrigger: number, onCountChange?: (n: number) => void, groups: GroupData[] }) {
+export default function GroupManager({ searchQuery, onCountChange, groups }: { searchQuery: string, onCountChange?: (n: number) => void, groups: GroupData[] }) {
     const { sendNui } = useNui()
     const [editingGroup, setEditingGroup] = useState<GroupData | null>(null)
     const [creating, setCreating] = useState(false)
@@ -21,38 +22,49 @@ export default function GroupManager({ searchQuery, refreshTrigger, onCountChang
     const [newGroupLabel, setNewGroupLabel] = useState('')
     const [newGroupDesc, setNewGroupDesc] = useState('')
     const [saving, setSaving] = useState(false)
-    
-    // Variables for deleting group confirmation modal
+
+    const { gameData } = useAppState()
     const [groupToDelete, setGroupToDelete] = useState<string | null>(null)
 
-    const totalAvailablePermissions = Object.keys(PERMISSION_MAP).length
+    // Calculate total available permissions dynamically
+    const staticPermsCount = Object.keys(PERMISSION_MAP).length
+    const dynamicActionsCount =
+        Object.keys(gameData.actions || {}).length +
+        Object.keys(gameData.playerActions || {}).length +
+        Object.keys(gameData.otherActions || {}).length
+
+    const totalAvailablePermissions = staticPermsCount + dynamicActionsCount
 
     const handleCreate = async () => {
         if (!newGroupId || !newGroupLabel || /[^a-z0-9_.]/.test(newGroupId) || newGroupId.startsWith('.') || newGroupId.endsWith('.')) return
         setSaving(true)
-        await sendNui('mri_Qadmin:server:SaveGroup', { id: newGroupId, label: newGroupLabel, description: newGroupDesc })
+        const response: any = await sendNui('mri_Qadmin:server:SaveGroup', { id: newGroupId, label: newGroupLabel, description: newGroupDesc })
         setSaving(false)
-        setCreating(false)
-        setNewGroupId('')
-        setNewGroupLabel('')
-        setNewGroupDesc('')
-        setTimeout(() => onCountChange?.(groups.length + 1), 500)
+        if (response?.status === 'ok') {
+            setCreating(false)
+            setNewGroupId('')
+            setNewGroupLabel('')
+            setNewGroupDesc('')
+            setTimeout(() => onCountChange?.(groups.length + 1), 500)
+        }
     }
 
     const handleDelete = async () => {
         if (!groupToDelete) return
         setSaving(true)
-        await sendNui('mri_Qadmin:server:DeleteGroup', { id: groupToDelete })
+        const response: any = await sendNui('mri_Qadmin:server:DeleteGroup', { id: groupToDelete })
         setSaving(false)
-        setGroupToDelete(null)
+        if (response?.status === 'ok') {
+            setGroupToDelete(null)
+        }
     }
 
     if (editingGroup) {
         return <GroupEditor group={editingGroup} onBack={() => setEditingGroup(null)} />
     }
 
-    const filtered = groups.filter(g => 
-        g.label.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filtered = groups.filter(g =>
+        g.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
         g.id.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
@@ -69,11 +81,11 @@ export default function GroupManager({ searchQuery, refreshTrigger, onCountChang
                     <Plus className="w-4 h-4 mr-2" /> Novo Grupo
                 </MriButton>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 overflow-y-auto">
                 {filtered.map(g => (
                     <div key={g.id} className="min-h-[220px]">
-                        <GroupOverviewCard 
+                        <GroupOverviewCard
                             name={g.label}
                             grantedCount={g.permissions.length}
                             totalCount={totalAvailablePermissions}
@@ -98,15 +110,15 @@ export default function GroupManager({ searchQuery, refreshTrigger, onCountChang
                     icon={Shield}
                     onClose={() => !saving && setCreating(false)}
                     onConfirm={handleCreate}
-                    confirmDisabled={!isReadyToCreate}
+                    isConfirmDisabled={!isReadyToCreate}
                 >
                     <div className="flex flex-col gap-4 py-2">
                         <div className="flex flex-col gap-1">
                             <label className="text-xs font-semibold uppercase text-muted-foreground">ID do Grupo</label>
-                            <MriInput 
-                                placeholder="ex: suporte.tecnico" 
-                                value={newGroupId} 
-                                onChange={e => setNewGroupId(e.target.value.toLowerCase().replace(/\s+/g, '_'))} 
+                            <MriInput
+                                placeholder="ex: suporte.tecnico"
+                                value={newGroupId}
+                                onChange={e => setNewGroupId(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
                                 disabled={saving}
                                 className={hasFormattingErrors ? 'border-red-500 focus-visible:ring-red-500' : ''}
                             />
@@ -121,19 +133,19 @@ export default function GroupManager({ searchQuery, refreshTrigger, onCountChang
                         </div>
                         <div className="flex flex-col gap-1">
                             <label className="text-xs font-semibold uppercase text-muted-foreground">Nome (Label)</label>
-                            <MriInput 
-                                placeholder="ex: Suporte Avançado" 
-                                value={newGroupLabel} 
-                                onChange={e => setNewGroupLabel(e.target.value)} 
+                            <MriInput
+                                placeholder="ex: Suporte Avançado"
+                                value={newGroupLabel}
+                                onChange={e => setNewGroupLabel(e.target.value)}
                                 disabled={saving}
                             />
                         </div>
                         <div className="flex flex-col gap-1">
                             <label className="text-xs font-semibold uppercase text-muted-foreground">Descrição (Opcional)</label>
-                            <MriInput 
-                                placeholder="Descreva as responsabilidades..." 
-                                value={newGroupDesc} 
-                                onChange={e => setNewGroupDesc(e.target.value)} 
+                            <MriInput
+                                placeholder="Descreva as responsabilidades..."
+                                value={newGroupDesc}
+                                onChange={e => setNewGroupDesc(e.target.value)}
                                 disabled={saving}
                             />
                         </div>
@@ -148,7 +160,7 @@ export default function GroupManager({ searchQuery, refreshTrigger, onCountChang
                     variant="destructive"
                     onClose={() => !saving && setGroupToDelete(null)}
                     onConfirm={handleDelete}
-                    confirmDisabled={saving}
+                    isConfirmDisabled={saving}
                     confirmText="Excluir Grupo"
                 >
                     <div className="py-2">

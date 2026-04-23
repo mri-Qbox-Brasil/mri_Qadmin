@@ -1,6 +1,6 @@
 import React from 'react'
 import { User, Shield, X, Trash2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+
 
 interface PlayerOverviewCardProps {
     identifier: string

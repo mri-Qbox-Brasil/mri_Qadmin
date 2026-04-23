@@ -1,32 +1,63 @@
 import React, { useState, useMemo } from 'react'
-import { ChevronLeft, Save, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, Save, ShieldCheck, Zap } from 'lucide-react'
 import { MriButton } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
+import { useAppState } from '@/context/AppState'
 import { GroupData } from './GroupManager'
 import { CATEGORIES, PERMISSION_MAP, getFriendlyPermissionName } from '../utils/categorization'
 import { cn } from '@/lib/utils'
 
 export default function GroupEditor({ group, onBack }: { group: GroupData, onBack: () => void }) {
     const { sendNui } = useNui()
+    const { gameData } = useAppState()
     const [permissions, setPermissions] = useState<Set<string>>(new Set(group.permissions))
     const [saving, setSaving] = useState(false)
 
-    const categoriesWithPerms = useMemo(() => {
+    const { categoriesWithPerms, dynamicPermInfo } = useMemo(() => {
         const result: Record<string, { pageNode?: string, actions: string[] }> = {}
-        
         Object.keys(CATEGORIES).forEach(c => result[c] = { actions: [] })
 
         Object.entries(PERMISSION_MAP).forEach(([perm, info]) => {
             if (!result[info.category]) result[info.category] = { actions: [] }
-            
             if (perm.startsWith('qadmin.page.')) {
-                result[info.category].pageNode = perm
+                const pageName = perm.replace('qadmin.page.', '')
+                if (pageName === info.category) {
+                    result[info.category].pageNode = perm
+                } else {
+                    result[info.category].actions.push(perm)
+                }
             } else {
                 result[info.category].actions.push(perm)
             }
         })
-        return result
-    }, [])
+
+        // Inject dynamic perms from all gameData action lists
+        const extra: Record<string, { label: string, desc: string }> = {}
+        const knownPerms = new Set(Object.keys(PERMISSION_MAP))
+
+        const toArray = (src: any) =>
+            Array.isArray(src) ? src : Object.entries(src || {}).map(([k, v]: any) => ({ ...v, id: k }))
+
+        const allActions = [
+            ...toArray(gameData.actions),
+            ...toArray(gameData.playerActions),
+            ...toArray(gameData.otherActions),
+        ]
+
+        allActions.forEach((action: any) => {
+            const perm = action.perms
+            if (!perm || knownPerms.has(perm)) return
+            knownPerms.add(perm)
+            if (!result['actions']) result['actions'] = { actions: [] }
+            result['actions'].actions.push(perm)
+            extra[perm] = {
+                label: action.label || perm,
+                desc: action.id ? `action: ${action.id}` : perm,
+            }
+        })
+
+        return { categoriesWithPerms: result, dynamicPermInfo: extra }
+    }, [gameData])
 
     const togglePermission = (perm: string) => {
         const next = new Set(permissions)
@@ -54,9 +85,11 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
 
     const handleSave = async () => {
         setSaving(true)
-        await sendNui('mri_Qadmin:server:UpdateGroupPermissions', { id: group.id, permissions: Array.from(permissions) })
+        const response: any = await sendNui('mri_Qadmin:server:UpdateGroupPermissions', { id: group.id, permissions: Array.from(permissions) })
         setSaving(false)
-        onBack()
+        if (response?.status === 'ok') {
+            onBack()
+        }
     }
 
     return (
@@ -137,9 +170,13 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                 )}
                                 {data.actions.map(actionPerm => {
                                     const info = PERMISSION_MAP[actionPerm]
+                                    const dyn = dynamicPermInfo[actionPerm]
                                     const has = permissions.has(actionPerm)
+                                    const label = info?.label ?? dyn?.label ?? getFriendlyPermissionName(actionPerm)
+                                    const desc = info?.desc ?? dyn?.desc ?? actionPerm
+                                    const Icon = info?.icon ?? Zap
                                     return (
-                                        <div 
+                                        <div
                                             key={actionPerm}
                                             className={cn(
                                                 "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
@@ -152,11 +189,11 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                                 "w-5 h-5 rounded border flex items-center justify-center shrink-0",
                                                 has ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"
                                             )}>
-                                                {has && <ShieldCheck className="w-3 h-3" />}
+                                                {has ? <ShieldCheck className="w-3 h-3" /> : <Icon className="w-3 h-3 text-muted-foreground" />}
                                             </div>
                                             <div className="flex flex-col overflow-hidden">
-                                                <span className="text-sm font-semibold truncate">{getFriendlyPermissionName(actionPerm)}</span>
-                                                <span className="text-[10px] text-muted-foreground truncate" title={info?.desc}>{info?.desc || actionPerm}</span>
+                                                <span className="text-sm font-semibold truncate">{label}</span>
+                                                <span className="text-[10px] text-muted-foreground truncate" title={desc}>{desc}</span>
                                             </div>
                                         </div>
                                     )

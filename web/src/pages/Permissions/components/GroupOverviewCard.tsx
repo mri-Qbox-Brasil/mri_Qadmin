@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Shield, Check, X, Settings, Trash2 } from 'lucide-react'
-import { MriButton } from '@mriqbox/ui-kit'
 import { cn } from '@/lib/utils'
 
 interface GroupOverviewCardProps {
