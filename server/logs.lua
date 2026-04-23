@@ -43,16 +43,47 @@ LoadLogSettings()
 
 -- ─── Helpers ─────────────────────────────────────────────────────────────────
 
-local function GetAdminName(src)
-    if not src or src <= 0 then return 'System' end
+local function GetAdminData(src)
+    if not src or src <= 0 then
+        return { name = 'System', citizenid = nil, src = 0 }
+    end
     local ok, Player = pcall(function() return QBCore.Functions.GetPlayer(src) end)
     if ok and Player and Player.PlayerData.charinfo then
         local c = Player.PlayerData.charinfo
         local name = ('%s %s'):format(c.firstname or '', c.lastname or ''):match('^%s*(.-)%s*$')
-        if name and name ~= '' then return name end
+        return {
+            name      = (name ~= '' and name) or GetPlayerName(src) or ('Player#%d'):format(src),
+            citizenid = Player.PlayerData.citizenid,
+            src       = src,
+        }
     end
-    return GetPlayerName(src) or ('Player#%d'):format(src)
+    return {
+        name      = GetPlayerName(src) or ('Player#%d'):format(src),
+        citizenid = nil,
+        src       = src,
+    }
 end
+
+local function GetTargetData(targetSrc)
+    if not targetSrc then return {} end
+    local tsrc = tonumber(targetSrc)
+    if not tsrc or tsrc <= 0 then return {} end
+    local ok, p = pcall(function() return QBCore.Functions.GetPlayer(tsrc) end)
+    if ok and p and p.PlayerData.charinfo then
+        local c = p.PlayerData.charinfo
+        local name = ('%s %s'):format(c.firstname or '', c.lastname or ''):match('^%s*(.-)%s*$')
+        return {
+            target_src       = tsrc,
+            target_name      = (name ~= '' and name) or GetPlayerName(tsrc) or ('Player#%d'):format(tsrc),
+            target_citizenid = p.PlayerData.citizenid,
+        }
+    end
+    return {
+        target_src  = tsrc,
+        target_name = GetPlayerName(tsrc) or ('Player#%d'):format(tsrc),
+    }
+end
+_G.GetTargetData = GetTargetData
 
 local LEVEL_COLORS = {
     info    = 3447003,
@@ -74,10 +105,14 @@ local CATEGORY_EMOJIS = {
     system      = '🖥️',
 }
 
-local PRIORITY = {
-    bans = 1, players = 2, money = 3, inventory = 4,
-    vehicles = 5, server = 6, permissions = 7, chat = 8, actions = 9, system = 99
-}
+local function BuildPriority()
+    local p = {}
+    local cats = (Config.Logs and Config.Logs.Categories) or {}
+    for i, cat in ipairs(cats) do
+        p[cat.id] = i
+    end
+    return p
+end
 
 -- ─── Queue persistence ───────────────────────────────────────────────────────
 
@@ -112,8 +147,9 @@ local function SendQueue(webhook)
 
     q.isSending = true
 
+    local priority = BuildPriority()
     table.sort(q.logs, function(a, b)
-        return (PRIORITY[a.category] or 50) < (PRIORITY[b.category] or 50)
+        return (priority[a.category] or 999) < (priority[b.category] or 999)
     end)
 
     local payload = { username = 'mri_Qadmin Logs', embeds = {} }
@@ -122,22 +158,43 @@ local function SendQueue(webhook)
     while #q.logs > 0 and #payload.embeds < MAX_EMBEDS do
         local log   = q.logs[1]
         local emoji = CATEGORY_EMOJIS[log.category] or '📄'
+        local adminInfo = log.admin or 'System'
+        if log.admin_citizenid then
+            adminInfo = adminInfo .. '\n`' .. log.admin_citizenid .. '`'
+        end
+
         local embed = {
             title  = ('%s [%s] %s'):format(emoji, (log.category or 'system'):upper(), log.message or ''),
             color  = LEVEL_COLORS[log.level] or LEVEL_COLORS.info,
             fields = {
                 { name = 'Resource', value = '`' .. (log.resource or 'unknown') .. '`', inline = true },
                 { name = 'Level',    value = '`' .. (log.level    or 'info')    .. '`', inline = true },
-                { name = 'Admin',    value = log.admin or 'System',                      inline = true },
+                { name = 'Admin',    value = adminInfo,                                  inline = true },
             },
             footer    = { text = 'mri_Qadmin • ' .. (log.category or 'system') },
             timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', log.created_at),
         }
 
-        if log.data and next(log.data) ~= nil then
-            local encoded = json.encode(log.data)
-            if #encoded <= 900 then
-                table.insert(embed.fields, { name = 'Data', value = '```json\n' .. encoded .. '\n```', inline = false })
+        if log.data then
+            if log.data.target_name or log.data.target_citizenid then
+                local targetInfo = log.data.target_name or 'Unknown'
+                if log.data.target_citizenid then
+                    targetInfo = targetInfo .. '\n`' .. log.data.target_citizenid .. '`'
+                end
+                table.insert(embed.fields, { name = 'Alvo', value = targetInfo, inline = true })
+            end
+
+            local dataClean = {}
+            for k, v in pairs(log.data) do
+                if k ~= 'target_src' and k ~= 'target_name' and k ~= 'target_citizenid' then
+                    dataClean[k] = v
+                end
+            end
+            if next(dataClean) ~= nil then
+                local encoded = json.encode(dataClean)
+                if #encoded <= 900 then
+                    table.insert(embed.fields, { name = 'Data', value = '```json\n' .. encoded .. '\n```', inline = false })
+                end
             end
         end
 
@@ -185,17 +242,41 @@ local function EnqueueDiscord(log)
     end
 end
 
+-- ─── Broadcast to admins only ────────────────────────────────────────────────
+
+local function BroadcastLogToAdmins(log)
+    local players = GetPlayers()
+    for _, playerId in ipairs(players) do
+        local pid = tonumber(playerId)
+        if pid and IsPlayerAceAllowed(pid, 'qadmin.page.logs') then
+            TriggerClientEvent('mri_Qadmin:client:NewLog', pid, log)
+        end
+    end
+end
+
 -- ─── Core function ────────────────────────────────────────────────────────────
 
 function AddLog(src, resource, category, level, message, data)
+    local adminData = GetAdminData(src)
+    local enrichedData = data or {}
+
+    -- Auto-resolve target info from target_src when name/citizenid are missing
+    if enrichedData.target_src and (not enrichedData.target_name or not enrichedData.target_citizenid) then
+        local resolved = GetTargetData(enrichedData.target_src)
+        if not enrichedData.target_name      then enrichedData.target_name      = resolved.target_name      end
+        if not enrichedData.target_citizenid then enrichedData.target_citizenid = resolved.target_citizenid end
+    end
+
     local log = {
-        resource   = resource or GetCurrentResourceName(),
-        category   = category or 'system',
-        level      = level    or 'info',
-        message    = message  or '',
-        data       = data     or {},
-        admin      = GetAdminName(src),
-        created_at = os.time(),
+        resource        = resource or GetCurrentResourceName(),
+        category        = category or 'system',
+        level           = level    or 'info',
+        message         = message  or '',
+        data            = enrichedData,
+        admin           = adminData.name,
+        admin_src       = adminData.src > 0 and adminData.src or nil,
+        admin_citizenid = adminData.citizenid,
+        created_at      = os.time(),
     }
 
     -- In-memory buffer (newest first, always stored regardless of filters)
@@ -216,10 +297,16 @@ function AddLog(src, resource, category, level, message, data)
         if re.name == log.resource then resCfg = re; break end
     end
 
+    -- Disabled category: suppress all destinations
+    if catCfg and catCfg.disabled == true then
+        BroadcastLogToAdmins(log)
+        return
+    end
+
     -- Whitelist mode: resources not listed are fully blocked
     local resMode = (cfg and cfg.ResourceMode) or 'blacklist'
     if resMode == 'whitelist' and resCfg == nil then
-        TriggerClientEvent('mri_Qadmin:client:NewLog', -1, log)
+        BroadcastLogToAdmins(log)
         return
     end
 
@@ -239,15 +326,15 @@ function AddLog(src, resource, category, level, message, data)
     -- DB (non-blocking) → push to panel after insert confirms ID
     if saveDb then
         MySQL.insert(
-            'INSERT INTO mri_qadmin_logs (resource, category, level, message, data, admin) VALUES (?, ?, ?, ?, ?, ?)',
-            { log.resource, log.category, log.level, log.message, json.encode(log.data), log.admin },
+            'INSERT INTO mri_qadmin_logs (resource, category, level, message, data, admin, admin_src, admin_citizenid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            { log.resource, log.category, log.level, log.message, json.encode(log.data), log.admin, log.admin_src, log.admin_citizenid },
             function(id)
                 log.id = id
-                TriggerClientEvent('mri_Qadmin:client:NewLog', -1, log)
+                BroadcastLogToAdmins(log)
             end
         )
     else
-        TriggerClientEvent('mri_Qadmin:client:NewLog', -1, log)
+        BroadcastLogToAdmins(log)
     end
 
     -- Discord queue (only if both category and resource entry allow it)
@@ -266,9 +353,9 @@ _G.AddLog = AddLog
 
 -- ─── External interface ───────────────────────────────────────────────────────
 
--- Other resources can call: exports['mri_Qadmin']:AddLog(resource, category, level, message, data)
-exports('AddLog', function(resource, category, level, message, data)
-    AddLog(0, resource, category, level, message, data)
+-- Other resources can call: exports['mri_Qadmin']:AddLog(resource, category, level, message, data[, source])
+exports('AddLog', function(resource, category, level, message, data, source)
+    AddLog(tonumber(source) or 0, resource, category, level, message, data)
 end)
 
 -- Other resources can trigger: TriggerEvent('mri_Qadmin:server:AddLog', resource, category, level, message, data[, source])
@@ -423,12 +510,13 @@ lib.callback.register('mri_Qadmin:callback:GetLogSettings', function(source)
     local result = {}
     for _, cat in ipairs(cats) do
         result[#result + 1] = {
-            id      = cat.id,
-            label   = cat.label,
-            webhook = (Config.Logs.Webhooks and Config.Logs.Webhooks[cat.id]) or '',
-            db      = cat.db ~= false,
-            discord = cat.discord == true,
-            relay   = cat.relay == true,
+            id       = cat.id,
+            label    = cat.label,
+            webhook  = (Config.Logs.Webhooks and Config.Logs.Webhooks[cat.id]) or '',
+            db       = cat.db ~= false,
+            discord  = cat.discord == true,
+            relay    = cat.relay == true,
+            disabled = cat.disabled == true,
         }
     end
     if #result == 0 then result = json.array end
@@ -461,11 +549,12 @@ lib.callback.register('mri_Qadmin:callback:SaveLogSettings', function(source, da
     for _, cat in ipairs(data.categories or {}) do
         if cat.id and cat.label then
             newCats[#newCats + 1] = {
-                id      = cat.id,
-                label   = cat.label,
-                db      = cat.db ~= false,
-                discord = cat.discord == true,
-                relay   = cat.relay == true,
+                id       = cat.id,
+                label    = cat.label,
+                db       = cat.db ~= false,
+                discord  = cat.discord == true,
+                relay    = cat.relay == true,
+                disabled = cat.disabled == true,
             }
             Config.Logs.Webhooks[cat.id] = (cat.webhook and cat.webhook ~= '') and cat.webhook or nil
         end

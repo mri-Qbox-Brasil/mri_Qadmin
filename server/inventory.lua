@@ -18,7 +18,7 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(_, selectedData)
 
     local playerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
     QBCore.Functions.Notify(src, locale("notifications.invcleared", playerName), 'success', 7500)
-    AddLog(src, 'mri_Qadmin', 'inventory', 'warn', ('Limpar inventário: inventário de %s limpo'):format(playerName), { target = player })
+    AddLog(src, 'mri_Qadmin', 'inventory', 'warn', ('Limpar inventário: inventário de %s limpo'):format(playerName), GetTargetData(tonumber(player)))
 end)
 
 -- Clear Inventory Offline
@@ -98,7 +98,10 @@ RegisterNetEvent('mri_Qadmin:server:GiveItem', function(_, selectedData)
     local playerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
     Player.Functions.AddItem(item, amount)
     QBCore.Functions.Notify(source, locale("notifications.give_item", tonumber(amount) .. " " .. item, playerName), "success", 7500)
-    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Dar item: %dx %s dado a %s'):format(tonumber(amount), item, playerName), { target = target, item = item, amount = tonumber(amount) })
+    local giveItemData = GetTargetData(tonumber(target))
+    giveItemData.item = item
+    giveItemData.amount = tonumber(amount)
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Dar item: %dx %s dado a %s'):format(tonumber(amount), item, playerName), giveItemData)
 end)
 
 -- Give Item to All

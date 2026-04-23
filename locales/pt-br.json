@@ -517,6 +517,26 @@
                 "vehicle": "Mostrar Veículo",
                 "weapon": "Mostrar Arma"
             }
+        },
+        "desc": {
+            "Fuel": "Define o sistema de combustível utilizado pelos veículos gerenciados no painel (ex: cdn-fuel, ox_fuel).",
+            "Dealership": "Sistema de concessionária integrado para checar o estoque antes de gerar veículos (ex: mri, ps-dealerships).",
+            "RenewedPhone": "Mude para true se utilizar o qb-phone Renewed (suporte a multijob).",
+            "AdminKey": "Tecla de atalho primária para abrir o menu admin (ex: 0, F8).",
+            "NoclipKey": "Tecla de atalho rápido para ativar Noclip no servidor (ex: 9, INSERT).",
+            "Debug": "Ativa logs detalhados (Prints) de rastreamento no console F8 e na janela TxAdmin/Servidor.",
+            "DefaultGarage": "Nome exato da garagem padrão (DB) usada quando carros são dados e salvos a um jogador na aba de Doar.",
+            "VehicleImages": "Caso use imagens customizadas no seu Frontend de Inventário, defina a URL inteira aqui. Deixar vazio puxa do docs.fivem.",
+            "MapBaseUrl": "URL base externa para carregar os tiles do mapa (ex: https://mri-qbox-brasil.github.io/mapas/). Se vazio, usa arquivos locais.",
+            "SignalingProvider": "Backend do webrtc. fivem-native (sem servidor externo), websocket (requer mri_Qsignaling rodando) ou cloudflare-sfu.",
+            "WebRTCUrl": "Endpoint obrigatório caso o SignalingProvider esteja como websocket. Geralmente é wss://seu-ip:porta.",
+            "Keybindings": "Permitir ou proibir que as teclas configuradas abram o painel. Se false, só abrirá via comandos (/adm)."
+        },
+        "option": {
+            "none_disabled": "Nenhum (Desativado)",
+            "fivem_native": "FiveM Native (Mais Simples)",
+            "websocket": "Websocket (Externo compatível com HTTPS)",
+            "cloudflare_sfu": "Cloudflare SFU (BETA)"
         }
     },
     "permissions": {
@@ -707,18 +727,23 @@
             "db": "Banco de dados",
             "discord": "Discord",
             "relay": "Relay (server event)",
-            "destination": "Destino"
+            "destination": "Destino",
+            "priority": "Prioridade",
+            "enabled": "Ativo"
         },
         "category": {
             "id_placeholder": "id",
             "label_placeholder": "Label",
-            "webhook_placeholder": "https://discord.com/api/webhooks/..."
+            "webhook_placeholder": "https://discord.com/api/webhooks/...",
+            "btn_add": "Adicionar Categoria"
         },
         "settings": {
             "save": "Salvar configurações",
             "categories": {
                 "title": "Categorias",
-                "description": "Configure o destino de cada categoria. O destino final de um log é o AND entre categoria e resource (ambos precisam permitir)."
+                "description": "Configure o destino de cada categoria. O destino final de um log é o AND entre categoria e resource (ambos precisam permitir).",
+                "empty": "Nenhuma categoria. Clique em \"Adicionar Categoria\" para começar.",
+                "drag_hint": "Arraste as linhas para mudar a prioridade de envio ao Discord."
             },
             "resources": {
                 "title": "Resources",
@@ -737,6 +762,64 @@
                 "db_global_desc": "Desativar sobrescreve os toggles por categoria.",
                 "max_memory": "Máximo em memória",
                 "max_memory_desc": "Logs mais recentes mantidos em memória (sem DB)."
+            }
+        },
+        "destinations": {
+            "db_title": "Banco de Dados",
+            "db_desc": "Armazena o log permanentemente. Permite consulta histórica pelo painel.",
+            "discord_title": "Discord",
+            "discord_desc": "Envia um embed formatado para o webhook configurado.",
+            "relay_title": "Relay",
+            "relay_desc": "Dispara um evento Lua no servidor para que outros resources possam reagir ao log."
+        },
+        "wizard": {
+            "setup": {
+                "btn_open": "Guia de Configuração",
+                "title": "Configuração do Sistema de Logs",
+                "step_of": "Passo %s de %s",
+                "btn_prev": "Anterior",
+                "btn_next": "Próximo",
+                "btn_finish": "Concluir",
+                "steps": {
+                    "welcome": {
+                        "title": "Bem-vindo ao Sistema de Logs",
+                        "description": "O mri_Qadmin registra automaticamente todas as ações administrativas. Aqui você define para onde cada categoria de log é enviada: banco de dados, Discord ou outros resources."
+                    },
+                    "categories": {
+                        "title": "Categorias de Log",
+                        "description": "Cada ação gera um log em uma categoria. Ative os destinos desejados. Arraste as linhas para mudar a prioridade de envio ao Discord — linha de cima = enviada primeiro."
+                    },
+                    "webhooks": {
+                        "title": "Webhooks do Discord",
+                        "description": "Categorias com Discord ativo enviam embeds para essas URLs. Deixe vazio para desativar o Discord naquela categoria.",
+                        "no_discord": "Nenhuma categoria com Discord ativo. Ative no passo anterior."
+                    },
+                    "general": {
+                        "title": "Configurações Gerais",
+                        "description": "Opções globais do sistema de logs."
+                    },
+                    "done": {
+                        "title": "Configuração Concluída",
+                        "description": "Seu sistema de logs está configurado. Você pode ajustar essas configurações a qualquer momento pela aba de Configurações."
+                    }
+                }
+            },
+            "add_category": {
+                "title": "Nova Categoria",
+                "btn_add": "Adicionar Categoria",
+                "id_hint": "Usado no código: AddLog(..., 'seu_id', ...)",
+                "label_hint": "Nome exibido no painel (emoji permitido)",
+                "steps": {
+                    "name": {
+                        "title": "Nome e Identificador",
+                        "description": "O ID é o identificador usado no código para associar chamadas AddLog a esta categoria. O label é o nome exibido no painel e nos filtros."
+                    },
+                    "config": {
+                        "title": "Destinos e Webhook",
+                        "description": "Escolha para onde os logs desta categoria serão roteados. Preencha a URL do webhook se o Discord estiver ativo."
+                    }
+                },
+                "webhook_desc": "URL do webhook para a categoria \"%s\". Deixe vazio para usar o webhook Fallback."
             }
         }
     },

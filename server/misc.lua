@@ -88,7 +88,10 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
                 '/' .. timeTable['month'] .. '/' .. timeTable['year'] .. ' ' .. timeTable['hour'] .. ':' .. timeTable['min'])
         end
         QBCore.Functions.Notify(source, locale("notifications.playerbanned", GetPlayerName(player), banTime, reason), 'success', 7500)
-        AddLog(source, 'mri_Qadmin', 'bans', 'warn', ('Banimento: %s foi banido'):format(GetPlayerName(player) or player), { reason = reason, duration = duration, player = GetPlayerName(player) })
+        local logData = GetTargetData(player)
+        logData.reason = reason
+        logData.duration = duration
+        AddLog(source, 'mri_Qadmin', 'bans', 'warn', ('Banimento: %s foi banido'):format(GetPlayerName(player) or player), logData)
 
     else
         -- OFFLINE BAN
@@ -174,7 +177,10 @@ RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(_, selectedData)
             locale("notifications.warned") .. ", por: " .. locale("notifications.reason") .. " " .. reason, 'inform', 60000)
         QBCore.Functions.Notify(source,
             locale("notifications.warngiven") .. GetPlayerName(target.PlayerData.source) .. ", por: " .. reason)
-        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Aviso: %s recebeu advertência'):format(GetPlayerName(target.PlayerData.source)), { player = GetPlayerName(target.PlayerData.source), reason = reason, warnId = warnId })
+        local warnLogData = GetTargetData(target.PlayerData.source)
+        warnLogData.reason = reason
+        warnLogData.warnId = warnId
+        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Aviso: %s recebeu advertência'):format(GetPlayerName(target.PlayerData.source)), warnLogData)
         MySQL.insert.await('INSERT INTO player_warns (senderIdentifier, targetIdentifier, reason, warnId) VALUES (?, ?, ?, ?)',
             {
                 sender.PlayerData.license,
@@ -200,7 +206,9 @@ RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(_, selectedData)
     end
 
     DropPlayer(target.PlayerData.source, locale("notifications.kicked") .. '\n' .. locale("notifications.reason") .. reason)
-    AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Expulsão: %s foi expulso'):format(GetPlayerName(target.PlayerData.source)), { player = GetPlayerName(target.PlayerData.source), reason = reason })
+    local kickLogData = GetTargetData(target.PlayerData.source)
+    kickLogData.reason = reason
+    AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Expulsão: %s foi expulso'):format(GetPlayerName(target.PlayerData.source)), kickLogData)
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -272,7 +280,7 @@ RegisterNetEvent('mri_Qadmin:server:Revive', function(_, selectedData)
 
     -- Notify the target player
     TriggerClientEvent('QBCore:Notify', player, 'Você foi revivido por um administrador.', 'success')
-    AddLog(src, 'mri_Qadmin', 'players', 'success', ('Revive: %s foi revivido'):format(GetPlayerName(player) or player), { player = player })
+    AddLog(src, 'mri_Qadmin', 'players', 'success', ('Revive: %s foi revivido'):format(GetPlayerName(player) or player), GetTargetData(player))
 
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
@@ -395,7 +403,10 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(_, selectedData)
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "give_money_crypto" or "give_money"), tonumber(amount),
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
-    AddLog(src, 'mri_Qadmin', 'money', 'info', ('Dar dinheiro: R$%s (%s) dado a %s %s'):format(amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = target, amount = tonumber(amount), type = moneyType })
+    local moneyLogData = GetTargetData(tonumber(target))
+    moneyLogData.amount = tonumber(amount)
+    moneyLogData.type = moneyType
+    AddLog(src, 'mri_Qadmin', 'money', 'info', ('Dar dinheiro: R$%s (%s) dado a %s %s'):format(amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), moneyLogData)
 
     TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
         id = tonumber(target),
@@ -454,7 +465,10 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(_, selectedData)
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "take_money_crypto" or "take_money"), tonumber(amount) .. "R$",
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
-    AddLog(src, 'mri_Qadmin', 'money', 'warn', ('Remover dinheiro: R$%s (%s) removido de %s %s'):format(amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = target, amount = tonumber(amount), type = moneyType })
+    local takeLogData = GetTargetData(tonumber(target))
+    takeLogData.amount = tonumber(amount)
+    takeLogData.type = moneyType
+    AddLog(src, 'mri_Qadmin', 'money', 'warn', ('Remover dinheiro: R$%s (%s) removido de %s %s'):format(amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), takeLogData)
 
     TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
         id = tonumber(target),
@@ -495,17 +509,17 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(_, selectedData)
 
         if playerIsCuffed then
             TriggerClientEvent("ND_Police:uncuffPed", target)
-            AddLog(source, 'mri_Qadmin', 'players', 'info', ('Algemas: jogador %s desalgemado'):format(GetPlayerName(target) or target), { target = target })
+            AddLog(source, 'mri_Qadmin', 'players', 'info', ('Algemas: jogador %s desalgemado'):format(GetPlayerName(target) or target), GetTargetData(target))
             return QBCore.Functions.Notify(source, locale("notifications.toggled_cuffs_off"), 'success')
         end
         TriggerClientEvent("ND_Police:syncNormalCuff", target, "front", "cuffs")
-        AddLog(source, 'mri_Qadmin', 'players', 'warn', ('Algemas: jogador %s algemado'):format(GetPlayerName(target) or target), { target = target })
+        AddLog(source, 'mri_Qadmin', 'players', 'warn', ('Algemas: jogador %s algemado'):format(GetPlayerName(target) or target), GetTargetData(target))
         return QBCore.Functions.Notify(source, locale("notifications.toggled_cuffs_on"), 'success')
     end
 
     TriggerClientEvent('mri_Qadmin:client:ToggleCuffs', target)
     QBCore.Functions.Notify(source, locale("notifications.toggled_cuffs"), 'success')
-    AddLog(source, 'mri_Qadmin', 'players', 'warn', ('Algemas: algemas alternadas no jogador %s'):format(GetPlayerName(target) or target), { target = target })
+    AddLog(source, 'mri_Qadmin', 'players', 'warn', ('Algemas: algemas alternadas no jogador %s'):format(GetPlayerName(target) or target), GetTargetData(target))
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
 end)
 
@@ -617,7 +631,7 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(_, selectedData)
         -- Trigger client event on target to kill themselves (reliable way)
         TriggerClientEvent('mri_Qadmin:client:ForceKill', targetPlayer.PlayerData.source)
         QBCore.Functions.Notify(src, locale("notifications.kill_player", targetPlayer.PlayerData.charinfo.firstname), 'success')
-        AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Matar: %s %s foi morto'):format(targetPlayer.PlayerData.charinfo.firstname, targetPlayer.PlayerData.charinfo.lastname), { player = targetId })
+        AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Matar: %s %s foi morto'):format(targetPlayer.PlayerData.charinfo.firstname, targetPlayer.PlayerData.charinfo.lastname), GetTargetData(targetId))
     else
         QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error')
     end

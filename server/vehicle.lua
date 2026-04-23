@@ -135,7 +135,11 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
         locale("notifications.givecar.success.source", QBCore.Shared.Vehicles[vehmodel].name, targetName), "success", 5000)
     QBCore.Functions.Notify(Player.PlayerData.source, locale("notifications.givecar.success.target", plate:upper(), garage), "success",
         5000)
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo: %s dado a %s (placa: %s)'):format(vehmodel, targetName, plate), { model = vehmodel, plate = plate, target = tsrc, garage = garage })
+    local giveCarData = GetTargetData(tsrc)
+    giveCarData.model = vehmodel
+    giveCarData.plate = plate
+    giveCarData.garage = garage
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo: %s dado a %s (placa: %s)'):format(vehmodel, targetName, plate), giveCarData)
 end)
 
 -- Dedicated event for the Vehicle Wizard (Frontend)
@@ -193,7 +197,11 @@ RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
 
     QBCore.Functions.Notify(src, locale("notifications.givecar.success.source", vehName, targetName), "success")
     QBCore.Functions.Notify(Player.PlayerData.source, locale("notifications.givecar.success.target", plate, garage), "success")
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo (wizard): %s dado a %s (placa: %s)'):format(model, targetName, plate), { model = model, plate = plate, target = playerId, garage = garage })
+    local wizardCarData = GetTargetData(playerId)
+    wizardCarData.model = model
+    wizardCarData.plate = plate
+    wizardCarData.garage = garage
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo (wizard): %s dado a %s (placa: %s)'):format(model, targetName, plate), wizardCarData)
 end)
 
 -- Give Car

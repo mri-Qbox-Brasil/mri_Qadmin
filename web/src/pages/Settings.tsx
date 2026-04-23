@@ -152,7 +152,8 @@ export default function Settings() {
     const renderPrimitiveSettings = () => {
         return Object.entries(settings).map(([key, val]) => {
             const valType = typeof val
-            const description = gameData.descriptions?.[key]
+            const descKey = gameData.descriptions?.[key]
+            const description = descKey ? t(descKey) : undefined
             const options = gameData.settingOptions?.[key]
 
             if (valType === 'boolean') {
@@ -183,7 +184,7 @@ export default function Settings() {
                             <MriSelect
                                 value={val as string | number}
                                 onChange={(newVal) => handleSettingChange(key, newVal)}
-                                options={options.map(opt => ({ label: opt.label, value: opt.value }))}
+                                options={options.map(opt => ({ label: t(opt.label) || opt.label, value: opt.value }))}
                                 className="bg-background"
                             />
                         ) : (

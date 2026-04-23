@@ -4,6 +4,7 @@ import { MriButton, MriPageHeader, MriInput, MriSelect, MriCard } from '@mriqbox
 import {
     RefreshCw, ChevronDown, ChevronRight, Circle, Download, ScrollText,
     Settings, X, Plus, Trash2, Save, Database, Webhook, Radio, LayoutList,
+    GripVertical, Power, PowerOff, Wand2, CheckCircle2, ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
@@ -30,6 +31,7 @@ interface LogCategory {
     db: boolean
     discord: boolean
     relay: boolean
+    disabled?: boolean
 }
 
 interface ResourceEntry {
@@ -52,23 +54,23 @@ interface LogSettingsData {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const LEVEL_STYLES: Record<string, { badge: string; row: string }> = {
-    info: { badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30', row: 'border-l-blue-500/50' },
-    success: { badge: 'bg-green-500/20 text-green-400 border-green-500/30', row: 'border-l-green-500/50' },
-    warn: { badge: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', row: 'border-l-yellow-500/50' },
-    error: { badge: 'bg-red-500/20 text-red-400 border-red-500/30', row: 'border-l-red-500/50' },
+    info:    { badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30',   row: 'border-l-blue-500/50'   },
+    success: { badge: 'bg-green-500/20 text-green-400 border-green-500/30', row: 'border-l-green-500/50'  },
+    warn:    { badge: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', row: 'border-l-yellow-500/50' },
+    error:   { badge: 'bg-red-500/20 text-red-400 border-red-500/30',      row: 'border-l-red-500/50'    },
 }
 
 const PAGE_SIZE = 100
+const EMPTY_CAT: LogCategory = { id: '', label: '', webhook: '', db: true, discord: false, relay: false, disabled: false }
+const EMPTY_RES: ResourceEntry = { name: '', db: true, discord: false, relay: false }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(ts: number | string): string {
     let d: Date
     if (typeof ts === 'number') {
-        // oxmysql returns TIMESTAMP as milliseconds; plain unix seconds are always < 1e10
         d = new Date(ts > 1e10 ? ts : ts * 1000)
     } else {
-        // Normalize MySQL "YYYY-MM-DD HH:MM:SS" → ISO "YYYY-MM-DDTHH:MM:SS" for reliable parsing
         d = new Date(String(ts).replace(' ', 'T'))
     }
     if (isNaN(d.getTime())) return '—'
@@ -95,24 +97,12 @@ function LogRow({ log, categoryMap }: { log: LogEntry; categoryMap: Record<strin
                         ? (expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />)
                         : <span className="w-3 h-3 block" />}
                 </span>
-                <span className="font-mono text-[10px] text-muted-foreground/60 w-28 shrink-0">
-                    {formatTime(log.created_at)}
-                </span>
-                <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0', style.badge)}>
-                    {log.level}
-                </span>
-                <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted/40 text-muted-foreground border border-border/30 shrink-0 max-w-[110px] truncate" title={categoryLabel}>
-                    {categoryLabel}
-                </span>
-                <span className="text-[10px] font-mono text-muted-foreground/50 shrink-0 max-w-[80px] truncate" title={log.resource}>
-                    {log.resource}
-                </span>
-                <span className="text-xs text-foreground/90 flex-1 truncate" title={log.message}>
-                    {log.message}
-                </span>
-                <span className="text-[10px] text-muted-foreground/60 shrink-0 hidden md:block max-w-[100px] truncate" title={log.admin}>
-                    {log.admin}
-                </span>
+                <span className="font-mono text-[10px] text-muted-foreground/60 w-28 shrink-0">{formatTime(log.created_at)}</span>
+                <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0', style.badge)}>{log.level}</span>
+                <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted/40 text-muted-foreground border border-border/30 shrink-0 max-w-[110px] truncate" title={categoryLabel}>{categoryLabel}</span>
+                <span className="text-[10px] font-mono text-muted-foreground/50 shrink-0 max-w-[80px] truncate" title={log.resource}>{log.resource}</span>
+                <span className="text-xs text-foreground/90 flex-1 truncate" title={log.message}>{log.message}</span>
+                <span className="text-[10px] text-muted-foreground/60 shrink-0 hidden md:block max-w-[100px] truncate" title={log.admin}>{log.admin}</span>
             </div>
             {expanded && hasData && (
                 <div className="px-8 pb-2">
@@ -125,7 +115,7 @@ function LogRow({ log, categoryMap }: { log: LogEntry; categoryMap: Record<strin
     )
 }
 
-// ─── Toggle helper (matches Settings.tsx peer pattern) ────────────────────────
+// ─── Primitives ───────────────────────────────────────────────────────────────
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
     return (
@@ -136,19 +126,17 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     )
 }
 
-// ─── ToggleBtn (for category table) ──────────────────────────────────────────
-
-function ToggleBtn({ active, onClick, icon: Icon, title }: {
-    active: boolean; onClick: () => void; icon: React.ElementType; title: string
+function ToggleBtn({ active, onClick, icon: Icon, title, danger }: {
+    active: boolean; onClick: () => void; icon: React.ElementType; title: string; danger?: boolean
 }) {
     return (
-        <button
-            onClick={onClick}
-            title={title}
+        <button onClick={onClick} title={title}
             className={cn(
                 'w-7 h-7 flex items-center justify-center rounded transition-colors',
                 active
-                    ? 'bg-primary/15 text-primary hover:bg-primary/25'
+                    ? danger
+                        ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
+                        : 'bg-primary/15 text-primary hover:bg-primary/25'
                     : 'text-muted-foreground/30 hover:bg-muted hover:text-muted-foreground'
             )}
         >
@@ -157,10 +145,386 @@ function ToggleBtn({ active, onClick, icon: Icon, title }: {
     )
 }
 
-// ─── Settings view ────────────────────────────────────────────────────────────
+// ─── WizardModal ──────────────────────────────────────────────────────────────
 
-const EMPTY_CAT = { id: '', label: '', webhook: '', db: true, discord: false, relay: false }
-const EMPTY_RES = { name: '', db: true, discord: false, relay: false }
+function WizardModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+                    <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+                {children}
+            </div>
+        </div>
+    )
+}
+
+function WizardStepDots({ total, current }: { total: number; current: number }) {
+    return (
+        <div className="flex items-center gap-1.5">
+            {Array.from({ length: total }).map((_, i) => (
+                <div key={i} className={cn(
+                    'rounded-full transition-all',
+                    i === current ? 'w-4 h-2 bg-primary' : i < current ? 'w-2 h-2 bg-primary/40' : 'w-2 h-2 bg-muted-foreground/20'
+                )} />
+            ))}
+        </div>
+    )
+}
+
+// ─── SetupWizard ──────────────────────────────────────────────────────────────
+
+function SetupWizard({ draft, onChange, onClose }: {
+    draft: LogSettingsData
+    onChange: (data: LogSettingsData) => void
+    onClose: () => void
+}) {
+    const { t } = useI18n()
+    const [step, setStep] = useState(0)
+    const [local, setLocal] = useState<LogSettingsData>(() => JSON.parse(JSON.stringify(draft)))
+
+    const STEPS = [
+        t('logs.wizard.setup.steps.welcome.title'),
+        t('logs.wizard.setup.steps.categories.title'),
+        t('logs.wizard.setup.steps.webhooks.title'),
+        t('logs.wizard.setup.steps.general.title'),
+        t('logs.wizard.setup.steps.done.title'),
+    ]
+    const TOTAL = STEPS.length
+
+    const updateCat = (idx: number, patch: Partial<LogCategory>) =>
+        setLocal(p => ({ ...p, categories: p.categories.map((c, i) => i === idx ? { ...c, ...patch } : c) }))
+
+    const finish = () => { onChange(local); onClose() }
+
+    const renderStep = () => {
+        switch (step) {
+            case 0:
+                return (
+                    <div className="flex flex-col gap-6">
+                        <p className="text-sm text-muted-foreground leading-relaxed">{t('logs.wizard.setup.steps.welcome.description')}</p>
+                        <div className="grid grid-cols-3 gap-3">
+                            {[
+                                { icon: Database, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', title: t('logs.destinations.db_title'), desc: t('logs.destinations.db_desc') },
+                                { icon: Webhook,  color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20', title: t('logs.destinations.discord_title'), desc: t('logs.destinations.discord_desc') },
+                                { icon: Radio,    color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20',   title: t('logs.destinations.relay_title'),   desc: t('logs.destinations.relay_desc') },
+                            ].map(({ icon: Icon, color, bg, title: dtitle, desc }) => (
+                                <div key={dtitle} className={cn('flex flex-col gap-2 p-4 rounded-xl border', bg)}>
+                                    <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', bg)}>
+                                        <Icon className={cn('w-4 h-4', color)} />
+                                    </div>
+                                    <p className="text-xs font-semibold text-foreground">{dtitle}</p>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">{desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )
+            case 1:
+                return (
+                    <div className="flex flex-col gap-3">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">{t('logs.wizard.setup.steps.categories.description')}</p>
+                        <MriCard className="overflow-hidden p-0 border-border">
+                            <div className="grid bg-muted/40 border-b border-border px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider gap-2"
+                                style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+                                <span>{t('logs.columns.label')}</span>
+                                <span title={t('logs.columns.db')}><Database className="w-3.5 h-3.5" /></span>
+                                <span title={t('logs.columns.discord')}><Webhook className="w-3.5 h-3.5" /></span>
+                                <span title={t('logs.columns.relay')}><Radio className="w-3.5 h-3.5" /></span>
+                            </div>
+                            <div className="max-h-52 overflow-y-auto">
+                                {local.categories.map((cat, idx) => (
+                                    <div key={cat.id} className="grid items-center gap-2 px-3 py-1.5 border-b border-border/40 last:border-0"
+                                        style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+                                        <span className="text-xs text-foreground truncate">{cat.label}</span>
+                                        <ToggleBtn active={cat.db}      onClick={() => updateCat(idx, { db:      !cat.db      })} icon={Database} title={t('logs.columns.db')} />
+                                        <ToggleBtn active={cat.discord} onClick={() => updateCat(idx, { discord: !cat.discord })} icon={Webhook}  title={t('logs.columns.discord')} />
+                                        <ToggleBtn active={cat.relay}   onClick={() => updateCat(idx, { relay:   !cat.relay   })} icon={Radio}    title={t('logs.columns.relay')} />
+                                    </div>
+                                ))}
+                            </div>
+                        </MriCard>
+                    </div>
+                )
+            case 2:
+                return (
+                    <div className="flex flex-col gap-3">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">{t('logs.wizard.setup.steps.webhooks.description')}</p>
+                        <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('logs.settings.general.fallback_webhook')}</label>
+                                <MriInput value={local.fallbackWebhook}
+                                    onChange={e => setLocal(p => ({ ...p, fallbackWebhook: (e.target as HTMLInputElement).value }))}
+                                    placeholder={t('logs.category.webhook_placeholder')}
+                                    className="h-8 text-xs" />
+                                <p className="text-[10px] text-muted-foreground/60 italic">{t('logs.settings.general.fallback_webhook_desc')}</p>
+                            </div>
+                            {local.categories.filter(c => c.discord).map((cat, _, arr) => {
+                                const realIdx = local.categories.findIndex(c => c.id === cat.id)
+                                return (
+                                    <div key={cat.id} className="flex flex-col gap-1">
+                                        <label className="text-[10px] font-semibold text-muted-foreground">{cat.label}</label>
+                                        <MriInput value={cat.webhook}
+                                            onChange={e => updateCat(realIdx, { webhook: (e.target as HTMLInputElement).value })}
+                                            placeholder={t('logs.category.webhook_placeholder')}
+                                            className="h-8 text-xs" />
+                                    </div>
+                                )
+                            })}
+                            {local.categories.every(c => !c.discord) && (
+                                <p className="text-[11px] text-muted-foreground/50 italic text-center py-4">
+                                    {t('logs.wizard.setup.steps.webhooks.no_discord')}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                )
+            case 3:
+                return (
+                    <div className="flex flex-col gap-4">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">{t('logs.wizard.setup.steps.general.description')}</p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-center justify-between p-4 bg-muted/10 border border-border/40 rounded-xl">
+                                <div>
+                                    <p className="text-xs font-semibold text-foreground">{t('logs.settings.general.db_global')}</p>
+                                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">{t('logs.settings.general.db_global_desc')}</p>
+                                </div>
+                                <Toggle checked={local.dbEnabled} onChange={v => setLocal(p => ({ ...p, dbEnabled: v }))} />
+                            </div>
+                            <div className="flex flex-col gap-2 p-4 bg-muted/10 border border-border/40 rounded-xl">
+                                <label className="text-xs font-semibold text-foreground">{t('logs.settings.general.max_memory')}</label>
+                                <MriInput value={String(local.maxMemory)}
+                                    onChange={e => { const v = parseInt((e.target as HTMLInputElement).value); if (!isNaN(v) && v > 0) setLocal(p => ({ ...p, maxMemory: v })) }}
+                                    className="h-8 text-xs w-24" />
+                                <p className="text-[10px] text-muted-foreground/70">{t('logs.settings.general.max_memory_desc')}</p>
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-2 p-4 bg-muted/10 border border-border/40 rounded-xl">
+                                <label className="text-xs font-semibold text-foreground">{t('logs.settings.general.relay_event')}</label>
+                                <MriInput value={local.forwardEvent}
+                                    onChange={e => setLocal(p => ({ ...p, forwardEvent: (e.target as HTMLInputElement).value }))}
+                                    placeholder="myResource:onLog"
+                                    className="h-8 text-xs" />
+                                <p className="text-[10px] text-muted-foreground/70">{t('logs.settings.general.relay_event_desc')}</p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            case 4:
+                return (
+                    <div className="flex flex-col items-center gap-4 py-6">
+                        <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center">
+                            <CheckCircle2 className="w-8 h-8 text-green-400" />
+                        </div>
+                        <div className="text-center">
+                            <p className="text-base font-semibold text-foreground mb-2">{t('logs.wizard.setup.steps.done.title')}</p>
+                            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">{t('logs.wizard.setup.steps.done.description')}</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center mt-2">
+                            {[
+                                { label: t('logs.destinations.db_title'), val: local.categories.filter(c => c.db && !c.disabled).length },
+                                { label: t('logs.destinations.discord_title'), val: local.categories.filter(c => c.discord && !c.disabled).length },
+                                { label: t('logs.destinations.relay_title'), val: local.categories.filter(c => c.relay && !c.disabled).length },
+                            ].map(({ label, val }) => (
+                                <div key={label} className="p-3 rounded-xl bg-muted/20 border border-border/40">
+                                    <p className="text-lg font-bold text-foreground">{val}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )
+        }
+    }
+
+    return (
+        <WizardModal title={t('logs.wizard.setup.title')} onClose={onClose}>
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+                <div className="flex items-center justify-between mb-5">
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">{STEPS[step]}</p>
+                    <WizardStepDots total={TOTAL} current={step} />
+                </div>
+                {renderStep()}
+            </div>
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border shrink-0">
+                <MriButton variant="ghost" size="sm" onClick={() => step > 0 ? setStep(s => s - 1) : onClose()} disabled={false}>
+                    {step === 0 ? t('common.cancel_label') : t('logs.wizard.setup.btn_prev')}
+                </MriButton>
+                <div className="flex items-center gap-2">
+                    {step < TOTAL - 1 && (
+                        <MriButton size="sm" onClick={() => setStep(s => s + 1)} className="gap-1.5">
+                            {t('logs.wizard.setup.btn_next')} <ArrowRight className="w-3.5 h-3.5" />
+                        </MriButton>
+                    )}
+                    {step === TOTAL - 1 && (
+                        <MriButton size="sm" onClick={finish} className="gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {t('logs.wizard.setup.btn_finish')}
+                        </MriButton>
+                    )}
+                </div>
+            </div>
+        </WizardModal>
+    )
+}
+
+// ─── AddCategoryWizard ────────────────────────────────────────────────────────
+
+function AddCategoryWizard({ existingIds, onAdd, onClose }: {
+    existingIds: string[]
+    onAdd: (cat: LogCategory) => void
+    onClose: () => void
+}) {
+    const { t } = useI18n()
+    const [step, setStep] = useState(0)
+    const [cat, setCat] = useState<LogCategory>({ ...EMPTY_CAT })
+
+    const TOTAL = cat.discord ? 3 : 2
+
+    const idClean = cat.id.trim().toLowerCase().replace(/\s+/g, '_')
+    const idValid = idClean.length > 0 && !existingIds.includes(idClean)
+    const labelValid = cat.label.trim().length > 0
+    const step0Valid = idValid && labelValid
+
+    const finish = () => {
+        if (!step0Valid) return
+        onAdd({ ...cat, id: idClean, label: cat.label.trim() })
+        onClose()
+    }
+
+    const canNext = step === 0 ? step0Valid : true
+
+    const renderStep = () => {
+        switch (step) {
+            case 0:
+                return (
+                    <div className="flex flex-col gap-5">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">{t('logs.wizard.add_category.steps.name.description')}</p>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-semibold text-foreground">{t('logs.columns.id')}</label>
+                                <MriInput
+                                    value={cat.id}
+                                    onChange={e => setCat(p => ({ ...p, id: (e.target as HTMLInputElement).value }))}
+                                    onKeyDown={e => e.key === 'Enter' && canNext && setStep(1)}
+                                    placeholder={t('logs.category.id_placeholder')}
+                                    className={cn('h-9 text-xs font-mono', cat.id && !idValid && 'border-red-500/50')}
+                                />
+                                <p className="text-[10px] text-muted-foreground/60 italic pl-0.5">{t('logs.wizard.add_category.id_hint')}</p>
+                                {cat.id && !idValid && (
+                                    <p className="text-[10px] text-red-400 pl-0.5">
+                                        {existingIds.includes(idClean) ? 'ID já existe.' : 'ID inválido.'}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-semibold text-foreground">{t('logs.columns.label')}</label>
+                                <MriInput
+                                    value={cat.label}
+                                    onChange={e => setCat(p => ({ ...p, label: (e.target as HTMLInputElement).value }))}
+                                    onKeyDown={e => e.key === 'Enter' && canNext && setStep(1)}
+                                    placeholder={t('logs.category.label_placeholder')}
+                                    className="h-9 text-xs"
+                                />
+                                <p className="text-[10px] text-muted-foreground/60 italic pl-0.5">{t('logs.wizard.add_category.label_hint')}</p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            case 1:
+                return (
+                    <div className="flex flex-col gap-4">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">{t('logs.wizard.add_category.steps.config.description')}</p>
+                        <div className="flex flex-col gap-2">
+                            {[
+                                { key: 'db' as const,      icon: Database, color: 'text-blue-400',   bg: 'bg-blue-500/10 border-blue-500/20',     title: t('logs.destinations.db_title'),      desc: t('logs.destinations.db_desc')      },
+                                { key: 'discord' as const, icon: Webhook,  color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20', title: t('logs.destinations.discord_title'), desc: t('logs.destinations.discord_desc') },
+                                { key: 'relay' as const,   icon: Radio,    color: 'text-green-400',  bg: 'bg-green-500/10 border-green-500/20',   title: t('logs.destinations.relay_title'),   desc: t('logs.destinations.relay_desc')   },
+                            ].map(({ key, icon: Icon, color, bg, title: dtitle, desc }) => (
+                                <button key={key}
+                                    onClick={() => setCat(p => ({ ...p, [key]: !p[key] }))}
+                                    className={cn(
+                                        'flex items-center gap-3 p-3 rounded-xl border text-left transition-all',
+                                        cat[key] ? bg : 'bg-muted/10 border-border/40 opacity-60 hover:opacity-80'
+                                    )}
+                                >
+                                    <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', cat[key] ? bg : 'bg-muted/30')}>
+                                        <Icon className={cn('w-4 h-4', cat[key] ? color : 'text-muted-foreground')} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-semibold text-foreground">{dtitle}</p>
+                                        <p className="text-[10px] text-muted-foreground leading-relaxed">{desc}</p>
+                                    </div>
+                                    <div className={cn('w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors',
+                                        cat[key] ? 'border-primary bg-primary' : 'border-muted-foreground/30')}>
+                                        {cat[key] && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )
+            case 2:
+                return (
+                    <div className="flex flex-col gap-4">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            {t('logs.wizard.add_category.webhook_desc', [cat.label])}
+                        </p>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold text-foreground">{t('logs.columns.webhook_discord')}</label>
+                            <MriInput
+                                value={cat.webhook}
+                                onChange={e => setCat(p => ({ ...p, webhook: (e.target as HTMLInputElement).value }))}
+                                placeholder={t('logs.category.webhook_placeholder')}
+                                className="h-9 text-xs"
+                            />
+                            <p className="text-[10px] text-muted-foreground/60 italic pl-0.5">{t('logs.settings.general.fallback_webhook_desc')}</p>
+                        </div>
+                    </div>
+                )
+        }
+    }
+
+    const steps = [
+        t('logs.wizard.add_category.steps.name.title'),
+        t('logs.wizard.add_category.steps.config.title'),
+        ...(cat.discord ? [t('logs.columns.webhook_discord')] : []),
+    ]
+
+    return (
+        <WizardModal title={t('logs.wizard.add_category.title')} onClose={onClose}>
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+                <div className="flex items-center justify-between mb-5">
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">{steps[step]}</p>
+                    <WizardStepDots total={steps.length} current={step} />
+                </div>
+                {renderStep()}
+            </div>
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border shrink-0">
+                <MriButton variant="ghost" size="sm" onClick={() => step > 0 ? setStep(s => s - 1) : onClose()}>
+                    {step === 0 ? t('common.cancel_label') : t('logs.wizard.setup.btn_prev')}
+                </MriButton>
+                <div className="flex items-center gap-2">
+                    {step < steps.length - 1 ? (
+                        <MriButton size="sm" onClick={() => setStep(s => s + 1)} disabled={!canNext} className="gap-1.5">
+                            {t('logs.wizard.setup.btn_next')} <ArrowRight className="w-3.5 h-3.5" />
+                        </MriButton>
+                    ) : (
+                        <MriButton size="sm" onClick={finish} disabled={!step0Valid} className="gap-1.5">
+                            <Plus className="w-3.5 h-3.5" />
+                            {t('logs.wizard.add_category.btn_add')}
+                        </MriButton>
+                    )}
+                </div>
+            </div>
+        </WizardModal>
+    )
+}
+
+// ─── Settings view ────────────────────────────────────────────────────────────
 
 function LogSettingsView({ draft, saving, onChange, onSave, onCancel }: {
     draft: LogSettingsData
@@ -170,8 +534,13 @@ function LogSettingsView({ draft, saving, onChange, onSave, onCancel }: {
     onCancel: () => void
 }) {
     const { t } = useI18n()
-    const [newCat, setNewCat] = useState({ ...EMPTY_CAT })
     const [newRes, setNewRes] = useState({ ...EMPTY_RES })
+    const [showSetupWizard, setShowSetupWizard] = useState(false)
+    const [showAddWizard, setShowAddWizard] = useState(false)
+
+    // Drag-and-drop state
+    const [dragIdx, setDragIdx] = useState<number | null>(null)
+    const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
 
     const updateCategory = (idx: number, patch: Partial<LogCategory>) =>
         onChange({ ...draft, categories: draft.categories.map((c, i) => i === idx ? { ...c, ...patch } : c) })
@@ -179,13 +548,8 @@ function LogSettingsView({ draft, saving, onChange, onSave, onCancel }: {
     const removeCategory = (idx: number) =>
         onChange({ ...draft, categories: draft.categories.filter((_, i) => i !== idx) })
 
-    const addCategory = () => {
-        const id = newCat.id.trim().toLowerCase().replace(/\s+/g, '_')
-        const label = newCat.label.trim()
-        if (!id || !label || draft.categories.some(c => c.id === id)) return
-        onChange({ ...draft, categories: [...draft.categories, { ...newCat, id, label }] })
-        setNewCat({ ...EMPTY_CAT })
-    }
+    const addCategory = (cat: LogCategory) =>
+        onChange({ ...draft, categories: [...draft.categories, cat] })
 
     const updateResource = (idx: number, patch: Partial<ResourceEntry>) =>
         onChange({ ...draft, resourceEntries: draft.resourceEntries.map((r, i) => i === idx ? { ...r, ...patch } : r) })
@@ -200,238 +564,261 @@ function LogSettingsView({ draft, saving, onChange, onSave, onCancel }: {
         setNewRes({ ...EMPTY_RES })
     }
 
+    const handleDragStart = (idx: number) => setDragIdx(idx)
+    const handleDragOver = (e: React.DragEvent, idx: number) => { e.preventDefault(); setDragOverIdx(idx) }
+    const handleDrop = (idx: number) => {
+        if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setDragOverIdx(null); return }
+        const cats = [...draft.categories]
+        const [moved] = cats.splice(dragIdx, 1)
+        cats.splice(idx, 0, moved)
+        onChange({ ...draft, categories: cats })
+        setDragIdx(null)
+        setDragOverIdx(null)
+    }
+    const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null) }
+
+    // grid: grip | id | label | webhook | db | discord | relay | enabled | delete
+    const catGrid = '28px 0.55fr 0.75fr 1.4fr auto auto auto auto auto'
+
     return (
-        <div className="flex-1 overflow-auto animate-in fade-in duration-300">
-            <div className="max-w-5xl mx-auto p-6 flex flex-col gap-8">
+        <>
+            {showSetupWizard && (
+                <SetupWizard
+                    draft={draft}
+                    onChange={d => { onChange(d); setShowSetupWizard(false) }}
+                    onClose={() => setShowSetupWizard(false)}
+                />
+            )}
+            {showAddWizard && (
+                <AddCategoryWizard
+                    existingIds={draft.categories.map(c => c.id)}
+                    onAdd={cat => { addCategory(cat); setShowAddWizard(false) }}
+                    onClose={() => setShowAddWizard(false)}
+                />
+            )}
 
-                {/* ── Categories ─────────────────────────────────────────── */}
-                <div>
-                    <div className="flex items-center gap-2 text-lg font-medium text-foreground pb-3 border-b border-border mb-4">
-                        <Database className="w-5 h-5 text-primary" />
-                        {t('logs.settings.categories.title')}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground/70 leading-relaxed italic mb-4">
-                        {t('logs.settings.categories.description')}
-                    </p>
+            <div className="flex-1 overflow-auto animate-in fade-in duration-300">
+                <div className="max-w-5xl mx-auto p-6 flex flex-col gap-8">
 
-                    <MriCard className="overflow-hidden bg-card border-border p-0">
-                        {/* header */}
-                        <div className="grid bg-muted/40 border-b border-border px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider items-center gap-3"
-                            style={{ gridTemplateColumns: '0.6fr 0.8fr 1.4fr auto auto auto auto' }}>
-                            <span>{t('logs.columns.id')}</span>
-                            <span>{t('logs.columns.label')}</span>
-                            <span>{t('logs.columns.webhook_discord')}</span>
-                            <span>{t('logs.columns.destination')}</span>
-                            <span className="w-7" />
-                        </div>
-
-                        {draft.categories.map((cat, idx) => (
-                            <div key={cat.id}
-                                className="grid items-center gap-3 px-4 py-2 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
-                                style={{ gridTemplateColumns: '0.6fr 0.8fr 1.4fr auto auto auto auto' }}>
-                                <MriInput
-                                    value={cat.id}
-                                    disabled
-                                    className="h-7 text-xs font-mono opacity-50 cursor-not-allowed"
-                                />
-                                <MriInput
-                                    value={cat.label}
-                                    onChange={e => updateCategory(idx, { label: (e.target as HTMLInputElement).value })}
-                                    placeholder="Label"
-                                    className="h-7 text-xs"
-                                />
-                                <MriInput
-                                    value={cat.webhook}
-                                    onChange={e => updateCategory(idx, { webhook: (e.target as HTMLInputElement).value })}
-                                    placeholder="https://discord.com/api/webhooks/..."
-                                    className="h-7 text-[10px]"
-                                />
-                                <ToggleBtn active={cat.db} onClick={() => updateCategory(idx, { db: !cat.db })} icon={Database} title={t('logs.columns.db')} />
-                                <ToggleBtn active={cat.discord} onClick={() => updateCategory(idx, { discord: !cat.discord })} icon={Webhook} title={t('logs.columns.discord')} />
-                                <ToggleBtn active={cat.relay} onClick={() => updateCategory(idx, { relay: !cat.relay })} icon={Radio} title={t('logs.columns.relay')} />
-                                <button onClick={() => removeCategory(idx)}
-                                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/10 text-muted-foreground/30 hover:text-red-400 transition-colors">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        ))}
-
-                        {/* Add row — same grid, all fields editable */}
-                        <div className="grid items-center gap-3 px-4 py-2.5 bg-muted/20 border-t border-border/50"
-                            style={{ gridTemplateColumns: '0.6fr 0.8fr 1.4fr auto auto auto auto' }}>
-                            <MriInput
-                                value={newCat.id}
-                                onChange={e => setNewCat(p => ({ ...p, id: (e.target as HTMLInputElement).value }))}
-                                onKeyDown={e => e.key === 'Enter' && addCategory()}
-                                placeholder={t('logs.category.id_placeholder')}
-                                className="h-7 text-xs font-mono"
-                            />
-                            <MriInput
-                                value={newCat.label}
-                                onChange={e => setNewCat(p => ({ ...p, label: (e.target as HTMLInputElement).value }))}
-                                onKeyDown={e => e.key === 'Enter' && addCategory()}
-                                placeholder={t('logs.category.label_placeholder')}
-                                className="h-7 text-xs"
-                            />
-                            <MriInput
-                                value={newCat.webhook}
-                                onChange={e => setNewCat(p => ({ ...p, webhook: (e.target as HTMLInputElement).value }))}
-                                placeholder={t('logs.category.webhook_placeholder')}
-                                className="h-7 text-[10px]"
-                            />
-                            <ToggleBtn active={newCat.db} onClick={() => setNewCat(p => ({ ...p, db: !p.db }))} icon={Database} title={t('logs.columns.db')} />
-                            <ToggleBtn active={newCat.discord} onClick={() => setNewCat(p => ({ ...p, discord: !p.discord }))} icon={Webhook} title={t('logs.columns.discord')} />
-                            <ToggleBtn active={newCat.relay} onClick={() => setNewCat(p => ({ ...p, relay: !p.relay }))} icon={Radio} title={t('logs.columns.relay')} />
-                            <button onClick={addCategory} disabled={!newCat.id.trim() || !newCat.label.trim()}
-                                className="w-7 h-7 flex items-center justify-center rounded border border-border hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                    {/* ── Categories ─────────────────────────────────────────── */}
+                    <div>
+                        <div className="flex items-center gap-2 pb-3 border-b border-border mb-4">
+                            <Database className="w-5 h-5 text-primary shrink-0" />
+                            <span className="text-lg font-medium text-foreground flex-1">{t('logs.settings.categories.title')}</span>
+                            <MriButton variant="ghost" size="sm" onClick={() => setShowSetupWizard(true)} className="gap-1.5 text-muted-foreground hover:text-foreground h-8">
+                                <Wand2 className="w-3.5 h-3.5" />
+                                {t('logs.wizard.setup.btn_open')}
+                            </MriButton>
+                            <MriButton size="sm" onClick={() => setShowAddWizard(true)} className="gap-1.5 h-8">
                                 <Plus className="w-3.5 h-3.5" />
-                            </button>
+                                {t('logs.category.btn_add')}
+                            </MriButton>
                         </div>
-                    </MriCard>
-                </div>
+                        <p className="text-[11px] text-muted-foreground/70 leading-relaxed italic mb-4">
+                            {t('logs.settings.categories.description')}
+                        </p>
 
-                {/* ── Resources ──────────────────────────────────────────── */}
-                <div>
-                    <div className="flex items-center gap-2 pb-3 border-b border-border mb-4">
-                        <Radio className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-lg font-medium text-foreground flex-1">{t('logs.settings.resources.title')}</span>
-                        <div className="flex items-center rounded-lg border border-border overflow-hidden text-[11px] font-medium shrink-0">
-                            {(['blacklist', 'whitelist'] as const).map(mode => (
-                                <button
-                                    key={mode}
-                                    onClick={() => onChange({ ...draft, resourceMode: mode })}
+                        <MriCard className="overflow-hidden bg-card border-border p-0">
+                            {/* header */}
+                            <div className="grid bg-muted/40 border-b border-border px-3 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider items-center gap-2"
+                                style={{ gridTemplateColumns: catGrid }}>
+                                <span />
+                                <span>{t('logs.columns.id')}</span>
+                                <span>{t('logs.columns.label')}</span>
+                                <span>{t('logs.columns.webhook_discord')}</span>
+                                <span title={t('logs.columns.db')}><Database className="w-3 h-3" /></span>
+                                <span title={t('logs.columns.discord')}><Webhook className="w-3 h-3" /></span>
+                                <span title={t('logs.columns.relay')}><Radio className="w-3 h-3" /></span>
+                                <span title={t('logs.columns.enabled')}><Power className="w-3 h-3" /></span>
+                                <span className="w-7" />
+                            </div>
+
+                            {draft.categories.map((cat, idx) => (
+                                <div
+                                    key={cat.id}
+                                    draggable
+                                    onDragStart={() => handleDragStart(idx)}
+                                    onDragOver={e => handleDragOver(e, idx)}
+                                    onDrop={() => handleDrop(idx)}
+                                    onDragEnd={handleDragEnd}
                                     className={cn(
-                                        'px-3 py-1.5 capitalize transition-colors',
-                                        draft.resourceMode === mode
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'text-muted-foreground hover:bg-muted'
+                                        'grid items-center gap-2 px-3 py-2 border-b border-border/50 last:border-0 transition-colors',
+                                        cat.disabled ? 'opacity-40' : 'hover:bg-muted/20',
+                                        dragOverIdx === idx && dragIdx !== idx && 'border-t-2 border-t-primary',
+                                        dragIdx === idx && 'opacity-50 bg-muted/30',
                                     )}
+                                    style={{ gridTemplateColumns: catGrid }}
                                 >
-                                    {mode}
-                                </button>
+                                    <button className="cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground transition-colors flex justify-center">
+                                        <GripVertical className="w-3.5 h-3.5" />
+                                    </button>
+                                    <span className={cn('text-[10px] font-mono text-muted-foreground truncate', cat.disabled && 'line-through')}>{cat.id}</span>
+                                    <MriInput
+                                        value={cat.label}
+                                        onChange={e => updateCategory(idx, { label: (e.target as HTMLInputElement).value })}
+                                        placeholder="Label"
+                                        className="h-7 text-xs"
+                                        disabled={cat.disabled}
+                                    />
+                                    <MriInput
+                                        value={cat.webhook}
+                                        onChange={e => updateCategory(idx, { webhook: (e.target as HTMLInputElement).value })}
+                                        placeholder={t('logs.category.webhook_placeholder')}
+                                        className="h-7 text-[10px]"
+                                        disabled={cat.disabled}
+                                    />
+                                    <ToggleBtn active={cat.db}      onClick={() => updateCategory(idx, { db:      !cat.db      })} icon={Database} title={t('logs.columns.db')} />
+                                    <ToggleBtn active={cat.discord} onClick={() => updateCategory(idx, { discord: !cat.discord })} icon={Webhook}  title={t('logs.columns.discord')} />
+                                    <ToggleBtn active={cat.relay}   onClick={() => updateCategory(idx, { relay:   !cat.relay   })} icon={Radio}    title={t('logs.columns.relay')} />
+                                    <ToggleBtn
+                                        active={!cat.disabled}
+                                        onClick={() => updateCategory(idx, { disabled: !cat.disabled })}
+                                        icon={cat.disabled ? PowerOff : Power}
+                                        title={t('logs.columns.enabled')}
+                                        danger={!!cat.disabled}
+                                    />
+                                    <button onClick={() => removeCategory(idx)}
+                                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/10 text-muted-foreground/30 hover:text-red-400 transition-colors">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
                             ))}
-                        </div>
+
+                            {draft.categories.length === 0 && (
+                                <div className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground/50">
+                                    <Database className="w-8 h-8 opacity-30" />
+                                    <p className="text-sm">{t('logs.settings.categories.empty')}</p>
+                                </div>
+                            )}
+                        </MriCard>
+                        <p className="text-[10px] text-muted-foreground/40 italic mt-2 pl-1">
+                            {t('logs.settings.categories.drag_hint')}
+                        </p>
                     </div>
-                    <p className="text-[11px] text-muted-foreground/70 leading-relaxed italic mb-4">
-                        {draft.resourceMode === 'whitelist'
-                            ? t('logs.settings.resources.desc_whitelist')
-                            : t('logs.settings.resources.desc_blacklist')}
-                    </p>
 
-                    <MriCard className="overflow-hidden bg-card border-border p-0">
-                        <div className="grid bg-muted/40 border-b border-border px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider items-center gap-3"
-                            style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-                            <span>{t('logs.settings.resources.title')}</span>
-                            <span>{t('logs.columns.destination')}</span>
-                            <span className="w-7" />
+                    {/* ── Resources ──────────────────────────────────────────── */}
+                    <div>
+                        <div className="flex items-center gap-2 pb-3 border-b border-border mb-4">
+                            <Radio className="w-5 h-5 text-primary shrink-0" />
+                            <span className="text-lg font-medium text-foreground flex-1">{t('logs.settings.resources.title')}</span>
+                            <div className="flex items-center rounded-lg border border-border overflow-hidden text-[11px] font-medium shrink-0">
+                                {(['blacklist', 'whitelist'] as const).map(mode => (
+                                    <button key={mode} onClick={() => onChange({ ...draft, resourceMode: mode })}
+                                        className={cn('px-3 py-1.5 capitalize transition-colors',
+                                            draft.resourceMode === mode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                                        )}>
+                                        {mode}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
+                        <p className="text-[11px] text-muted-foreground/70 leading-relaxed italic mb-4">
+                            {draft.resourceMode === 'whitelist' ? t('logs.settings.resources.desc_whitelist') : t('logs.settings.resources.desc_blacklist')}
+                        </p>
 
-                        {draft.resourceEntries.length === 0 && (
-                            <p className="text-[11px] text-muted-foreground/50 text-center py-5 italic">{t('logs.settings.resources.empty')}</p>
-                        )}
-
-                        {draft.resourceEntries.map((res, idx) => (
-                            <div key={res.name}
-                                className="grid items-center gap-3 px-4 py-2 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
+                        <MriCard className="overflow-hidden bg-card border-border p-0">
+                            <div className="grid bg-muted/40 border-b border-border px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider items-center gap-3"
                                 style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-                                <MriInput value={res.name} disabled className="h-7 text-xs font-mono opacity-50 cursor-not-allowed" />
-                                <ToggleBtn active={res.db} onClick={() => updateResource(idx, { db: !res.db })} icon={Database} title={t('logs.columns.db')} />
-                                <ToggleBtn active={res.discord} onClick={() => updateResource(idx, { discord: !res.discord })} icon={Webhook} title={t('logs.columns.discord')} />
-                                <ToggleBtn active={res.relay} onClick={() => updateResource(idx, { relay: !res.relay })} icon={Radio} title={t('logs.columns.relay')} />
-                                <button onClick={() => removeResource(idx)}
-                                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/10 text-muted-foreground/30 hover:text-red-400 transition-colors">
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                <span>{t('logs.settings.resources.title')}</span>
+                                <span>{t('logs.columns.destination')}</span>
+                                <span className="w-7" />
+                            </div>
+
+                            {draft.resourceEntries.length === 0 && (
+                                <p className="text-[11px] text-muted-foreground/50 text-center py-5 italic">{t('logs.settings.resources.empty')}</p>
+                            )}
+
+                            {draft.resourceEntries.map((res, idx) => (
+                                <div key={res.name} className="grid items-center gap-3 px-4 py-2 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
+                                    style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
+                                    <MriInput value={res.name} disabled className="h-7 text-xs font-mono opacity-50 cursor-not-allowed" />
+                                    <ToggleBtn active={res.db}      onClick={() => updateResource(idx, { db:      !res.db      })} icon={Database} title={t('logs.columns.db')} />
+                                    <ToggleBtn active={res.discord} onClick={() => updateResource(idx, { discord: !res.discord })} icon={Webhook}  title={t('logs.columns.discord')} />
+                                    <ToggleBtn active={res.relay}   onClick={() => updateResource(idx, { relay:   !res.relay   })} icon={Radio}    title={t('logs.columns.relay')} />
+                                    <button onClick={() => removeResource(idx)}
+                                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/10 text-muted-foreground/30 hover:text-red-400 transition-colors">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* Add row */}
+                            <div className="grid items-center gap-3 px-4 py-2.5 bg-muted/20 border-t border-border/50"
+                                style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
+                                <MriInput value={newRes.name}
+                                    onChange={e => setNewRes(p => ({ ...p, name: (e.target as HTMLInputElement).value }))}
+                                    onKeyDown={e => e.key === 'Enter' && addResource()}
+                                    placeholder={t('logs.settings.resources.placeholder')}
+                                    className="h-7 text-xs font-mono" />
+                                <ToggleBtn active={newRes.db}      onClick={() => setNewRes(p => ({ ...p, db:      !p.db      }))} icon={Database} title={t('logs.columns.db')} />
+                                <ToggleBtn active={newRes.discord} onClick={() => setNewRes(p => ({ ...p, discord: !p.discord }))} icon={Webhook}  title={t('logs.columns.discord')} />
+                                <ToggleBtn active={newRes.relay}   onClick={() => setNewRes(p => ({ ...p, relay:   !p.relay   }))} icon={Radio}    title={t('logs.columns.relay')} />
+                                <button onClick={addResource} disabled={!newRes.name.trim()}
+                                    className="w-7 h-7 flex items-center justify-center rounded border border-border hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                    <Plus className="w-3.5 h-3.5" />
                                 </button>
                             </div>
-                        ))}
-
-                        {/* Add row */}
-                        <div className="grid items-center gap-3 px-4 py-2.5 bg-muted/20 border-t border-border/50"
-                            style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-                            <MriInput
-                                value={newRes.name}
-                                onChange={e => setNewRes(p => ({ ...p, name: (e.target as HTMLInputElement).value }))}
-                                onKeyDown={e => e.key === 'Enter' && addResource()}
-                                placeholder={t('logs.settings.resources.placeholder')}
-                                className="h-7 text-xs font-mono"
-                            />
-                            <ToggleBtn active={newRes.db} onClick={() => setNewRes(p => ({ ...p, db: !p.db }))} icon={Database} title={t('logs.columns.db')} />
-                            <ToggleBtn active={newRes.discord} onClick={() => setNewRes(p => ({ ...p, discord: !p.discord }))} icon={Webhook} title={t('logs.columns.discord')} />
-                            <ToggleBtn active={newRes.relay} onClick={() => setNewRes(p => ({ ...p, relay: !p.relay }))} icon={Radio} title={t('logs.columns.relay')} />
-                            <button onClick={addResource} disabled={!newRes.name.trim()}
-                                className="w-7 h-7 flex items-center justify-center rounded border border-border hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                                <Plus className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-                    </MriCard>
-                </div>
-
-                {/* ── General ────────────────────────────────────────────── */}
-                <div>
-                    <div className="flex items-center gap-2 text-lg font-medium text-foreground pb-3 border-b border-border mb-4">
-                        <Settings className="w-5 h-5 text-primary" />
-                        {t('logs.settings.general.title')}
+                        </MriCard>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col space-y-2 p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
-                            <label className="text-xs font-bold font-mono text-muted-foreground pl-1">{t('logs.settings.general.fallback_webhook')}</label>
-                            <MriInput
-                                value={draft.fallbackWebhook}
-                                onChange={e => onChange({ ...draft, fallbackWebhook: (e.target as HTMLInputElement).value })}
-                                placeholder={t('logs.category.webhook_placeholder')}
-                                className="h-10 bg-background border-border"
-                            />
-                            <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic pl-1">{t('logs.settings.general.fallback_webhook_desc')}</p>
+                    {/* ── General ────────────────────────────────────────────── */}
+                    <div>
+                        <div className="flex items-center gap-2 text-lg font-medium text-foreground pb-3 border-b border-border mb-4">
+                            <Settings className="w-5 h-5 text-primary" />
+                            {t('logs.settings.general.title')}
                         </div>
 
-                        <div className="flex flex-col space-y-2 p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
-                            <label className="text-xs font-bold font-mono text-muted-foreground pl-1">
-                                {t('logs.settings.general.relay_event')} <span className="text-primary font-normal not-italic normal-case">(server-side)</span>
-                            </label>
-                            <MriInput
-                                value={draft.forwardEvent}
-                                onChange={e => onChange({ ...draft, forwardEvent: (e.target as HTMLInputElement).value })}
-                                placeholder="myResource:onLog"
-                                className="h-10 bg-background border-border"
-                            />
-                            <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic pl-1">{t('logs.settings.general.relay_event_desc')}</p>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
-                            <div>
-                                <p className="text-xs font-bold font-mono text-muted-foreground">{t('logs.settings.general.db_global')}</p>
-                                <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic mt-0.5">{t('logs.settings.general.db_global_desc')}</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col space-y-2 p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
+                                <label className="text-xs font-bold font-mono text-muted-foreground pl-1">{t('logs.settings.general.fallback_webhook')}</label>
+                                <MriInput value={draft.fallbackWebhook}
+                                    onChange={e => onChange({ ...draft, fallbackWebhook: (e.target as HTMLInputElement).value })}
+                                    placeholder={t('logs.category.webhook_placeholder')}
+                                    className="h-10 bg-background border-border" />
+                                <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic pl-1">{t('logs.settings.general.fallback_webhook_desc')}</p>
                             </div>
-                            <Toggle checked={draft.dbEnabled} onChange={v => onChange({ ...draft, dbEnabled: v })} />
-                        </div>
 
-                        <div className="flex flex-col space-y-2 p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
-                            <label className="text-xs font-bold font-mono text-muted-foreground pl-1">{t('logs.settings.general.max_memory')}</label>
-                            <MriInput
-                                value={String(draft.maxMemory)}
-                                onChange={e => {
-                                    const v = parseInt((e.target as HTMLInputElement).value)
-                                    if (!isNaN(v) && v > 0) onChange({ ...draft, maxMemory: v })
-                                }}
-                                placeholder="500"
-                                className="h-10 bg-background border-border w-28"
-                            />
-                            <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic pl-1">{t('logs.settings.general.max_memory_desc')}</p>
+                            <div className="flex flex-col space-y-2 p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
+                                <label className="text-xs font-bold font-mono text-muted-foreground pl-1">
+                                    {t('logs.settings.general.relay_event')} <span className="text-primary font-normal not-italic normal-case">(server-side)</span>
+                                </label>
+                                <MriInput value={draft.forwardEvent}
+                                    onChange={e => onChange({ ...draft, forwardEvent: (e.target as HTMLInputElement).value })}
+                                    placeholder="myResource:onLog"
+                                    className="h-10 bg-background border-border" />
+                                <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic pl-1">{t('logs.settings.general.relay_event_desc')}</p>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
+                                <div>
+                                    <p className="text-xs font-bold font-mono text-muted-foreground">{t('logs.settings.general.db_global')}</p>
+                                    <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic mt-0.5">{t('logs.settings.general.db_global_desc')}</p>
+                                </div>
+                                <Toggle checked={draft.dbEnabled} onChange={v => onChange({ ...draft, dbEnabled: v })} />
+                            </div>
+
+                            <div className="flex flex-col space-y-2 p-4 bg-muted/10 border border-border/40 rounded-xl hover:bg-muted/20 transition-colors">
+                                <label className="text-xs font-bold font-mono text-muted-foreground pl-1">{t('logs.settings.general.max_memory')}</label>
+                                <MriInput value={String(draft.maxMemory)}
+                                    onChange={e => { const v = parseInt((e.target as HTMLInputElement).value); if (!isNaN(v) && v > 0) onChange({ ...draft, maxMemory: v }) }}
+                                    placeholder="500"
+                                    className="h-10 bg-background border-border w-28" />
+                                <p className="text-[10px] text-muted-foreground/70 leading-relaxed italic pl-1">{t('logs.settings.general.max_memory_desc')}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Save / Cancel */}
-                <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
-                    <MriButton variant="ghost" size="sm" onClick={onCancel} disabled={saving}>{t('common.cancel_label')}</MriButton>
-                    <MriButton size="sm" onClick={onSave} isLoading={saving} disabled={saving} className="gap-1.5">
-                        {!saving && <Save className="w-3.5 h-3.5" />}
-                        {t('logs.settings.save')}
-                    </MriButton>
+                    {/* Save / Cancel */}
+                    <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+                        <MriButton variant="ghost" size="sm" onClick={onCancel} disabled={saving}>{t('common.cancel_label')}</MriButton>
+                        <MriButton size="sm" onClick={onSave} isLoading={saving} disabled={saving} className="gap-1.5">
+                            {!saving && <Save className="w-3.5 h-3.5" />}
+                            {t('logs.settings.save')}
+                        </MriButton>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 }
 
@@ -442,7 +829,6 @@ export default function Logs() {
     const { sendNui, on, off } = useNui()
 
     const [activeView, setActiveView] = useState<'logs' | 'settings'>('logs')
-
     const [logs, setLogs] = useState<LogEntry[]>([])
     const [total, setTotal] = useState(0)
     const [page, setPage] = useState(1)
@@ -473,20 +859,20 @@ export default function Logs() {
     }, [filterSearch, filterResource])
 
     const levelOptions = useMemo(() => [
-        { value: 'info', label: 'ℹ️ Info' },
+        { value: 'info',    label: 'ℹ️ Info'    },
         { value: 'success', label: '✅ Success' },
-        { value: 'warn', label: '⚠️ Warn' },
-        { value: 'error', label: '❌ Error' },
+        { value: 'warn',    label: '⚠️ Warn'    },
+        { value: 'error',   label: '❌ Error'   },
     ], [])
 
     const logTabs: MriTabItem[] = useMemo(() => [
-        { id: 'logs', label: t('logs.tabs.logs'), icon: LayoutList },
-        { id: 'settings', label: t('logs.tabs.settings'), icon: Settings },
+        { id: 'logs',     label: t('logs.tabs.logs'),     icon: LayoutList },
+        { id: 'settings', label: t('logs.tabs.settings'), icon: Settings   },
     ], [t])
 
     const categoryOptions = useMemo(() =>
-        (logSettings?.categories || []).map(c => ({ value: c.id, label: c.label }))
-        , [logSettings])
+        (logSettings?.categories || []).filter(c => !c.disabled).map(c => ({ value: c.id, label: c.label }))
+    , [logSettings])
 
     const categoryMap = useMemo(() => {
         const map: Record<string, string> = {}
@@ -498,13 +884,13 @@ export default function Logs() {
         const res = await sendNui('mri_Qadmin:callback:GetLogSettings', {}, MOCK_LOG_SETTINGS) as any
         if (res) {
             const normalized: LogSettingsData = {
-                categories: Array.isArray(res.categories) ? res.categories : [],
+                categories:      Array.isArray(res.categories)      ? res.categories      : [],
                 resourceEntries: Array.isArray(res.resourceEntries) ? res.resourceEntries : [],
-                resourceMode: res.resourceMode === 'whitelist' ? 'whitelist' : 'blacklist',
+                resourceMode:    res.resourceMode === 'whitelist'    ? 'whitelist'         : 'blacklist',
                 fallbackWebhook: res.fallbackWebhook ?? '',
-                dbEnabled: res.dbEnabled !== false,
-                maxMemory: typeof res.maxMemory === 'number' ? res.maxMemory : 500,
-                forwardEvent: res.forwardEvent ?? '',
+                dbEnabled:       res.dbEnabled !== false,
+                maxMemory:       typeof res.maxMemory === 'number' ? res.maxMemory : 500,
+                forwardEvent:    res.forwardEvent ?? '',
             }
             setLogSettings(normalized)
             setSettingsDraft(JSON.parse(JSON.stringify(normalized)))
@@ -518,7 +904,8 @@ export default function Logs() {
                 page: p, limit: PAGE_SIZE,
                 categories: filterCategories,
                 levels: filterLevels,
-                resource: debouncedResource, search: debouncedSearch,
+                resource: debouncedResource,
+                search: debouncedSearch,
             }, MOCK_LOGS)
             if (res) {
                 setLogs((res as any).logs || [])
@@ -538,9 +925,9 @@ export default function Logs() {
         const handler = (log: LogEntry) => {
             if (!isLive) return
             const matchesCategory = filterCategories.length === 0 || filterCategories.includes(log.category)
-            const matchesLevel = filterLevels.length === 0 || filterLevels.includes(log.level)
+            const matchesLevel    = filterLevels.length === 0    || filterLevels.includes(log.level)
             const matchesResource = !debouncedResource || log.resource.includes(debouncedResource)
-            const matchesSearch = !debouncedSearch || log.message.toLowerCase().includes(debouncedSearch.toLowerCase()) || log.admin.toLowerCase().includes(debouncedSearch.toLowerCase())
+            const matchesSearch   = !debouncedSearch   || log.message.toLowerCase().includes(debouncedSearch.toLowerCase()) || log.admin.toLowerCase().includes(debouncedSearch.toLowerCase())
             if (matchesCategory && matchesLevel && matchesResource && matchesSearch) {
                 if (page === 1) {
                     setLogs(prev => [log, ...prev.slice(0, PAGE_SIZE - 1)])
@@ -590,93 +977,42 @@ export default function Logs() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader
-                title={t('qadmin.page.logs')}
-                icon={ScrollText}
-                countLabel={t('logs.records')}
-                count={total}
-            >
-                <MriTabs
-                    items={logTabs}
-                    value={activeView}
-                    onChange={setActiveView}
-                    variant="premium"
-                />
+            <MriPageHeader title={t('qadmin.page.logs')} icon={ScrollText} countLabel={t('logs.records')} count={total}>
+                <MriTabs items={logTabs} value={activeView} onChange={setActiveView} variant="premium" />
 
                 {activeView === 'logs' && <>
                     {categoryOptions.length > 0 && (
-                        <MriSelect
-                            multiple
-                            options={categoryOptions}
-                            value={filterCategories}
+                        <MriSelect multiple options={categoryOptions} value={filterCategories}
                             onChange={v => { setFilterCategories(v as string[]); setPage(1) }}
-                            placeholder={t('logs.filter.all_categories')}
-                            className="h-10 text-xs w-44"
-                        />
+                            placeholder={t('logs.filter.all_categories')} className="h-10 text-xs w-44" />
                     )}
-                    <MriSelect
-                        multiple
-                        options={levelOptions}
-                        value={filterLevels}
+                    <MriSelect multiple options={levelOptions} value={filterLevels}
                         onChange={v => { setFilterLevels(v as string[]); setPage(1) }}
-                        placeholder={t('logs.filter.all_levels')}
-                        className="h-10 text-xs w-36"
-                    />
-                    <MriInput
-                        value={filterResource}
-                        onChange={e => setFilterResource((e.target as HTMLInputElement).value)}
-                        placeholder={t('logs.filter.resource_placeholder')}
-                        className="h-10 text-xs w-32"
-                    />
-                    <MriInput
-                        value={filterSearch}
-                        onChange={e => setFilterSearch((e.target as HTMLInputElement).value)}
-                        placeholder={t('logs.filter.search_placeholder')}
-                        className="h-10 text-xs w-48"
-                    />
+                        placeholder={t('logs.filter.all_levels')} className="h-10 text-xs w-36" />
+                    <MriInput value={filterResource} onChange={e => setFilterResource((e.target as HTMLInputElement).value)}
+                        placeholder={t('logs.filter.resource_placeholder')} className="h-10 text-xs w-32" />
+                    <MriInput value={filterSearch} onChange={e => setFilterSearch((e.target as HTMLInputElement).value)}
+                        placeholder={t('logs.filter.search_placeholder')} className="h-10 text-xs w-48" />
                     {(filterCategories.length > 0 || filterLevels.length > 0 || filterResource || filterSearch) && (
-                        <MriButton
-                            variant="ghost"
-                            size="icon"
+                        <MriButton variant="ghost" size="icon"
                             className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10 p-0 shrink-0"
-                            title="Limpar filtros"
-                            onClick={() => {
-                                setFilterCategories([]); setFilterLevels([])
-                                setFilterResource(''); setFilterSearch('')
-                                setDebouncedSearch(''); setDebouncedResource('')
-                            }}
-                        >
+                            onClick={() => { setFilterCategories([]); setFilterLevels([]); setFilterResource(''); setFilterSearch(''); setDebouncedSearch(''); setDebouncedResource('') }}>
                             <X className="w-4 h-4" />
                         </MriButton>
                     )}
-                    <MriButton
-                        variant="outline"
-                        onClick={() => setIsLive(v => !v)}
-                        className={cn(
-                            'h-10 px-3 gap-1.5 text-xs font-medium shrink-0',
-                            isLive
-                                ? 'border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                                : 'border-input bg-transparent text-muted-foreground hover:bg-muted'
-                        )}
-                    >
+                    <MriButton variant="outline" onClick={() => setIsLive(v => !v)}
+                        className={cn('h-10 px-3 gap-1.5 text-xs font-medium shrink-0',
+                            isLive ? 'border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'border-input bg-transparent text-muted-foreground hover:bg-muted'
+                        )}>
                         <Circle className={cn('w-2 h-2 fill-current', isLive && 'animate-pulse')} />
                         {isLive ? t('logs.btn.live') : t('logs.btn.paused')}
                     </MriButton>
-                    <MriButton
-                        variant="outline"
-                        onClick={handleExport}
-                        title="Exportar"
-                        className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10 p-0 shrink-0"
-                    >
+                    <MriButton variant="outline" onClick={handleExport}
+                        className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10 p-0 shrink-0">
                         <Download className="w-4 h-4" />
                     </MriButton>
-                    <MriButton
-                        variant="outline"
-                        onClick={() => fetchLogs(page)}
-                        disabled={loading}
-                        isLoading={loading}
-                        className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10 p-0 shrink-0"
-                    >
+                    <MriButton variant="outline" onClick={() => fetchLogs(page)} disabled={loading} isLoading={loading}
+                        className="border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10 p-0 shrink-0">
                         {!loading && <RefreshCw className="w-4 h-4" />}
                     </MriButton>
                 </>}
@@ -684,29 +1020,19 @@ export default function Logs() {
 
             {activeView === 'settings' ? (
                 settingsDraft ? (
-                    <LogSettingsView
-                        draft={settingsDraft}
-                        saving={settingsSaving}
-                        onChange={setSettingsDraft}
-                        onSave={saveSettings}
-                        onCancel={cancelSettings}
-                    />
+                    <LogSettingsView draft={settingsDraft} saving={settingsSaving}
+                        onChange={setSettingsDraft} onSave={saveSettings} onCancel={cancelSettings} />
                 ) : (
-                    <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">
-                        {t('logs.loading')}
-                    </div>
+                    <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">{t('logs.loading')}</div>
                 )
             ) : (
                 <div className="flex-1 overflow-hidden flex flex-col gap-3 p-2 pt-0">
                     {newCount > 0 && page !== 1 && (
-                        <button
-                            onClick={() => fetchLogs(1)}
-                            className="shrink-0 w-full text-center text-xs py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-colors"
-                        >
+                        <button onClick={() => fetchLogs(1)}
+                            className="shrink-0 w-full text-center text-xs py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-colors">
                             {t('logs.new_records', [newCount])}
                         </button>
                     )}
-
                     <div className="flex-1 overflow-y-auto rounded-lg border border-border/50 bg-background/20 divide-y divide-border/30">
                         {loading ? (
                             <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">{t('logs.loading')}</div>
@@ -719,7 +1045,6 @@ export default function Logs() {
                             logs.map((log, i) => <LogRow key={log.id ?? `tmp-${i}`} log={log} categoryMap={categoryMap} />)
                         )}
                     </div>
-
                     {totalPages > 1 && (
                         <div className="flex items-center justify-between shrink-0 text-xs text-muted-foreground">
                             <MriButton variant="outline" size="sm" className="h-7 text-xs" disabled={page <= 1 || loading} onClick={() => fetchLogs(page - 1)}>

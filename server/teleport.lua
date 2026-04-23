@@ -11,7 +11,7 @@ RegisterNetEvent('mri_Qadmin:server:TeleportToPlayer', function(_, selectedData)
 
     CheckRoutingbucket(src, player)
     TriggerClientEvent('mri_Qadmin:client:TeleportToPlayer', src, coords)
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Teleporte: admin teleportou para o jogador %s'):format(GetPlayerName(player) or player), { target = player })
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Teleporte: admin teleportou para o jogador %s'):format(GetPlayerName(player) or player), GetTargetData(player))
 end)
 
 -- Bring Player
@@ -64,7 +64,7 @@ RegisterNetEvent('mri_Qadmin:server:BringPlayer', function(_, selectedData)
     -- Execute Teleport
     Debug(('[mri_Qadmin] Teleporting ID %s to %s'):format(targetId, adminCoords))
     SetEntityCoords(targetPed, adminCoords.x, adminCoords.y, adminCoords.z)
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Trazer: admin trouxe jogador %s'):format(GetPlayerName(targetId) or targetId), { target = targetId })
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Trazer: admin trouxe jogador %s'):format(GetPlayerName(targetId) or targetId), GetTargetData(targetId))
 end)
 
 -- Send Player Back
@@ -82,7 +82,7 @@ RegisterNetEvent('mri_Qadmin:server:SendPlayerBack', function(_, selectedData)
         SetEntityCoords(targetPed, lastPos.x, lastPos.y, lastPos.z)
 
         TriggerClientEvent('QBCore:Notify', source, 'Jogador enviado de volta com sucesso.', 'success')
-        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Enviar de volta: jogador %s enviado para posição anterior'):format(GetPlayerName(targetId) or targetId), { target = targetId })
+        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Enviar de volta: jogador %s enviado para posição anterior'):format(GetPlayerName(targetId) or targetId), GetTargetData(targetId))
 
         previousPositions[targetId] = nil -- limpa após usar
     else

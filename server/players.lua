@@ -375,7 +375,7 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
         end
 
         QBCore.Functions.Notify(src, locale("notifications.jobset", name, Job, grade.name), 'success', 5000)
-        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Cargo: %s recebeu cargo %s (%s)'):format(name, Job, grade.name), { citizenid = citizenid, job = Job, grade = Grade })
+        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Cargo: %s recebeu cargo %s (%s)'):format(name, Job, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, job = Job, grade = Grade })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
@@ -433,7 +433,7 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
         end
 
         QBCore.Functions.Notify(src, locale("notifications.gangset", name, Gang, grade.name), 'success', 5000)
-        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Gangue: %s recebeu gangue %s (%s)'):format(name, Gang, grade.name), { citizenid = citizenid, gang = Gang, grade = Grade })
+        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Gangue: %s recebeu gangue %s (%s)'):format(name, Gang, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, gang = Gang, grade = Grade })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
@@ -456,7 +456,9 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
 
     QBCore.Functions.AddPermission(tPlayer.PlayerData.source, tostring(rank))
     QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("notifications.player_perms", name, rank), 'success', 5000)
-    AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Permissão: %s recebeu permissão %s'):format(name, rank), { target = targetId, rank = rank })
+    local permLogData = GetTargetData(tonumber(targetId))
+    permLogData.rank = rank
+    AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Permissão: %s recebeu permissão %s'):format(name, rank), permLogData)
 end)
 
 -- Remove Stress
@@ -476,7 +478,7 @@ RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(dataKey, selectedDat
     TriggerClientEvent('mri_Qadmin:client:removeStress', targetId)
 
     QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("notifications.removed_stress_player"), 'success', 5000)
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Stress removido de %s %s'):format(tPlayer.PlayerData.charinfo.firstname, tPlayer.PlayerData.charinfo.lastname), { target = targetId })
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Stress removido de %s %s'):format(tPlayer.PlayerData.charinfo.firstname, tPlayer.PlayerData.charinfo.lastname), GetTargetData(tonumber(targetId)))
 end)
 
 -- Set Vital (Unified event for Health, Armor, Hunger, Thirst, Stress)
@@ -500,7 +502,10 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     end
 
     local targetName = tPlayer.PlayerData.charinfo.firstname .. ' ' .. tPlayer.PlayerData.charinfo.lastname
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Vital: %s de %s definido para %s'):format(vital, targetName, value), { target = targetId, vital = vital, value = value })
+    local vitalLogData = GetTargetData(tonumber(targetId))
+    vitalLogData.vital = vital
+    vitalLogData.value = value
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Vital: %s de %s definido para %s'):format(vital, targetName, value), vitalLogData)
 
     -- Broadcast update immediate to admins only
     local admins = GetAdminPlayers()

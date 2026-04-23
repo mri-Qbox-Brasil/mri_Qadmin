@@ -62,8 +62,14 @@ CREATE TABLE IF NOT EXISTS mri_qadmin_logs (
     message TEXT NOT NULL,
     data LONGTEXT NULL,
     admin VARCHAR(100) NULL,
+    admin_src INT NULL,
+    admin_citizenid VARCHAR(50) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_category (category),
     INDEX idx_level (level),
-    INDEX idx_created_at (created_at)
+    INDEX idx_created_at (created_at),
+    INDEX idx_admin_citizenid (admin_citizenid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE mri_qadmin_logs ADD COLUMN IF NOT EXISTS admin_src INT NULL AFTER admin;
+ALTER TABLE mri_qadmin_logs ADD COLUMN IF NOT EXISTS admin_citizenid VARCHAR(50) NULL AFTER admin_src;

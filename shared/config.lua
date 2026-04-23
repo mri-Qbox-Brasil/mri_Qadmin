@@ -75,37 +75,37 @@ Config.Logs = {
 }
 
 Config.Descriptions = {
-    Fuel = "Define o sistema de combustível utilizado pelos veículos gerenciados no painel (ex: cdn-fuel, ox_fuel).",
-    Dealership = "Sistema de concessionária integrado para checar o estoque antes de gerar veículos (ex: mri, ps-dealerships).",
-    RenewedPhone = "Mude para true se utilizar o qb-phone Renewed (suporte a multijob).",
-    AdminKey = "Tecla de atalho primária para abrir o menu admin (ex: 0, F8).",
-    NoclipKey = "Tecla de atalho rápido para ativar Noclip no servidor (ex: 9, INSERT).",
-    Debug = "Ativa logs detalhados (Prints) de rastreamento no console F8 e na janela TxAdmin/Servidor.",
-    DefaultGarage = "Nome exato da garagem padrão (DB) usada quando carros são 'dados' e salvos a um jogador na aba de Doar.",
-    VehicleImages = "Caso use imagens customizadas no seu Frontend de Inventário, defina a URL inteira aqui. Deixar vazio puxa do docs.fivem (webRTC local).",
-    MapBaseUrl = "URL base externa para carregar os tiles do mapa (ex: https://mri-qbox-brasil.github.io/mapas/). Se vazio, usa arquivos locais.",
-    SignalingProvider = "Backend do webrtc. 'fivem-native' (sem servidor externo), 'websocket' (requer nodeJS mri_Qsignaling rodando) ou 'cloudflare-sfu'.",
-    WebRTCUrl = "Endpoint obrigatório caso o SignalingProvider esteja como 'websocket'. Geralmente é wss://seu-ip:porta.",
-    Keybindings = "Permitir ou proibir que as teclas configuradas abram o painel. Se false, só abrirá via comandos (/adm)."
+    Fuel              = "settings.desc.Fuel",
+    Dealership        = "settings.desc.Dealership",
+    RenewedPhone      = "settings.desc.RenewedPhone",
+    AdminKey          = "settings.desc.AdminKey",
+    NoclipKey         = "settings.desc.NoclipKey",
+    Debug             = "settings.desc.Debug",
+    DefaultGarage     = "settings.desc.DefaultGarage",
+    VehicleImages     = "settings.desc.VehicleImages",
+    MapBaseUrl        = "settings.desc.MapBaseUrl",
+    SignalingProvider = "settings.desc.SignalingProvider",
+    WebRTCUrl         = "settings.desc.WebRTCUrl",
+    Keybindings       = "settings.desc.Keybindings",
 }
 
 Config.Options = {
     Fuel = {
-        { label = "cdn-fuel", value = "cdn-fuel" },
-        { label = "ps-fuel", value = "ps-fuel" },
-        { label = "LegacyFuel", value = "LegacyFuel" },
-        { label = "ox_fuel", value = "ox_fuel" }
+        { label = "cdn-fuel",     value = "cdn-fuel"     },
+        { label = "ps-fuel",      value = "ps-fuel"      },
+        { label = "LegacyFuel",   value = "LegacyFuel"   },
+        { label = "ox_fuel",      value = "ox_fuel"      },
     },
     Dealership = {
-        { label = "mri", value = "mri" },
-        { label = "ps-dealerships", value = "ps-dealerships" },
-        { label = "Nenhum (Desativado)", value = "none" }
+        { label = "mri",                          value = "mri"              },
+        { label = "ps-dealerships",               value = "ps-dealerships"   },
+        { label = "settings.option.none_disabled", value = "none"            },
     },
     SignalingProvider = {
-        { label = "FiveM Native (Mais Simples)", value = "fivem-native" },
-        { label = "Websocket (Externo compatível com HTTPS)", value = "websocket" },
-        { label = "Cloudflare SFU (BETA)", value = "cloudflare-sfu" }
-    }
+        { label = "settings.option.fivem_native",  value = "fivem-native"   },
+        { label = "settings.option.websocket",     value = "websocket"      },
+        { label = "settings.option.cloudflare_sfu", value = "cloudflare-sfu" },
+    },
 }
 
 Config.Inventory = 'qb-inventory' -- Default
