@@ -9,6 +9,8 @@ RegisterNetEvent('mri_Qadmin:server:SpectateTarget', function(data, selectedData
     if player and player ~= source then
         CheckRoutingbucket(source, player)
         TriggerEvent('mri_Qadmin:spectate', tonumber(player), type == "1", source, data.perms)
+        local action = type == "1" and "iniciou" or "encerrou"
+        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Espectador: admin %s espectação do jogador %s'):format(action, GetPlayerName(tonumber(player)) or player), { target = player })
     else
         TriggerClientEvent('QBCore:Notify', source, "Jogador inválido.", 'error')
     end

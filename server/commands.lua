@@ -50,6 +50,7 @@ end)
 lib.addCommand('nc', {
     help = 'Toggle noclip',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.noclip') then return end
     TriggerClientEvent("mri_Qadmin:client:ToggleNoClip", source)
 end)
 

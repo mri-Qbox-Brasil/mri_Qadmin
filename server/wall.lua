@@ -125,6 +125,7 @@ RegisterNetEvent("mri_Qadmin:server:enableWall", function(data)
     Debug('wall_source', src)
     Debug('wall_data', data)
     enableWall(src)
+    AddLog(src, 'mri_Qadmin', 'server', 'info', 'Wall: admin alternou o wall ESP', {})
 end)
 
 QBCore.Functions.CreateCallback('mri_wall:getWallInfos', function(_source, cb)
@@ -155,6 +156,7 @@ end)
 -----------------------------------------------------------------------------------------------------------------------------------------
 
 lib.callback.register('mri_Qadmin:callback:GetWallSettings', function(_source)
+    if not CheckPerms(_source, 'qadmin.open') then return nil end
     return {
         colors = principal_colors,
         settings = wall_settings
@@ -187,6 +189,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
     TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
 
     TriggerClientEvent('QBCore:Notify', src, 'Wall settings updated', 'success')
+    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Wall: configuração "%s/%s" atualizada'):format(type, key), { type = type, key = key, value = value })
 end)
 
 RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principal)
@@ -206,6 +209,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principa
     TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
 
     TriggerClientEvent('QBCore:Notify', src, 'Principal color removed', 'success')
+    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Wall: cor do principal "%s" removida'):format(principal), { principal = principal })
 end)
 
 AddEventHandler('playerDropped', function()

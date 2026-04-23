@@ -29,6 +29,51 @@ Config.Actions = {}
 Config.PlayerActions = {}
 Config.OtherActions = {}
 
+-- ─── Logs ─────────────────────────────────────────────────────────────────────
+-- Configure one Discord webhook per category, or a single Fallback for all.
+-- Leave as "" to disable that category's Discord forwarding.
+Config.Logs = {
+    Webhooks = {
+        players     = "",   -- bans, kicks, revives, etc.
+        bans        = "",   -- ban / unban actions
+        inventory   = "",   -- give item, clear inventory, etc.
+        vehicles    = "",   -- spawn, delete, admin car, etc.
+        money       = "",   -- give/take money
+        server      = "",   -- weather, time, announcements
+        permissions = "",   -- group / permission changes
+        chat        = "",   -- staff chat messages
+        system      = "",   -- resource events, system logs
+        -- Fallback: receives categories with no specific webhook
+        Fallback    = "",
+    },
+    -- Event fired on other resources when a log is added (leave "" to disable)
+    -- e.g. "myResource:onAdminLog"  (must be a server-side event handler)
+    ForwardEvent = "",
+    -- Persist logs to the database
+    DBEnabled = true,
+    -- Max in-memory buffer (most recent N logs kept for instant panel display)
+    MaxMemory = 500,
+    -- Per-resource destination overrides (AND logic with category settings).
+    -- ResourceMode: 'blacklist' — unlisted resources pass through; 'whitelist' — only listed resources are processed.
+    ResourceMode    = 'blacklist',
+    -- e.g. { name = 'my_resource', db = true, discord = false, relay = true }
+    ResourceEntries = {},
+    -- Categories shown in the panel and routed to Discord webhooks.
+    -- id must match the category string used in AddLog calls.
+    -- Managed at runtime via the Logs settings panel; overridden by logs_settings.json if present.
+    Categories = {
+        { id = 'players',     label = '👤 Players'    },
+        { id = 'bans',        label = '🔨 Bans'        },
+        { id = 'inventory',   label = '🎒 Inventário'  },
+        { id = 'vehicles',    label = '🚗 Veículos'    },
+        { id = 'money',       label = '💰 Dinheiro'    },
+        { id = 'server',      label = '⚙️ Servidor'    },
+        { id = 'permissions', label = '🛡️ Permissões'  },
+        { id = 'chat',        label = '💬 Chat'         },
+        { id = 'system',      label = '🖥️ Sistema'     },
+    },
+}
+
 Config.Descriptions = {
     Fuel = "Define o sistema de combustível utilizado pelos veículos gerenciados no painel (ex: cdn-fuel, ox_fuel).",
     Dealership = "Sistema de concessionária integrado para checar o estoque antes de gerar veículos (ex: mri, ps-dealerships).",

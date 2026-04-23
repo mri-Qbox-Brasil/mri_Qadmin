@@ -2,6 +2,7 @@
 
 -- Request WebRTC streaming for a specific player
 lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(source, targetId, viewerId)
+    if not CheckPerms(source, 'qadmin.page.livescreens') then return nil end
     local target = tonumber(targetId)
     if target and target ~= 0 then
         -- Default to source if no specialized viewerId provided
@@ -114,6 +115,7 @@ local function cfRequest(method, path, body)
 end
 
 lib.callback.register('mri_Qadmin:callback:CFCreateSession', function(_source)
+    if not CheckPerms(_source, 'qadmin.page.livescreens') then return nil end
     -- sessions/new expects NO body and NO Content-Type
     local ok, result = pcall(cfRequest, 'POST', '/sessions/new', nil)
     if not ok then
@@ -124,6 +126,7 @@ lib.callback.register('mri_Qadmin:callback:CFCreateSession', function(_source)
 end)
 
 lib.callback.register('mri_Qadmin:callback:CFPublishTracks', function(_source, data)
+    if not CheckPerms(_source, 'qadmin.page.livescreens') then return nil end
     local ok, result = pcall(cfRequest, 'POST', ('/sessions/%s/tracks/new'):format(data.sessionId), {
         sessionDescription = data.offer,
         tracks = {{ location = 'local', mid = '0', trackName = 'screen' }},
@@ -133,6 +136,7 @@ lib.callback.register('mri_Qadmin:callback:CFPublishTracks', function(_source, d
 end)
 
 lib.callback.register('mri_Qadmin:callback:CFSubscribe', function(_source, data)
+    if not CheckPerms(_source, 'qadmin.page.livescreens') then return nil end
     local ok, result = pcall(cfRequest, 'POST', ('/sessions/%s/tracks/new'):format(data.mySessionId), {
         tracks = {{ location = 'remote', sessionId = data.publisherSessionId, trackName = data.trackName }},
     })
@@ -141,6 +145,7 @@ lib.callback.register('mri_Qadmin:callback:CFSubscribe', function(_source, data)
 end)
 
 lib.callback.register('mri_Qadmin:callback:CFRenegotiate', function(_source, data)
+    if not CheckPerms(_source, 'qadmin.page.livescreens') then return nil end
     return cfRequest('PUT', ('/sessions/%s/renegotiate'):format(data.sessionId), {
         sessionDescription = data.answer,
     })

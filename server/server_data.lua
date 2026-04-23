@@ -36,7 +36,8 @@ _G.GetServerData = GetServerData
 
 lib.callback.register(
     "mri_Qadmin:callback:GetServerInfo",
-    function(_source, _cb)
+    function(source)
+        if not CheckPerms(source, 'qadmin.open') then return nil end
         return GetServerData()
     end
 )

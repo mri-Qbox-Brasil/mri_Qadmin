@@ -36,6 +36,7 @@ local function GetItemsList()
 end
 _G.GetItemsList = GetItemsList
 
-lib.callback.register('mri_Qadmin:callback:GetItems', function()
+lib.callback.register('mri_Qadmin:callback:GetItems', function(source)
+    if not CheckPerms(source, 'qadmin.page.items') then return {} end
     return GetItemsList()
 end)
