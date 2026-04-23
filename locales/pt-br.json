@@ -729,7 +729,9 @@
             "relay": "Relay (server event)",
             "destination": "Destino",
             "priority": "Prioridade",
-            "enabled": "Ativo"
+            "enabled": "Ativo",
+            "db_short": "DB",
+            "relay_short": "Relay"
         },
         "category": {
             "id_placeholder": "id",
@@ -761,7 +763,15 @@
                 "db_global": "Salvar no banco (global)",
                 "db_global_desc": "Desativar sobrescreve os toggles por categoria.",
                 "max_memory": "Máximo em memória",
-                "max_memory_desc": "Logs mais recentes mantidos em memória (sem DB)."
+                "max_memory_desc": "Logs mais recentes mantidos em memória (sem DB).",
+                "db_global_warning": "Quando ativo, TODAS as categorias são forçadas a salvar no banco, sobrescrevendo os toggles individuais.",
+                "memory_hint": "Valores maiores exibem mais histórico no feed ao vivo, mas consomem mais RAM.",
+                "memory_unit": "logs em memória"
+            },
+            "nav": {
+                "categories": "Categorias",
+                "resources": "Filtros de Resource",
+                "general": "Configurações Gerais"
             }
         },
         "destinations": {
@@ -801,6 +811,11 @@
                     "done": {
                         "title": "Configuração Concluída",
                         "description": "Seu sistema de logs está configurado. Você pode ajustar essas configurações a qualquer momento pela aba de Configurações."
+                    },
+                    "resources": {
+                        "title": "Filtro de Resources",
+                        "description": "Controla quais resources externos podem rotear logs. Escolha o modo padrão — regras individuais por resource podem ser adicionadas depois em Configurações.",
+                        "mode_hint": "Regras individuais com flags de DB, Discord e Relay por resource podem ser configuradas em Configurações → Filtros de Resources."
                     }
                 }
             },

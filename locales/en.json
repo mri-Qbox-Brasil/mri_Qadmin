@@ -729,7 +729,9 @@
             "relay": "Relay (server event)",
             "destination": "Destination",
             "priority": "Priority",
-            "enabled": "Active"
+            "enabled": "Active",
+            "db_short": "DB",
+            "relay_short": "Relay"
         },
         "category": {
             "id_placeholder": "id",
@@ -761,7 +763,15 @@
                 "db_global": "Save to database (global)",
                 "db_global_desc": "Disabling this overrides per-category toggles.",
                 "max_memory": "Max in memory",
-                "max_memory_desc": "Most recent logs kept in memory (without DB)."
+                "max_memory_desc": "Most recent logs kept in memory (without DB).",
+                "db_global_warning": "When enabled, ALL categories are forced to save to the database, overriding individual toggles.",
+                "memory_hint": "Higher values give more live-view history but use more RAM.",
+                "memory_unit": "logs in memory"
+            },
+            "nav": {
+                "categories": "Categories",
+                "resources": "Resource Filters",
+                "general": "General Settings"
             }
         },
         "destinations": {
@@ -801,6 +811,11 @@
                     "done": {
                         "title": "Setup Complete",
                         "description": "Your logs system is configured. You can adjust these settings at any time from the Settings tab."
+                    },
+                    "resources": {
+                        "title": "Resource Filters",
+                        "description": "Controls which external resources are allowed to route logs. Choose a default mode — individual per-resource rules can be added later in Settings.",
+                        "mode_hint": "Per-resource rules with individual DB, Discord and Relay flags can be configured in Settings → Resource Filters."
                     }
                 }
             },

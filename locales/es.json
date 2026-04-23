@@ -729,7 +729,9 @@
             "relay": "Relay (server event)",
             "destination": "Destino",
             "priority": "Prioridad",
-            "enabled": "Activo"
+            "enabled": "Activo",
+            "db_short": "BD",
+            "relay_short": "Relay"
         },
         "category": {
             "id_placeholder": "id",
@@ -761,7 +763,15 @@
                 "db_global": "Guardar en base de datos (global)",
                 "db_global_desc": "Deshabilitar sobrescribe los toggles por categoría.",
                 "max_memory": "Máximo en memoria",
-                "max_memory_desc": "Logs más recientes en memoria (sin DB)."
+                "max_memory_desc": "Logs más recientes en memoria (sin DB).",
+                "db_global_warning": "Cuando está activo, TODAS las categorías se fuerzan a guardar en la base de datos, anulando los toggles individuales.",
+                "memory_hint": "Valores más altos muestran más historial en el feed en vivo pero consumen más RAM.",
+                "memory_unit": "logs en memoria"
+            },
+            "nav": {
+                "categories": "Categorías",
+                "resources": "Filtros de Resource",
+                "general": "Configuración General"
             }
         },
         "destinations": {
@@ -801,6 +811,11 @@
                     "done": {
                         "title": "Configuración Completa",
                         "description": "Tu sistema de logs está configurado. Puedes ajustar estas opciones en cualquier momento desde la pestaña Configuración."
+                    },
+                    "resources": {
+                        "title": "Filtros de Resources",
+                        "description": "Controla qué resources externos pueden enrutar logs. Elige el modo predeterminado; las reglas individuales por resource se pueden agregar después en Configuración.",
+                        "mode_hint": "Las reglas individuales con flags de BD, Discord y Relay por resource se configuran en Configuración → Filtros de Resources."
                     }
                 }
             },
