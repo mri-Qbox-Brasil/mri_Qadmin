@@ -48,9 +48,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     ].filter(item => {
         if (item.divider) return true
         if (!item.route) return true
-        // Check if permission exists for route
         if (item.route in PAGE_PERMISSIONS) {
-            console.log(item.route, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
             return hasPermission(myPermissions, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
         }
         return true
