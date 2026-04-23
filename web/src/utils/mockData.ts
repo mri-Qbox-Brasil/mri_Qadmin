@@ -74,14 +74,54 @@ export const MOCK_PLAYERS = [
         name: "Offline User",
         citizenid: "BRL9MRI00000",
         license: "license:offlineuser123",
-        last_loggedout: Date.now() - 86400000, // 1 day ago
+        last_loggedout: Date.now() - 86400000,
         online: false,
         cash: 0,
         bank: 0,
         crypto: 0,
         job: { label: "Unemployed", name: "unemployed", grade: { name: "Unemployed", level: 0 } },
         gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },
-    }
+    },
+    {
+        id: 4,
+        name: "Banido Permanente",
+        citizenid: "BRL9MRI00001",
+        license: "license:bannedperm456",
+        last_loggedout: Date.now() - 3 * 86400000,
+        online: false,
+        cash: 0,
+        bank: 0,
+        crypto: 0,
+        job: { label: "Unemployed", name: "unemployed", grade: { name: "Unemployed", level: 0 } },
+        gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },
+        ban: {
+            id: 42,
+            reason: 'Uso de cheats / Trapaça',
+            expire: 2147483647,
+            bannedby: 'Admin Master',
+            isPermanent: true,
+        },
+    },
+    {
+        id: 5,
+        name: "Banido Temporário",
+        citizenid: "BRL9MRI00002",
+        license: "license:bannedtemp789",
+        last_loggedout: Date.now() - 86400000,
+        online: false,
+        cash: 0,
+        bank: 0,
+        crypto: 0,
+        job: { label: "Unemployed", name: "unemployed", grade: { name: "Unemployed", level: 0 } },
+        gang: { label: "None", name: "none", grade: { name: "None", level: 0 } },
+        ban: {
+            id: 43,
+            reason: 'Linguagem inapropriada no chat',
+            expire: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+            bannedby: 'Moderador João',
+            isPermanent: false,
+        },
+    },
 ];
 
 export const MOCK_GROUPS = [
@@ -305,3 +345,74 @@ export const MOCK_INVENTORY = {
     maxWeight: 85000,
     slots: 30
 };
+
+const now = Math.floor(Date.now() / 1000)
+const ago = (s: number) => now - s
+
+export const MOCK_LOGS = {
+    total: 38,
+    logs: [
+        { id: 38, resource: 'mri_Qadmin', category: 'bans',        level: 'warn',    message: 'Banimento: Carlos Silva foi banido',                              admin: 'João Admin',    data: { reason: 'Hack de dinheiro', duration: '86400', player: 'Carlos Silva' },           created_at: ago(45)     },
+        { id: 37, resource: 'mri_Qadmin', category: 'players',     level: 'success', message: 'Revive: Pedro Santos foi revivido',                               admin: 'Maria Mod',     data: { player: 12 },                                                                        created_at: ago(120)    },
+        { id: 36, resource: 'mri_Qadmin', category: 'money',       level: 'info',    message: 'Dar dinheiro: R$5000 (cash) dado a Ana Oliveira',                 admin: 'João Admin',    data: { target: '7', amount: 5000, type: 'cash' },                                           created_at: ago(310)    },
+        { id: 35, resource: 'mri_Qadmin', category: 'inventory',   level: 'info',    message: 'Dar item: 5x water dado a Pedro Santos',                          admin: 'Maria Mod',     data: { item: 'water', amount: 5, player: 12 },                                              created_at: ago(480)    },
+        { id: 34, resource: 'mri_Qadmin', category: 'players',     level: 'warn',    message: 'Expulsão: Lucas Costa foi expulso',                               admin: 'Dev Gabriel',   data: { player: 'Lucas Costa', reason: 'Linguagem inapropriada' },                          created_at: ago(600)    },
+        { id: 33, resource: 'mri_Qadmin', category: 'vehicles',    level: 'info',    message: 'Admin Car: adm_zentorno salvo para João Admin',                   admin: 'João Admin',    data: { model: 'adm_zentorno', plate: 'ADMIN001' },                                          created_at: ago(720)    },
+        { id: 32, resource: 'mri_Qadmin', category: 'server',      level: 'info',    message: 'Anúncio global: Manutenção programada para 22h',                  admin: 'Dev Gabriel',   data: { message: 'Manutenção programada para 22h' },                                         created_at: ago(900)    },
+        { id: 31, resource: 'mri_Qadmin', category: 'bans',        level: 'info',    message: 'Desbanimento: CID ABC123 desbanido',                              admin: 'João Admin',    data: { cid: 'ABC123' },                                                                     created_at: ago(1100)   },
+        { id: 30, resource: 'mri_Qadmin', category: 'players',     level: 'info',    message: 'Aviso: Fernanda Lima recebeu advertência',                        admin: 'Maria Mod',     data: { player: 'Fernanda Lima', reason: 'AFK em área pública', warnId: 'WARN-4821' },       created_at: ago(1300)   },
+        { id: 29, resource: 'mri_Qadmin', category: 'money',       level: 'warn',    message: 'Remover dinheiro: R$2000 (bank) removido de Lucas Costa',         admin: 'João Admin',    data: { target: '9', amount: 2000, type: 'bank' },                                           created_at: ago(1500)   },
+        { id: 28, resource: 'mri_Qadmin', category: 'permissions', level: 'info',    message: 'Grupo atualizado: grupo "moderador" teve permissões alteradas',    admin: 'Dev Gabriel',   data: { group: 'moderador', added: ['qadmin.action.kick_player'], removed: [] },             created_at: ago(1800)   },
+        { id: 27, resource: 'mri_Qadmin', category: 'inventory',   level: 'warn',    message: 'Limpar inventário: inventário de Carlos Silva esvaziado',         admin: 'João Admin',    data: { player: 3 },                                                                         created_at: ago(2100)   },
+        { id: 26, resource: 'mri_Qadmin', category: 'players',     level: 'warn',    message: 'Matar: Pedro Santos foi morto',                                   admin: 'Dev Gabriel',   data: { player: 12 },                                                                        created_at: ago(2400)   },
+        { id: 25, resource: 'mri_Qadmin', category: 'vehicles',    level: 'info',    message: 'Spawn veículo: zentorno gerado',                                  admin: 'Maria Mod',     data: { model: 'zentorno', plate: 'TEST001' },                                               created_at: ago(2700)   },
+        { id: 24, resource: 'mri_Qadmin', category: 'server',      level: 'info',    message: 'Alterar clima: Clear aplicado',                                   admin: 'Dev Gabriel',   data: { weather: 'Clear' },                                                                  created_at: ago(3000)   },
+        { id: 23, resource: 'mri_Qadmin', category: 'system',      level: 'info',    message: 'Resource iniciado: mri_Qadmin',                                   admin: 'System',        data: { resource: 'mri_Qadmin' },                                                            created_at: ago(3300)   },
+        { id: 22, resource: 'mri_Qadmin', category: 'players',     level: 'success', message: 'Revive em massa: todos os jogadores foram revividos',              admin: 'João Admin',    data: {},                                                                                    created_at: ago(3600)   },
+        { id: 21, resource: 'mri_Qadmin', category: 'money',       level: 'warn',    message: 'Dar dinheiro a todos: R$1000 (cash) dado a todos os jogadores',   admin: 'Dev Gabriel',   data: { amount: 1000, type: 'cash' },                                                        created_at: ago(4200)   },
+        { id: 20, resource: 'mri_Qadmin', category: 'bans',        level: 'warn',    message: 'Banimento (offline): Jogador Desconhecido foi banido',             admin: 'Maria Mod',     data: { reason: 'Duplication', name: 'Jogador Desconhecido', license: 'license:abc123' },    created_at: ago(4800)   },
+        { id: 19, resource: 'mri_Qadmin', category: 'vehicles',    level: 'info',    message: 'Alterar placa: placa de ABZ1234 alterada para VIP0001',           admin: 'João Admin',    data: { oldPlate: 'ABZ1234', newPlate: 'VIP0001' },                                          created_at: ago(5400)   },
+        { id: 18, resource: 'mri_Qadmin', category: 'players',     level: 'info',    message: 'Bucket: jogador 5 movido para bucket 2',                          admin: 'Dev Gabriel',   data: { player: '5', bucket: 2 },                                                            created_at: ago(6000)   },
+        { id: 17, resource: 'mri_Qadmin', category: 'chat',        level: 'info',    message: 'Staff Chat: João Admin: @todos reunião em 5min',                  admin: 'João Admin',    data: { message: '@todos reunião em 5min' },                                                 created_at: ago(6600)   },
+        { id: 16, resource: 'mri_Qadmin', category: 'inventory',   level: 'info',    message: 'Abrir inventário: inventário de Ana Oliveira aberto',             admin: 'Maria Mod',     data: { player: 7 },                                                                         created_at: ago(7200)   },
+        { id: 15, resource: 'mri_Qadmin', category: 'permissions', level: 'warn',    message: 'Grupo criado: novo grupo "suporte" criado',                       admin: 'Dev Gabriel',   data: { group: 'suporte', label: 'Suporte' },                                                created_at: ago(7800)   },
+        { id: 14, resource: 'mri_Qadmin', category: 'vehicles',    level: 'warn',    message: 'Deletar veículo: veículo de placa BRP0001 deletado',              admin: 'João Admin',    data: { plate: 'BRP0001' },                                                                  created_at: ago(8400)   },
+        { id: 13, resource: 'mri_Qadmin', category: 'system',      level: 'error',   message: 'Erro ao conectar webhook: timeout após 30s',                      admin: 'System',        data: { webhook: 'discord.com/api/webhooks/...', error: 'ETIMEDOUT' },                       created_at: ago(9000)   },
+        { id: 12, resource: 'mri_Qadmin', category: 'players',     level: 'info',    message: 'Verificação: Pedro Santos verificado',                            admin: 'Maria Mod',     data: { player: 12 },                                                                        created_at: ago(9600)   },
+        { id: 11, resource: 'mri_Qadmin', category: 'server',      level: 'info',    message: 'Alterar horário: Night aplicado',                                 admin: 'Dev Gabriel',   data: { time: '24' },                                                                        created_at: ago(10200)  },
+        { id: 10, resource: 'mri_Qadmin', category: 'inventory',   level: 'info',    message: 'Abrir depósito: police_stash_1 aberto',                          admin: 'João Admin',    data: { stash: 'police_stash_1' },                                                           created_at: ago(10800)  },
+        { id: 9,  resource: 'mri_Qadmin', category: 'bans',        level: 'info',    message: 'Desbanimento: ban #47 removido',                                  admin: 'Maria Mod',     data: { banId: 47 },                                                                         created_at: ago(11400)  },
+        { id: 8,  resource: 'mri_Qadmin', category: 'money',       level: 'info',    message: 'Dar dinheiro: R$10000 (bank) dado a Dev Gabriel',                 admin: 'Dev Gabriel',   data: { target: '1', amount: 10000, type: 'bank' },                                          created_at: ago(12000)  },
+        { id: 7,  resource: 'mri_Qadmin', category: 'players',     level: 'warn',    message: 'Expulsão: Troll McTrollface foi expulso',                         admin: 'Maria Mod',     data: { player: 'Troll McTrollface', reason: 'Trolling em roleplay' },                      created_at: ago(12600)  },
+        { id: 6,  resource: 'mri_Qadmin', category: 'vehicles',    level: 'info',    message: 'Admin Car: adm_elegy salvo para Dev Gabriel',                     admin: 'Dev Gabriel',   data: { model: 'adm_elegy', plate: 'ADMIN002' },                                             created_at: ago(13200)  },
+        { id: 5,  resource: 'mri_Qadmin', category: 'server',      level: 'warn',    message: 'Blackout: ativado',                                               admin: 'Dev Gabriel',   data: {},                                                                                    created_at: ago(13800)  },
+        { id: 4,  resource: 'mri_Qadmin', category: 'permissions', level: 'info',    message: 'Jogador adicionado ao grupo: Ana Oliveira → admin',               admin: 'Dev Gabriel',   data: { cid: 'BRL9DEV999', group: 'admin' },                                                 created_at: ago(14400)  },
+        { id: 3,  resource: 'mri_Qadmin', category: 'inventory',   level: 'warn',    message: 'Limpar inventário (offline): inventário de CID XYZ789 esvaziado', admin: 'João Admin',    data: { cid: 'XYZ789' },                                                                     created_at: ago(15000)  },
+        { id: 2,  resource: 'mri_Qadmin', category: 'players',     level: 'success', message: 'Revive: Ana Oliveira foi revivida',                               admin: 'Maria Mod',     data: { player: 7 },                                                                         created_at: ago(15600)  },
+        { id: 1,  resource: 'mri_Qadmin', category: 'system',      level: 'info',    message: 'Resource iniciado: mri_Qadmin v1.8.0',                            admin: 'System',        data: { version: '1.8.0' },                                                                  created_at: ago(16200)  },
+    ],
+}
+
+
+export const MOCK_LOG_SETTINGS = {
+    categories: [
+        { id: 'players',     label: '👤 Players',    webhook: '',                                                                              db: true,  discord: false, relay: false },
+        { id: 'bans',        label: '🔨 Bans',       webhook: 'https://discord.com/api/webhooks/000000000000000000/example-bans-webhook',   db: true,  discord: true,  relay: false },
+        { id: 'inventory',   label: '🎒 Inventário', webhook: '',                                                                              db: true,  discord: false, relay: false },
+        { id: 'vehicles',    label: '🚗 Veículos',   webhook: '',                                                                              db: true,  discord: false, relay: false },
+        { id: 'money',       label: '💰 Dinheiro',   webhook: 'https://discord.com/api/webhooks/000000000000000000/example-money-webhook',  db: true,  discord: true,  relay: false },
+        { id: 'server',      label: '⚙️ Servidor',   webhook: '',                                                                              db: true,  discord: false, relay: false },
+        { id: 'permissions', label: '🛡️ Permissões', webhook: '',                                                                              db: true,  discord: false, relay: false },
+        { id: 'chat',        label: '💬 Chat',        webhook: '',                                                                              db: false, discord: false, relay: false },
+        { id: 'system',      label: '🖥️ Sistema',    webhook: '',                                                                              db: true,  discord: false, relay: false },
+    ],
+    resourceMode: 'blacklist' as 'blacklist' | 'whitelist',
+    fallbackWebhook: '',
+    dbEnabled: true,
+    maxMemory: 500,
+    forwardEvent: '',
+    resourceEntries: [
+        { name: 'mri_Qadmin', db: true,  discord: true,  relay: false },
+        { name: 'monitor',    db: false, discord: false, relay: false },
+    ],
+}
