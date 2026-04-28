@@ -150,7 +150,41 @@ export const MOCK_CHARACTER_GROUPS = {
     'BRL9MRI67890': ['suporte']
 };
 
+export const MOCK_PERMISSION_DEFINITIONS = [
+    { id: 'qadmin.open',   label: 'Abrir Painel',  desc: 'Permite abrir o painel administrativo', category: 'other' },
+    { id: 'qadmin.master', label: 'Master Bypass', desc: 'Acesso irrestrito a todas as funções',  category: 'other' },
+    { id: 'qadmin.page.dashboard',   label: 'Dashboard',   desc: 'Acessar o painel principal',       category: 'dashboard'   },
+    { id: 'qadmin.page.players',     label: 'Players',     desc: 'Acessar a lista de jogadores',     category: 'players'     },
+    { id: 'qadmin.page.groups',      label: 'Groups',      desc: 'Acessar gerenciamento de grupos',  category: 'groups'      },
+    { id: 'qadmin.page.bans',        label: 'Bans',        desc: 'Acessar a lista de banimentos',    category: 'bans'        },
+    { id: 'qadmin.page.staffchat',   label: 'Staff Chat',  desc: 'Acessar o canal de staff',         category: 'staffchat'   },
+    { id: 'qadmin.page.items',       label: 'Items',       desc: 'Acessar a página de itens',        category: 'items'       },
+    { id: 'qadmin.page.vehicles',    label: 'Vehicles',    desc: 'Acessar a página de veículos',     category: 'vehicles'    },
+    { id: 'qadmin.page.commands',    label: 'Commands',    desc: 'Acessar a lista de comandos',      category: 'commands'    },
+    { id: 'qadmin.page.actions',     label: 'Actions',     desc: 'Acessar o gerenciador de ações',   category: 'actions'     },
+    { id: 'qadmin.page.permissions', label: 'Permissions', desc: 'Acessar a página de permissões',   category: 'permissions' },
+    { id: 'qadmin.page.resources',   label: 'Resources',   desc: 'Acessar a página de recursos',     category: 'resources'   },
+    { id: 'qadmin.page.settings',    label: 'Settings',    desc: 'Acessar as configurações',         category: 'settings'    },
+    { id: 'qadmin.page.devmode',     label: 'Dev Mode',    desc: 'Acessar o modo desenvolvedor',     category: 'devmode'     },
+    { id: 'qadmin.page.livemap',     label: 'Live Map',    desc: 'Acessar o mapa ao vivo',           category: 'livemap'     },
+    { id: 'qadmin.page.livescreens', label: 'Live Screens',desc: 'Acessar telas ao vivo',            category: 'livescreens' },
+    { id: 'qadmin.page.logs',        label: 'Logs',        desc: 'Acessar logs de ações',            category: 'dashboard'   },
+    { id: 'qadmin.action.revive',    label: 'Revive',      desc: 'Curar e reviver um jogador',       category: 'actions'     },
+    { id: 'qadmin.action.ban_player',label: 'Ban Player',  desc: 'Banir um jogador do servidor',     category: 'actions'     },
+    { id: 'qadmin.action.kick_player',label: 'Kick Player',desc: 'Expulsar um jogador',              category: 'actions'     },
+    { id: 'qadmin.action.freeze_player', label: 'Freeze Player', desc: 'Imobilizar um jogador',     category: 'actions'     },
+    { id: 'qadmin.action.spectate_player', label: 'Spectate', desc: 'Espionar um jogador',          category: 'actions'     },
+    { id: 'qadmin.action.teleport_to_player', label: 'Teleport to Player', desc: 'Teleportar-se até um jogador', category: 'actions' },
+    { id: 'qadmin.action.god_mode',  label: 'God Mode',    desc: 'Alternar imunidade a dano',        category: 'actions'     },
+    { id: 'qadmin.action.noclip',    label: 'Noclip',      desc: 'Alternar atravessar superfícies',  category: 'actions'     },
+    { id: 'qadmin.action.give_money',label: 'Give Money',  desc: 'Adicionar dinheiro a um jogador',  category: 'actions'     },
+    { id: 'qadmin.action.give_item', label: 'Give Item',   desc: 'Dar um item a um jogador',         category: 'actions'     },
+    { id: 'qadmin.action.spawn_vehicle', label: 'Spawn Vehicle', desc: 'Spawnar um veículo',        category: 'actions'     },
+    { id: 'qadmin.commands',         label: 'Commands List',desc: 'Acessar a lista de comandos',     category: 'commands'    },
+]
+
 export const MOCK_GAME_DATA = {
+    permissionDefinitions: MOCK_PERMISSION_DEFINITIONS,
     items: [
         { name: "water", label: "Water Bottle", description: "A refreshing bottle of water.", weight: 100, type: 'item', image: "water.png" },
         { name: "sandwich", label: "Sandwich", description: "A tasty sandwich.", weight: 200, type: 'item', image: "sandwich.png" },
