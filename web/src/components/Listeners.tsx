@@ -13,9 +13,9 @@ export default function Listeners() {
         setEntityInfo,
         setNearbyEntities,
         setGameData,
-
         setStaffMessages,
         setMyPermissions,
+        setPermissionDefinitions,
         setPagination,
         setLastPlayersFetch
     } = useAppState()
@@ -32,6 +32,9 @@ export default function Listeners() {
             }
             if (data.permissions) {
                 setMyPermissions(Array.isArray(data.permissions) ? data.permissions : [])
+            }
+            if (data.permissionDefinitions) {
+                setPermissionDefinitions(Array.isArray(data.permissionDefinitions) ? data.permissionDefinitions : [])
             }
             if (data.supportedLanguages) {
                 setSupportedLanguages(data.supportedLanguages)
