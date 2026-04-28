@@ -212,8 +212,7 @@ function GeneratePlate()
 end
 
 lib.callback.register('mri_Qadmin:callback:CheckPerms', function(source, perms)
-    print('^3[mri_Qadmin] CheckPerms Source: ' .. tostring(source) .. ', Nodes: ' .. tostring(perms) .. '^7')
-    return CheckPerms(source, perms)
+    return HasPerms(source, perms)
 end)
 
 lib.callback.register('mri_Qadmin:callback:CheckAlreadyPlate', function(_, vPlate)
