@@ -1,5 +1,6 @@
 QBCore = exports['qb-core']:GetCoreObject()
 PlayerData = {}
+local isAdminPlayer = false
 
 -- Functions
 local function setupMenu()
@@ -34,6 +35,9 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
         -- Automatically notify NUI that fresh data (items, vehicles, etc) is ready
         GetData()
 
+        local perms = initialData and initialData.permissions or {}
+        isAdminPlayer = #perms > 0
+
         SendNUIMessage({
             action = "setupUI",
             data = {
@@ -44,7 +48,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 playerData = PlayerData,
                 server = initialData and initialData.serverInfo or {},
                 vehicleImages = Config.VehicleImages,
-                permissions = initialData and initialData.permissions or {},
+                permissions = perms,
                 supportedLanguages = Config.SupportedLanguages,
                 webrtcUrl = Config.WebRTCUrl,
                 signalingProvider = Config.SignalingProvider,
@@ -304,6 +308,7 @@ end)
 
 RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
     local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
+    isAdminPlayer = perms and #perms > 0 or false
     SendNUIMessage({
         action = "updatePermissions",
         data = perms or {}
@@ -361,16 +366,17 @@ RegisterNetEvent('mri_Qadmin:client:UpdatePlayerMoney', function(data)
 end)
 
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst)
-    Debug("HUD UpdateNeeds:", newHunger, newThirst)
+    if not isAdminPlayer then return end
     TriggerServerEvent('mri_Qadmin:server:SyncVitals', { hunger = newHunger, thirst = newThirst })
 end)
 
 RegisterNetEvent('hud:client:UpdateStress', function(newStress)
-    Debug("HUD UpdateStress:", newStress)
+    if not isAdminPlayer then return end
     TriggerServerEvent('mri_Qadmin:server:SyncVitals', { stress = newStress })
 end)
 
 RegisterNetEvent("ars_ambulancejob:updateDeathStatus", function(death)
+    if not isAdminPlayer then return end
     TriggerServerEvent('mri_Qadmin:server:SyncDeathStatus', death.isDead)
 end)
 
