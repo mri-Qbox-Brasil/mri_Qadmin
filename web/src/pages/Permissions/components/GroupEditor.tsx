@@ -4,12 +4,12 @@ import { MriButton } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { GroupData } from './GroupManager'
-import { CATEGORIES, PERMISSION_MAP, getFriendlyPermissionName } from '../utils/categorization'
+import { CATEGORIES, getPermIcon, getFriendlyPermissionName } from '../utils/categorization'
 import { cn } from '@/lib/utils'
 
 export default function GroupEditor({ group, onBack }: { group: GroupData, onBack: () => void }) {
     const { sendNui } = useNui()
-    const { gameData } = useAppState()
+    const { gameData, permissionDefinitions } = useAppState()
     const [permissions, setPermissions] = useState<Set<string>>(new Set(group.permissions))
     const [saving, setSaving] = useState(false)
 
@@ -17,23 +17,24 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
         const result: Record<string, { pageNode?: string, actions: string[] }> = {}
         Object.keys(CATEGORIES).forEach(c => result[c] = { actions: [] })
 
-        Object.entries(PERMISSION_MAP).forEach(([perm, info]) => {
-            if (!result[info.category]) result[info.category] = { actions: [] }
-            if (perm.startsWith('qadmin.page.')) {
-                const pageName = perm.replace('qadmin.page.', '')
-                if (pageName === info.category) {
-                    result[info.category].pageNode = perm
+        permissionDefinitions.forEach(def => {
+            const cat = def.category
+            if (!result[cat]) result[cat] = { actions: [] }
+            if (def.id.startsWith('qadmin.page.')) {
+                const pageName = def.id.replace('qadmin.page.', '')
+                if (pageName === cat) {
+                    result[cat].pageNode = def.id
                 } else {
-                    result[info.category].actions.push(perm)
+                    result[cat].actions.push(def.id)
                 }
-            } else {
-                result[info.category].actions.push(perm)
+            } else if (def.id !== 'qadmin.open' && def.id !== 'qadmin.master') {
+                result[cat].actions.push(def.id)
             }
         })
 
-        // Inject dynamic perms from all gameData action lists
+        // Inject dynamic perms from gameData action lists not already in defs
         const extra: Record<string, { label: string, desc: string }> = {}
-        const knownPerms = new Set(Object.keys(PERMISSION_MAP))
+        const knownPerms = new Set(permissionDefinitions.map(d => d.id))
 
         const toArray = (src: any) =>
             Array.isArray(src) ? src : Object.entries(src || {}).map(([k, v]: any) => ({ ...v, id: k }))
@@ -169,12 +170,12 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                     </div>
                                 )}
                                 {data.actions.map(actionPerm => {
-                                    const info = PERMISSION_MAP[actionPerm]
+                                    const def = permissionDefinitions.find(d => d.id === actionPerm)
                                     const dyn = dynamicPermInfo[actionPerm]
                                     const has = permissions.has(actionPerm)
-                                    const label = info?.label ?? dyn?.label ?? getFriendlyPermissionName(actionPerm)
-                                    const desc = info?.desc ?? dyn?.desc ?? actionPerm
-                                    const Icon = info?.icon ?? Zap
+                                    const label = def?.label ?? dyn?.label ?? getFriendlyPermissionName(actionPerm, permissionDefinitions)
+                                    const desc = def?.desc ?? dyn?.desc ?? actionPerm
+                                    const Icon = getPermIcon(actionPerm, def?.category)
                                     return (
                                         <div
                                             key={actionPerm}

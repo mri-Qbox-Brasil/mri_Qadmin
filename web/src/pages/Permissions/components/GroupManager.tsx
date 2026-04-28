@@ -5,7 +5,7 @@ import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import GroupOverviewCard from './GroupOverviewCard'
 import GroupEditor from './GroupEditor'
-import { PERMISSION_MAP, getFriendlyPermissionName } from '../utils/categorization'
+import { getFriendlyPermissionName } from '../utils/categorization'
 
 export interface GroupData {
     id: string;
@@ -23,17 +23,15 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
     const [newGroupDesc, setNewGroupDesc] = useState('')
     const [saving, setSaving] = useState(false)
 
-    const { gameData } = useAppState()
+    const { gameData, permissionDefinitions } = useAppState()
     const [groupToDelete, setGroupToDelete] = useState<string | null>(null)
 
-    // Calculate total available permissions dynamically
-    const staticPermsCount = Object.keys(PERMISSION_MAP).length
     const dynamicActionsCount =
         Object.keys(gameData.actions || {}).length +
         Object.keys(gameData.playerActions || {}).length +
         Object.keys(gameData.otherActions || {}).length
 
-    const totalAvailablePermissions = staticPermsCount + dynamicActionsCount
+    const totalAvailablePermissions = permissionDefinitions.length + dynamicActionsCount
 
     const handleCreate = async () => {
         if (!newGroupId || !newGroupLabel || /[^a-z0-9_.]/.test(newGroupId) || newGroupId.startsWith('.') || newGroupId.endsWith('.')) return
@@ -89,7 +87,7 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
                             name={g.label}
                             grantedCount={g.permissions.length}
                             totalCount={totalAvailablePermissions}
-                            permissions={g.permissions.map(p => ({ label: getFriendlyPermissionName(p), granted: true }))}
+                            permissions={g.permissions.map(p => ({ label: getFriendlyPermissionName(p, permissionDefinitions), granted: true }))}
                             onEdit={() => setEditingGroup(g)}
                             onDelete={() => setGroupToDelete(g.id)}
                         />

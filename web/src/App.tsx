@@ -27,13 +27,14 @@ import WebRTCStreamer from '@/components/WebRTCStreamer'
 import { isEnvBrowser } from '@/utils/misc'
 import { MOCK_GAME_DATA, MOCK_PLAYERS } from '@/utils/mockData'
 
-import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
+import { hasPermission, getPagePermissions } from '@/utils/permissions'
 
 // ... existing imports
 
 export default function App() {
     const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'actions' | 'items' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens' | 'logs'>('dashboard')
-    const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings } = useAppState()
+    const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings, permissionDefinitions, setPermissionDefinitions } = useAppState()
+    const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { on, off, sendNui } = useNui()
     const { scale } = useTheme()
     const isDev = (import.meta as any)?.env?.DEV === true
@@ -70,8 +71,8 @@ export default function App() {
                 if (!hasPermission(myPermissions, 'qadmin.page.dashboard') && !hasPermission(myPermissions, 'qadmin.page.commands')) {
                     return
                 }
-            } else if (r in PAGE_PERMISSIONS) {
-                const perm = PAGE_PERMISSIONS[r as keyof typeof PAGE_PERMISSIONS]
+            } else if (r in pagePermissions) {
+                const perm = pagePermissions[r]
                 if (!hasPermission(myPermissions, perm)) {
                     return
                 }
@@ -98,10 +99,11 @@ export default function App() {
         if (isEnvBrowser()) {
             setGameData(MOCK_GAME_DATA)
             setPlayers(MOCK_PLAYERS)
-            setSettings({ MapBaseUrl: 'https://assets.mriqbox.com.br/admin/map/' }) // Mock CDN for browser dev
-            setMyPermissions(['qadmin.page.*', 'action.*']) // Full access to pages and actions in dev
+            setSettings({ MapBaseUrl: 'https://assets.mriqbox.com.br/admin/map/' })
+            setMyPermissions(['qadmin.page.*', 'action.*'])
+            setPermissionDefinitions(MOCK_GAME_DATA.permissionDefinitions)
         }
-    }, [setGameData, setPlayers, setMyPermissions, setSettings])
+    }, [setGameData, setPlayers, setMyPermissions, setSettings, setPermissionDefinitions])
 
     // Correct implementation:
     const { setPermissionRefreshTrigger } = useAppState()
@@ -133,14 +135,13 @@ export default function App() {
     const effectiveRoute = useMemo(() => {
         if (route === 'dashboard') {
             if (!hasPermission(myPermissions, 'qadmin.page.dashboard') && !hasPermission(myPermissions, 'qadmin.page.commands')) {
-                const firstAllowed = Object.entries(PAGE_PERMISSIONS).find(([, p]) => hasPermission(myPermissions, p))
+                const firstAllowed = Object.entries(pagePermissions).find(([, p]) => hasPermission(myPermissions, p))
                 return firstAllowed ? firstAllowed[0] : 'no_access'
             }
-        } else if (route in PAGE_PERMISSIONS) {
-            const perm = PAGE_PERMISSIONS[route as keyof typeof PAGE_PERMISSIONS]
+        } else if (route in pagePermissions) {
+            const perm = pagePermissions[route]
             if (!hasPermission(myPermissions, perm)) {
-                // Find first permitted page as fallback
-                const firstAllowed = Object.entries(PAGE_PERMISSIONS).find(([, p]) => hasPermission(myPermissions, p))
+                const firstAllowed = Object.entries(pagePermissions).find(([, p]) => hasPermission(myPermissions, p))
                 return firstAllowed ? firstAllowed[0] : 'no_access'
             }
         }

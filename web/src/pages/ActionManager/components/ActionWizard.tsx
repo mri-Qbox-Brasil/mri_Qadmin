@@ -12,7 +12,6 @@ import { useI18n } from '@/hooks/useI18n';
 import { useAppState } from '@/context/AppState';
 import { useNui } from '@/context/NuiContext';
 import { cn } from '@/lib/utils';
-import { PERMISSION_MAP } from '@/pages/Permissions/utils/categorization';
 
 interface ActionWizardProps {
     isOpen: boolean;
@@ -26,7 +25,7 @@ interface ActionWizardProps {
 export default function ActionWizard({ isOpen, onClose, onFinish, initialData, editId, category = 'Actions' }: ActionWizardProps) {
     const { t } = useI18n();
     const { sendNui } = useNui();
-    useAppState(); // Component uses context, but no specific values destructured here
+    const { permissionDefinitions } = useAppState();
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -266,9 +265,9 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                 <h3 className="text-sm font-bold">{t('action_wizard.fields.perm_label')}</h3>
                                 <MriSelect
                                     creatable
-                                    options={Object.entries(PERMISSION_MAP).map(([key, val]) => ({
-                                        label: val.label ? `${key} — ${val.label}` : key,
-                                        value: key,
+                                    options={permissionDefinitions.map(def => ({
+                                        label: def.label ? `${def.id} — ${def.label}` : def.id,
+                                        value: def.id,
                                     }))}
                                     value={perms}
                                     onChange={setPerms}

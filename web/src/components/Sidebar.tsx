@@ -11,13 +11,13 @@ interface SidebarProps {
     currentRoute: string
 }
 
-import { hasPermission, PAGE_PERMISSIONS } from '@/utils/permissions'
-
-// ... existing imports
+import { hasPermission, getPagePermissions } from '@/utils/permissions'
+import { useMemo } from 'react'
 
 export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     const { t } = useI18n()
-    const { menuWide, setMenuWide, myPermissions } = useAppState()
+    const { menuWide, setMenuWide, myPermissions, permissionDefinitions } = useAppState()
+    const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { theme, setTheme } = useTheme()
 
     const toggleTheme = () => {
@@ -48,8 +48,8 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     ].filter(item => {
         if (item.divider) return true
         if (!item.route) return true
-        if (item.route in PAGE_PERMISSIONS) {
-            return hasPermission(myPermissions, PAGE_PERMISSIONS[item.route as keyof typeof PAGE_PERMISSIONS])
+        if (item.route in pagePermissions) {
+            return hasPermission(myPermissions, pagePermissions[item.route])
         }
         return true
     })
