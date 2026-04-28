@@ -16,6 +16,7 @@ Config.Keybindings = true
 Config.AdminKey = "0"
 Config.NoclipKey = "9"
 Config.Debug = true -- Set to true to enable debug prints
+Config.QBCoreAutoSync = true -- Auto-promote players with QBCore 'admin'/'god' to mri_Qadmin 'admin' group
 
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"
@@ -81,6 +82,7 @@ Config.Descriptions = {
     AdminKey          = "settings.desc.AdminKey",
     NoclipKey         = "settings.desc.NoclipKey",
     Debug             = "settings.desc.Debug",
+    QBCoreAutoSync    = "settings.desc.QBCoreAutoSync",
     DefaultGarage     = "settings.desc.DefaultGarage",
     VehicleImages     = "settings.desc.VehicleImages",
     MapBaseUrl        = "settings.desc.MapBaseUrl",

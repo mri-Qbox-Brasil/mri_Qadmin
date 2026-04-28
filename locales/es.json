@@ -530,7 +530,8 @@
             "MapBaseUrl": "URL base externa para cargar los tiles del mapa (ej: https://example.github.io/maps/). Si está vacío, usa archivos locales.",
             "SignalingProvider": "Backend de WebRTC. fivem-native (sin servidor externo), websocket (requiere mri_Qsignaling en Node.js) o cloudflare-sfu.",
             "WebRTCUrl": "Endpoint obligatorio cuando SignalingProvider es websocket. Normalmente wss://tu-ip:puerto.",
-            "Keybindings": "Permite o bloquea que las teclas configuradas abran el panel. Si es false, solo funcionará el comando /adm."
+            "Keybindings": "Permite o bloquea que las teclas configuradas abran el panel. Si es false, solo funcionará el comando /adm.",
+            "QBCoreAutoSync": "Si es true, los jugadores con permiso 'admin' o 'god' en QBCore se añaden automáticamente al grupo 'admin' del panel. Desactívalo para control manual total."
         },
         "option": {
             "none_disabled": "Ninguno (Desactivado)",
