@@ -3,6 +3,7 @@ import { Plus, Users, Shield } from 'lucide-react'
 import { MriButton, MriInput, MriActionModal } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
+import { useI18n } from '@/hooks/useI18n'
 import GroupOverviewCard from './GroupOverviewCard'
 import GroupEditor from './GroupEditor'
 import { getFriendlyPermissionName } from '../utils/categorization'
@@ -16,6 +17,7 @@ export interface GroupData {
 
 export default function GroupManager({ searchQuery, onCountChange, groups }: { searchQuery: string, onCountChange?: (n: number) => void, groups: GroupData[] }) {
     const { sendNui } = useNui()
+    const { t } = useI18n()
     const [editingGroup, setEditingGroup] = useState<GroupData | null>(null)
     const [creating, setCreating] = useState(false)
     const [newGroupId, setNewGroupId] = useState('')
@@ -87,7 +89,7 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
                             name={g.label}
                             grantedCount={g.permissions.length}
                             totalCount={totalAvailablePermissions}
-                            permissions={g.permissions.map(p => ({ label: getFriendlyPermissionName(p, permissionDefinitions), granted: true }))}
+                            permissions={g.permissions.map(p => ({ label: getFriendlyPermissionName(p, permissionDefinitions, t), granted: true }))}
                             onEdit={() => setEditingGroup(g)}
                             onDelete={() => setGroupToDelete(g.id)}
                         />

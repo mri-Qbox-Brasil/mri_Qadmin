@@ -1,7 +1,7 @@
 export interface PermDef {
     id: string
-    label: string
-    desc: string
+    label?: string
+    desc?: string
     category: string
 }
 

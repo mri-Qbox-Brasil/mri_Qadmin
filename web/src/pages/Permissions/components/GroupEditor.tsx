@@ -3,12 +3,14 @@ import { ChevronLeft, Save, ShieldCheck, Zap } from 'lucide-react'
 import { MriButton } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
+import { useI18n } from '@/hooks/useI18n'
 import { GroupData } from './GroupManager'
 import { CATEGORIES, getPermIcon, getFriendlyPermissionName } from '../utils/categorization'
 import { cn } from '@/lib/utils'
 
 export default function GroupEditor({ group, onBack }: { group: GroupData, onBack: () => void }) {
     const { sendNui } = useNui()
+    const { t } = useI18n()
     const { gameData, permissionDefinitions } = useAppState()
     const [permissions, setPermissions] = useState<Set<string>>(new Set(group.permissions))
     const [saving, setSaving] = useState(false)
@@ -173,8 +175,8 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                     const def = permissionDefinitions.find(d => d.id === actionPerm)
                                     const dyn = dynamicPermInfo[actionPerm]
                                     const has = permissions.has(actionPerm)
-                                    const label = def?.label ?? dyn?.label ?? getFriendlyPermissionName(actionPerm, permissionDefinitions)
-                                    const desc = def?.desc ?? dyn?.desc ?? actionPerm
+                                    const label = getFriendlyPermissionName(actionPerm, permissionDefinitions, t) || dyn?.label || actionPerm
+                                    const desc = t(`perm_descs.${actionPerm}`) !== `perm_descs.${actionPerm}` ? t(`perm_descs.${actionPerm}`) : (dyn?.desc ?? actionPerm)
                                     const Icon = getPermIcon(actionPerm, def?.category)
                                     return (
                                         <div

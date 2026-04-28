@@ -226,17 +226,25 @@ export function getPermIcon(id: string, category?: string): LucideIcon {
     return PERM_ICONS[id] ?? (category ? CATEGORY_ICONS[category] : undefined) ?? Lock;
 }
 
-export function getPermissionInfo(permission: string, defs: PermDef[]) {
+export function getPermissionInfo(permission: string, defs: PermDef[], t?: (key: string) => string) {
     const def = defs.find(d => d.id === permission);
+    const labelKey = `perm_labels.${permission}`;
+    const descKey = `perm_descs.${permission}`;
+    const label = (t ? t(labelKey) : undefined) || def?.label;
+    const desc = (t ? t(descKey) : undefined) || def?.desc;
     if (def) {
-        return { category: def.category, icon: getPermIcon(def.id, def.category), label: def.label, desc: def.desc };
+        return { category: def.category, icon: getPermIcon(def.id, def.category), label, desc };
     }
-    if (permission.startsWith('qadmin.page.'))   return { category: 'settings', icon: Key,  label: undefined, desc: undefined };
-    if (permission.startsWith('qadmin.action.')) return { category: 'other',    icon: Zap,  label: undefined, desc: undefined };
-    return { category: 'other', icon: Lock, label: undefined, desc: undefined };
+    if (permission.startsWith('qadmin.page.'))   return { category: 'settings', icon: Key,  label, desc };
+    if (permission.startsWith('qadmin.action.')) return { category: 'other',    icon: Zap,  label, desc };
+    return { category: 'other', icon: Lock, label, desc };
 }
 
-export function getFriendlyPermissionName(permission: string, defs: PermDef[]): string {
+export function getFriendlyPermissionName(permission: string, defs: PermDef[], t?: (key: string) => string): string {
+    if (t) {
+        const translated = t(`perm_labels.${permission}`);
+        if (translated !== `perm_labels.${permission}`) return translated;
+    }
     const def = defs.find(d => d.id === permission);
     if (def?.label) return def.label;
     if (permission.startsWith('qadmin.page.')) {
