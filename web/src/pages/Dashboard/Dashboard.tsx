@@ -19,9 +19,7 @@ import {
     Megaphone,
     Send,
     Heart,
-    Trash2,
-    Zap,
-    Navigation,
+    MapPin,
     Ghost,
     Shield,
     EyeOff,
@@ -30,7 +28,8 @@ import {
     Terminal,
     Command,
     Copy,
-    RefreshCw
+    RefreshCw,
+    MessageSquare
 } from 'lucide-react'
 import { TableVirtuoso } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
@@ -77,7 +76,6 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, iconColor
 )
 
 export default function Dashboard() {
-    const [loadingPlayers, setLoadingPlayers] = useState(true)
     const [loadingSummary, setLoadingSummary] = useState(true)
     const [loadingCommands, setLoadingCommands] = useState(false)
     const [error, setError] = useState<string | null>(null)
