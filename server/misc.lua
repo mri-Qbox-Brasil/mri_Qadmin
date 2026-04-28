@@ -156,6 +156,7 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
         if src > 0 then
             QBCore.Functions.Notify(src, 'Jogador desbanido com sucesso.', 'success', 7500)
         end
+        AddLog(src, 'mri_Qadmin', 'bans', 'info', ('Desbanimento: %s desbanido'):format(GetPlayerName(targetId) or targetId), GetTargetData(targetId))
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     else
         if src > 0 then
@@ -539,6 +540,7 @@ RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(_, selectedData)
     end
 
     TriggerClientEvent('qb-clothing:client:openMenu', target)
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Roupa: editor de roupa aberto para %s'):format(GetPlayerName(target) or target), GetTargetData(target))
 end)
 
 -- Set Ped

@@ -59,12 +59,14 @@ RegisterNetEvent('mri_Qadmin:server:OpenInv', function(data)
         return TriggerClientEvent("QBCore:Notify", source, locale("notifications.no_self"), "error", 7500)
     end
     exports.ox_inventory:forceOpenInventory(source, 'player', targetPlayer)
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Inventário: admin abriu inventário de %s'):format(GetPlayerName(targetPlayer) or targetPlayer), GetTargetData(targetPlayer))
 end)
 
 -- Open Stash [ox side]
 RegisterNetEvent('mri_Qadmin:server:OpenStash', function(data)
     if not CheckPerms(source, 'qadmin.action.open_stash') then return end
     exports.ox_inventory:forceOpenInventory(source, 'stash', data)
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Stash: admin abriu stash "%s"'):format(tostring(data)), { stash = tostring(data) })
 end)
 
 -- Open Trunk [ox side]
@@ -79,6 +81,7 @@ RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(actionData, vehiclePlat
     if not success then
         return QBCore.Functions.Notify(source, locale("trunk_not_found"), 'error', 7500)
     end
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Porta-malas: admin abriu porta-malas do veículo %s'):format(plate), { plate = plate })
 end)
 
 -- Give Item
