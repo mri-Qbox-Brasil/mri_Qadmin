@@ -11,6 +11,7 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         serverInfo = GetServerData(),
         resources = RefreshResources(),
         permissions = GetUserPermissions(src),
+        permissionDefinitions = GetPermissionDefinitions(),
         actions = GetAllDynamicActions(),
         groups = GetGroupsData(),
         items = GetItemsList(),

@@ -68,48 +68,178 @@ end
 -- FUNCTIONS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-local ALL_KNOWN_QADMIN_PERMS = (function()
-    local pages = {
-        'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'devmode', 'livemap', 'livescreens',
-        'logs', 'statistics', 'reports', 'terminal', 'staff_point'
-    }
-    local actions = {
-        'qadmin.action.revive', 'qadmin.action.revive_all', 'qadmin.action.revive_self',
-        'qadmin.action.kill_player', 'qadmin.action.ban_player',
-        'qadmin.action.unban_player', 'qadmin.action.kick_player', 'qadmin.action.warn_player',
-        'qadmin.action.verify_player', 'qadmin.action.delete_character', 'qadmin.action.set_job',
-        'qadmin.action.set_gang', 'qadmin.action.give_money', 'qadmin.action.remove_money',
-        'qadmin.action.set_bucket', 'qadmin.action.give_item', 'qadmin.action.clear_inventory',
-        'qadmin.action.open_inventory', 'qadmin.action.view_inventory', 'qadmin.action.modify_inventory',
-        'qadmin.action.open_trunk', 'qadmin.action.open_stash',
-        'qadmin.action.delete_vehicle', 'qadmin.action.spawn_vehicle', 'qadmin.action.admincar',
-        'qadmin.action.change_plate', 'qadmin.action.change_vehicle_state',
-        'qadmin.action.fix_vehicle', 'qadmin.action.fix_self_vehicle', 'qadmin.action.spectate_player',
-        'qadmin.action.freeze_player', 'qadmin.action.teleport_to_player', 'qadmin.action.bring_player',
-        'qadmin.action.teleport_back', 'qadmin.action.drunk_player', 'qadmin.action.blackout',
-        'qadmin.action.toggle_cuffs', 'qadmin.action.clothing_menu', 'qadmin.action.staff_clothing',
-        'qadmin.action.set_ped', 'qadmin.action.noclip', 'qadmin.action.god_mode',
-        'qadmin.action.invisibility', 'qadmin.action.invisible', 'qadmin.action.tag',
-        'qadmin.action.announcements', 'qadmin.action.clear_chat', 'qadmin.action.goto_waypoint',
-        'qadmin.action.info_admin', 'qadmin.action.server_time', 'qadmin.action.change_resource',
-        'qadmin.action.enable_wall', 'qadmin.action.screen_capture', 'qadmin.action.change_vehicle_property',
-        'qadmin.action.view_detailed_logs', 'qadmin.action.manage_reports', 'qadmin.action.delete_report',
-        'qadmin.action.staff_clock_in', 'qadmin.action.staff_clock_out', 'qadmin.commands',
-        'qadmin.action.track_player', 'qadmin.action.set_vital', 'qadmin.action.view_player_identifiers',
-        'qadmin.action.manage_vehicles', 'qadmin.action.copy_inventory', 'qadmin.action.manage_actions',
-        'qadmin.action.staff_chat_send', 'qadmin.action.toggle_mock_mode', 'qadmin.action.manage_settings',
-        'qadmin.action.manage_wall', 'qadmin.action.mute_player', 'qadmin.action.refuel_vehicle'
-    }
-    local all = {'qadmin.open', 'qadmin.master'}
-    for _, p in ipairs(pages) do all[#all + 1] = 'qadmin.page.' .. p end
-    for _, a in ipairs(actions) do all[#all + 1] = a end
-    -- Config-driven action perms
-    if Config.Actions then for _, v in pairs(Config.Actions) do if v.perms then all[#all + 1] = v.perms end end end
-    if Config.PlayerActions then for _, v in pairs(Config.PlayerActions) do if v.perms then all[#all + 1] = v.perms end end end
-    if Config.OtherActions then for _, v in pairs(Config.OtherActions) do if v.perms then all[#all + 1] = v.perms end end end
-    return all
-end)()
+-- Single source of truth for all known permissions.
+-- Each entry: { id, label, desc, category }
+-- The flat ALL_KNOWN_QADMIN_PERMS list is derived below for internal ACE operations.
+local PERM_DEFINITIONS = {
+    -- ── System ───────────────────────────────────────────────────────────────
+    { id = 'qadmin.open',   label = 'Abrir Painel',  desc = 'Permite abrir o painel administrativo',     category = 'other'       },
+    { id = 'qadmin.master', label = 'Master Bypass', desc = 'Acesso irrestrito a todas as funções',      category = 'other'       },
+    -- ── Pages ────────────────────────────────────────────────────────────────
+    { id = 'qadmin.page.dashboard',    label = 'Dashboard',    desc = 'Acessar o painel principal',          category = 'dashboard'   },
+    { id = 'qadmin.page.players',      label = 'Players',      desc = 'Acessar a lista de jogadores',        category = 'players'     },
+    { id = 'qadmin.page.groups',       label = 'Groups',       desc = 'Acessar gerenciamento de grupos',     category = 'groups'      },
+    { id = 'qadmin.page.bans',         label = 'Bans',         desc = 'Acessar a lista de banimentos',       category = 'bans'        },
+    { id = 'qadmin.page.staffchat',    label = 'Staff Chat',   desc = 'Acessar o canal de staff',            category = 'staffchat'   },
+    { id = 'qadmin.page.items',        label = 'Items',        desc = 'Acessar a página de itens',           category = 'items'       },
+    { id = 'qadmin.page.vehicles',     label = 'Vehicles',     desc = 'Acessar a página de veículos',        category = 'vehicles'    },
+    { id = 'qadmin.page.commands',     label = 'Commands',     desc = 'Acessar a lista de comandos',         category = 'commands'    },
+    { id = 'qadmin.page.actions',      label = 'Actions',      desc = 'Acessar o gerenciador de ações',      category = 'actions'     },
+    { id = 'qadmin.page.permissions',  label = 'Permissions',  desc = 'Acessar a página de permissões',      category = 'permissions' },
+    { id = 'qadmin.page.resources',    label = 'Resources',    desc = 'Acessar a página de recursos',        category = 'resources'   },
+    { id = 'qadmin.page.settings',     label = 'Settings',     desc = 'Acessar as configurações do painel',  category = 'settings'    },
+    { id = 'qadmin.page.devmode',      label = 'Dev Mode',     desc = 'Acessar o modo desenvolvedor',        category = 'devmode'     },
+    { id = 'qadmin.page.livemap',      label = 'Live Map',     desc = 'Acessar o mapa ao vivo',              category = 'livemap'     },
+    { id = 'qadmin.page.livescreens',  label = 'Live Screens', desc = 'Acessar telas ao vivo dos jogadores', category = 'livescreens' },
+    { id = 'qadmin.page.logs',         label = 'Logs',         desc = 'Acessar logs de ações',               category = 'dashboard'   },
+    { id = 'qadmin.page.statistics',   label = 'Statistics',   desc = 'Visualizar estatísticas na Dashboard',category = 'dashboard'   },
+    { id = 'qadmin.page.reports',      label = 'Reports',      desc = 'Gerenciar reports de jogadores',      category = 'players'     },
+    { id = 'qadmin.page.terminal',     label = 'Terminal',     desc = 'Acessar o terminal/console',          category = 'commands'    },
+    { id = 'qadmin.page.staff_point',  label = 'Staff Point',  desc = 'Sistema de ponto da staff',           category = 'other'       },
+    -- ── Dashboard Actions ────────────────────────────────────────────────────
+    { id = 'qadmin.action.announcements',       label = 'Announcements',              desc = 'Enviar anúncios globais',               category = 'dashboard'   },
+    { id = 'qadmin.action.clear_chat',          label = 'Limpar Chat',                desc = 'Limpar o chat global do servidor',      category = 'dashboard'   },
+    { id = 'qadmin.action.info_admin',          label = 'Info Admin',                 desc = 'Ver resumos financeiros na Dashboard',  category = 'dashboard'   },
+    { id = 'qadmin.action.view_detailed_logs',  label = 'Detailed Logs',              desc = 'Ver logs detalhados por CitizenID',     category = 'dashboard'   },
+    { id = 'qadmin.action.manage_actions',      label = 'Gerenciar Ações',            desc = 'Criar, editar e excluir ações',         category = 'dashboard'   },
+    { id = 'qadmin.action.manage_settings',     label = 'Gerenciar Configurações',    desc = 'Alterar configurações do servidor',     category = 'dashboard'   },
+    { id = 'qadmin.action.manage_wall',         label = 'Gerenciar Wall/ESP',         desc = 'Alterar configurações globais de ESP',  category = 'dashboard'   },
+    -- ── Player Actions ───────────────────────────────────────────────────────
+    { id = 'qadmin.action.view_player_identifiers', label = 'Ver Identificadores',    desc = 'Ver Steam ID, IP e Licenças',           category = 'players'     },
+    { id = 'qadmin.action.track_player',        label = 'Track Player',               desc = 'Localizar e rastrear jogador no mapa',  category = 'players'     },
+    { id = 'qadmin.action.set_vital',           label = 'Set Vitals',                 desc = 'Ajustar vida, colete, fome, etc.',      category = 'players'     },
+    { id = 'qadmin.action.tag',                 label = 'Player Tags',                desc = 'Mostrar tags acima dos jogadores',      category = 'players'     },
+    { id = 'qadmin.action.manage_reports',      label = 'Manage Reports',             desc = 'Ver e responder reports',               category = 'players'     },
+    { id = 'qadmin.action.delete_report',       label = 'Delete Report',              desc = 'Remover reports do sistema',            category = 'players'     },
+    { id = 'qadmin.action.staff_clothing',      label = 'Staff Clothing',             desc = 'Aplicar uniforme de staff',             category = 'players'     },
+    -- ── Actions ──────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.revive',              label = 'Revive',                     desc = 'Curar e reviver um jogador',            category = 'actions'     },
+    { id = 'qadmin.action.revive_all',          label = 'Revive All / Radius',        desc = 'Reviver todos ou em raio',              category = 'actions'     },
+    { id = 'qadmin.action.revive_self',         label = 'Reviver-se',                 desc = 'Reviver o próprio administrador',       category = 'actions'     },
+    { id = 'qadmin.action.kill_player',         label = 'Kill Player',                desc = 'Matar um jogador',                      category = 'actions'     },
+    { id = 'qadmin.action.kick_player',         label = 'Kick Player',                desc = 'Expulsar um jogador do servidor',       category = 'actions'     },
+    { id = 'qadmin.action.warn_player',         label = 'Warn Player',                desc = 'Emitir advertência a um jogador',       category = 'actions'     },
+    { id = 'qadmin.action.verify_player',       label = 'Verify Player',              desc = 'Verificar identidade do jogador',       category = 'actions'     },
+    { id = 'qadmin.action.delete_character',    label = 'Delete Character',           desc = 'Deletar permanentemente um personagem', category = 'actions'     },
+    { id = 'qadmin.action.spectate_player',     label = 'Spectate',                   desc = 'Espionar um jogador',                   category = 'actions'     },
+    { id = 'qadmin.action.freeze_player',       label = 'Freeze Player',              desc = 'Imobilizar um jogador',                 category = 'actions'     },
+    { id = 'qadmin.action.bring_player',        label = 'Bring Player',               desc = 'Teleportar jogador até você',           category = 'actions'     },
+    { id = 'qadmin.action.teleport_to_player',  label = 'Teleport to Player',         desc = 'Teleportar-se até um jogador',          category = 'actions'     },
+    { id = 'qadmin.action.teleport_back',       label = 'Teleport Back',              desc = 'Retornar à posição anterior',           category = 'actions'     },
+    { id = 'qadmin.action.teleport_to_coords',  label = 'Teleport to Coords',         desc = 'Teleportar para coordenadas específicas', category = 'actions'   },
+    { id = 'qadmin.action.teleport_to_location',label = 'Teleport to Location',       desc = 'Teleportar para local salvo',           category = 'actions'     },
+    { id = 'qadmin.action.teleport_to_marker',  label = 'Teleport to Marker',         desc = 'Teleportar para o waypoint',            category = 'actions'     },
+    { id = 'qadmin.action.set_job',             label = 'Set Job',                    desc = 'Alterar emprego de um jogador',         category = 'actions'     },
+    { id = 'qadmin.action.set_gang',            label = 'Set Gang',                   desc = 'Alterar gang de um jogador',            category = 'actions'     },
+    { id = 'qadmin.action.fire_job',            label = 'Fire from Job',              desc = 'Demitir jogador do emprego',            category = 'actions'     },
+    { id = 'qadmin.action.fire_gang',           label = 'Fire from Gang',             desc = 'Remover jogador da gang',               category = 'actions'     },
+    { id = 'qadmin.action.set_bucket',          label = 'Set Bucket',                 desc = 'Alterar routing bucket do jogador',     category = 'actions'     },
+    { id = 'qadmin.action.get_bucket',          label = 'Get Bucket',                 desc = 'Consultar routing bucket do jogador',   category = 'actions'     },
+    { id = 'qadmin.action.give_money',          label = 'Give Money',                 desc = 'Adicionar dinheiro a um jogador',       category = 'actions'     },
+    { id = 'qadmin.action.remove_money',        label = 'Remove Money',               desc = 'Remover dinheiro de um jogador',        category = 'actions'     },
+    { id = 'qadmin.action.give_money_all',      label = 'Give Money to All',          desc = 'Dar dinheiro a todos online',           category = 'actions'     },
+    { id = 'qadmin.action.drunk_player',        label = 'Drunk Effect',               desc = 'Aplicar efeito de embriaguez',          category = 'actions'     },
+    { id = 'qadmin.action.remove_stress',       label = 'Remove Stress',              desc = 'Limpar nível de estresse do jogador',   category = 'actions'     },
+    { id = 'qadmin.action.mute_player',         label = 'Mute Player',                desc = 'Silenciar voz de um jogador',           category = 'actions'     },
+    { id = 'qadmin.action.goto_waypoint',       label = 'Ir para Waypoint',           desc = 'Teleportar para o marcador no mapa',   category = 'actions'     },
+    { id = 'qadmin.action.blackout',            label = 'Blackout',                   desc = 'Deixar jogador inconsciente',           category = 'actions'     },
+    { id = 'qadmin.action.toggle_cuffs',        label = 'Toggle Cuffs',               desc = 'Algemar ou desalgemar um jogador',      category = 'actions'     },
+    { id = 'qadmin.action.clothing_menu',       label = 'Clothing Menu',              desc = 'Abrir editor de roupa do jogador',      category = 'actions'     },
+    { id = 'qadmin.action.set_ped',             label = 'Set Ped',                    desc = 'Alterar modelo do personagem',          category = 'actions'     },
+    { id = 'qadmin.action.god_mode',            label = 'God Mode',                   desc = 'Alternar imunidade a dano',             category = 'actions'     },
+    { id = 'qadmin.action.noclip',              label = 'Noclip',                     desc = 'Alternar atravessar superfícies',       category = 'actions'     },
+    { id = 'qadmin.action.invisibility',        label = 'Invisibility',               desc = 'Alternar modo invisível',               category = 'actions'     },
+    { id = 'qadmin.action.invisible',           label = 'Invisibility',               desc = 'Alternar modo invisível (alias)',       category = 'actions'     },
+    { id = 'qadmin.action.set_ammo',            label = 'Set Ammo',                   desc = 'Definir quantidade de munição',         category = 'actions'     },
+    { id = 'qadmin.action.infinite_ammo',       label = 'Infinite Ammo',              desc = 'Alternar munição ilimitada',            category = 'actions'     },
+    { id = 'qadmin.action.toggle_duty',         label = 'Toggle Duty',                desc = 'Alternar status de serviço',            category = 'actions'     },
+    { id = 'qadmin.action.toggle_laser',        label = 'Toggle Laser',               desc = 'Alternar mira laser da arma',           category = 'actions'     },
+    { id = 'qadmin.action.play_sound',          label = 'Play Sound',                 desc = 'Reproduzir som para jogador específico',category = 'actions'     },
+    { id = 'qadmin.action.ban_player',          label = 'Ban Player',                 desc = 'Banir um jogador do servidor',          category = 'actions'     },
+    { id = 'qadmin.action.unban_player',        label = 'Desbanir Jogador',           desc = 'Remover banimento ativo da lista',      category = 'actions'     },
+    { id = 'qadmin.action.give_item',           label = 'Give Item',                  desc = 'Dar um item a um jogador',              category = 'actions'     },
+    { id = 'qadmin.action.give_item_all',       label = 'Give Item to All',           desc = 'Dar item a todos os jogadores online',  category = 'actions'     },
+    { id = 'qadmin.action.clear_inventory',     label = 'Clear Inventory',            desc = 'Esvaziar inventário de um jogador',     category = 'actions'     },
+    { id = 'qadmin.action.clear_inventory_offline', label = 'Clear Inventory (Offline)', desc = 'Esvaziar inventário de jogador offline', category = 'actions' },
+    { id = 'qadmin.action.open_inventory',      label = 'Abrir Inventário (Nativo)',  desc = 'Abrir inventário pelo ox_inventory',    category = 'actions'     },
+    { id = 'qadmin.action.view_inventory',      label = 'Ver Inventário (Painel)',    desc = 'Visualizar inventário pelo painel',     category = 'actions'     },
+    { id = 'qadmin.action.modify_inventory',    label = 'Modificar Inventário',       desc = 'Adicionar, remover e mover itens',      category = 'actions'     },
+    { id = 'qadmin.action.open_trunk',          label = 'Open Trunk',                 desc = 'Acessar porta-malas de veículo',        category = 'actions'     },
+    { id = 'qadmin.action.open_stash',          label = 'Open Stash',                 desc = 'Acessar stash de um jogador',           category = 'actions'     },
+    { id = 'qadmin.action.spawn_vehicle',       label = 'Spawn Vehicle',              desc = 'Spawnar um veículo',                    category = 'actions'     },
+    { id = 'qadmin.action.delete_vehicle',      label = 'Delete Vehicle',             desc = 'Remover um veículo',                    category = 'actions'     },
+    { id = 'qadmin.action.admin_car',           label = 'Admin Car',                  desc = 'Spawnar e salvar veículo admin',        category = 'actions'     },
+    { id = 'qadmin.action.admincar',            label = 'Admin Car (alias)',           desc = 'Spawnar e salvar veículo admin',        category = 'actions'     },
+    { id = 'qadmin.action.give_car',            label = 'Give Car',                   desc = 'Spawnar e salvar veículo na garagem',   category = 'actions'     },
+    { id = 'qadmin.action.change_plate',        label = 'Change Plate',               desc = 'Alterar placa de um veículo',           category = 'actions'     },
+    { id = 'qadmin.action.fix_vehicle',         label = 'Fix Vehicle',                desc = 'Reparar veículo de um jogador',         category = 'actions'     },
+    { id = 'qadmin.action.fix_vehicle_for',     label = 'Fix Vehicle For Player',     desc = 'Reparar veículo de jogador específico', category = 'actions'     },
+    { id = 'qadmin.action.fix_self_vehicle',    label = 'Reparar Próprio Veículo',    desc = 'Reparar o veículo em que o admin está', category = 'actions'     },
+    { id = 'qadmin.action.refuel_vehicle',      label = 'Refuel Vehicle',             desc = 'Reabastecer veículo completamente',     category = 'actions'     },
+    { id = 'qadmin.action.max_mods',            label = 'Max Vehicle Mods',           desc = 'Aplicar mods máximos ao veículo atual', category = 'actions'     },
+    { id = 'qadmin.action.change_weather',      label = 'Change Weather',             desc = 'Alterar o clima do servidor',           category = 'actions'     },
+    { id = 'qadmin.action.change_time',         label = 'Change Time',                desc = 'Alterar horário do servidor via presets', category = 'actions'   },
+    { id = 'qadmin.action.toggle_devmode',      label = 'Toggle Dev Mode',            desc = 'Ativar/Desativar o modo desenvolvedor', category = 'actions'     },
+    { id = 'qadmin.action.vehicle_dev',         label = 'Vehicle Dev Menu',           desc = 'Abrir menu de desenvolvimento de veículo', category = 'actions'  },
+    { id = 'qadmin.action.toggle_coords',       label = 'Toggle Coords',              desc = 'Mostrar/ocultar HUD de coordenadas',    category = 'actions'     },
+    { id = 'qadmin.action.toggle_blips',        label = 'Toggle Blips',               desc = 'Mostrar/ocultar blips de jogadores',    category = 'actions'     },
+    { id = 'qadmin.action.toggle_names',        label = 'Toggle Names',               desc = 'Mostrar/ocultar nomes acima dos jogadores', category = 'actions' },
+    { id = 'qadmin.action.enable_wall',         label = 'Enable Wall',                desc = 'Alternar exibição do wall de telas',    category = 'actions'     },
+    -- ── Items ────────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.copy_inventory',      label = 'Copiar Inventário',          desc = 'Copiar itens de outro inventário para si', category = 'items'    },
+    -- ── Vehicles ─────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.manage_vehicles',     label = 'Gerenciar Veículos',         desc = 'Spawnar livremente e atualizar estoque', category = 'vehicles'  },
+    { id = 'qadmin.action.change_vehicle_property', label = 'Modify Stock',           desc = 'Alterar propriedades ou estoque do veículo', category = 'vehicles' },
+    { id = 'qadmin.action.change_vehicle_state',label = 'Alterar Estado do Veículo',  desc = 'Alterar estado de garagem (dentro/fora)', category = 'vehicles'  },
+    { id = 'qadmin.action.update_vehicle_stock',label = 'Atualizar Estoque',          desc = 'Atualizar estoque de veículos da garagem', category = 'vehicles' },
+    -- ── Commands ─────────────────────────────────────────────────────────────
+    { id = 'qadmin.commands',                   label = 'Commands List',              desc = 'Acessar a lista de comandos do servidor', category = 'commands'  },
+    -- ── Resources ────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.change_resource',     label = 'Gerenciar Recursos',         desc = 'Iniciar, parar e reiniciar recursos',   category = 'resources'   },
+    -- ── Settings ─────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.server_time',         label = 'Server Time',                desc = 'Alterar horário do servidor',           category = 'settings'    },
+    -- ── Live Screens ─────────────────────────────────────────────────────────
+    { id = 'qadmin.action.screen_capture',      label = 'Screen Capture',             desc = 'Capturar tela de jogador',              category = 'livescreens' },
+    -- ── Staff / Other ─────────────────────────────────────────────────────────
+    { id = 'qadmin.action.staff_clock_in',      label = 'Staff Clock In',             desc = 'Iniciar sessão de ponto',               category = 'other'       },
+    { id = 'qadmin.action.staff_clock_out',     label = 'Staff Clock Out',            desc = 'Encerrar sessão de ponto',              category = 'other'       },
+    { id = 'qadmin.action.staff_chat_send',     label = 'Enviar Mensagens (StaffChat)', desc = 'Enviar mensagens no Staff Chat',      category = 'other'       },
+    { id = 'qadmin.action.toggle_mock_mode',    label = 'Alternar Mock Mode',         desc = 'Habilitar dados fictícios para testes', category = 'other'       },
+}
+
+-- Flat ID list derived from PERM_DEFINITIONS for internal ACE operations.
+local ALL_KNOWN_QADMIN_PERMS = {}
+do
+    for _, p in ipairs(PERM_DEFINITIONS) do
+        ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = p.id
+    end
+    if Config.Actions then for _, v in pairs(Config.Actions) do if v.perms then ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = v.perms end end end
+    if Config.PlayerActions then for _, v in pairs(Config.PlayerActions) do if v.perms then ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = v.perms end end end
+    if Config.OtherActions then for _, v in pairs(Config.OtherActions) do if v.perms then ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = v.perms end end end
+end
+
+--- Returns full permission definitions including config-driven entries.
+--- Called by data_sync.lua to include in the initial data payload.
+function GetPermissionDefinitions()
+    local defs = {}
+    for _, p in ipairs(PERM_DEFINITIONS) do defs[#defs + 1] = p end
+    if Config.Actions then
+        for _, v in pairs(Config.Actions) do
+            if v.perms then defs[#defs + 1] = { id = v.perms, label = v.label or v.perms, desc = v.description or '', category = 'actions' } end
+        end
+    end
+    if Config.PlayerActions then
+        for _, v in pairs(Config.PlayerActions) do
+            if v.perms then defs[#defs + 1] = { id = v.perms, label = v.label or v.perms, desc = v.description or '', category = 'actions' } end
+        end
+    end
+    if Config.OtherActions then
+        for _, v in pairs(Config.OtherActions) do
+            if v.perms then defs[#defs + 1] = { id = v.perms, label = v.label or v.perms, desc = v.description or '', category = 'other' } end
+        end
+    end
+    return defs
+end
 
 local function ClearGroupAces(groupId)
     local principal = 'mri.group.' .. groupId
@@ -556,17 +686,13 @@ lib.addCommand('mri_qadmin.debugperms', {
 
     print(('^3--- DEBUG PERMISSIONS: %s (%s) ---^7'):format(p.PlayerData.name, p.PlayerData.citizenid))
 
-    local pages = {
-        'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'devmode', 'livemap', 'livescreens'
-    }
-
     print('PAGES:')
-    for _, page in ipairs(pages) do
-        local node = 'qadmin.page.' .. page
-        local allowed = HasPerms(targetId, node)
-        local color = allowed and '^2' or '^1'
-        print(('%s- %s: %s^7'):format(color, node, tostring(allowed)))
+    for _, def in ipairs(PERM_DEFINITIONS) do
+        if def.id:find('qadmin%.page%.') then
+            local allowed = HasPerms(targetId, def.id)
+            local color = allowed and '^2' or '^1'
+            print(('%s- %s: %s^7'):format(color, def.id, tostring(allowed)))
+        end
     end
 
     local isMaster = HasPerms(targetId, 'qadmin.master')
@@ -724,42 +850,8 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
         end
     end
 
-    local pages = {
-        'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'devmode', 'livemap', 'livescreens',
-        'logs', 'statistics', 'reports', 'terminal', 'staff_point'
-    }
-    for _, page in ipairs(pages) do addSafe('qadmin.page.' .. page) end
-
-    local corePermissions = {
-        'qadmin.action.revive', 'qadmin.action.kill_player', 'qadmin.action.ban_player',
-        'qadmin.action.unban_player', 'qadmin.action.kick_player', 'qadmin.action.warn_player',
-        'qadmin.action.verify_player', 'qadmin.action.delete_character', 'qadmin.action.set_job',
-        'qadmin.action.set_gang', 'qadmin.action.give_money', 'qadmin.action.remove_money',
-        'qadmin.action.set_bucket', 'qadmin.action.give_item', 'qadmin.action.clear_inventory',
-        'qadmin.action.open_inventory', 'qadmin.action.open_trunk', 'qadmin.action.open_stash',
-        'qadmin.action.delete_vehicle', 'qadmin.action.spawn_vehicle', 'qadmin.action.admincar',
-        'qadmin.action.change_plate', 'qadmin.action.fix_vehicle', 'qadmin.action.spectate_player',
-        'qadmin.action.freeze_player', 'qadmin.action.teleport_to_player', 'qadmin.action.bring_player',
-        'qadmin.action.teleport_back', 'qadmin.action.drunk_player', 'qadmin.action.blackout',
-        'qadmin.action.toggle_cuffs', 'qadmin.action.clothing_menu', 'qadmin.action.staff_clothing',
-        'qadmin.action.set_ped', 'qadmin.action.noclip', 'qadmin.action.god_mode',
-        'qadmin.action.invisibility', 'qadmin.action.tag', 'qadmin.action.announcements',
-        'qadmin.action.info_admin', 'qadmin.action.server_time', 'qadmin.action.change_resource',
-        'qadmin.action.enable_wall', 'qadmin.action.screen_capture', 'qadmin.action.change_vehicle_property',
-        'qadmin.action.view_detailed_logs', 'qadmin.action.manage_reports', 'qadmin.action.delete_report',
-        'qadmin.action.staff_clock_in', 'qadmin.action.staff_clock_out', 'qadmin.commands',
-        'qadmin.action.track_player', 'qadmin.action.set_vital', 'qadmin.action.view_player_identifiers',
-        'qadmin.action.manage_vehicles', 'qadmin.action.copy_inventory', 'qadmin.action.manage_actions',
-        'qadmin.action.staff_chat_send', 'qadmin.action.toggle_mock_mode', 'qadmin.action.manage_settings',
-        'qadmin.action.manage_wall'
-    }
-    for _, perms in ipairs(corePermissions) do addSafe(perms) end
-
-    -- Seed Actions from Config
-    if Config.Actions then for k, v in pairs(Config.Actions) do if v.perms then addSafe(v.perms) end end end
-    if Config.PlayerActions then for k, v in pairs(Config.PlayerActions) do if v.perms then addSafe(v.perms) end end end
-    if Config.OtherActions then for k, v in pairs(Config.OtherActions) do if v.perms then addSafe(v.perms) end end end
+    -- Seed everything from ALL_KNOWN_QADMIN_PERMS (already includes Config.Actions entries)
+    for _, perm in ipairs(ALL_KNOWN_QADMIN_PERMS) do addSafe(perm) end
 
     if type(Config.OpenPanelPerms) == "string" then addSafe(Config.OpenPanelPerms) end
 
