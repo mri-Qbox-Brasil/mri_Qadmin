@@ -483,6 +483,7 @@ RegisterNUICallback("mri_Qadmin:server:GotoWaypoint", function(_, cb)
         local found, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, true)
         if found then z = groundZ end
         SetEntityCoords(cache.ped, coords.x, coords.y, z + 0.5, false, false, false, false)
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', ('Teleporte: admin foi para waypoint (%.1f, %.1f)'):format(coords.x, coords.y), {})
     else
         QBCore.Functions.Notify(locale('notifications.no_waypoint') or 'Nenhum waypoint definido.', 'error')
     end
@@ -498,6 +499,7 @@ RegisterNUICallback("mri_Qadmin:server:FixVehicle", function(_, cb)
         SetVehicleEngineHealth(veh, 1000.0)
         SetVehicleBodyHealth(veh, 1000.0)
         SetVehiclePetrolTankHealth(veh, 1000.0)
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin reparou o próprio veículo', {})
     else
         QBCore.Functions.Notify(locale('notifications.not_in_vehicle') or 'Você não está em um veículo.', 'error')
     end

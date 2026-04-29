@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { ChevronLeft, Save, ShieldCheck, Zap } from 'lucide-react'
+import { ChevronLeft, Save, ShieldCheck } from 'lucide-react'
 import { MriButton } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
@@ -60,7 +60,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
         })
 
         return { categoriesWithPerms: result, dynamicPermInfo: extra }
-    }, [gameData])
+    }, [gameData, permissionDefinitions])
 
     const togglePermission = (perm: string) => {
         const next = new Set(permissions)
@@ -76,7 +76,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
         const cat = categoriesWithPerms[catId]
         const allAssociated = [cat.pageNode, ...cat.actions].filter(Boolean) as string[]
         const hasAll = allAssociated.every(p => permissions.has(p))
-        
+
         const next = new Set(permissions)
         if (hasAll) {
             allAssociated.forEach(p => next.delete(p))
@@ -119,7 +119,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                 {Object.entries(CATEGORIES).map(([catId, cat]) => {
                     const data = categoriesWithPerms[catId]
                     if (!data.pageNode && data.actions.length === 0) return null
-                    
+
                     const allAssociated = [data.pageNode, ...data.actions].filter(Boolean) as string[]
                     const hasAll = allAssociated.every(p => permissions.has(p))
                     const hasSome = allAssociated.some(p => permissions.has(p))
@@ -127,7 +127,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
 
                     return (
                         <div key={catId} className="bg-background/40 border border-border/50 rounded-xl overflow-hidden">
-                            <div 
+                            <div
                                 className="flex items-center justify-between p-4 cursor-pointer hover:bg-primary/5 transition-colors border-b border-border/50"
                                 onClick={() => toggleCategory(catId)}
                             >
@@ -142,8 +142,8 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                 </div>
                                 <div className={cn(
                                     "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors",
-                                    hasAll ? "bg-primary border-primary text-primary-foreground" : 
-                                    hasSome ? "bg-primary/20 border-primary" : "border-muted-foreground/30"
+                                    hasAll ? "bg-primary border-primary text-primary-foreground" :
+                                        hasSome ? "bg-primary/20 border-primary" : "border-muted-foreground/30"
                                 )}>
                                     {hasAll && <div className="w-2.5 h-2.5 bg-current rounded-sm" />}
                                     {hasSome && !hasAll && <div className="w-2.5 h-0.5 bg-primary rounded-sm" />}
@@ -152,7 +152,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
 
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {data.pageNode && (
-                                    <div 
+                                    <div
                                         className={cn(
                                             "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
                                             permissions.has(data.pageNode) ? "bg-primary/10 border-primary shadow-sm" : "bg-card/30 border-border hover:border-primary/50"

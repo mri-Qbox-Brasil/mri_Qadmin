@@ -29,8 +29,6 @@ import { MOCK_GAME_DATA, MOCK_PLAYERS } from '@/utils/mockData'
 
 import { hasPermission, getPagePermissions } from '@/utils/permissions'
 
-// ... existing imports
-
 export default function App() {
     const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'actions' | 'items' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens' | 'logs'>('dashboard')
     const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings, permissionDefinitions, setPermissionDefinitions } = useAppState()
@@ -93,7 +91,7 @@ export default function App() {
 
         window.addEventListener('ps:navigate', handler as EventListener)
         return () => window.removeEventListener('ps:navigate', handler as EventListener)
-    }, [players, setSelectedPlayer, myPermissions])
+    }, [players, setSelectedPlayer, myPermissions, pagePermissions])
 
     useEffect(() => {
         if (isEnvBrowser()) {
@@ -146,10 +144,10 @@ export default function App() {
             }
         }
         return route
-    }, [route, myPermissions])
+    }, [route, myPermissions, pagePermissions])
 
     // Sync state back to dashboard if access is revoked (Side effect)
-    // Removed setRoute in useEffect to avoid cascading renders. 
+    // Removed setRoute in useEffect to avoid cascading renders.
     // effectiveRoute handles the correct view rendering.
 
     // Listen for NUI visibility messages from the client resource
@@ -256,22 +254,22 @@ export default function App() {
                         effectiveRoute === 'players' ? <Players /> :
                             effectiveRoute === 'actions' ? <Actions /> :
                                 effectiveRoute === 'staffchat' ? <StaffChat /> :
-                                            effectiveRoute === 'items' ? <Items /> :
-                                                effectiveRoute === 'vehicles' ? <Vehicles /> :
-                                                        effectiveRoute === 'groups' ? <Groups /> :
-                                                            effectiveRoute === 'credits' ? <Credits /> :
-                                                                effectiveRoute === 'settings' ? <Settings /> :
-                                                                    effectiveRoute === 'dashboard' ? <Dashboard /> :
-                                                                        effectiveRoute === 'permissions' ? <Permissions /> :
-                                                                            effectiveRoute === 'livemap' ? <LiveMapPage /> :
-                                                                                effectiveRoute === 'livescreens' ? <LiveScreensPage /> :
-                                                                                    effectiveRoute === 'logs' ? <Logs /> :
-                                                                                        null}
+                                    effectiveRoute === 'items' ? <Items /> :
+                                        effectiveRoute === 'vehicles' ? <Vehicles /> :
+                                            effectiveRoute === 'groups' ? <Groups /> :
+                                                effectiveRoute === 'credits' ? <Credits /> :
+                                                    effectiveRoute === 'settings' ? <Settings /> :
+                                                        effectiveRoute === 'dashboard' ? <Dashboard /> :
+                                                            effectiveRoute === 'permissions' ? <Permissions /> :
+                                                                effectiveRoute === 'livemap' ? <LiveMapPage /> :
+                                                                    effectiveRoute === 'livescreens' ? <LiveScreensPage /> :
+                                                                        effectiveRoute === 'logs' ? <Logs /> :
+                                                                            null}
                 </div>
             </div>
             {/* Background elements and Overlays */}
             <Listeners />
-            
+
             {/* Left side overlays container */}
             <div className="fixed inset-y-0 left-0 flex flex-col justify-center gap-4 z-50 pointer-events-none">
                 <ToggleCoords />

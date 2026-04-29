@@ -265,7 +265,7 @@ function SetupWizard({ draft, onChange, onClose }: {
                                     className="h-8 text-xs" />
                                 <p className="text-[10px] text-muted-foreground/60 italic">{t('logs.settings.general.fallback_webhook_desc')}</p>
                             </div>
-                            {local.categories.filter(c => c.discord).map((cat, _, arr) => {
+                            {local.categories.filter(c => c.discord).map((cat) => {
                                 const realIdx = local.categories.findIndex(c => c.id === cat.id)
                                 return (
                                     <div key={cat.id} className="flex flex-col gap-1">
@@ -419,7 +419,7 @@ function AddCategoryWizard({ existingIds, onAdd, onClose }: {
     const [step, setStep] = useState(0)
     const [cat, setCat] = useState<LogCategory>({ ...EMPTY_CAT })
 
-    const TOTAL = cat.discord ? 3 : 2
+
 
     const idClean = cat.id.trim().toLowerCase().replace(/\s+/g, '_')
     const idValid = idClean.length > 0 && !existingIds.includes(idClean)
@@ -1050,7 +1050,7 @@ export default function Logs() {
 
     useEffect(() => {
         if (activeView === 'settings' && !settingsDraft) fetchSettings()
-    }, [activeView])
+    }, [activeView, settingsDraft, fetchSettings])
 
     const handleExport = () => {
         const content = logs.map(l =>

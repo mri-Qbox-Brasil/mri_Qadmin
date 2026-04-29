@@ -1,7 +1,7 @@
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem, MriScrollArea } from '@mriqbox/ui-kit'
-import { LayoutDashboard, Users, Box, Terminal, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText } from 'lucide-react'
+import { LayoutDashboard, Users, Box, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 import pkg from '../../package.json'

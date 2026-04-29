@@ -53,6 +53,16 @@ function StatCard({ title, value, icon, variant = 'default' }: StatCardProps) {
     )
 }
 
+const mockSummary = {
+    totalCash: 15000,
+    totalBank: 200000,
+    totalCrypto: 1000,
+    uniquePlayers: 42,
+    vehicleCount: 140,
+    bansCount: 5,
+    characterCount: 70
+}
+
 export default function DashboardStats() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -60,16 +70,6 @@ export default function DashboardStats() {
     const { sendNui } = useNui()
     const { t } = useI18n()
     const { players } = useAppState()
-
-    const mockSummary = {
-        totalCash: 15000,
-        totalBank: 200000,
-        totalCrypto: 1000,
-        uniquePlayers: 42,
-        vehicleCount: 140,
-        bansCount: 5,
-        characterCount: 70
-    }
 
     useEffect(() => {
         async function load() {

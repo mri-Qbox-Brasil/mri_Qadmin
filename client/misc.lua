@@ -8,6 +8,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleInvisible', function(data)
     visible = not visible
 
     SetEntityVisible(cache.ped, visible, 0)
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', visible and 'Invisibilidade: desativada' or 'Invisibilidade: ativada', {})
 end)
 
 -- God Mode
@@ -15,11 +16,13 @@ local godmode = false
 RegisterNetEvent('mri_Qadmin:client:ToggleGodmode', function(data)
     if godmode then
         godmode = false
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'God mode: desativado', {})
     else
         if not data then return end
         local actionData = CheckDataFromKey(data)
         if not actionData or not CheckPerms(actionData.perms) then return end
         godmode = true
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'God mode: ativado', {})
     end
 
     if godmode then
@@ -89,6 +92,8 @@ RegisterNetEvent('mri_Qadmin:client:setInfiniteAmmo', function(data)
     if not actionData or not CheckPerms(actionData.perms) then return end
     InfiniteAmmo = not InfiniteAmmo
 
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Munição infinita: ativada', {})
+
     if GetAmmoInPedWeapon(cache.ped, cache.weapon) < 6 then
         SetAmmoInClip(cache.ped, cache.weapon, 10)
         Wait(50)
@@ -126,11 +131,13 @@ end
 RegisterNetEvent('mri_Qadmin:client:ToggleCoords', function(data)
     if showCoords then
         showCoords = false
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', 'Coordenadas: exibição desativada', {})
     else
         if not data then return end
         local actionData = CheckDataFromKey(data)
         if not actionData or not CheckPerms(actionData.perms) then return end
         showCoords = true
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', 'Coordenadas: exibição ativada', {})
     end
 
     if showCoords then
@@ -150,6 +157,7 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
         QBCore.Functions.Notify(locale("notifications.set_weapon_ammo", tostring(ammo)), 'success')
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', ('Munição: definida para %s'):format(ammo), {})
     else
         QBCore.Functions.Notify(locale("notifications.no_weapon"), 'error')
     end
@@ -162,6 +170,7 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmoAdmin', function()
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
         QBCore.Functions.Notify(locale("notifications.set_weapon_ammo", tostring(ammo)), 'success')
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Munição: 999 definido via comando /setammo', {})
     else
         QBCore.Functions.Notify(locale("notifications.no_weapon"), 'error')
     end
@@ -181,6 +190,8 @@ RegisterNetEvent('mri_Qadmin:client:ToggleDev', function(dataKey)
         if not data or not CheckPerms(data.perms) then return end
         ToggleDev = true
     end
+
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', ToggleDev and 'Dev mode: ativado' or 'Dev mode: desativado', {})
 
     TriggerEvent("qb-admin:client:ToggleDevmode")              -- toggle dev mode (ps-hud/qb-hud)
     TriggerEvent('mri_Qadmin:client:ToggleCoords', dataKey)  -- toggle Coords

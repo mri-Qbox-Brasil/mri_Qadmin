@@ -770,4 +770,13 @@ RegisterNetEvent('mri_Qadmin:server:Announce', function(message)
     AddLog(src, 'mri_Qadmin', 'server', 'info', ('Anúncio global: %s'):format(message), { message = message })
 end)
 
-
+-- Relay for client-only toggle actions (god mode, noclip, etc.)
+RegisterNetEvent('mri_Qadmin:server:LogClientAction', function(category, level, message, data)
+    local src = source
+    if not CheckPerms(src, 'qadmin.open') then return end
+    local validCats  = { players=true, bans=true, inventory=true, vehicles=true, money=true, server=true, permissions=true, chat=true, actions=true, system=true }
+    local validLevels = { info=true, success=true, warn=true, error=true }
+    category = validCats[category]  and category or 'actions'
+    level    = validLevels[level] and level    or 'info'
+    AddLog(src, 'mri_Qadmin', category, level, tostring(message or ''), type(data) == 'table' and data or {})
+end)

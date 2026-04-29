@@ -41,6 +41,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
     -- local x = 0.4
     -- local y = 0.025
     activeLaser = not activeLaser
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', activeLaser and 'Laser dev: ativado' or 'Laser dev: desativado', {})
     CreateThread(function()
         while true do
             local wait = 7

@@ -30,7 +30,7 @@ import BucketModal from '@/components/players/BucketModal'
 import MapModal from '@/components/players/MapModal'
 import ScreenModal from '@/components/players/ScreenModal'
 import {
-    LayoutGrid, List, RefreshCw, User, Heart, X, ChevronLeft,
+    LayoutGrid, List, RefreshCw, User, Heart, ChevronLeft,
     ExternalLink, Gift, Trash2, Contact,
     Copy,
     Fingerprint,

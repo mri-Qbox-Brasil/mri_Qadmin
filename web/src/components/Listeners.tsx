@@ -163,7 +163,7 @@ export default function Listeners() {
             off('setMessages', setMessages)
         }
 
-    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setNearbyEntities, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages])
+    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setNearbyEntities, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages, setPermissionDefinitions])
 
     return null
 }
