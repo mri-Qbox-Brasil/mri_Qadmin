@@ -1,3 +1,28 @@
+# [1.9.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.8.0...v1.9.0) (2026-04-29)
+
+
+### Bug Fixes
+
+* **client:** skip HUD vitals sync events for non-admin players ([d6c9de2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/d6c9de2a33c5ad0359b8aec32a7ed4db4666111b))
+* lint ([140956e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/140956e01196970ac1a99fac742f1bc328219908))
+* **perms:** isolate principal namespace to mri.group.* and add cache-based cleanup ([a9cbf08](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/a9cbf0887eaf50f6fa1d08837bd058e64fa129a7))
+* **perms:** silence spurious notifications on visibility checks ([6f006ce](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/6f006ce48e7c0d9d4174388f864968aab529cfc8))
+* remove lua lint ([4c4088d](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/4c4088d7b651ea0b2642ed395920b5b35110ec2d))
+
+
+### Features
+
+* **dashboard:** improve dashboard design and stats display ([9bb7ba4](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/9bb7ba4b7255f6c5e2c3cf6001ac4d6c310d65a0))
+* **logs:** add centralized logs system ([c700579](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/c700579a193285b2f853ac495342f4fc540b1394))
+* **logs:** add missing admin panel action logs ([b347717](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/b34771717a8996617bd60cdd5144ebef69e767f3))
+* **logs:** refactor settings into tabbed side-nav with resource wizard step ([f6465d7](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/f6465d7f35ce9a925701090021614ddcaec97b65))
+* **permissions:** refactor permissions system ([c7f4b90](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/c7f4b9013efc64aefda2be574b5746d10b29c49d))
+* **perms:** add MOCK_PERMISSION_DEFINITIONS and rebuild web assets ([16c7ada](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/16c7ada6f07a17d0e1be1b9331abc073a8244264))
+* **perms:** single source of truth — PERM_DEFINITIONS on backend ([581130b](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/581130bfc2022862a081d069d68278b837770630))
+* **players:** add banned players quick filter and mock data ([cb7e46f](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/cb7e46fed2f109172e282d2210891715f7d5cf34))
+* **settings:** add QBCoreAutoSync toggle for QBCore admin auto-promotion ([711c146](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/711c1464953a97c988c87307413590c744e8deb6))
+* **ui:** add reusable MriDrawer, MriSkeleton, and MriTable components ([dd8cdf8](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/dd8cdf82f3091a51dd7e506228d80a3be57de73a))
+
 # [1.8.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.7.0...v1.8.0) (2026-04-16)
 
 
