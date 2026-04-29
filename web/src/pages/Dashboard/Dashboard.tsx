@@ -6,7 +6,6 @@ import { useNui } from '@/context/NuiContext'
 import { MriPageHeader } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 import { useAppState } from '@/context/AppState'
-import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import DevLocaleSwitcher from '@/components/DevLocaleSwitcher'
 import {
     Wallet,
@@ -16,11 +15,32 @@ import {
     Car,
     Gavel,
     User,
-    LayoutDashboard
+    LayoutDashboard,
+    Megaphone,
+    Send,
+    Heart,
+    MapPin,
+    Ghost,
+    Shield,
+    EyeOff,
+    ZapOff,
+    Fuel,
+    Terminal,
+    Command,
+    Copy,
+    RefreshCw,
+    MessageSquare
 } from 'lucide-react'
 import { TableVirtuoso } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
+import { hasPermission } from '@/utils/permissions'
+import { MriButton, MriActionCard } from '@mriqbox/ui-kit'
+import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
+import { MriSkeleton } from '@/components/ui/MriSkeleton'
+import { VirtuosoGrid } from 'react-virtuoso'
+import CommandsSkeleton from '@/components/skeletons/CommandsSkeleton'
+import { MOCK_GAME_DATA } from '@/utils/mockData'
 
 const mockSummary = {
     totalCash: 15000,
@@ -33,17 +53,19 @@ const mockSummary = {
     onlinePlayers: 1
 }
 
-interface StatCardProps {
-    icon: React.ElementType;
-    label: string;
-    value: string | number;
-    iconColor?: string;
-    bgIcon?: string;
-}
+const StatSkeleton = () => (
+    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
+        <MriSkeleton className="w-12 h-12 rounded-lg shrink-0" />
+        <div className="space-y-2">
+            <MriSkeleton className="h-4 w-20" />
+            <MriSkeleton className="h-6 w-12" />
+        </div>
+    </div>
+)
 
 const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, iconColor = "text-primary", bgIcon = "bg-primary/20" }) => (
-    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-sidebar-foreground/20 transition-all">
-        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center shrink-0", bgIcon)}>
+    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-primary/40 transition-all hover:bg-muted/5 group">
+        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center shrink-0 transition-all group-hover:scale-110", bgIcon)}>
             <Icon className={cn("w-6 h-6", iconColor)} />
         </div>
         <div>
@@ -54,17 +76,49 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, iconColor
 )
 
 export default function Dashboard() {
-    const [loading, setLoading] = useState(true)
+    const [loadingSummary, setLoadingSummary] = useState(true)
+    const [loadingCommands, setLoadingCommands] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [summary, setSummary] = useState<SummaryData | null>(null)
+    const { sendNui, debugMode } = useNui()
+    const { t } = useI18n()
+    const { setPlayers, players, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch, myPermissions, gameData, setGameData } = useAppState()
+
+    const canSeeDashboard = useMemo(() => hasPermission(myPermissions, 'qadmin.page.dashboard'), [myPermissions])
+    const canSeeCommands = useMemo(() => hasPermission(myPermissions, 'qadmin.page.commands'), [myPermissions])
+
+    const [activeView, setActiveView] = useState<'dashboard' | 'commands'>(canSeeDashboard ? 'dashboard' : 'commands')
     const [playersSearch, setPlayersSearch] = useState<string>('')
+    const [commandsSearch, setCommandsSearch] = useState<string>('')
 
     const [sortBy, setSortBy] = useState<string | null>(null)
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
-    const { sendNui, debugMode } = useNui()
-    const { t } = useI18n()
-    const { setPlayers, players, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch } = useAppState()
+    // Initial view selection based on permissions
+    useEffect(() => {
+        if (!canSeeDashboard && canSeeCommands && activeView === 'dashboard') {
+            setActiveView('commands')
+        } else if (!canSeeCommands && canSeeDashboard && activeView === 'commands') {
+            setActiveView('dashboard')
+        }
+    }, [canSeeDashboard, canSeeCommands, activeView])
+
+    const canDo = (perm: string) => hasPermission(myPermissions, perm)
+    const [announcement, setAnnouncement] = useState('')
+    const [sendingAnnounce, setSendingAnnounce] = useState(false)
+
+    const handleSendAnnounce = async () => {
+        if (!announcement.trim()) return
+        setSendingAnnounce(true)
+        try {
+            await sendNui('mri_Qadmin:server:Announce', announcement)
+            setAnnouncement('')
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setSendingAnnounce(false)
+        }
+    }
 
 
     // Defer the players update so sorting doesn't block the UI thread during high-frequency sync updates
@@ -148,6 +202,41 @@ export default function Dashboard() {
         return list
     }, [deferredPlayers, playersSearch, sortBy, sortDir])
 
+    const commands = useMemo(() => {
+        return (gameData.commands || []).map((cmd: any) => ({
+            ...cmd,
+            name: (cmd.name || '').trim()
+        })).sort((a: any, b: any) => a.name.localeCompare(b.name))
+    }, [gameData.commands])
+
+    const filteredCommands = commands.filter((cmd: any) =>
+        cmd.name.toLowerCase().includes(commandsSearch.toLowerCase()) ||
+        (cmd.description || '').toLowerCase().includes(commandsSearch.toLowerCase())
+    )
+
+    const handleRefreshCommands = async () => {
+        setLoadingCommands(true)
+        try {
+            const data = await sendNui('getData', {}, MOCK_GAME_DATA)
+            if (data) setGameData((prev: any) => ({ ...prev, ...data }))
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setLoadingCommands(false)
+        }
+    }
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text)
+    }
+
+    const dashboardTabs: MriTabItem[] = useMemo(() => {
+        const tabs: MriTabItem[] = []
+        if (canSeeDashboard) tabs.push({ id: 'dashboard', label: t('qadmin.page.dashboard'), icon: LayoutDashboard })
+        if (canSeeCommands) tabs.push({ id: 'commands', label: t('qadmin.page.commands'), icon: Terminal })
+        return tabs
+    }, [t, canSeeDashboard, canSeeCommands])
+
     function toggleSort(field: string) {
         if (sortBy === field) {
             setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))
@@ -159,12 +248,14 @@ export default function Dashboard() {
 
     useEffect(() => {
         async function load() {
-            // Load server info only once
+            setLoadingSummary(true)
             try {
                 const serverInfo: SummaryData = await sendNui('getServerInfo', {}, mockSummary)
                 setSummary(serverInfo || mockSummary)
             } catch (e: any) {
                 setError(e?.message ?? t('error_loading_data'))
+            } finally {
+                setLoadingSummary(false)
             }
         }
         load()
@@ -186,12 +277,12 @@ export default function Dashboard() {
                 const now = Date.now()
                 // Only skip if we already have players and it hasn't been a minute
                 if (now - lastPlayersFetch < 60000 && players.length > 0) {
-                    setLoading(false)
+                    setLoadingPlayers(false)
                     return
                 }
             }
 
-            setLoading(true)
+            setLoadingPlayers(true)
             try {
                 const filteredMocks = playersSearch === ''
                     ? MOCK_PLAYERS
@@ -229,7 +320,7 @@ export default function Dashboard() {
             } catch {
                 // ignore
             } finally {
-                if (mounted) setLoading(false)
+                if (mounted) setLoadingPlayers(false)
             }
         }
 
@@ -251,143 +342,346 @@ export default function Dashboard() {
 
 
 
-    if (loading || !summary) return <DashboardSkeleton />
+    if (!summary) {
+        return (
+            <div className="h-full w-full flex flex-col p-4 space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[...Array(8)].map((_, i) => <StatSkeleton key={i} />)}
+                </div>
+                <MriSkeleton className="flex-1 rounded-xl" />
+            </div>
+        )
+    }
+
     if (error) return <div className="p-6 text-red-400">{error}</div>
 
     return (
         <div className="h-full w-full flex flex-col rounded-r-xl overflow-hidden">
-            <MriPageHeader title={t('nav_dashboard')} icon={LayoutDashboard}>
+            <MriPageHeader title={activeView === 'dashboard' ? t('qadmin.page.dashboard') : t('qadmin.page.commands')} icon={activeView === 'dashboard' ? LayoutDashboard : Terminal}>
                 <div className="flex items-center gap-2">
+                    {dashboardTabs.length > 1 && (
+                        <MriTabs
+                            items={dashboardTabs}
+                            value={activeView}
+                            onChange={setActiveView as any}
+                            variant="premium"
+                        />
+                    )}
                     <MriExpandableSearch
-                        placeholder={t('search_placeholder_players') || 'Search players...'}
-                        value={playersSearch}
-                        onChange={setPlayersSearch}
+                        placeholder={activeView === 'dashboard' ? t('search_placeholder_players') : t('commands_search_placeholder')}
+                        value={activeView === 'dashboard' ? playersSearch : commandsSearch}
+                        onChange={activeView === 'dashboard' ? setPlayersSearch : setCommandsSearch}
                     />
+                    {activeView === 'commands' && (
+                        <MriButton
+                            size="icon"
+                            variant="outline"
+                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                            onClick={handleRefreshCommands}
+                            disabled={loadingCommands}
+                        >
+                            <RefreshCw className={cn("w-4 h-4", loadingCommands && "animate-spin")} />
+                        </MriButton>
+                    )}
                 </div>
                 {debugMode && <DevLocaleSwitcher className="w-40" />}
             </MriPageHeader>
 
             <div className="flex-1 flex flex-col py-4 px-2 no-scrollbar overflow-hidden">
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <StatCard
-                        icon={Wallet}
-                        label={t('dashboard_cash_on_hand')}
-                        value={`${t('currency_symbol')} ${summary.totalCash?.toLocaleString()}`}
-                        bgIcon="bg-green-500/10"
-                        iconColor="text-green-500"
-                    />
-                    <StatCard
-                        icon={Landmark}
-                        label={t('dashboard_bank_balance')}
-                        value={`${t('currency_symbol')} ${summary.totalBank?.toLocaleString()}`}
-                        bgIcon="bg-cyan-500/10"
-                        iconColor="text-cyan-500"
-                    />
-                    <StatCard
-                        icon={Coins}
-                        label={t('dashboard_crypto')}
-                        value={`${t('currency_symbol')} ${summary.totalCrypto?.toLocaleString()}`}
-                        bgIcon="bg-yellow-500/10"
-                        iconColor="text-yellow-500"
-                    />
-
-                    <StatCard
-                        icon={Users}
-                        label={t('dashboard_unique_players')}
-                        value={summary.uniquePlayers}
-                        bgIcon="bg-purple-500/10"
-                        iconColor="text-purple-500"
-                    />
-
-                    {/* Row 2 */}
-                    <StatCard
-                        icon={Car}
-                        label={t('title_vehicles')}
-                        value={summary.vehicleCount ?? 0}
-                        bgIcon="bg-blue-500/10"
-                        iconColor="text-blue-500"
-                    />
-                    <StatCard
-                        icon={Gavel}
-                        label={t('dashboard_bans') || 'Bans'}
-                        value={summary.bansCount ?? 0}
-                        bgIcon="bg-red-500/10"
-                        iconColor="text-red-500"
-                    />
-                    <StatCard
-                        icon={User}
-                        label={t('dashboard_characters') || 'Characters'}
-                        value={summary.characterCount ?? 0}
-                        bgIcon="bg-orange-500/10"
-                        iconColor="text-orange-500"
-                    />
-                    {/* Online Players Custom Card */}
-                    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-muted-foreground/20 transition-all">
-                        <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-green-500/10 relative">
-                            <div className="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_10px_var(--primary)] animate-pulse" />
+                {loadingSummary && !summary ? (
+                    <div className="h-full w-full flex flex-col space-y-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            {[...Array(8)].map((_, i) => <StatSkeleton key={i} />)}
                         </div>
-                        <div>
-                            <h3 className="text-sm font-medium text-muted-foreground">{t('players_online')}</h3>
-                            <p className="text-xl font-bold text-foreground tracking-tight">{summary.onlinePlayers ?? 0}</p>
-                        </div>
+                        <MriSkeleton className="flex-1 rounded-xl" />
                     </div>
-                </div>
-
-                {/* Players Table Section */}
-                <div className="flex-1 min-h-0 flex flex-col relative">
-                    <div className="flex items-center gap-2 mb-4 shrink-0">
-                        <Users className="w-6 h-6 text-primary" />
-                        <h2 className="text-lg font-bold text-foreground">{t('players')}</h2>
-                    </div>
-
-                    <div className="border border-border rounded-xl bg-card flex-1 min-h-0 relative overflow-hidden">
-                        <TableVirtuoso
-                            data={displayedPlayers}
-                            components={{
-                                Table: (props: any) => <table {...props} className="w-full text-left" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }} />,
-                            }}
-                            fixedHeaderContent={() => (
-                                <tr className="bg-muted border-b border-border text-xs uppercase font-bold text-muted-foreground tracking-wider">
-                                    <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[30%]" onClick={() => toggleSort('name')}>
-                                        {t('player_name')} {sortBy === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                                    </th>
-                                    <th className="px-6 py-4 w-[15%]">CID</th>
-                                    <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[20%]" onClick={() => toggleSort('cash')}>
-                                        {t('dashboard_cash_on_hand')} {sortBy === 'cash' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                                    </th>
-                                    <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[20%]" onClick={() => toggleSort('bank')}>
-                                        {t('dashboard_bank_balance')} {sortBy === 'bank' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                                    </th>
-                                    <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[15%]" onClick={() => toggleSort('crypto')}>
-                                        {t('dashboard_crypto')} {sortBy === 'crypto' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
-                                    </th>
-                                </tr>
-                            )}
-                            itemContent={(_: any, p: any) => (
+                ) : activeView === 'dashboard' && canSeeDashboard ? (
+                    <>
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                            {hasPermission(myPermissions, 'qadmin.action.info_admin') && (
                                 <>
-                                    <td className="px-6 py-4 font-medium text-foreground w-[30%] truncate">{p.name || p.cid || p.id}</td>
-                                    <td className="px-6 py-4 text-muted-foreground font-mono text-xs w-[15%] truncate">{p.cid ?? '-'}</td>
-                                    <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">
-                                        {Array.isArray(p.money)
-                                            ? (p.money.find((m: any) => m.name === 'cash')?.amount ?? 0)
-                                            : (p.cash ?? p.money ?? '-')}
-                                    </td>
-                                    <td className="px-6 py-4 text-foreground/80 w-[20%] truncate" onClick={() => setSelectedPlayer(p)}>
-                                        {Array.isArray(p.money)
-                                            ? (p.money.find((m: any) => m.name === 'bank')?.amount ?? 0)
-                                            : (p.bank ?? '-')}
-                                    </td>
-                                    <td className="px-6 py-4 text-foreground/80 w-[15%] truncate">
-                                        {Array.isArray(p.money)
-                                            ? (p.money.find((m: any) => m.name === 'crypto' || m.name === 'bitcoin')?.amount ?? 0)
-                                            : (p.crypto ?? '-')}
-                                    </td>
+                                    <StatCard
+                                        icon={Wallet}
+                                        label={t('dashboard.stats.cash')}
+                                        value={`${t('common.currency_symbol')} ${summary.totalCash?.toLocaleString()}`}
+                                        bgIcon="bg-green-500/10"
+                                        iconColor="text-green-500"
+                                    />
+                                    <StatCard
+                                        icon={Landmark}
+                                        label={t('dashboard.stats.bank')}
+                                        value={`${t('common.currency_symbol')} ${summary.totalBank?.toLocaleString()}`}
+                                        bgIcon="bg-cyan-500/10"
+                                        iconColor="text-cyan-500"
+                                    />
+                                    <StatCard
+                                        icon={Coins}
+                                        label={t('dashboard.stats.crypto')}
+                                        value={`${t('common.currency_symbol')} ${summary.totalCrypto?.toLocaleString()}`}
+                                        bgIcon="bg-yellow-500/10"
+                                        iconColor="text-yellow-500"
+                                    />
                                 </>
                             )}
-                        />
+
+                            <StatCard
+                                icon={Users}
+                                label={t('dashboard.stats.unique')}
+                                value={summary.uniquePlayers}
+                                bgIcon="bg-purple-500/10"
+                                iconColor="text-purple-500"
+                            />
+
+                            {/* Row 2 */}
+                            <StatCard
+                                icon={Car}
+                                label={t('qadmin.vehicle.title')}
+                                value={summary.vehicleCount ?? 0}
+                                bgIcon="bg-blue-500/10"
+                                iconColor="text-blue-500"
+                            />
+                            <StatCard
+                                icon={Gavel}
+                                label={t('qadmin.dashboard.stats.bans')}
+                                value={summary.bansCount ?? 0}
+                                bgIcon="bg-red-500/10"
+                                iconColor="text-red-500"
+                            />
+                            <StatCard
+                                icon={User}
+                                label={t('qadmin.dashboard.stats.chars')}
+                                value={summary.characterCount ?? 0}
+                                bgIcon="bg-orange-500/10"
+                                iconColor="text-orange-500"
+                            />
+                            {/* Online Players Custom Card */}
+                            <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-muted-foreground/20 transition-all">
+                                <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-green-500/10 relative">
+                                    <div className="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_10px_var(--primary)] animate-pulse" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.online')}</h3>
+                                    <p className="text-xl font-bold text-foreground tracking-tight">{summary.onlinePlayers ?? 0}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Actions Grid */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            {canDo('qadmin.action.revive_self') && (
+                                <MriActionCard
+                                    title={t('qadmin.dashboard.quick.revive.title')}
+                                    description={t('qadmin.dashboard.quick.revive.desc')}
+                                    icon={Heart}
+                                    variant="premium"
+                                    onClick={() => sendNui('mri_Qadmin:server:ReviveSelf')}
+                                />
+                            )}
+                            {canDo('qadmin.action.clear_chat') && (
+                                <MriActionCard
+                                    title={t('qadmin.dashboard.quick.chat.title')}
+                                    description={t('qadmin.dashboard.quick.chat.desc')}
+                                    icon={MessageSquare}
+                                    onClick={() => sendNui('mri_Qadmin:server:ClearChat')}
+                                />
+                            )}
+                            {canDo('qadmin.action.goto_waypoint') && (
+                                <MriActionCard
+                                    title={t('qadmin.dashboard.quick.waypoint.title')}
+                                    description={t('qadmin.dashboard.quick.waypoint.desc')}
+                                    icon={MapPin}
+                                    onClick={() => sendNui('mri_Qadmin:server:GoToWaypoint')}
+                                />
+                            )}
+                            {canDo('qadmin.action.fix_vehicle') && (
+                                <MriActionCard
+                                    title={t('qadmin.dashboard.quick.fix.title')}
+                                    description={t('qadmin.dashboard.quick.fix.desc')}
+                                    icon={Shield}
+                                    onClick={() => sendNui('mri_Qadmin:server:FixVehicle')}
+                                />
+                            )}
+                        </div>
+
+                        {/* Self Tools */}
+                        {(canDo('qadmin.action.noclip') || canDo('qadmin.action.god_mode') || canDo('qadmin.action.invisibility') || canDo('qadmin.action.blackout') || canDo('qadmin.action.refuel_vehicle')) && (
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                {canDo('qadmin.action.noclip') && (
+                                    <MriActionCard
+                                        title={t('qadmin.dashboard.quick.noclip.title')}
+                                        description={t('qadmin.dashboard.quick.noclip.desc')}
+                                        icon={Ghost}
+                                        onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:ToggleNoClip', type: 'client' } })}
+                                    />
+                                )}
+                                {canDo('qadmin.action.god_mode') && (
+                                    <MriActionCard
+                                        title={t('qadmin.dashboard.quick.god.title')}
+                                        description={t('qadmin.dashboard.quick.god.desc')}
+                                        icon={Shield}
+                                        onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:ToggleGodmode', type: 'client' } })}
+                                    />
+                                )}
+                                {canDo('qadmin.action.invisible') && (
+                                    <MriActionCard
+                                        title={t('qadmin.dashboard.quick.invisible.title')}
+                                        description={t('qadmin.dashboard.quick.invisible.desc')}
+                                        icon={EyeOff}
+                                        onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:ToggleInvisible', type: 'client' } })}
+                                    />
+                                )}
+                                {canDo('qadmin.action.blackout') && (
+                                    <MriActionCard
+                                        title={t('qadmin.dashboard.quick.blackout.title')}
+                                        description={t('qadmin.dashboard.quick.blackout.desc')}
+                                        icon={ZapOff}
+                                        onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:server:ToggleBlackout', type: 'server' } })}
+                                    />
+                                )}
+                                {canDo('qadmin.action.refuel_vehicle') && (
+                                    <MriActionCard
+                                        title={t('qadmin.dashboard.quick.refuel.title')}
+                                        description={t('qadmin.dashboard.quick.refuel.desc')}
+                                        icon={Fuel}
+                                        onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:RefuelVehicle', type: 'client' } })}
+                                    />
+                                )}
+                            </div>
+                        )}
+
+                        {/* Announcement Section */}
+                        {hasPermission(myPermissions, 'qadmin.action.announcements') && (
+                            <div className="mb-8 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+                                <div className="bg-card border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4 relative group overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+
+                                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                                        <Megaphone className="w-6 h-6 text-primary" />
+                                    </div>
+
+                                    <div className="flex-1 w-full space-y-1">
+                                        <h4 className="text-sm font-semibold mb-2">{t('qadmin.dashboard.announcement.title')}</h4>
+                                        <div className="flex gap-2">
+                                            <textarea
+                                                value={announcement}
+                                                onChange={(e) => setAnnouncement(e.target.value)}
+                                                placeholder={t('qadmin.dashboard.announcement.placeholder')}
+                                                className="flex-1 bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-muted-foreground/50"
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSendAnnounce()}
+                                            />
+                                            <MriButton
+                                                onClick={handleSendAnnounce}
+                                                isLoading={sendingAnnounce}
+                                                disabled={sendingAnnounce || !announcement.trim()}
+                                                className="gap-2"
+                                            >
+                                                {!sendingAnnounce && <Send className="w-4 h-4" />}
+                                                {t('common.send')}
+                                            </MriButton>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Players Table Section */}
+                        {hasPermission(myPermissions, 'qadmin.page.statistics') && (
+                            <div className="flex-1 min-h-0 flex flex-col relative">
+                                <div className="flex items-center gap-2 mb-4 shrink-0">
+                                    <Users className="w-6 h-6 text-primary" />
+                                    <h2 className="text-lg font-bold text-foreground">{t('qadmin.dashboard.section.stats')}</h2>
+                                </div>
+
+                                <div className="border border-border rounded-xl bg-card flex-1 min-h-0 relative overflow-hidden">
+                                    <TableVirtuoso
+                                        data={displayedPlayers}
+                                        components={{
+                                            Table: (props: any) => <table {...props} className="w-full text-left" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }} />,
+                                        }}
+                                        fixedHeaderContent={() => (
+                                            <tr className="bg-muted border-b border-border text-xs uppercase font-bold text-muted-foreground tracking-wider">
+                                                <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[30%]" onClick={() => toggleSort('common.name')}>
+                                                    {t('player.labels.name')} {sortBy === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                                </th>
+                                                <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[15%]" onClick={() => toggleSort('citizenid')}>
+                                                    {t('player.labels.citizenid')} {sortBy === 'citizenid' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                                </th>
+                                                <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[20%]" onClick={() => toggleSort('common.cash')}>
+                                                    {t('dashboard.stats.cash')} {sortBy === 'cash' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                                </th>
+                                                <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[20%]" onClick={() => toggleSort('common.bank')}>
+                                                    {t('dashboard.stats.bank')} {sortBy === 'bank' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                                </th>
+                                                <th className="px-6 py-4 cursor-pointer select-none hover:text-foreground transition-colors w-[15%]" onClick={() => toggleSort('common.crypto')}>
+                                                    {t('dashboard.stats.crypto')} {sortBy === 'crypto' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                                </th>
+                                            </tr>
+                                        )}
+                                        itemContent={(_: any, p: any) => (
+                                            <>
+                                                <td className="px-6 py-4 font-medium text-foreground w-[30%] truncate">{p.name || p.cid || p.id}</td>
+                                                <td className="px-6 py-4 text-muted-foreground font-mono text-xs w-[15%] truncate">{p.cid ?? '-'}</td>
+                                                <td className="px-6 py-4 text-foreground/80 w-[20%] truncate">
+                                                    {Array.isArray(p.money)
+                                                        ? (p.money.find((m: any) => m.name === 'cash')?.amount ?? 0)
+                                                        : (p.cash ?? p.money ?? '-')}
+                                                </td>
+                                                <td className="px-6 py-4 text-foreground/80 w-[20%] truncate" onClick={() => setSelectedPlayer(p)}>
+                                                    {Array.isArray(p.money)
+                                                        ? (p.money.find((m: any) => m.name === 'bank')?.amount ?? 0)
+                                                        : (p.bank ?? '-')}
+                                                </td>
+                                                <td className="px-6 py-4 text-foreground/80 w-[15%] truncate">
+                                                    {Array.isArray(p.money)
+                                                        ? (p.money.find((m: any) => m.name === 'crypto' || m.name === 'bitcoin')?.amount ?? 0)
+                                                        : (p.crypto ?? '-')}
+                                                </td>
+                                            </>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : activeView === 'commands' && canSeeCommands ? (
+                    <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        {loadingCommands && commands.length === 0 ? (
+                            <CommandsSkeleton />
+                        ) : filteredCommands.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
+                                <Command className="w-10 h-10 opacity-20" />
+                                <p>{t('qadmin.commands.none_found')}</p>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-hidden pt-4 p-2">
+                                <VirtuosoGrid
+                                    style={{ height: '100%' }}
+                                    data={filteredCommands}
+                                    listClassName="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 xxl:grid-cols-5 gap-4"
+                                    itemContent={(index: number, cmd: any) => (
+                                        <div key={cmd.name} className="bg-card border border-border rounded-xl p-4 flex gap-4 hover:border-primary/50 hover:bg-muted/50 transition-all group relative overflow-hidden">
+                                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <MriButton size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => copyToClipboard(cmd.name)}>
+                                                    <Copy className="w-3 h-3" />
+                                                </MriButton>
+                                            </div>
+
+                                            <div className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center border border-border shrink-0">
+                                                <Terminal className="w-6 h-6 text-muted-foreground/50 group-hover:text-primary/70 transition-colors" />
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                <h3 className="font-bold text-foreground truncate pr-6 font-mono text-sm">{cmd.name}</h3>
+                                                <p className="text-xs text-muted-foreground truncate" title={cmd.description}>{cmd.description || t('common.no_description')}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                />
+                            </div>
+                        )}
                     </div>
-                </div>
+                ) : null}
             </div>
         </div>
     )

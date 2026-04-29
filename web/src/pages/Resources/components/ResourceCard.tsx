@@ -59,7 +59,7 @@ export default function ResourceCard({ label, version, author, description, stat
             {expanded && (
                 <div className="px-3 pb-3 pt-0">
                     <div className="pt-3 border-t border-border text-xs text-muted-foreground leading-relaxed">
-                        {description || <span className="italic text-muted-foreground/60">{t('resources_no_description')}</span>}
+                        {description || <span className="italic text-muted-foreground/60">{t('resources.no_description')}</span>}
                     </div>
                 </div>
             )}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNui } from "@/context/NuiContext";
 import { useAppState } from "@/context/AppState";
 import { useI18n } from "@/hooks/useI18n";
-import { MriActionDropdown, MriActionDropdownItem } from "@mriqbox/ui-kit";
+import { MriActionCard, MriActionCardItem } from "@mriqbox/ui-kit";
 
 interface ActionDropdownProps {
     id: string;
@@ -50,9 +50,9 @@ export default function ActionDropdown({
         }
     };
 
-    const parsedDropdownItems: MriActionDropdownItem[] = data.dropdown?.map((item: any, idx: number) => {
+    const parsedItems: MriActionCardItem[] = data.dropdown?.map((item: any, idx: number) => {
         const subKey = item.id ?? item.label ?? `__dropdown_${idx}`;
-        const baseItem: Partial<MriActionDropdownItem> = {
+        const baseItem: Partial<MriActionCardItem> = {
             id: subKey,
             label: item.label,
             option: item.option as any,
@@ -98,8 +98,8 @@ export default function ActionDropdown({
             });
             baseItem.selectedValue = selectedData[subKey]?.value;
             baseItem.selectedLabel = selectedData[subKey]?.label;
-            baseItem.searchPlaceholder = t("actions_search_placeholder");
-            baseItem.noneFoundText = t("none_found");
+            baseItem.searchPlaceholder = t("actions.search_placeholder");
+            baseItem.noneFoundText = t("common.none_found");
             baseItem.selectPlaceholder = t("select_placeholder");
             baseItem.onDropdownSelect = (fieldId, val) => {
                 handleSelectData(fieldId, { id: fieldId, value: val.value, label: val.label }, false);
@@ -108,16 +108,17 @@ export default function ActionDropdown({
             baseItem.onButtonClick = () => handleSubClick();
         }
 
-        return baseItem as MriActionDropdownItem;
+        return baseItem as MriActionCardItem;
     }) || [];
 
     return (
-        <MriActionDropdown
+        <MriActionCard
             id={id}
             label={data.label}
             isFavorite={isFavorite}
             onToggleFavorite={onToggleFavorite}
-            dropdownItems={parsedDropdownItems}
+            items={parsedItems}
+            disabled={data.disabled}
         />
     );
 }

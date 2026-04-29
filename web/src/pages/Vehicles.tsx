@@ -1,28 +1,48 @@
 import React, { useState } from 'react'
-import { VirtuosoGrid } from 'react-virtuoso'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
-import GridSkeleton from '@/components/skeletons/GridSkeleton'
+import { MriSkeleton } from '@/components/ui/MriSkeleton'
+import {
+    MriTable,
+    MriTableHeader,
+    MriTableBody,
+    MriTableHead,
+    MriTableRow,
+    MriTableCell
+} from '@/components/ui/MriTable'
+import { VirtuosoGrid, TableVirtuoso } from 'react-virtuoso'
 
-import { Car, RefreshCw, Gift } from 'lucide-react'
+import { Car, RefreshCw, Gift, LayoutGrid, Table as TableIcon } from 'lucide-react'
 
 import VehicleGridCard from '@/components/vehicles/VehicleGridCard'
 import StockModal from '@/components/vehicles/StockModal'
 import VehicleWizard from './Vehicles/components/VehicleWizard'
 import { MOCK_GAME_DATA } from '@/utils/mockData'
+import { hasPermission } from '@/utils/permissions'
 
 
 export default function Vehicles() {
     const { t } = useI18n()
     const { sendNui } = useNui()
-    const { gameData, setGameData } = useAppState()
+    const { gameData, setGameData, myPermissions } = useAppState()
+    const canDo = (perm: string) => hasPermission(myPermissions, perm)
+
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
+        const saved = localStorage.getItem('mri_qadmin_vehicles_view_mode')
+        return (saved === 'grid' || saved === 'table') ? saved : 'grid'
+    })
+
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(false)
     const [showVehicleWizard, setShowVehicleWizard] = useState(false)
+
+    React.useEffect(() => {
+        localStorage.setItem('mri_qadmin_vehicles_view_mode', viewMode)
+    }, [viewMode])
 
     const vehicles = React.useMemo(() => {
         return (gameData.vehicles || []).map(v => {
@@ -95,43 +115,132 @@ export default function Vehicles() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('title_vehicles') || "Vehicles"} icon={Car} countLabel={t('records')} count={filteredVehicles.length}>
+            <MriPageHeader title={t('vehicle.title') || "Vehicles"} icon={Car} countLabel={t('common.records')} count={filteredVehicles.length}>
+                <div className="flex items-center bg-card border border-border rounded-lg p-1 gap-1">
+                    <MriButton
+                        size="icon"
+                        variant="ghost"
+                        className={cn("h-8 w-8 rounded", viewMode === 'grid' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                        onClick={() => setViewMode('grid')}
+                    >
+                        <LayoutGrid className="w-4 h-4" />
+                    </MriButton>
+                    <MriButton
+                        size="icon"
+                        variant="ghost"
+                        className={cn("h-8 w-8 rounded", viewMode === 'table' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                        onClick={() => setViewMode('table')}
+                    >
+                        <TableIcon className="w-4 h-4" />
+                    </MriButton>
+                </div>
+
                 <div className="flex items-center gap-2">
                     <MriExpandableSearch
-                        placeholder={t('search_placeholder_vehicles')}
+                        placeholder={t('common.search')}
                         value={search}
                         onChange={setSearch}
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <MriButton
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowVehicleWizard(true)}
-                    >
-                        <Gift className="w-4 h-4" />
-                    </MriButton>
+                    {canDo('qadmin.action.manage_vehicles') && (
+                        <MriButton
+                            size="icon"
+                            variant="outline"
+                            className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowVehicleWizard(true)}
+                        >
+                            <Gift className="w-4 h-4" />
+                        </MriButton>
+                    )}
                     <MriButton
                         size="icon"
                         variant="outline"
                         className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                         onClick={handleRefresh}
+                        isLoading={loading}
                         disabled={loading}
                     >
-                        <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                        {!loading && <RefreshCw className="w-4 h-4" />}
                     </MriButton>
                 </div>
             </MriPageHeader>
 
             <div className="flex-1 overflow-hidden pt-4 p-2">
                 {loading ? (
-                    <GridSkeleton className="h-full" hideHeader={true} />
+                    <div className="grid grid-cols-4 gap-4">
+                        {[...Array(12)].map((_, i) => (
+                            <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-4">
+                                <MriSkeleton className="h-40 w-full rounded-lg" />
+                                <div className="space-y-2">
+                                    <MriSkeleton className="h-4 w-3/4" />
+                                    <MriSkeleton className="h-4 w-1/2" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : filteredVehicles.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                         <Car className="w-12 h-12 opacity-20" />
-                        <p>{t('vehicles_none_found')}</p>
+                        <p>{t('vehicle.none_found')}</p>
                     </div>
+                ) : viewMode === 'table' ? (
+                    <MriTable className="h-full">
+                        <TableVirtuoso
+                            style={{ height: '100%' }}
+                            data={filteredVehicles}
+                            components={{
+                                Table: (props: any) => <table {...props} className="w-full text-left" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }} />,
+                                TableHeader: MriTableHeader,
+                                TableBody: MriTableBody,
+                                TableRow: MriTableRow,
+                            }}
+                            fixedHeaderContent={() => (
+                                <tr className="bg-muted border-b border-border shadow-sm">
+                                    <MriTableHead className="w-[30%]">{t('vehicle.labels.name')}</MriTableHead>
+                                    <MriTableHead className="w-[20%]">{t('vehicle.labels.model')}</MriTableHead>
+                                    <MriTableHead className="w-[15%]">{t('vehicle.labels.brand')}</MriTableHead>
+                                    <MriTableHead className="w-[15%]">{t('vehicle.labels.category')}</MriTableHead>
+                                    <MriTableHead className="w-[10%] text-right">{t('vehicle.labels.stock')}</MriTableHead>
+                                    <MriTableHead className="w-[10%] text-right pr-6">{t('common.actions')}</MriTableHead>
+                                </tr>
+                            )}
+                            itemContent={(_: any, v: any) => (
+                                <>
+                                    <MriTableCell className="font-bold">{v.name}</MriTableCell>
+                                    <MriTableCell className="font-mono text-xs">{v.model}</MriTableCell>
+                                    <MriTableCell>{v.brand}</MriTableCell>
+                                    <MriTableCell>
+                                        <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-medium uppercase border border-border">
+                                            {v.category}
+                                        </span>
+                                    </MriTableCell>
+                                    <MriTableCell className="text-right">
+                                        <span className={cn(
+                                            "font-mono font-bold",
+                                            v.stock <= 0 ? "text-red-500" : "text-foreground"
+                                        )}>
+                                            {v.stock}
+                                        </span>
+                                    </MriTableCell>
+                                    <MriTableCell className="text-right pr-6">
+                                        <div className="flex items-center justify-end gap-1">
+                                            {canDo('qadmin.action.spawn_vehicle') && (
+                                                <MriButton
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-7 w-7 rounded bg-muted border border-border text-muted-foreground hover:text-foreground"
+                                                    onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:SpawnVehicle', type: 'client', perms: 'qadmin.action.spawn_vehicle' }, selectedData: { Vehicle: { value: v.model } } })}
+                                                >
+                                                    <Car className="w-3.5 h-3.5" />
+                                                </MriButton>
+                                            )}
+                                        </div>
+                                    </MriTableCell>
+                                </>
+                            )}
+                        />
+                    </MriTable>
                 ) : (
                     <VirtuosoGrid
                         style={{ height: '100%' }}

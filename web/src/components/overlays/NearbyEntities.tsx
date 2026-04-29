@@ -25,7 +25,7 @@ export default function NearbyEntities() {
 
                     <MriCardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
                         <Radar className="h-4 w-4 animate-pulse" />
-                        {t('devmode_nearby_entities')}
+                        {t('devmode.nearby_entities')}
                     </MriCardTitle>
                 </MriCardHeader>
 

@@ -4,6 +4,7 @@ import { Box } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
+import { hasPermission } from '@/utils/permissions'
 
 interface Item {
     item: string
@@ -18,9 +19,10 @@ interface ItemGridCardProps {
 
 export default function ItemGridCard({ item, onSpawn }: ItemGridCardProps) {
     const { t } = useI18n()
-    const { gameData } = useAppState()
+    const { gameData, myPermissions } = useAppState()
     const [imageError, setImageError] = useState(false)
     const [imgLoaded, setImgLoaded] = useState(false)
+    const canDo = (perm: string) => hasPermission(myPermissions, perm)
 
     const getImageUrl = (itemId: string) => {
         const inventory = gameData.inventory || 'qb-inventory'
@@ -85,14 +87,16 @@ export default function ItemGridCard({ item, onSpawn }: ItemGridCardProps) {
 
                 <div className="flex items-center justify-between mt-2">
                     <p className="text-xs text-muted-foreground truncate max-w-[120px]" title={item.description || ''}>{item.description}</p>
-                    <MriButton
-                        size="sm"
-                        variant="secondary"
-                        className="h-7 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50"
-                        onClick={() => onSpawn(item)}
-                    >
-                        {t('btn_spawn')}
-                    </MriButton>
+                    {canDo('qadmin.action.give_item') && (
+                        <MriButton
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50"
+                            onClick={() => onSpawn(item)}
+                        >
+                            {t('btn_spawn')}
+                        </MriButton>
+                    )}
                 </div>
             </div>
         </div>

@@ -204,6 +204,7 @@ local function ToggleNoclip()
         SetupCam()
         ToggleBehavior(true)
         QBCore.Functions.Notify("Noclip Ativado", "success")
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Noclip: ativado', {})
 
         CreateThread(function()
             while noclip do
@@ -219,6 +220,7 @@ local function ToggleNoclip()
     else
         StopNoclip()
         QBCore.Functions.Notify("Noclip Desativado", "error")
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Noclip: desativado', {})
     end
 end
 

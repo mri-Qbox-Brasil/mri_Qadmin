@@ -1,5 +1,7 @@
+local QBCore = exports['qb-core']:GetCoreObject()
+
 local function noPerms(source)
-    QBCore.Functions.Notify(source, locale('no_perms') or "Permissões insuficientes.", 'error')
+    QBCore.Functions.Notify(source, locale('notifications.no_perms') or "Permissões insuficientes.", 'error')
 end
 
 local function formatNodes(perms)
@@ -8,16 +10,20 @@ local function formatNodes(perms)
     elseif type(perms) == 'table' then
         return table.concat(perms, ', ')
     end
-    return nil
+    return tostring(perms or "nil")
 end
 
 --- @param perms string | table
 function HasPerms(source, perms)
+    if not perms then return false end
+
     local function checkNode(node)
+        if not node then return false end
+
         -- Primary check against the source directly
         if IsPlayerAceAllowed(source, node) then return true end
 
-        -- Fallback: Check explicitly against identifiers (solves native FiveM cache lag after adding principal via console)
+        -- Fallback: Check explicitly against identifiers (solves native FiveM cache lag)
         local num = GetNumPlayerIdentifiers(source)
         for i = 0, num - 1 do
             local id = GetPlayerIdentifier(source, i)
@@ -26,14 +32,14 @@ function HasPerms(source, perms)
             end
         end
 
-        -- This ensures character-level and job-level perms work even if ACE inheritance cache is lagging
+        -- Extended principals check (Character, Job, Gang)
         local Player = QBCore.Functions.GetPlayer(source)
         if Player then
             local citizenid = Player.PlayerData.citizenid
             local job = Player.PlayerData.job.name
             local jobGrade = Player.PlayerData.job.grade.level or Player.PlayerData.job.grade
-            local gang = Player.PlayerData.gang.name
-            local gangGrade = Player.PlayerData.gang.grade.level or Player.PlayerData.gang.grade
+            local gang = Player.PlayerData.gang and Player.PlayerData.gang.name
+            local gangGrade = Player.PlayerData.gang and (Player.PlayerData.gang.grade.level or Player.PlayerData.gang.grade)
 
             -- Check Character Principal
             if IsPrincipalAceAllowed('char:' .. citizenid, node) then return true end
@@ -59,12 +65,33 @@ function HasPerms(source, perms)
         return true
     end
 
+    -- NEW: Automatic Open Panel Permission
+    -- If you are in ANY group, you can open the panel.
+    if perms == "qadmin.open" then
+        local Player = QBCore.Functions.GetPlayer(source)
+        if Player then
+            local citizenid = Player.PlayerData.citizenid
+            local exists = MySQL.single.await('SELECT count(*) as count FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid})
+            if exists and exists.count > 0 then return true end
+        end
+    end
+
     -- Check Native ACEs
     if type(perms) == 'string' then
         if checkNode(perms) then return true end
+
+        -- Fallback: if checking 'qadmin.commands', also check 'qadmin.page.commands'
+        if not string.find(perms, 'qadmin.page.') then
+            local nodeName = perms:gsub('qadmin.', '')
+            if checkNode('qadmin.page.' .. nodeName) then return true end
+        end
     elseif type(perms) == 'table' then
         for _, p in pairs(perms) do
             if checkNode(p) then return true end
+            if type(p) == 'string' and not string.find(p, 'qadmin.page.') then
+                local nodeName = p:gsub('qadmin.', '')
+                if checkNode('qadmin.page.' .. nodeName) then return true end
+            end
         end
     end
 
@@ -74,7 +101,32 @@ end
 --- @param perms string | table
 function CheckPerms(source, perms)
     local allowed = HasPerms(source, perms)
-    Debug(('[DEBUG] CheckPerms Source: %s, Nodes: %s | Result: %s'):format(source, formatNodes(perms), tostring(allowed)))
+
+    -- Silent some common/noisy logs
+    if perms and perms ~= "qadmin.open" then
+        local nodeStr = formatNodes(perms) or "nil"
+        Debug(('[DEBUG] CheckPerms Source: %s, Nodes: %s | Result: %s'):format(tostring(source), nodeStr, tostring(allowed)))
+    end
+
+    if perms == "qadmin.open" and not allowed then
+        print('^1--- PERMISSION CRITICAL FAILURE: qadmin.open ---^7')
+        print('^3Source:^7', source)
+        print('^3Identifiers:^7')
+        local ids = GetNumPlayerIdentifiers(source)
+        for i = 0, ids - 1 do
+            print('  -', GetPlayerIdentifier(source, i))
+        end
+        local Player = QBCore.Functions.GetPlayer(source)
+        if Player then
+            print('^3CitizenID:^7', Player.PlayerData.citizenid)
+            print('^3QBCore Job:^7', Player.PlayerData.job.name)
+            print('^3QBCore Grade:^7', Player.PlayerData.job.grade.level)
+        else
+            print('^1[!] QBCore Player object NOT FOUND for source ' .. tostring(source) .. '^7')
+        end
+        print('^3Direct ACE Test (group.admin):^7', IsPrincipalAceAllowed('group.admin', 'qadmin.open'))
+        print('^1----------------------------------------------^7')
+    end
 
     if not allowed then
         noPerms(source)
@@ -160,7 +212,7 @@ function GeneratePlate()
 end
 
 lib.callback.register('mri_Qadmin:callback:CheckPerms', function(source, perms)
-    return CheckPerms(source, perms)
+    return HasPerms(source, perms)
 end)
 
 lib.callback.register('mri_Qadmin:callback:CheckAlreadyPlate', function(_, vPlate)
@@ -176,7 +228,7 @@ function CheckRoutingbucket(source, target)
     if sourceBucket == targetBucket then return end
 
     SetPlayerRoutingBucket(source, targetBucket)
-    QBCore.Functions.Notify(source, locale("bucket_set", targetBucket), 'error', 7500)
+    QBCore.Functions.Notify(source, locale("notifications.bucket_set", targetBucket), 'error', 7500)
 end
 
 --- Convert "R, G, B" string to "#RRGGBB" hex
@@ -212,8 +264,8 @@ end
 function NormalizePrincipal(id)
     local str = NormalizeIdentifier(id)
     if not str then return nil end
-    
-    -- If it's a license, steam, discord, etc (contains : but not group., job., gang. or char:), 
+
+    -- If it's a license, steam, discord, etc (contains : but not group., job., gang. or char:),
     -- and doesn't already have 'identifier.' prefix, add it for FiveM native ACE compatibility.
     if string.find(str, ":") and not string.find(str, "char:") and not string.find(str, "group%.") and not string.find(str, "job%.") and not string.find(str, "gang%.") then
         return "identifier." .. str

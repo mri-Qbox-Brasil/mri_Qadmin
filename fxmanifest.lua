@@ -21,6 +21,7 @@ server_scripts {
     "server/db.lua",
     "server/main.lua",
     "server/utils.lua",
+    "server/logs.lua",
     "server/chat.lua",
     "server/commands.lua",
     "server/groups.lua",
@@ -64,6 +65,7 @@ client_scripts {
     "client/world.lua",
     "client/key_capture.lua",
     "client/nearby_scanner.lua",
+    "client/logs.lua",
     "client/webrtc.lua",
 
 }
@@ -78,9 +80,10 @@ exports {
     "CheckPerms",
     "IsPlayerInPrincipal",
     "GeneratePlate",
-    "GetActions", -- server
-    "ToggleUI", -- client
-    "OpenUI", -- client
+    "GetActions",    -- server
+    "AddLog",        -- server: exports['mri_Qadmin']:AddLog(resource, category, level, message, data)
+    "ToggleUI",      -- client
+    "OpenUI",        -- client
     "IsMenuVisible", -- client
 }
 

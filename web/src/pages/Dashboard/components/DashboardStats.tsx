@@ -6,14 +6,52 @@ import { useI18n } from '@/hooks/useI18n'
 import {
     Wallet,
     Landmark,
-    Bitcoin,
+    Coins,
     Users,
     Car,
-    Gavel,
+    ShieldAlert,
     UserCircle,
     Activity
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+interface StatCardProps {
+    title: string
+    value: string | number
+    icon: React.ReactNode
+    variant?: 'default' | 'warning' | 'info' | 'success' | 'purple' | 'indigo' | 'orange'
+}
+
+function StatCard({ title, value, icon, variant = 'default' }: StatCardProps) {
+    const variants = {
+        default: 'from-primary/10 to-primary/5 border-primary/20 text-primary',
+        warning: 'from-amber-500/10 to-amber-500/5 border-amber-500/20 text-amber-500',
+        info: 'from-blue-500/10 to-blue-500/5 border-blue-500/20 text-blue-500',
+        success: 'from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 text-emerald-500',
+        purple: 'from-purple-500/10 to-purple-500/5 border-purple-500/20 text-purple-500',
+        indigo: 'from-indigo-500/10 to-indigo-500/5 border-indigo-500/20 text-indigo-500',
+        orange: 'from-orange-500/10 to-orange-500/5 border-orange-500/20 text-orange-500'
+    }
+
+    return (
+        <div className={cn(
+            "p-6 rounded-2xl border bg-gradient-to-br transition-all hover:scale-[1.02] duration-300 group",
+            variants[variant] || variants.default
+        )}>
+            <div className="flex items-start justify-between mb-4">
+                <div className="p-2.5 rounded-xl bg-background/50 backdrop-blur-sm border border-current/10 group-hover:border-current/20 transition-colors">
+                    {icon}
+                </div>
+            </div>
+            <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
+                <h3 className="text-3xl font-black tracking-tight text-foreground tabular-nums">
+                    {value}
+                </h3>
+            </div>
+        </div>
+    )
+}
 
 const mockSummary = {
     totalCash: 15000,
@@ -23,27 +61,6 @@ const mockSummary = {
     vehicleCount: 140,
     bansCount: 5,
     characterCount: 70
-}
-
-interface StatCardProps {
-    title: string
-    value: string | number
-    icon: React.ReactNode
-    color: string
-}
-
-function StatCard({ title, value, icon, color }: StatCardProps) {
-    return (
-        <div className="bg-[#09090b] border border-zinc-800 rounded-xl p-4 flex items-center gap-4 hover:border-zinc-700 transition-colors group">
-            <div className={cn("p-3 rounded-lg bg-opacity-10 border border-opacity-20", color)}>
-                {icon}
-            </div>
-            <div>
-                <p className="text-sm text-zinc-500 font-medium">{title}</p>
-                <p className="text-2xl font-bold text-white group-hover:text-primary transition-colors">{value}</p>
-            </div>
-        </div>
-    )
 }
 
 export default function DashboardStats() {
@@ -69,64 +86,76 @@ export default function DashboardStats() {
         load()
     }, [sendNui])
 
-    if (loading) return <div className="h-full w-full flex items-center justify-center"><Spinner /></div>
-    if (error) return <div className="p-6 text-red-500 bg-red-500/10 rounded-lg border border-red-500/20 m-4 flex items-center gap-2"><Activity className="w-5 h-5" /> {error}</div>
+    if (loading) return (
+        <div className="h-48 w-full flex items-center justify-center bg-card/50 rounded-2xl border border-dashed border-border">
+            <Spinner />
+        </div>
+    )
+
+    if (error) return (
+        <div className="p-6 text-destructive bg-destructive/10 rounded-2xl border border-destructive/20 flex items-center gap-3">
+            <Activity className="w-5 h-5" /> 
+            <span className="font-medium">{error}</span>
+        </div>
+    )
 
     return (
-        <div className="h-full w-full p-6 overflow-auto bg-zinc-900/10">
-            <div className="flex items-center gap-2 mb-6">
-                <Activity className="w-6 h-6 text-primary" />
-                <h2 className="text-xl font-bold text-white">{t('title_dashboard')}</h2>
+        <div className="space-y-6">
+            <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Activity className="w-5 h-5" />
+                </div>
+                <h2 className="text-xl font-bold tracking-tight text-foreground">{t('qadmin.dashboard.title')}</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                    title={t('players_online')}
+                    title={t('dashboard.stats.online')}
                     value={players.length}
-                    icon={<Activity className="w-6 h-6 text-green-500" />}
-                    color="bg-green-500/10 border-green-500/20"
+                    icon={<Users className="w-6 h-6" />}
+                    variant="success"
                 />
                 <StatCard
-                    title={t('dashboard_cash_on_hand')}
-                    value={`$${summary.totalCash?.toLocaleString()}`}
-                    icon={<Wallet className="w-6 h-6 text-emerald-500" />}
-                    color="bg-emerald-500/10 border-emerald-500/20"
+                    title={t('dashboard.stats.cash')}
+                    value={`$${(summary.totalCash || 0).toLocaleString()}`}
+                    icon={<Wallet className="w-6 h-6" />}
+                    variant="success"
                 />
                 <StatCard
-                    title={t('dashboard_bank_balance')}
-                    value={`$${summary.totalBank?.toLocaleString()}`}
-                    icon={<Landmark className="w-6 h-6 text-blue-500" />}
-                    color="bg-blue-500/10 border-blue-500/20"
+                    title={t('dashboard.stats.bank')}
+                    value={`$${(summary.totalBank || 0).toLocaleString()}`}
+                    icon={<Landmark className="w-6 h-6" />}
+                    variant="info"
                 />
                 <StatCard
-                    title={t('dashboard_crypto')}
-                    value={`$${summary.totalCrypto?.toLocaleString()}`}
-                    icon={<Bitcoin className="w-6 h-6 text-yellow-500" />}
-                    color="bg-yellow-500/10 border-yellow-500/20"
+                    title={t('dashboard.stats.crypto')}
+                    value={`${(summary.totalCrypto || 0).toLocaleString()}`}
+                    icon={<Coins className="w-6 h-6" />}
+                    variant="warning"
                 />
                 <StatCard
-                    title={t('dashboard_unique_players')}
-                    value={summary.uniquePlayers}
-                    icon={<Users className="w-6 h-6 text-purple-500" />}
-                    color="bg-purple-500/10 border-purple-500/20"
+                    title={t('dashboard.stats.unique')}
+                    value={summary.uniquePlayers || 0}
+                    icon={<Activity className="w-6 h-6" />}
+                    variant="purple"
                 />
                 <StatCard
-                    title={t('title_vehicles')}
-                    value={summary.vehicleCount}
-                    icon={<Car className="w-6 h-6 text-indigo-500" />}
-                    color="bg-indigo-500/10 border-indigo-500/20"
+                    title={t('dashboard.stats.vehicles')}
+                    value={summary.vehicleCount || 0}
+                    icon={<Car className="w-6 h-6" />}
+                    variant="indigo"
                 />
                 <StatCard
-                    title={t('dashboard_bans') || 'Bans'}
-                    value={summary.bansCount}
-                    icon={<Gavel className="w-6 h-6 text-red-500" />}
-                    color="bg-red-500/10 border-red-500/20"
+                    title={t('dashboard.stats.bans')}
+                    value={summary.bansCount || 0}
+                    icon={<ShieldAlert className="w-6 h-6" />}
+                    variant="warning"
                 />
                 <StatCard
-                    title={t('dashboard_characters') || 'Characters'}
-                    value={summary.characterCount}
-                    icon={<UserCircle className="w-6 h-6 text-orange-500" />}
-                    color="bg-orange-500/10 border-orange-500/20"
+                    title={t('dashboard.stats.chars')}
+                    value={summary.characterCount || 0}
+                    icon={<UserCircle className="w-6 h-6" />}
+                    variant="orange"
                 />
             </div>
         </div>

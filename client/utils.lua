@@ -23,6 +23,7 @@ end
 
 --- @param perms table
 function CheckPerms(perms)
+    print('^3[mri_Qadmin] CheckPerms: ' .. tostring(perms) .. '^7')
 	return lib.callback.await('mri_Qadmin:callback:CheckPerms', false, perms)
 end
 
@@ -63,7 +64,6 @@ end
 --- @param title string
 --- @param message string
 function Log(title, message)
-	TriggerServerEvent("qb-log:server:CreateLog", "mri_Qadmin", title, "red", message)
     Debug("[mri_Qadmin LOG] " .. title .. ": " .. message)
 end
 
@@ -75,7 +75,7 @@ function GetGroundSafe(x, y, z)
     -- Try Raycast first (reliable)
     local rayCast = StartShapeTestRay(x, y, z + 5.0, x, y, z - 500.0, 4294967295, cache.ped, 0)
     local retval, hit, endCoords
-    
+
     for _ = 1, 50 do
         retval, hit, endCoords = GetShapeTestResult(rayCast)
         if retval ~= 1 then break end
@@ -90,7 +90,7 @@ function GetGroundSafe(x, y, z)
     local success, resFound, resZ = pcall(function()
         return GetGroundZFor_3dCoord(x + 0.0, y + 0.0, z + 0.0, false)
     end)
-    
+
     if success then
         return resFound, resZ
     end

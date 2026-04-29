@@ -23,6 +23,7 @@ RegisterNetEvent('mri_Qadmin:server:StartWatchingPlayer', function(targetId)
 
     if not found then
         table.insert(viewers[target], adminSrc)
+        AddLog(adminSrc, 'mri_Qadmin', 'players', 'info', ('Tela ao vivo: admin começou a assistir a tela de %s'):format(GetPlayerName(target) or target), GetTargetData(target))
     end
 end)
 
@@ -32,15 +33,21 @@ RegisterNetEvent('mri_Qadmin:server:StopWatchingPlayer', function(targetId)
     local target = tonumber(targetId)
     if not target or not viewers[target] then return end
 
+    local removed = false
     for i, src in ipairs(viewers[target]) do
         if src == adminSrc then
             table.remove(viewers[target], i)
+            removed = true
             break
         end
     end
 
     if #viewers[target] == 0 then
         viewers[target] = nil
+    end
+
+    if removed then
+        AddLog(adminSrc, 'mri_Qadmin', 'players', 'info', ('Tela ao vivo: admin parou de assistir a tela de %s'):format(GetPlayerName(target) or target), GetTargetData(target))
     end
 end)
 

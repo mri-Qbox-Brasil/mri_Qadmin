@@ -101,6 +101,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
     end
 
     Debug(('[mri_Qadmin] Action %s atualizada/criada por %s (Cat: %s)'):format(id, GetPlayerName(src), category))
+    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Ação salva: %s (%s)'):format(id, category), { id = id, category = category })
 
     -- Broadcast update to admins only
     local admins = GetAdminPlayers()
@@ -125,6 +126,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteAction', function(id, category)
     end
 
     Debug(('[mri_Qadmin] Action %s deletada por %s'):format(id, GetPlayerName(src)))
+    AddLog(src, 'mri_Qadmin', 'server', 'warn', ('Ação deletada: %s (%s)'):format(id, category), { id = id, category = category })
 
     -- Broadcast update to admins only
     local admins = GetAdminPlayers()

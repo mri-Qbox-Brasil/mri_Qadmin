@@ -5,3 +5,5 @@ server/server_secrets.json
 web/package-lock.json
 web/node_modules
 .release/node_modules
+.claude/
+.code-review-graph/

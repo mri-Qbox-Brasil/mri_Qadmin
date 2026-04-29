@@ -20,7 +20,7 @@ RegisterNetEvent('mri_Qadmin:client:Admincar', function(_data)
     if sharedVehicles then
         TriggerServerEvent('mri_Qadmin:server:SaveCar', props, sharedVehicles, hash, props.plate)
     else
-        QBCore.Functions.Notify(locale("cannot_store_veh"), 'error')
+        QBCore.Functions.Notify(locale("notifications.cannot_store_veh"), 'error')
     end
 end)
 
@@ -63,6 +63,7 @@ RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
     end
 
     TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(vehicle))
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', ('Veículo: admin spawnando %s temporário'):format(selectedVehicle), {})
 end)
 
 -- Refuel Vehicle
@@ -76,9 +77,10 @@ RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function(data)
         else
             exports[Config.Fuel]:SetFuel(cache.vehicle, 100.0)
         end
-        QBCore.Functions.Notify(locale("refueled_vehicle"), 'success')
+        QBCore.Functions.Notify(locale("notifications.refueled_vehicle"), 'success')
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin abasteceu o próprio veículo', {})
     else
-        QBCore.Functions.Notify(locale("not_in_vehicle"), 'error')
+        QBCore.Functions.Notify(locale("notifications.not_in_vehicle"), 'error')
     end
 end)
 
@@ -89,14 +91,14 @@ RegisterNetEvent('mri_Qadmin:client:ChangePlate', function(data, selectedData)
     local plate = selectedData["Plate"].value
 
     if string.len(plate) > 8 then
-        return QBCore.Functions.Notify(locale("plate_max"), "error", 5000)
+        return QBCore.Functions.Notify(locale("notifications.plate_max"), "error", 5000)
     end
 
     if cache.vehicle then
         local AlreadyPlate = lib.callback.await("mri_Qadmin:callback:CheckAlreadyPlate", false, plate)
 
         if AlreadyPlate then
-            QBCore.Functions.Notify(locale("already_plate"), "error", 5000)
+            QBCore.Functions.Notify(locale("notifications.already_plate"), "error", 5000)
             return
         end
 
@@ -107,7 +109,7 @@ RegisterNetEvent('mri_Qadmin:client:ChangePlate', function(data, selectedData)
         Wait(100)
         TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', QBCore.Functions.GetPlate(cache.vehicle))
     else
-        QBCore.Functions.Notify(locale("not_in_vehicle"), 'error')
+        QBCore.Functions.Notify(locale("notifications.not_in_vehicle"), 'error')
     end
 end)
 
@@ -145,6 +147,8 @@ RegisterNetEvent('mri_Qadmin:client:ToggleVehDevMenu', function(data)
 
     VEHICLE_DEV_MODE = not VEHICLE_DEV_MODE
 
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', VEHICLE_DEV_MODE and 'Menu dev de veículo: ativado' or 'Menu dev de veículo: desativado', {})
+
     if VEHICLE_DEV_MODE then
         CreateThread(UpdateVehicleMenu)
     end
@@ -172,6 +176,7 @@ RegisterNetEvent('mri_Qadmin:client:maxmodVehicle', function(data)
 
     if cache.vehicle then
         UpgradePerformance(cache.vehicle)
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin aplicou max mods no próprio veículo', {})
     else
         QBCore.Functions.Notify(locale("vehicle_not_driver"), 'error', 7500)
     end

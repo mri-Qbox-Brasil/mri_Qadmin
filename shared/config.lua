@@ -15,7 +15,8 @@ Config.SupportedLanguages = {
 Config.Keybindings = true
 Config.AdminKey = "0"
 Config.NoclipKey = "9"
-Config.Debug = false -- Set to true to enable debug prints
+Config.Debug = true -- Set to true to enable debug prints
+Config.QBCoreAutoSync = true -- Auto-promote players with QBCore 'admin'/'god' to mri_Qadmin 'admin' group
 
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"
@@ -29,38 +30,84 @@ Config.Actions = {}
 Config.PlayerActions = {}
 Config.OtherActions = {}
 
+-- ─── Logs ─────────────────────────────────────────────────────────────────────
+-- Configure one Discord webhook per category, or a single Fallback for all.
+-- Leave as "" to disable that category's Discord forwarding.
+Config.Logs = {
+    Webhooks = {
+        players     = "",   -- bans, kicks, revives, etc.
+        bans        = "",   -- ban / unban actions
+        inventory   = "",   -- give item, clear inventory, etc.
+        vehicles    = "",   -- spawn, delete, admin car, etc.
+        money       = "",   -- give/take money
+        server      = "",   -- weather, time, announcements
+        permissions = "",   -- group / permission changes
+        chat        = "",   -- staff chat messages
+        system      = "",   -- resource events, system logs
+        -- Fallback: receives categories with no specific webhook
+        Fallback    = "",
+    },
+    -- Event fired on other resources when a log is added (leave "" to disable)
+    -- e.g. "myResource:onAdminLog"  (must be a server-side event handler)
+    ForwardEvent = "",
+    -- Persist logs to the database
+    DBEnabled = true,
+    -- Max in-memory buffer (most recent N logs kept for instant panel display)
+    MaxMemory = 500,
+    -- Per-resource destination overrides (AND logic with category settings).
+    -- ResourceMode: 'blacklist' — unlisted resources pass through; 'whitelist' — only listed resources are processed.
+    ResourceMode    = 'blacklist',
+    -- e.g. { name = 'my_resource', db = true, discord = false, relay = true }
+    ResourceEntries = {},
+    -- Categories shown in the panel and routed to Discord webhooks.
+    -- id must match the category string used in AddLog calls.
+    -- Managed at runtime via the Logs settings panel; overridden by logs_settings.json if present.
+    Categories = {
+        { id = 'players',     label = '👤 Players'    },
+        { id = 'bans',        label = '🔨 Bans'        },
+        { id = 'inventory',   label = '🎒 Inventário'  },
+        { id = 'vehicles',    label = '🚗 Veículos'    },
+        { id = 'money',       label = '💰 Dinheiro'    },
+        { id = 'server',      label = '⚙️ Servidor'    },
+        { id = 'permissions', label = '🛡️ Permissões'  },
+        { id = 'chat',        label = '💬 Chat'         },
+        { id = 'system',      label = '🖥️ Sistema'     },
+    },
+}
+
 Config.Descriptions = {
-    Fuel = "Define o sistema de combustível utilizado pelos veículos gerenciados no painel (ex: cdn-fuel, ox_fuel).",
-    Dealership = "Sistema de concessionária integrado para checar o estoque antes de gerar veículos (ex: mri, ps-dealerships).",
-    RenewedPhone = "Mude para true se utilizar o qb-phone Renewed (suporte a multijob).",
-    AdminKey = "Tecla de atalho primária para abrir o menu admin (ex: 0, F8).",
-    NoclipKey = "Tecla de atalho rápido para ativar Noclip no servidor (ex: 9, INSERT).",
-    Debug = "Ativa logs detalhados (Prints) de rastreamento no console F8 e na janela TxAdmin/Servidor.",
-    DefaultGarage = "Nome exato da garagem padrão (DB) usada quando carros são 'dados' e salvos a um jogador na aba de Doar.",
-    VehicleImages = "Caso use imagens customizadas no seu Frontend de Inventário, defina a URL inteira aqui. Deixar vazio puxa do docs.fivem (webRTC local).",
-    MapBaseUrl = "URL base externa para carregar os tiles do mapa (ex: https://mri-qbox-brasil.github.io/mapas/). Se vazio, usa arquivos locais.",
-    SignalingProvider = "Backend do webrtc. 'fivem-native' (sem servidor externo), 'websocket' (requer nodeJS mri_Qsignaling rodando) ou 'cloudflare-sfu'.",
-    WebRTCUrl = "Endpoint obrigatório caso o SignalingProvider esteja como 'websocket'. Geralmente é wss://seu-ip:porta.",
-    Keybindings = "Permitir ou proibir que as teclas configuradas abram o painel. Se false, só abrirá via comandos (/adm)."
+    Fuel              = "settings.desc.Fuel",
+    Dealership        = "settings.desc.Dealership",
+    RenewedPhone      = "settings.desc.RenewedPhone",
+    AdminKey          = "settings.desc.AdminKey",
+    NoclipKey         = "settings.desc.NoclipKey",
+    Debug             = "settings.desc.Debug",
+    QBCoreAutoSync    = "settings.desc.QBCoreAutoSync",
+    DefaultGarage     = "settings.desc.DefaultGarage",
+    VehicleImages     = "settings.desc.VehicleImages",
+    MapBaseUrl        = "settings.desc.MapBaseUrl",
+    SignalingProvider = "settings.desc.SignalingProvider",
+    WebRTCUrl         = "settings.desc.WebRTCUrl",
+    Keybindings       = "settings.desc.Keybindings",
 }
 
 Config.Options = {
     Fuel = {
-        { label = "cdn-fuel", value = "cdn-fuel" },
-        { label = "ps-fuel", value = "ps-fuel" },
-        { label = "LegacyFuel", value = "LegacyFuel" },
-        { label = "ox_fuel", value = "ox_fuel" }
+        { label = "cdn-fuel",     value = "cdn-fuel"     },
+        { label = "ps-fuel",      value = "ps-fuel"      },
+        { label = "LegacyFuel",   value = "LegacyFuel"   },
+        { label = "ox_fuel",      value = "ox_fuel"      },
     },
     Dealership = {
-        { label = "mri", value = "mri" },
-        { label = "ps-dealerships", value = "ps-dealerships" },
-        { label = "Nenhum (Desativado)", value = "none" }
+        { label = "mri",                          value = "mri"              },
+        { label = "ps-dealerships",               value = "ps-dealerships"   },
+        { label = "settings.option.none_disabled", value = "none"            },
     },
     SignalingProvider = {
-        { label = "FiveM Native (Mais Simples)", value = "fivem-native" },
-        { label = "Websocket (Externo compatível com HTTPS)", value = "websocket" },
-        { label = "Cloudflare SFU (BETA)", value = "cloudflare-sfu" }
-    }
+        { label = "settings.option.fivem_native",  value = "fivem-native"   },
+        { label = "settings.option.websocket",     value = "websocket"      },
+        { label = "settings.option.cloudflare_sfu", value = "cloudflare-sfu" },
+    },
 }
 
 Config.Inventory = 'qb-inventory' -- Default

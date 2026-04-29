@@ -41,6 +41,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
     -- local x = 0.4
     -- local y = 0.025
     activeLaser = not activeLaser
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', activeLaser and 'Laser dev: ativado' or 'Laser dev: desativado', {})
     CreateThread(function()
         while true do
             local wait = 7
@@ -70,10 +71,10 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
                     local playerCoords = GetEntityCoords(cache.ped)
                     local dist = #(playerCoords - entityCoord)
                     local entNetId = NetworkGetEntityIsNetworked(entity) and NetworkGetNetworkIdFromEntity(entity) or nil
-                    local entType = locale('devmode_unknown')
-                    if IsEntityAVehicle(entity) then entType = locale('devmode_vehicle')
-                    elseif IsEntityAPed(entity) then entType = locale('devmode_ped')
-                    elseif IsEntityAnObject(entity) then entType = locale('devmode_object') end
+                    local entType = locale('devmode.unknown')
+                    if IsEntityAVehicle(entity) then entType = locale('devmode.vehicle')
+                    elseif IsEntityAPed(entity) then entType = locale('devmode.ped')
+                    elseif IsEntityAnObject(entity) then entType = locale('devmode.object') end
 
 
                     objectData.hash = model

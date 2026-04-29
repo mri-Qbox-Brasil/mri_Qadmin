@@ -35,16 +35,15 @@ local function AdminLog(src, action, target, item, count, invType)
         targetName = tostring(target) .. " (" .. tostring(invType) .. ")"
     end
 
-    local logMsg = ("[INVENTORY] Admin %s executou '%s' em %s. Item: %s, Qtd: %s"):format(
+    local logMsg = ('[INVENTORY] Admin %s executou \'%s\' em %s. Item: %s, Qtd: %s'):format(
         adminName, action, targetName, tostring(item or "N/A"), tostring(count or "N/A")
     )
 
-    print(logMsg)
-    -- TriggerEvent('qb-log:server:CreateLog', 'adminactions', 'Inventory Action', 'red', logMsg)
+    AddLog(src, 'mri_Qadmin', 'inventory', 'info', logMsg, { action = action, target = tostring(target), item = item, count = count, invType = invType })
 end
 
 lib.callback.register('mri_Qadmin:callback:GetPlayerInventory', function(source, targetId)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return nil end
+    if not CheckPerms(source, 'qadmin.action.view_inventory') then return nil end
 
     local target = tonumber(targetId)
     if not target then return nil end
@@ -103,7 +102,7 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerInventory', function(source,
 end)
 
 lib.callback.register('mri_Qadmin:callback:GetVehicleInventory', function(source, plate, type)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return nil end
+    if not CheckPerms(source, 'qadmin.action.view_inventory') then return nil end
 
     local invId = type == 'trunk' and 'trunk'..plate or 'glovebox'..plate
 
@@ -167,7 +166,7 @@ lib.callback.register('mri_Qadmin:callback:GetVehicleInventory', function(source
 end)
 
 lib.callback.register('mri_Qadmin:server:RemoveInventoryItem', function(source, targetId, item, count, slot, invType)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
@@ -198,7 +197,7 @@ lib.callback.register('mri_Qadmin:server:RemoveInventoryItem', function(source, 
 end)
 
 lib.callback.register('mri_Qadmin:server:ClearPlayerInventory', function(source, targetId, invType)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.clear_inventory') then return false end
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
@@ -223,7 +222,7 @@ lib.callback.register('mri_Qadmin:server:ClearPlayerInventory', function(source,
 end)
 
 lib.callback.register('mri_Qadmin:server:GiveInventoryItem', function(source, targetId, item, count, invType)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
@@ -246,7 +245,7 @@ lib.callback.register('mri_Qadmin:server:GiveInventoryItem', function(source, ta
 end)
 
 lib.callback.register('mri_Qadmin:server:TransferItemToSelf', function(source, targetId, item, count, slot, invType)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
@@ -278,7 +277,7 @@ lib.callback.register('mri_Qadmin:server:TransferItemToSelf', function(source, t
 end)
 
 lib.callback.register('mri_Qadmin:server:CopyInventoryToSelf', function(source, targetId, invType)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.copy_inventory') then return false end
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
@@ -311,7 +310,7 @@ lib.callback.register('mri_Qadmin:server:CopyInventoryToSelf', function(source, 
 end)
 
 lib.callback.register('mri_Qadmin:server:MoveInventoryItem', function(source, data)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
     Debug("Move Request:", json.encode(data))
 
     local fromTarget = (not data.fromType or data.fromType == 'player') and tonumber(data.fromId) or (data.fromType == 'trunk' and 'trunk'..data.fromId or 'glovebox'..data.fromId)
@@ -414,7 +413,7 @@ lib.callback.register('mri_Qadmin:server:MoveInventoryItem', function(source, da
 end)
 
 lib.callback.register('mri_Qadmin:server:StartWatchingInventory', function(source, inventoryId)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.view_inventory') then return false end
     if not inventoryId or inventoryId == '' then return false end
     if not watching[inventoryId] then watching[inventoryId] = {} end
     watching[inventoryId][source] = true
@@ -422,7 +421,7 @@ lib.callback.register('mri_Qadmin:server:StartWatchingInventory', function(sourc
 end)
 
 lib.callback.register('mri_Qadmin:server:StopWatchingInventory', function(source, inventoryId)
-    if not CheckPerms(source, 'qadmin.action.open_inventory') then return false end
+    if not CheckPerms(source, 'qadmin.action.view_inventory') then return false end
     if watching[inventoryId] then
         watching[inventoryId][source] = nil
         if next(watching[inventoryId]) == nil then

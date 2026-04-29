@@ -7,6 +7,7 @@ RegisterNetEvent('mri_Qadmin:client:ChangeTime', function(srcData, selectedData)
     if not time then return end
 
     TriggerServerEvent('qb-weathersync:server:setTime', time, 00)
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'server', 'info', ('Hora: alterada para %s'):format(tostring(time)), {})
 end)
 
 -- Changes the weather
@@ -16,6 +17,7 @@ RegisterNetEvent('mri_Qadmin:client:ChangeWeather', function(srcData, selectedDa
     local weather = selectedData["Weather"].value
 
     TriggerServerEvent('qb-weathersync:server:setWeather', weather)
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'server', 'info', ('Clima: alterado para %s'):format(tostring(weather)), {})
 end)
 
 RegisterNetEvent('mri_Qadmin:client:copyToClipboard', function(srcData, selectedData)
@@ -30,14 +32,14 @@ RegisterNetEvent('mri_Qadmin:client:copyToClipboard', function(srcData, selected
         local x = QBCore.Shared.Round(coords.x, 2)
         local y = QBCore.Shared.Round(coords.y, 2)
         string = "vector2(".. x ..", ".. y ..")"
-        QBCore.Functions.Notify(locale("copy_vector2"), 'success')
+        QBCore.Functions.Notify(locale("notifications.copy_vector2"), 'success')
     elseif dropdown == 'vector3' then
         local coords = GetEntityCoords(ped)
         local x = QBCore.Shared.Round(coords.x, 2)
         local y = QBCore.Shared.Round(coords.y, 2)
         local z = QBCore.Shared.Round(coords.z, 2)
         string = "vector3(".. x ..", ".. y ..", ".. z ..")"
-        QBCore.Functions.Notify(locale("copy_vector3"), 'success')
+        QBCore.Functions.Notify(locale("notifications.copy_vector3"), 'success')
     elseif dropdown == 'vector4' then
         local coords = GetEntityCoords(ped)
         local x = QBCore.Shared.Round(coords.x, 2)
@@ -46,14 +48,14 @@ RegisterNetEvent('mri_Qadmin:client:copyToClipboard', function(srcData, selected
         local heading = GetEntityHeading(ped)
         local h = QBCore.Shared.Round(heading, 2)
         string = "vector4(".. x ..", ".. y ..", ".. z ..", ".. h ..")"
-        QBCore.Functions.Notify(locale("copy_vector4"), 'success')
+        QBCore.Functions.Notify(locale("notifications.copy_vector4"), 'success')
     elseif dropdown == 'heading' then
         local heading = GetEntityHeading(ped)
         local h = QBCore.Shared.Round(heading, 2)
         string = h
-        QBCore.Functions.Notify(locale("copy_heading"), 'success')
+        QBCore.Functions.Notify(locale("notifications.copy_heading"), 'success')
     elseif string == nil then
-        QBCore.Functions.Notify(locale("empty_input"), 'error')
+        QBCore.Functions.Notify(locale("notifications.empty_input"), 'error')
     end
 
     lib.setClipboard(string)

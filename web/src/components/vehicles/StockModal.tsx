@@ -28,12 +28,12 @@ export default function StockModal({ vehicle, isOpen, onClose, onConfirm }: Stoc
             <div className="p-6">
                 <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                     <Car className="w-5 h-5 text-primary" />
-                    {t('update_stock_title', [vehicle.name])}
+                    {t('vehicle.update_stock').replace('%s', vehicle.name || '')}
                 </h2>
 
                 <div className="space-y-4">
                     <div>
-                        <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('stock_quantity_label')}</label>
+                        <label className="text-sm font-medium text-muted-foreground mb-1.5 block">{t('vehicle.labels.stock')}</label>
                         <MriInput
                             type="number"
                             value={stock}
@@ -43,8 +43,8 @@ export default function StockModal({ vehicle, isOpen, onClose, onConfirm }: Stoc
                     </div>
 
                     <div className="flex gap-3 pt-2">
-                        <MriButton onClick={onClose} variant="ghost" className="flex-1">{t('cancel_label')}</MriButton>
-                        <MriButton onClick={() => onConfirm(vehicle, stock)} className="flex-1">{t('confirm_label')}</MriButton>
+                        <MriButton onClick={onClose} variant="ghost" className="flex-1">{t('common.cancel')}</MriButton>
+                        <MriButton onClick={() => onConfirm(vehicle, stock)} className="flex-1">{t('common.confirm')}</MriButton>
                     </div>
                 </div>
             </div>

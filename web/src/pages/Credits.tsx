@@ -10,7 +10,7 @@ export default function Credits() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('nav_credits')} icon={Info} />
+            <MriPageHeader title={t('nav.credits')} icon={Info} />
 
             {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">

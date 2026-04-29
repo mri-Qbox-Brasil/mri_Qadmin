@@ -4,7 +4,7 @@ module.exports = {
     content: [
         './index.html',
         './src/**/*.{ts,tsx,js,jsx}',
-        './node_modules/@mriqbox/ui-kit/dist/**/*.js'
+        './node_modules/@mriqbox/ui-kit/dist/**/*.{js,mjs}'
     ],
     theme: {
         extend: {

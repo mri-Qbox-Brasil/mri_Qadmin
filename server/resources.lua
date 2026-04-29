@@ -38,6 +38,7 @@ end)
 _G.RefreshResources = refreshResources
 
 lib.callback.register('mri_Qadmin:callback:GetResources', function(_source)
+    if not CheckPerms(_source, 'qadmin.page.resources') then return {} end
     return refreshResources()
 end)
 
@@ -49,14 +50,17 @@ lib.callback.register('mri_Qadmin:callback:ChangeResourceState', function(source
     if data.state == "start" then
         StartResource(data.name)
         Debug("Started " .. data.name)
+        AddLog(source, 'mri_Qadmin', 'server', 'info', ('Recurso iniciado: %s'):format(data.name), { resource = data.name })
     elseif data.state == "stop" then
         StopResource(data.name)
         Debug("Stopped " .. data.name)
+        AddLog(source, 'mri_Qadmin', 'server', 'warn', ('Recurso parado: %s'):format(data.name), { resource = data.name })
     elseif data.state == "restart" then
         StopResource(data.name)
         Wait(200)
         StartResource(data.name)
         Debug("Restarted " .. data.name)
+        AddLog(source, 'mri_Qadmin', 'server', 'warn', ('Recurso reiniciado: %s'):format(data.name), { resource = data.name })
     end
 
     if data.state == "check-updates" then

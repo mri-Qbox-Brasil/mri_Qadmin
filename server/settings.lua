@@ -58,7 +58,8 @@ end
 _G.GetPrimitiveSettings = GetPrimitiveSettings
 
 -- API for NUI to read settings (only primitive ones)
-lib.callback.register('mri_Qadmin:callback:GetSettings', function(_)
+lib.callback.register('mri_Qadmin:callback:GetSettings', function(source)
+    if not CheckPerms(source, 'qadmin.page.settings') then return nil end
     return GetPrimitiveSettings()
 end)
 
@@ -84,6 +85,7 @@ RegisterNetEvent('mri_Qadmin:server:UpdateSetting', function(key, value)
     -- Broadcast to ALL clients to update their local Config table
     TriggerClientEvent('mri_Qadmin:client:UpdateSettings', -1, GetPrimitiveSettings())
     QBCore.Functions.Notify(src, 'Configuração salva e sincronizada!', 'success')
+    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Configuração: %s definida como %s'):format(key, tostring(value)), { key = key, value = value })
 end)
 
 -- Send settings to client when they fully load

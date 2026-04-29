@@ -40,7 +40,7 @@ RegisterNetEvent('mri_Qadmin:requestSpectate', function(target, _)
     FreezeEntityPosition(cache.ped, true)
 
     buttonsScaleform = CreateInstructionalButtons({
-        { control = 177, label = locale('spectate_exit') }
+        { control = 177, label = locale('notifications.spectate_exit') }
     })
 end)
 

@@ -7,6 +7,7 @@ import { useI18n } from '@/hooks/useI18n'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { cn } from '@/lib/utils'
 import ActionWizard from './components/ActionWizard'
+import { hasPermission } from '@/utils/permissions'
 
 interface ActionManagerProps {
     isEmbedded?: boolean;
@@ -26,7 +27,7 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
 }, ref) => {
     const { t } = useI18n()
     const { sendNui } = useNui()
-    const { gameData } = useAppState()
+    const { gameData, myPermissions } = useAppState()
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editPayload, setEditPayload] = useState<string>('')
     const [loading, setLoading] = useState(false)
@@ -145,7 +146,7 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
                             className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                             onClick={handleRefresh}
                             disabled={loading}
-                            title={t('refresh')}
+                            title={t('common.refresh')}
                         >
                             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
                         </MriButton>
@@ -154,7 +155,7 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
                             variant="outline"
                             className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                             onClick={handleOpenCreate}
-                            title={t('action_manager_create')}
+                            title={t('action_manager.create')}
                         >
                             <Plus className={cn("w-4 h-4", loading && "animate-spin")} />
                         </MriButton>
@@ -166,7 +167,7 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
                 {/* Sidebar Categories */}
                 {!isEmbedded && (
                     <div className="w-64 border-r border-border p-2 space-y-2 flex flex-col bg-card/30">
-                        <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('action_manager_categories')}</h3>
+                        <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('action_manager.categories')}</h3>
                         {(['All', 'Actions', 'PlayerActions', 'OtherActions'] as const).map(cat => (
                             <MriButton
                                 key={cat}
@@ -185,16 +186,16 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
                         <MriCard className="p-6 space-y-4">
                             <div className="flex items-center justify-between border-b border-border pb-4">
                                 <div>
-                                    <h2 className="text-xl font-bold">{t('action_manager_editing')} <span className="text-primary">{editingId}</span></h2>
-                                    <p className="text-muted-foreground text-sm">{t('action_manager_edit_help')}</p>
+                                    <h2 className="text-xl font-bold">{t('action_manager.editing')} <span className="text-primary">{editingId}</span></h2>
+                                    <p className="text-muted-foreground text-sm">{t('action_manager.edit_help')}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <MriButton variant="ghost" onClick={() => setEditingId(null)}>{t('action_manager_cancel')}</MriButton>
+                                    <MriButton variant="ghost" onClick={() => setEditingId(null)}>{t('action_manager.cancel')}</MriButton>
                                     <MriButton variant="brand" onClick={() => {
                                         const action = actionsList.find(a => a.id === editingId);
                                         if (action) handleSave(editingId, editPayload, action.category);
                                     }}>
-                                        <Save className="w-4 h-4 mr-2" /> {t('action_manager_save')}
+                                        <Save className="w-4 h-4 mr-2" /> {t('action_manager.save')}
                                     </MriButton>
                                 </div>
                             </div>
@@ -236,28 +237,46 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
 
                                         <div className="space-y-1.5 text-sm">
                                             <div className="flex justify-between items-center bg-secondary/30 px-2 py-1 rounded">
-                                                <span className="text-muted-foreground text-xs">{t('action_manager_type')}</span>
+                                                <span className="text-muted-foreground text-xs">{t('action_manager.labels.type')}</span>
                                                 <span className="font-mono text-xs text-foreground">{action.type || 'N/A'}</span>
                                             </div>
                                             <div className="flex justify-between items-center bg-secondary/30 px-2 py-1 rounded">
-                                                <span className="text-muted-foreground text-xs">{t('action_manager_perms')}</span>
+                                                <span className="text-muted-foreground text-xs">{t('action_manager.labels.perms')}</span>
                                                 <span className="font-mono text-xs text-primary">{action.perms || 'N/A'}</span>
                                             </div>
                                             <div className="flex justify-between items-center bg-secondary/30 px-2 py-1 rounded truncate">
-                                                <span className="text-muted-foreground text-xs mr-2">{t('action_manager_event')}</span>
+                                                <span className="text-muted-foreground text-xs mr-2">{t('action_manager.labels.event')}</span>
                                                 <span className="font-mono text-xs text-green-400 truncate">{action.event || 'N/A'}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
-                                        <MriButton variant="ghost" size="icon" className="w-9 h-9" onClick={() => startAdvancedEdit(action)} title="Advanced Editor (JSON)">
+                                        <MriButton
+                                            variant="ghost"
+                                            size="icon"
+                                            className="w-9 h-9"
+                                            onClick={() => startAdvancedEdit(action)}
+                                            title="Advanced Editor (JSON)"
+                                            disabled={!hasPermission(myPermissions, 'qadmin.action.manage_actions')}
+                                        >
                                             <Code className="w-4 h-4" />
                                         </MriButton>
-                                        <MriButton variant="brand" size="sm" onClick={() => startEdit(action)}>
+                                        <MriButton
+                                            variant="brand"
+                                            size="sm"
+                                            onClick={() => startEdit(action)}
+                                            disabled={!hasPermission(myPermissions, 'qadmin.action.manage_actions')}
+                                        >
                                             <Wand2 className="w-4 h-4 mr-2" /> Wizard
                                         </MriButton>
-                                        <MriButton variant="destructive" size="icon" className="w-9 h-9" onClick={() => setActionToDelete(action)}>
+                                        <MriButton
+                                            variant="destructive"
+                                            size="icon"
+                                            className="w-9 h-9"
+                                            onClick={() => setActionToDelete(action)}
+                                            disabled={!hasPermission(myPermissions, 'qadmin.action.manage_actions')}
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </MriButton>
                                     </div>
@@ -266,7 +285,7 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
                             {actionsList.length === 0 && (
                                 <div className="col-span-full py-20 text-center text-muted-foreground flex flex-col items-center">
                                     <Code className="w-10 h-10 opacity-20 mb-2" />
-                                    <p>{t('action_manager_empty')}</p>
+                                    <p>{t('action_manager.empty')}</p>
                                 </div>
                             )}
                         </div>
@@ -287,7 +306,7 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
             {/* Delete Modal */}
             {actionToDelete && (
                 <ConfirmAction
-                    text={t('action_manager_delete_confirm')?.replace('%s', actionToDelete.id) || `Tem certeza que deseja deletar a ação ${actionToDelete.id}?`}
+                    text={t('action_manager.delete_confirm')?.replace('%s', actionToDelete.id) || `Tem certeza que deseja deletar a ação ${actionToDelete.id}?`}
                     onConfirm={confirmDelete}
                     onCancel={() => setActionToDelete(null)}
                 />

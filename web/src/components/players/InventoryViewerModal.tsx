@@ -7,6 +7,8 @@ import { InventoryItem } from './InventoryItem'
 import { cn } from '@/lib/utils'
 import { MOCK_INVENTORY } from '@/utils/mockData'
 import { DragGhost } from './DragGhost'
+import { useAppState } from '@/context/AppState'
+import { hasPermission } from '@/utils/permissions'
 
 export interface InventoryTarget {
     id: number | string // player ID or Plate
@@ -55,6 +57,8 @@ interface InventorySlotProps {
 const InventorySlot = ({ target, onClose, onAddComparison, isSecondary, otherTarget }: InventorySlotProps) => {
     useI18n()
     const { sendNui, debugMode } = useNui()
+    const { myPermissions } = useAppState()
+    const canDo = (perm: string) => hasPermission(myPermissions, perm)
     const [data, setData] = useState<InventoryResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [showGiveItem, setShowGiveItem] = useState(false)
@@ -449,9 +453,15 @@ const InventorySlot = ({ target, onClose, onAddComparison, isSecondary, otherTar
                                 <ArrowLeftRight className="w-4 h-4" /> Comparar
                             </MriButton>
                         )}
-                        <MriButton size="icon" variant="ghost" onClick={() => setShowGiveItem(!showGiveItem)} title="Dar Item"><Plus className="w-4 h-4" /></MriButton>
-                        <MriButton size="icon" variant="ghost" onClick={handleCopyAll} title="Copiar Tudo"><Copy className="w-4 h-4" /></MriButton>
-                        <MriButton size="icon" variant="ghost" onClick={handleClearInventory} className="text-destructive hover:bg-destructive/10" title="Limpar"><Trash2 className="w-4 h-4" /></MriButton>
+                            {canDo('qadmin.action.give_item') && (
+                                <MriButton size="icon" variant="ghost" onClick={() => setShowGiveItem(!showGiveItem)} title="Dar Item"><Plus className="w-4 h-4" /></MriButton>
+                            )}
+                            {canDo('qadmin.action.copy_inventory') && (
+                                <MriButton size="icon" variant="ghost" onClick={handleCopyAll} title="Copiar Tudo"><Copy className="w-4 h-4" /></MriButton>
+                            )}
+                            {canDo('qadmin.action.clear_inventory') && (
+                                <MriButton size="icon" variant="ghost" onClick={handleClearInventory} className="text-destructive hover:bg-destructive/10" title="Limpar"><Trash2 className="w-4 h-4" /></MriButton>
+                            )}
                         <MriButton size="icon" variant="ghost" onClick={fetchInventory} disabled={loading}><RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /></MriButton>
                         {onClose && <MriButton size="icon" variant="ghost" onClick={onClose}><X className="w-5 h-5" /></MriButton>}
                     </div>

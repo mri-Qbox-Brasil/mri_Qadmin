@@ -59,7 +59,7 @@ export default function Changelog() {
         <div className="flex flex-col h-full gap-4 p-6 bg-muted/10">
             <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-muted-foreground" />
-                <h2 className="text-xl font-bold text-foreground">{t('changelog') || 'Changelog'}</h2>
+                <h2 className="text-xl font-bold text-foreground">{t('credits.changelog') || 'Changelog'}</h2>
             </div>
             <div className="flex-1 flex items-center justify-center">
                 <Spinner />
@@ -71,10 +71,10 @@ export default function Changelog() {
         <div className="flex flex-col h-full gap-4 p-6 bg-muted/10">
             <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-muted-foreground" />
-                <h2 className="text-xl font-bold text-foreground">{t('changelog') || 'Changelog'}</h2>
+                <h2 className="text-xl font-bold text-foreground">{t('credits.changelog') || 'Changelog'}</h2>
             </div>
             <div className="flex-1 flex items-center justify-center text-red-400">
-                {t('changelog_error') || 'Error loading changelog.'}
+                {t('credits.changelog_error') || 'Error loading changelog.'}
             </div>
         </div>
     )
@@ -83,7 +83,7 @@ export default function Changelog() {
         <div className="flex flex-col h-full gap-4 p-6 overflow-hidden bg-muted/10 border-t border-border">
             <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold text-foreground tracking-tight">{t('changelog') || 'Changelog'}</h2>
+                <h2 className="text-xl font-bold text-foreground tracking-tight">{t('credits.changelog') || 'Changelog'}</h2>
             </div>
 
             <div className="flex-1 overflow-auto space-y-3 pr-2 pb-4 no-scrollbar">

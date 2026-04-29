@@ -13,9 +13,9 @@ export default function Listeners() {
         setEntityInfo,
         setNearbyEntities,
         setGameData,
-
         setStaffMessages,
         setMyPermissions,
+        setPermissionDefinitions,
         setPagination,
         setLastPlayersFetch
     } = useAppState()
@@ -32,6 +32,9 @@ export default function Listeners() {
             }
             if (data.permissions) {
                 setMyPermissions(Array.isArray(data.permissions) ? data.permissions : [])
+            }
+            if (data.permissionDefinitions) {
+                setPermissionDefinitions(Array.isArray(data.permissionDefinitions) ? data.permissionDefinitions : [])
             }
             if (data.supportedLanguages) {
                 setSupportedLanguages(data.supportedLanguages)
@@ -160,7 +163,7 @@ export default function Listeners() {
             off('setMessages', setMessages)
         }
 
-    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setNearbyEntities, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages])
+    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setNearbyEntities, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages, setPermissionDefinitions])
 
     return null
 }

@@ -1,5 +1,6 @@
 QBCore = exports['qb-core']:GetCoreObject()
 PlayerData = {}
+local isAdminPlayer = false
 
 -- Functions
 local function setupMenu()
@@ -34,6 +35,9 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
         -- Automatically notify NUI that fresh data (items, vehicles, etc) is ready
         GetData()
 
+        local perms = initialData and initialData.permissions or {}
+        isAdminPlayer = #perms > 0
+
         SendNUIMessage({
             action = "setupUI",
             data = {
@@ -44,7 +48,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 playerData = PlayerData,
                 server = initialData and initialData.serverInfo or {},
                 vehicleImages = Config.VehicleImages,
-                permissions = initialData and initialData.permissions or {},
+                permissions = perms,
                 supportedLanguages = Config.SupportedLanguages,
                 webrtcUrl = Config.WebRTCUrl,
                 signalingProvider = Config.SignalingProvider,
@@ -60,7 +64,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
 end)
 
 RegisterNUICallback('getServerInfo', function(_, cb)
-    local serverInfo = lib.callback.await('mri_Qadmin:callback:GetServerInfo', false)
+    local serverInfo = lib.callback.await('mri_Qadmin:callback:GetServerInfo')
     if not serverInfo then
         Debug("Erro: Nenhum dado recebido do servidor.")
         cb({ error = "Erro ao carregar informações do servidor." })
@@ -87,6 +91,11 @@ local function GetTranslations(locale)
     return nil, locale
 end
 
+-- Forward new log entries to the NUI panel in real-time
+RegisterNetEvent('mri_Qadmin:client:NewLog', function(log)
+    SendNUIMessage({ action = 'newLog', data = log })
+end)
+
 -- Provide translations to the frontend when requested (frontend calls this on mount)
 RegisterNUICallback('getTranslations', function(data, cb)
     local tbl, locale = GetTranslations(data and data.locale)
@@ -98,7 +107,7 @@ RegisterNUICallback('getTranslations', function(data, cb)
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetBans", function(_data, cb)
-    local bans = lib.callback.await('mri_Qadmin:callback:GetBans', false)
+    local bans = lib.callback.await('mri_Qadmin:callback:GetBans')
     cb(bans)
 end)
 
@@ -181,23 +190,34 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
 end)
 
 RegisterNUICallback("update_vehicle_stock", function(data, cb)
-    local success = lib.callback.await("mri_Qadmin:server:UpdateVehicleStock", false, "update_vehicle_stock", data.selectedData)
+    local success = lib.callback.await("mri_Qadmin:server:UpdateVehicleStock", "update_vehicle_stock", data.selectedData)
     cb({ status = success and "ok" or "error" })
 end)
 
 -- Open UI Event
 RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
-    if not CheckPerms("qadmin.open") then return end
+    print('^3[mri_Qadmin] Tentativa de abrir painel iniciada...^7')
+    
+    local hasPerm = CheckPerms("qadmin.open")
+    print('^3[mri_Qadmin] Check qadmin.open: ' .. tostring(hasPerm) .. '^7')
+    
+    if not hasPerm then 
+        print('^1[mri_Qadmin] Acesso negado pela verificação de qadmin.open!^7')
+        return 
+    end
     
     local tbl, locale = GetTranslations()
     if tbl then
+        print('^2[mri_Qadmin] Traduções carregadas: ' .. locale .. '^7')
         SendNUIMessage({ action = 'setTranslations', data = { translations = tbl, locale = locale } })
+    else
+        print('^1[mri_Qadmin] AVISO: Falha ao carregar traduções, procedendo sem elas.^7')
     end
 
+    print('^2[mri_Qadmin] Chamando ToggleUI(true)...^7')
     ToggleUI(true)
     
-    -- resend translations shortly after opening UI in case the NUI wasn't ready yet
-    -- using cached data to avoid redundant disk I/O
+    -- resend translations shortly after opening UI
     if tbl then
         CreateThread(function()
             Wait(150)
@@ -213,7 +233,7 @@ end)
 
 -- Change resource state
 RegisterNUICallback("setResourceState", function(data, cb)
-	local resources = lib.callback.await('mri_Qadmin:callback:ChangeResourceState', false, data)
+	local resources = lib.callback.await('mri_Qadmin:callback:ChangeResourceState', data)
 	cb(resources)
 end)
 
@@ -224,9 +244,9 @@ RegisterNUICallback("getPlayers", function(data, cb)
 end)
 
 -- Get Groups
-RegisterNUICallback("getGroupsData", function(_, cb)
-	local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData', false)
-	cb(groups)
+RegisterNUICallback("mri_Qadmin:callback:GetGroups", function(_, cb)
+    local groups = lib.callback.await('mri_Qadmin:callback:GetGroups')
+    cb(groups or {})
 end)
 
 -- Get Player Coords
@@ -236,7 +256,7 @@ RegisterNUICallback("GetPlayerCoords", function(data, cb)
 end)
 
 RegisterNUICallback("GetAllPlayerCoords", function(_, cb)
-    local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords', false)
+    local coords = lib.callback.await('mri_Qadmin:callback:GetAllPlayerCoords')
     cb(coords)
 end)
 
@@ -287,7 +307,8 @@ RegisterNetEvent('mri_Qadmin:client:UpdateResourceState', function(data)
 end)
 
 RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
-    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
+    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
+    isAdminPlayer = perms and #perms > 0 or false
     SendNUIMessage({
         action = "updatePermissions",
         data = perms or {}
@@ -345,16 +366,17 @@ RegisterNetEvent('mri_Qadmin:client:UpdatePlayerMoney', function(data)
 end)
 
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst)
-    Debug("HUD UpdateNeeds:", newHunger, newThirst)
+    if not isAdminPlayer then return end
     TriggerServerEvent('mri_Qadmin:server:SyncVitals', { hunger = newHunger, thirst = newThirst })
 end)
 
 RegisterNetEvent('hud:client:UpdateStress', function(newStress)
-    Debug("HUD UpdateStress:", newStress)
+    if not isAdminPlayer then return end
     TriggerServerEvent('mri_Qadmin:server:SyncVitals', { stress = newStress })
 end)
 
 RegisterNetEvent("ars_ambulancejob:updateDeathStatus", function(death)
+    if not isAdminPlayer then return end
     TriggerServerEvent('mri_Qadmin:server:SyncDeathStatus', death.isDead)
 end)
 
@@ -365,17 +387,17 @@ end)
 
 -- Permissions Callbacks Matcher
 RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(_, cb)
-    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions', false)
+    local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
     cb(perms or {})
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(_, cb)
-    local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals', false)
+    local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals')
     cb(principals or {})
 end)
 
 RegisterNUICallback("mri_Qadmin:callback:GetAces", function(_, cb)
-    local aces = lib.callback.await('mri_Qadmin:callback:GetAces', false)
+    local aces = lib.callback.await('mri_Qadmin:callback:GetAces')
     cb(aces or {})
 end)
 
@@ -384,29 +406,29 @@ RegisterNUICallback("seed_pages", function(_, cb)
     cb('ok')
 end)
 
-RegisterNUICallback("toggle_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:ToggleAce', data.id)
-    cb('ok')
+RegisterNUICallback("mri_Qadmin:server:SaveGroup", function(data, cb)
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:SaveGroup', false, data.id, data.label, data.description)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
-RegisterNUICallback("add_principal", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:AddPrincipal', data.child, data.parent, data.description)
-    cb('ok')
+RegisterNUICallback("mri_Qadmin:server:DeleteGroup", function(data, cb)
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:DeleteGroup', false, data.id)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
-RegisterNUICallback("remove_principal", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:RemovePrincipal', data.id)
-    cb('ok')
+RegisterNUICallback("mri_Qadmin:server:UpdateGroupPermissions", function(data, cb)
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:UpdateGroupPermissions', false, data.id, data.permissions)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
-RegisterNUICallback("add_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:AddAce', data.principal, data.object, data.allow, data.description)
-    cb('ok')
+RegisterNUICallback("mri_Qadmin:callback:GetCharacterGroups", function(data, cb)
+    local groups = lib.callback.await('mri_Qadmin:callback:GetCharacterGroups', false, data.citizenid)
+    cb(groups or {})
 end)
 
-RegisterNUICallback("remove_ace", function(data, cb)
-    TriggerServerEvent('mri_Qadmin:server:RemoveAce', data.id)
-    cb('ok')
+RegisterNUICallback("mri_Qadmin:server:UpdateCharacterGroups", function(data, cb)
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:UpdateCharacterGroups', false, data.citizenid, data.groups)
+    cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 
 RegisterNUICallback("mri_Qadmin:server:SetVital", function(data, cb)
@@ -420,7 +442,7 @@ RegisterNUICallback("mri_Qadmin:server:GiveVehicle", function(data, cb)
 end)
 
 RegisterNUICallback("getSettings", function(_, cb)
-    local settings = lib.callback.await('mri_Qadmin:callback:GetSettings', false)
+    local settings = lib.callback.await('mri_Qadmin:callback:GetSettings')
     cb(settings or {})
 end)
 
@@ -436,6 +458,51 @@ end)
 
 RegisterNUICallback("mri_Qadmin:server:DeleteAction", function(data, cb)
     TriggerServerEvent('mri_Qadmin:server:DeleteAction', data.id, data.category)
+    cb('ok')
+end)
+
+-- Dashboard self-action callbacks
+RegisterNUICallback("mri_Qadmin:server:ReviveSelf", function(_, cb)
+    if not CheckPerms('qadmin.action.revive_self') then cb('denied'); return end
+    TriggerServerEvent('mri_Qadmin:server:ReviveSelf')
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:ClearChat", function(_, cb)
+    if not CheckPerms('qadmin.action.clear_chat') then cb('denied'); return end
+    TriggerServerEvent('mri_Qadmin:server:ClearChat')
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:GotoWaypoint", function(_, cb)
+    if not CheckPerms('qadmin.action.goto_waypoint') then cb('denied'); return end
+    local wp = GetFirstBlipInfoId(8)
+    if DoesBlipExist(wp) then
+        local coords = GetBlipCoords(wp)
+        local z = coords.z
+        local found, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, true)
+        if found then z = groundZ end
+        SetEntityCoords(cache.ped, coords.x, coords.y, z + 0.5, false, false, false, false)
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', ('Teleporte: admin foi para waypoint (%.1f, %.1f)'):format(coords.x, coords.y), {})
+    else
+        QBCore.Functions.Notify(locale('notifications.no_waypoint') or 'Nenhum waypoint definido.', 'error')
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback("mri_Qadmin:server:FixVehicle", function(_, cb)
+    if not CheckPerms('qadmin.action.fix_self_vehicle') then cb('denied'); return end
+    local veh = GetVehiclePedIsIn(cache.ped, false)
+    if veh ~= 0 then
+        SetVehicleFixed(veh)
+        SetVehicleDeformationFixed(veh)
+        SetVehicleEngineHealth(veh, 1000.0)
+        SetVehicleBodyHealth(veh, 1000.0)
+        SetVehiclePetrolTankHealth(veh, 1000.0)
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin reparou o próprio veículo', {})
+    else
+        QBCore.Functions.Notify(locale('notifications.not_in_vehicle') or 'Você não está em um veículo.', 'error')
+    end
     cb('ok')
 end)
 

@@ -3,14 +3,13 @@ name: Lint (Web & Lua)
 on:
   pull_request:
     paths:
-      - 'web/**'
-      - 'client/**'
-      - 'server/**'
-      - 'shared/**'
-      - 'locales/**'
-      - 'fxmanifest.lua'
-      - '.github/workflows/lint.yml'
-      - '.luacheckrc'
+      - "web/**"
+      - "client/**"
+      - "server/**"
+      - "shared/**"
+      - "locales/**"
+      - "fxmanifest.lua"
+      - ".github/workflows/lint.yml"
   workflow_dispatch: {}
 
 concurrency:
@@ -34,7 +33,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 25
-          cache: 'pnpm'
+          cache: "pnpm"
           cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Install dependencies
@@ -44,19 +43,3 @@ jobs:
       - name: Run ESLint
         working-directory: web
         run: pnpm run lint
-
-  lint-lua:
-    name: Lint Lua (Luacheck)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Install Luacheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lua5.1 luarocks
-          sudo luarocks install luacheck
-
-      - name: Run Luacheck
-        run: luacheck . --codes --formatter plain

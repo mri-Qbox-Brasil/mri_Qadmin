@@ -41,14 +41,15 @@ local function GetVehiclesList()
 end
 _G.GetVehiclesList = GetVehiclesList
 
-lib.callback.register('mri_Qadmin:callback:GetVehicles', function()
+lib.callback.register('mri_Qadmin:callback:GetVehicles', function(source)
+    if not CheckPerms(source, 'qadmin.page.vehicles') then return {} end
     return GetVehiclesList()
 end)
 
 -- Admin Car
 RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
     local src = source
-    if not CheckPerms(src, 'qadmin.action.admin_car') then return end
+    if not CheckPerms(src, 'qadmin.action.admincar') then return end
 
     local Player = QBCore.Functions.GetPlayer(src)
     local result = MySQL.query.await('SELECT plate FROM player_vehicles WHERE plate = ?', { plate })
@@ -66,8 +67,9 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
                 0
             })
         TriggerClientEvent('QBCore:Notify', src, locale("veh_owner"), 'success', 5000)
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Admin Car: veículo %s salvo com placa %s'):format(vehicle.model, plate), { model = vehicle.model, plate = plate })
     else
-        TriggerClientEvent('QBCore:Notify', src, locale("u_veh_owner"), 'error', 3000)
+        TriggerClientEvent('QBCore:Notify', src, locale("notifications.u_veh_owner"), 'error', 3000)
     end
 end)
 
@@ -76,7 +78,7 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
     local src = source
 
     if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
         return
     end
 
@@ -101,17 +103,17 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
     end
 
     if plate:len() > 8 then
-        QBCore.Functions.Notify(src, locale("plate_max"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.plate_max"), "error", 5000)
         return
     end
 
     if not Player then
-        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), "error", 5000)
         return
     end
 
     if CheckAlreadyPlate(plate) then
-        QBCore.Functions.Notify(src, locale("givecar.error.plates_alreadyused", plate:upper()), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.givecar.plates_alreadyused", plate:upper()), "error", 5000)
         return
     end
 
@@ -128,18 +130,23 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
             1
         })
 
+    local targetName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
     QBCore.Functions.Notify(src,
-        locale("givecar.success.source", QBCore.Shared.Vehicles[vehmodel].name,
-            ("%s %s"):format(Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname)), "success", 5000)
-    QBCore.Functions.Notify(Player.PlayerData.source, locale("givecar.success.target", plate:upper(), garage), "success",
+        locale("notifications.givecar.success.source", QBCore.Shared.Vehicles[vehmodel].name, targetName), "success", 5000)
+    QBCore.Functions.Notify(Player.PlayerData.source, locale("notifications.givecar.success.target", plate:upper(), garage), "success",
         5000)
+    local giveCarData = GetTargetData(tsrc)
+    giveCarData.model = vehmodel
+    giveCarData.plate = plate
+    giveCarData.garage = garage
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo: %s dado a %s (placa: %s)'):format(vehmodel, targetName, plate), giveCarData)
 end)
 
 -- Dedicated event for the Vehicle Wizard (Frontend)
 RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
     local src = source
     if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error")
+        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error")
         return
     end
 
@@ -151,7 +158,7 @@ RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
 
     local Player = QBCore.Functions.GetPlayer(playerId)
     if not Player then
-        QBCore.Functions.Notify(src, locale("not_online"), "error")
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), "error")
         return
     end
 
@@ -161,7 +168,7 @@ RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
     props.plate = plate -- Put plate in overrides for client application
 
     if CheckAlreadyPlate(plate) then
-        QBCore.Functions.Notify(src, locale("givecar.error.plates_alreadyused", plate), "error")
+        QBCore.Functions.Notify(src, locale("notifications.givecar.plates_alreadyused", plate), "error")
         return
     end
 
@@ -188,16 +195,21 @@ RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
     local vehName = QBCore.Shared.Vehicles[model] and QBCore.Shared.Vehicles[model].name or model
     local targetName = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
 
-    QBCore.Functions.Notify(src, locale("givecar.success.source", vehName, targetName), "success")
-    QBCore.Functions.Notify(Player.PlayerData.source, locale("givecar.success.target", plate, garage), "success")
+    QBCore.Functions.Notify(src, locale("notifications.givecar.success.source", vehName, targetName), "success")
+    QBCore.Functions.Notify(Player.PlayerData.source, locale("notifications.givecar.success.target", plate, garage), "success")
+    local wizardCarData = GetTargetData(playerId)
+    wizardCarData.model = model
+    wizardCarData.plate = plate
+    wizardCarData.garage = garage
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo (wizard): %s dado a %s (placa: %s)'):format(model, targetName, plate), wizardCarData)
 end)
 
 -- Give Car
 RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(_, selectedData)
     local src = source
 
-    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+    if not CheckPerms(src, 'qadmin.action.change_vehicle_state') then
+        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
         return
     end
 
@@ -205,7 +217,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(_, selectedData)
     local state = tonumber(selectedData['State'].value)
 
     if plate:len() > 8 then
-        QBCore.Functions.Notify(src, locale("plate_max"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.plate_max"), "error", 5000)
         return
     end
 
@@ -216,7 +228,8 @@ RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(_, selectedData)
 
     MySQL.update.await('UPDATE player_vehicles SET state = ?, depotprice = ? WHERE plate = ?', { state, 0, plate })
 
-    QBCore.Functions.Notify(src, locale("state_changed"), "success", 5000)
+    QBCore.Functions.Notify(src, locale("notifications.state_changed"), "success", 5000)
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estado do veículo: placa %s alterada para estado %d'):format(plate, state), { plate = plate, state = state })
 end)
 
 -- Change Plate
@@ -233,9 +246,11 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     MySQL.update.await('UPDATE player_vehicles SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
     MySQL.update.await('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
     MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Placa alterada: %s -> %s'):format(currentPlate, newPlate), { oldPlate = currentPlate, newPlate = newPlate })
 end)
 
 lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(_source, plate)
+    if not CheckPerms(_source, 'qadmin.page.vehicles') then return nil end
     local result = MySQL.query.await('SELECT vehicle FROM player_vehicles WHERE plate = ?', { plate })
     local veh = result[1] and result[1].vehicle or {}
     return veh
@@ -243,7 +258,7 @@ end)
 
 -- Fix Vehicle for player
 RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(_, selectedData)
-    if not CheckPerms(source, 'qadmin.action.spawn_vehicle') then return end
+    if not CheckPerms(source, 'qadmin.action.fix_vehicle') then return end
     local src = source
     local playerId = selectedData['Player'].value
     local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
@@ -251,9 +266,10 @@ RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(_, selectedData)
         local name = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
         TriggerClientEvent('iens:repaira', Player.PlayerData.source)
         TriggerClientEvent('vehiclemod:client:fixEverything', Player.PlayerData.source)
-        QBCore.Functions.Notify(src, locale("veh_fixed", name), 'success', 7500)
+        QBCore.Functions.Notify(src, locale("notifications.veh_fixed", name), 'success', 7500)
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Reparar veículo: veículo de %s reparado'):format(name), { target = playerId })
     else
-        TriggerClientEvent('QBCore:Notify', src, locale("not_online"), "error")
+        TriggerClientEvent('QBCore:Notify', src, locale("notifications.not_online"), "error")
     end
 end)
 
@@ -262,14 +278,14 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedD
     local src = source
 
     if not CheckPerms(src, 'qadmin.action.delete_vehicle') then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
         return
     end
 
     local plate = selectedData["Plate"].value:upper()
 
     if plate:len() > 8 then
-        QBCore.Functions.Notify(src, locale("plate_max"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.plate_max"), "error", 5000)
         return
     end
 
@@ -282,6 +298,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedD
     MySQL.query.await('DELETE FROM player_vehicles WHERE plate = ?', { plate })
 
     QBCore.Functions.Notify(src, locale("veh_deleted", plate), "success", 5000)
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'warn', ('Deletar veículo: placa %s removida do banco'):format(plate), { plate = plate })
 end)
 
 -- Update Vehicle Stock

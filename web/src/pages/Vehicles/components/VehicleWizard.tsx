@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
     MriModal, MriButton, MriInput,
-    MriSelectSearch, MriColorPicker
+    MriSelect, MriColorPicker
 } from '@mriqbox/ui-kit';
 import { useI18n } from '@/hooks/useI18n';
 import { useAppState } from '@/context/AppState';
@@ -35,11 +35,11 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
     const [garage, setGarage] = useState('Pillbox Garage Parking');
 
     const STEPS = useMemo(() => [
-        { id: 1, title: t('vehicle_wizard_step_receiver'), icon: Users },
-        { id: 2, title: t('vehicle_wizard_step_vehicle'), icon: Car },
-        { id: 3, title: t('vehicle_wizard_step_custom'), icon: Palette },
-        { id: 4, title: t('vehicle_wizard_step_storage'), icon: Warehouse },
-        { id: 5, title: t('vehicle_wizard_step_summary'), icon: CheckCircle2 },
+        { id: 1, title: t('vehicle.wizard.steps.receiver'), icon: Users },
+        { id: 2, title: t('vehicle.wizard.steps.vehicle'), icon: Car },
+        { id: 3, title: t('vehicle.wizard.steps.custom'), icon: Palette },
+        { id: 4, title: t('vehicle.wizard.steps.storage'), icon: Warehouse },
+        { id: 5, title: t('vehicle.wizard.steps.summary'), icon: CheckCircle2 },
     ], [t]);
 
     const playerOptions = useMemo(() => {
@@ -99,7 +99,7 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-6 border-b border-border pb-4">
                     <Gift className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-bold">{t('vehicle_wizard_title')}</h2>
+                    <h2 className="text-xl font-bold">{t('vehicle.wizard.title')}</h2>
                 </div>
 
                 {/* Stepper Header */}
@@ -141,15 +141,15 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                     {currentStep === 1 && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <h3 className="text-sm font-bold flex items-center gap-2">
-                                <Users className="w-4 h-4 text-primary" /> {t('vehicle_wizard_receiver_q')}
+                                <Users className="w-4 h-4 text-primary" /> {t('vehicle.wizard.questions.receiver')}
                             </h3>
                             <div className="p-4 bg-muted/20 border border-border rounded-xl">
                                 <div data-scroll-lock-ignore>
-                                    <MriSelectSearch
+                                    <MriSelect
                                         options={playerOptions}
                                         value={selectedPlayer}
                                         onChange={(val: string) => setSelectedPlayer(val)}
-                                        placeholder={t('search_player_placeholder')}
+                                        placeholder={t('common.search_player')}
                                     />
                                 </div>
                                 {selectedPlayerObj && (
@@ -170,10 +170,10 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                     {currentStep === 2 && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
                             <h3 className="text-sm font-bold flex items-center gap-2">
-                                <Car className="w-4 h-4 text-primary" /> {t('vehicle_wizard_vehicle_q')}
+                                <Car className="w-4 h-4 text-primary" /> {t('vehicle.wizard.questions.vehicle')}
                             </h3>
                             <div className="p-4 bg-muted/20 border border-border rounded-xl">
-                                <MriSelectSearch
+                                <MriSelect
                                     options={vehicleOptions}
                                     value={selectedVehicle}
                                     onChange={(val: string) => setSelectedVehicle(val)}
@@ -202,13 +202,13 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                     {currentStep === 3 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
                             <h3 className="text-sm font-bold flex items-center gap-2">
-                                <Palette className="w-4 h-4 text-primary" /> {t('vehicle_wizard_custom_q')}
+                                <Palette className="w-4 h-4 text-primary" /> {t('vehicle.wizard.questions.custom')}
                             </h3>
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                                        <Hash className="w-3 h-3" /> {t('vehicle_wizard_plate')}
+                                        <Hash className="w-3 h-3" /> {t('vehicle.wizard.labels.plate')}
                                     </label>
                                     <MriInput
                                         value={plate}
@@ -219,7 +219,7 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                                        <Palette className="w-3 h-3" /> {t('vehicle_wizard_color')}
+                                        <Palette className="w-3 h-3" /> {t('vehicle.wizard.labels.color')}
                                     </label>
                                     <div className="flex items-center gap-3 bg-card p-2 rounded-lg border border-border">
                                         <MriColorPicker
@@ -237,7 +237,7 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-1">
                                         <h4 className="text-sm font-bold flex items-center gap-2">
-                                            <Gauge className="w-4 h-4 text-primary" /> {t('vehicle_wizard_max_tuned')}
+                                            <Gauge className="w-4 h-4 text-primary" /> {t('vehicle.wizard.max_tuned')}
                                         </h4>
                                         <p className="text-[10px] text-muted-foreground">Sets all performance mods to the highest level.</p>
                                     </div>
@@ -258,9 +258,9 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                     {currentStep === 4 && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
                             <h3 className="text-sm font-bold flex items-center gap-2">
-                                <Warehouse className="w-4 h-4 text-primary" /> {t('vehicle_wizard_storage_q')}
+                                <Warehouse className="w-4 h-4 text-primary" /> {t('vehicle.wizard.questions.storage')}
                             </h3>
-                            <p className="text-xs text-muted-foreground">{t('vehicle_wizard_storage_desc')}</p>
+                            <p className="text-xs text-muted-foreground">{t('vehicle.wizard.storage_desc')}</p>
 
                             <div className="grid grid-cols-2 gap-3">
                                 {[
@@ -288,7 +288,7 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                             </div>
                             <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/10 rounded-lg flex items-start gap-3">
                                 <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-amber-500/80 leading-relaxed italic">{t('vehicle_wizard_storage_help')}</p>
+                                <p className="text-[10px] text-amber-500/80 leading-relaxed italic">{t('vehicle.wizard.help.storage')}</p>
                             </div>
                         </div>
                     )}
@@ -297,37 +297,37 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
                             <div className="p-4 bg-muted/20 border border-border rounded-xl space-y-4">
                                 <h3 className="text-sm font-bold flex items-center gap-2">
-                                    <Monitor className="w-4 h-4 text-primary" /> {t('vehicle_wizard_step_summary')}
+                                    <Monitor className="w-4 h-4 text-primary" /> {t('vehicle.wizard.steps.summary')}
                                 </h3>
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center text-xs pb-2 border-b border-border/50">
-                                        <span className="text-muted-foreground">{t('vehicle_wizard_receiver_label')}</span>
+                                        <span className="text-muted-foreground">{t('vehicle.wizard.labels.receiver')}</span>
                                         <span className="font-bold">{selectedPlayerObj?.name} <span className="text-[10px] text-muted-foreground">({selectedPlayer})</span></span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs pb-2 border-b border-border/50">
-                                        <span className="text-muted-foreground">{t('vehicle_wizard_vehicle_label')}</span>
+                                        <span className="text-muted-foreground">{t('vehicle.wizard.labels.vehicle')}</span>
                                         <span className="font-bold">{selectedVehicleObj?.name || selectedVehicle}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs pb-2 border-b border-border/50">
-                                        <span className="text-muted-foreground">{t('vehicle_wizard_plate_label')}</span>
+                                        <span className="text-muted-foreground">{t('vehicle.wizard.labels.plate')}</span>
                                         <span className="font-bold font-mono uppercase bg-muted px-2 py-0.5 rounded">{plate}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs pb-2 border-b border-border/50">
-                                        <span className="text-muted-foreground">{t('vehicle_wizard_color_label')}</span>
+                                        <span className="text-muted-foreground">{t('vehicle.wizard.labels.color')}</span>
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: color }} />
                                             <span className="font-bold font-mono">{color}</span>
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center text-xs pb-2 border-b border-border/50">
-                                        <span className="text-muted-foreground">{t('vehicle_wizard_garage_label')}</span>
+                                        <span className="text-muted-foreground">{t('vehicle.wizard.labels.garage')}</span>
                                         <span className="font-bold">{garage}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs">
-                                        <span className="text-muted-foreground">{t('vehicle_wizard_performance_label')}</span>
+                                        <span className="text-muted-foreground">{t('vehicle.wizard.labels.performance')}</span>
                                         <span className={cn("font-bold text-[10px] px-2 py-0.5 rounded uppercase", maxTuned ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                                            {maxTuned ? t('vehicle_wizard_tuned_label') : t('vehicle_wizard_stock_label')}
+                                            {maxTuned ? t('vehicle.wizard.labels.tuned') : t('vehicle.wizard.labels.stock')}
                                         </span>
                                     </div>
                                 </div>
@@ -344,12 +344,12 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                         disabled={currentStep === 1 || loading}
                         className="gap-2"
                     >
-                        <ChevronLeft className="w-4 h-4" /> {t('permission_wizard_back')}
+                        <ChevronLeft className="w-4 h-4" /> {t('permission_wizard.back')}
                     </MriButton>
 
                     <div className="flex gap-2">
                         <MriButton variant="outline" onClick={onClose} disabled={loading}>
-                            {t('cancel_label')}
+                            {t('common.cancel')}
                         </MriButton>
                         {currentStep < 5 ? (
                             <MriButton
@@ -361,15 +361,16 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
                                 }
                                 className="gap-2 min-w-[100px]"
                             >
-                                {t('permission_wizard_next')} <ChevronRight className="w-4 h-4" />
+                                {t('permission_wizard.next')} <ChevronRight className="w-4 h-4" />
                             </MriButton>
                         ) : (
                             <MriButton
                                 onClick={handleFinish}
-                                loading={loading}
+                                isLoading={loading}
                                 className="gap-2 bg-primary text-primary-foreground min-w-[120px]"
                             >
-                                {t('vehicle_wizard_send_success')} <Gift className="w-4 h-4" />
+                                {!loading && <Gift className="w-4 h-4" />}
+                                {t('vehicle.wizard.success')}
                             </MriButton>
                         )}
                     </div>
@@ -378,3 +379,4 @@ export default function VehicleWizard({ isOpen, onClose, onFinish }: VehicleWiza
         </MriModal>
     );
 }
+

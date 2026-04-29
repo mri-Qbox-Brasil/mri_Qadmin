@@ -14,20 +14,20 @@ export default function EntityInformation() {
                 <MriCardHeader className="p-4 pb-2">
                     <MriCardTitle className="flex items-center gap-2 text-sm font-medium">
                         <Info className="h-4 w-4" />
-                        {t('devmode_entity_info')}
+                        {t('devmode.entity_info')}
                     </MriCardTitle>
                 </MriCardHeader>
                 <MriCardContent className="p-4 pt-2 text-xs space-y-1">
-                    <p><span className="font-semibold">{t('devmode_type')}:</span> {entityInfo.type}</p>
-                    <p><span className="font-semibold">{t('devmode_model')}:</span> {entityInfo.name}</p>
-                    <p><span className="font-semibold">{t('devmode_hash')}:</span> {entityInfo.hash}</p>
-                    <p><span className="font-semibold">{t('devmode_handle')}:</span> {entityInfo.id}</p>
-                    {entityInfo.netId && <p><span className="font-semibold">{t('devmode_netid')}:</span> {entityInfo.netId}</p>}
-                    <p><span className="font-semibold">{t('devmode_distance')}:</span> {entityInfo.distance}m</p>
+                    <p><span className="font-semibold">{t('devmode.type')}:</span> {entityInfo.type}</p>
+                    <p><span className="font-semibold">{t('devmode.model')}:</span> {entityInfo.name}</p>
+                    <p><span className="font-semibold">{t('devmode.hash')}:</span> {entityInfo.hash}</p>
+                    <p><span className="font-semibold">{t('devmode.handle')}:</span> {entityInfo.id}</p>
+                    {entityInfo.netId && <p><span className="font-semibold">{t('devmode.netid')}:</span> {entityInfo.netId}</p>}
+                    <p><span className="font-semibold">{t('devmode.distance')}:</span> {entityInfo.distance}m</p>
                     <div className="mt-4 pt-2 border-t border-primary-foreground/20 italic opacity-80">
-                        <p>{t('devmode_copy_info')}</p>
-                        <p>{t('devmode_delete_ent')}</p>
-                        <p>{t('devmode_exit_info')}</p>
+                        <p>{t('devmode.copy_info')}</p>
+                        <p>{t('devmode.delete_ent')}</p>
+                        <p>{t('devmode.exit_info')}</p>
                     </div>
                 </MriCardContent>
             </MriCard>

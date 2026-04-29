@@ -23,6 +23,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_cid', function(_, selectedData)
     local affectedRows = MySQL.update.await('DELETE FROM bans WHERE license = ? OR license = ?', { license1, license2 })
     if affectedRows and affectedRows > 0 then
         TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi desbanido."):format(citizenid), "success", 5000)
+        AddLog(src, 'mri_Qadmin', 'bans', 'info', ('Desbanimento: CID %s desbanido'):format(citizenid), { cid = citizenid })
     else
         TriggerClientEvent('QBCore:Notify', src, ("⚠️ Nenhum banimento encontrado com as licenças associadas ao CID %s."):format(citizenid), "error", 5000)
     end
@@ -43,6 +44,7 @@ RegisterNetEvent('mri_Qadmin:server:delete_cid', function(_, selectedData)
 
     if affectedRows and affectedRows > 0 then
         TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi deletado."):format(citizenid), "success", 5000)
+        AddLog(src, 'mri_Qadmin', 'players', 'error', ('Deletar personagem: CID %s deletado'):format(citizenid), { citizenid = citizenid })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     else
         TriggerClientEvent('QBCore:Notify', src, ("❌ Nenhum jogador encontrado com CID %s."):format(citizenid), "error", 5000)
@@ -73,19 +75,23 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
                 player, 'discord'), QBCore.Functions.GetIdentifier(player, 'ip'), reason, banTime, GetPlayerName(source) })
 
         if time == 2147483647 then
-            DropPlayer(player, locale("banned") .. '\n' .. locale("reason") .. reason .. locale("ban_perm"))
+            DropPlayer(player, locale("notifications.banned") .. '\n' .. locale("notifications.reason") .. reason .. locale("notifications.ban_perm"))
         else
             DropPlayer(player,
-                locale("banned") ..
+                locale("notifications.banned") ..
                 '\n' ..
-                locale("reason") ..
+                locale("notifications.reason") ..
                 reason ..
                 '\n' ..
-                locale("ban_expires") ..
+                locale("notifications.ban_expires") ..
                 timeTable['day'] ..
                 '/' .. timeTable['month'] .. '/' .. timeTable['year'] .. ' ' .. timeTable['hour'] .. ':' .. timeTable['min'])
         end
-        QBCore.Functions.Notify(source, locale("playerbanned", GetPlayerName(player), banTime, reason), 'success', 7500)
+        QBCore.Functions.Notify(source, locale("notifications.playerbanned", GetPlayerName(player), banTime, reason), 'success', 7500)
+        local logData = GetTargetData(player)
+        logData.reason = reason
+        logData.duration = duration
+        AddLog(source, 'mri_Qadmin', 'bans', 'warn', ('Banimento: %s foi banido'):format(GetPlayerName(player) or player), logData)
 
     else
         -- OFFLINE BAN
@@ -108,7 +114,8 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
         MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
             { name, licenseVal, discord or "", "0.0.0.0", reason, banTime, GetPlayerName(source) })
 
-        QBCore.Functions.Notify(source, locale("playerbanned", name, banTime, reason), 'success', 7500)
+        QBCore.Functions.Notify(source, locale("notifications.playerbanned", name, banTime, reason), 'success', 7500)
+        AddLog(source, 'mri_Qadmin', 'bans', 'warn', ('Banimento (offline): %s foi banido'):format(name), { reason = reason, duration = duration, name = name, license = licenseVal })
     end
 
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
@@ -149,6 +156,7 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
         if src > 0 then
             QBCore.Functions.Notify(src, 'Jogador desbanido com sucesso.', 'success', 7500)
         end
+        AddLog(src, 'mri_Qadmin', 'bans', 'info', ('Desbanimento: %s desbanido'):format(GetPlayerName(targetId) or targetId), GetTargetData(targetId))
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     else
         if src > 0 then
@@ -167,9 +175,13 @@ RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(_, selectedData)
     local warnId = 'WARN-' .. math.random(1111, 9999)
     if target ~= nil then
         QBCore.Functions.Notify(target.PlayerData.source,
-            locale("warned") .. ", por: " .. locale("reason") .. " " .. reason, 'inform', 60000)
+            locale("notifications.warned") .. ", por: " .. locale("notifications.reason") .. " " .. reason, 'inform', 60000)
         QBCore.Functions.Notify(source,
-            locale("warngiven") .. GetPlayerName(target.PlayerData.source) .. ", por: " .. reason)
+            locale("notifications.warngiven") .. GetPlayerName(target.PlayerData.source) .. ", por: " .. reason)
+        local warnLogData = GetTargetData(target.PlayerData.source)
+        warnLogData.reason = reason
+        warnLogData.warnId = warnId
+        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Aviso: %s recebeu advertência'):format(GetPlayerName(target.PlayerData.source)), warnLogData)
         MySQL.insert.await('INSERT INTO player_warns (senderIdentifier, targetIdentifier, reason, warnId) VALUES (?, ?, ?, ?)',
             {
                 sender.PlayerData.license,
@@ -178,7 +190,7 @@ RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(_, selectedData)
                 warnId
             })
     else
-        TriggerClientEvent('QBCore:Notify', source, locale("not_online"), 'error')
+        TriggerClientEvent('QBCore:Notify', source, locale("notifications.not_online"), 'error')
     end
 end)
 
@@ -190,11 +202,14 @@ RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(_, selectedData)
     local reason = GetValue(selectedData, "Reason")
 
     if not target then
-        QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error', 7500)
         return
     end
 
-    DropPlayer(target.PlayerData.source, locale("kicked") .. '\n' .. locale("reason") .. reason)
+    DropPlayer(target.PlayerData.source, locale("notifications.kicked") .. '\n' .. locale("notifications.reason") .. reason)
+    local kickLogData = GetTargetData(target.PlayerData.source)
+    kickLogData.reason = reason
+    AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Expulsão: %s foi expulso'):format(GetPlayerName(target.PlayerData.source)), kickLogData)
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -233,6 +248,7 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
 
 		-- Also notify the target player
 		TriggerClientEvent('QBCore:Notify', playerId, newState and "Você foi verificado pela staff." or "Sua verificação de staff foi removida.", "primary", 5000)
+		AddLog(src, 'mri_Qadmin', 'players', 'info', newState and ('Verificação: jogador %s marcado como verificado'):format(GetPlayerName(playerId) or playerId) or ('Verificação: verificação removida do jogador %s'):format(GetPlayerName(playerId) or playerId), { target = playerId })
 
 		-- Broadcast update to everyone so all admins see it immediately
 		local ped = GetPlayerPed(playerId)
@@ -246,7 +262,7 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 	else
 		Debug('[DEBUG] Player not found for ID: ' .. tostring(playerId))
-		QBCore.Functions.Notify(src, locale("not_online"), "error")
+		QBCore.Functions.Notify(src, locale("notifications.not_online"), "error")
 	end
 end)
 
@@ -265,13 +281,14 @@ RegisterNetEvent('mri_Qadmin:server:Revive', function(_, selectedData)
 
     -- Notify the target player
     TriggerClientEvent('QBCore:Notify', player, 'Você foi revivido por um administrador.', 'success')
+    AddLog(src, 'mri_Qadmin', 'players', 'success', ('Revive: %s foi revivido'):format(GetPlayerName(player) or player), GetTargetData(player))
 
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
 -- Revive All
 RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(_)
-    if not CheckPerms(source, 'qadmin.action.revive') then return end
+    if not CheckPerms(source, 'qadmin.action.revive_all') then return end
 
     -- Trigger standard hospital revive event for all
     TriggerClientEvent('hospital:client:Revive', -1)
@@ -280,11 +297,12 @@ RegisterNetEvent('mri_Qadmin:server:ReviveAll', function(_)
     if GetResourceState('mri_Qbox') == 'started' then
         TriggerClientEvent('qbx_medical:client:revive', -1)
     end
+    AddLog(source, 'mri_Qadmin', 'players', 'success', 'Revive em massa: todos os jogadores foram revividos', {})
 end)
 
 -- Revive Radius
 RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(_)
-    if not CheckPerms(source, 'qadmin.action.revive') then return end
+    if not CheckPerms(source, 'qadmin.action.revive_all') then return end
 
     local src = source
     local ped = GetPlayerPed(src)
@@ -303,7 +321,25 @@ RegisterNetEvent('mri_Qadmin:server:ReviveRadius', function(_)
             TriggerClientEvent('QBCore:Notify', v, 'Você foi revivido por um administrador.', 'success')
         end
     end
+    AddLog(src, 'mri_Qadmin', 'players', 'success', 'Revive em raio: jogadores próximos foram revividos', {})
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
+end)
+
+-- Revive Self (admin revives themselves)
+RegisterNetEvent('mri_Qadmin:server:ReviveSelf', function()
+    if not CheckPerms(source, 'qadmin.action.revive_self') then return end
+    local src = source
+    TriggerClientEvent('hospital:client:Revive', src)
+    TriggerClientEvent('qbx_medical:client:revive', src)
+    TriggerClientEvent('QBCore:Client:Revive', src)
+    AddLog(src, 'mri_Qadmin', 'players', 'success', 'Revive próprio: admin se reviveu', {})
+end)
+
+-- Clear Chat
+RegisterNetEvent('mri_Qadmin:server:ClearChat', function()
+    if not CheckPerms(source, 'qadmin.action.clear_chat') then return end
+    TriggerClientEvent('chat:clear', -1)
+    AddLog(source, 'mri_Qadmin', 'actions', 'info', ('Chat limpo por %s'):format(GetPlayerName(source) or source), {})
 end)
 
 -- Set RoutingBucket
@@ -318,11 +354,12 @@ RegisterNetEvent('mri_Qadmin:server:SetBucket', function(_, selectedData)
     Debug(player, bucket, currentBucket)
 
     if bucket == currentBucket then
-        return QBCore.Functions.Notify(src, locale("target_same_bucket", player), 'error', 7500)
+        return QBCore.Functions.Notify(src, locale("notifications.target_same_bucket", player), 'error', 7500)
     end
 
     SetPlayerRoutingBucket(player, bucket)
-    QBCore.Functions.Notify(src, locale("bucket_set_for_target", player, bucket), 'success', 7500)
+    QBCore.Functions.Notify(src, locale("notifications.bucket_set_for_target", player, bucket), 'success', 7500)
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Bucket: jogador %s movido para bucket %d'):format(GetPlayerName(tonumber(player)) or player, bucket), { player = player, bucket = bucket })
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -334,7 +371,7 @@ RegisterNetEvent('mri_Qadmin:server:GetBucket', function(_, selectedData)
     local player = GetValue(selectedData, "Player")
     local currentBucket = GetPlayerRoutingBucket(tonumber(player))
 
-    QBCore.Functions.Notify(src, locale("bucket_get", player, currentBucket), 'success', 7500)
+    QBCore.Functions.Notify(src, locale("notifications.bucket_get", player, currentBucket), 'success', 7500)
 end)
 
 -- Helper to format money into the array expected by the UI
@@ -360,13 +397,17 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(_, selectedData)
     local Player = QBCore.Functions.GetPlayer(tonumber(target))
 
     if Player == nil then
-        return QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        return QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error', 7500)
     end
 
     Player.Functions.AddMoney(tostring(moneyType), tonumber(amount))
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "give_money_crypto" or "give_money"), tonumber(amount),
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
+    local moneyLogData = GetTargetData(tonumber(target))
+    moneyLogData.amount = tonumber(amount)
+    moneyLogData.type = moneyType
+    AddLog(src, 'mri_Qadmin', 'money', 'info', ('Dar dinheiro: R$%s (%s) dado a %s %s'):format(amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), moneyLogData)
 
     TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
         id = tonumber(target),
@@ -384,6 +425,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(_, selectedData)
     local moneyType = GetValue(selectedData, "Type")
     local players = QBCore.Functions.GetPlayers()
 
+    AddLog(src, 'mri_Qadmin', 'money', 'warn', ('Dar dinheiro a todos: R$%s (%s) dado a todos os jogadores'):format(amount, moneyType), { amount = tonumber(amount), type = moneyType })
     for _, v in pairs(players) do
         local Player = QBCore.Functions.GetPlayer(tonumber(v))
         if Player then
@@ -411,19 +453,23 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(_, selectedData)
     local Player = QBCore.Functions.GetPlayer(tonumber(target))
 
     if Player == nil then
-        return QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        return QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error', 7500)
     end
 
     if Player.PlayerData.money[moneyType] >= tonumber(amount) then
         Player.Functions.RemoveMoney(moneyType, tonumber(amount), "state-fees")
         broadcastMoneyUpdate(src, target, Player)
     else
-        QBCore.Functions.Notify(src, locale("not_enough_money"), "primary")
+        QBCore.Functions.Notify(src, locale("notifications.not_enough_money"), "primary")
     end
 
     QBCore.Functions.Notify(src,
         locale((moneyType == "crypto" and "take_money_crypto" or "take_money"), tonumber(amount) .. "R$",
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
+    local takeLogData = GetTargetData(tonumber(target))
+    takeLogData.amount = tonumber(amount)
+    takeLogData.type = moneyType
+    AddLog(src, 'mri_Qadmin', 'money', 'warn', ('Remover dinheiro: R$%s (%s) removido de %s %s'):format(amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), takeLogData)
 
     TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
         id = tonumber(target),
@@ -441,13 +487,15 @@ RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(_)
     local src = source
 
     if Blackout then
-        TriggerClientEvent('QBCore:Notify', src, locale("blackout", "Ativado"), 'primary')
+        TriggerClientEvent('QBCore:Notify', src, locale("notifications.blackout", "Ativado"), 'primary')
+        AddLog(src, 'mri_Qadmin', 'server', 'warn', 'Blackout ativado', {})
         while Blackout do
             Wait(0)
             exports["qb-weathersync"]:setBlackout(true)
         end
         exports["qb-weathersync"]:setBlackout(false)
-        TriggerClientEvent('QBCore:Notify', src, locale("blackout", "Desativado"), 'primary')
+        TriggerClientEvent('QBCore:Notify', src, locale("notifications.blackout", "Desativado"), 'primary')
+        AddLog(src, 'mri_Qadmin', 'server', 'info', 'Blackout desativado', {})
     end
 end)
 
@@ -462,14 +510,17 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(_, selectedData)
 
         if playerIsCuffed then
             TriggerClientEvent("ND_Police:uncuffPed", target)
-            return QBCore.Functions.Notify(source, locale("toggled_cuffs_off"), 'success')
+            AddLog(source, 'mri_Qadmin', 'players', 'info', ('Algemas: jogador %s desalgemado'):format(GetPlayerName(target) or target), GetTargetData(target))
+            return QBCore.Functions.Notify(source, locale("notifications.toggled_cuffs_off"), 'success')
         end
         TriggerClientEvent("ND_Police:syncNormalCuff", target, "front", "cuffs")
-        return QBCore.Functions.Notify(source, locale("toggled_cuffs_on"), 'success')
+        AddLog(source, 'mri_Qadmin', 'players', 'warn', ('Algemas: jogador %s algemado'):format(GetPlayerName(target) or target), GetTargetData(target))
+        return QBCore.Functions.Notify(source, locale("notifications.toggled_cuffs_on"), 'success')
     end
 
     TriggerClientEvent('mri_Qadmin:client:ToggleCuffs', target)
-    QBCore.Functions.Notify(source, locale("toggled_cuffs"), 'success')
+    QBCore.Functions.Notify(source, locale("notifications.toggled_cuffs"), 'success')
+    AddLog(source, 'mri_Qadmin', 'players', 'warn', ('Algemas: algemas alternadas no jogador %s'):format(GetPlayerName(target) or target), GetTargetData(target))
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
 end)
 
@@ -481,7 +532,7 @@ RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(_, selectedData)
     local target = tonumber(GetValue(selectedData, "Player"))
 
     if target == nil then
-        return QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        return QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error', 7500)
     end
 
     if target == src then
@@ -489,13 +540,14 @@ RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(_, selectedData)
     end
 
     TriggerClientEvent('qb-clothing:client:openMenu', target)
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Roupa: editor de roupa aberto para %s'):format(GetPlayerName(target) or target), GetTargetData(target))
 end)
 
 -- Set Ped
 RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
     local src = source
     if not CheckPerms(source, 'qadmin.action.set_ped') then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
         return
     end
 
@@ -504,16 +556,18 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
     local Player = QBCore.Functions.GetPlayer(tsrc)
 
     if not Player then
-        QBCore.Functions.Notify(locale("not_online"), "error", 5000)
+        QBCore.Functions.Notify(locale("notifications.not_online"), "error", 5000)
         return
     end
 
     TriggerClientEvent("mri_Qadmin:client:setPed", Player.PlayerData.source, ped)
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Ped: modelo %s aplicado em %s %s'):format(ped, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = tsrc, ped = ped })
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
 -- Callback para listar bans com paginação e busca
 lib.callback.register('mri_Qadmin:callback:GetBans', function(_source, data)
+    if not CheckPerms(_source, 'qadmin.page.bans') then return { bans = {}, total = 0 } end
     local page = data and tonumber(data.page) or 1
     local pageSize = data and tonumber(data.pageSize) or 50
     local search = data and data.search or ""
@@ -560,6 +614,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(_, selectedData)
     if affectedRows and affectedRows > 0 then
         TriggerClientEvent('QBCore:Notify', src, ("✅ Banimento removido com sucesso (ID %s)."):format(banId), "success", 5000)
         TriggerClientEvent('mri_Qadmin:client:RefreshBans', -1)
+        AddLog(src, 'mri_Qadmin', 'bans', 'info', ('Desbanimento: ban #%d removido'):format(banId), { banId = banId })
     else
         TriggerClientEvent('QBCore:Notify', src, "Nenhum banimento removido.", "error", 5000)
     end
@@ -577,13 +632,15 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(_, selectedData)
     if targetPlayer then
         -- Trigger client event on target to kill themselves (reliable way)
         TriggerClientEvent('mri_Qadmin:client:ForceKill', targetPlayer.PlayerData.source)
-        QBCore.Functions.Notify(src, locale("kill_player", targetPlayer.PlayerData.charinfo.firstname), 'success')
+        QBCore.Functions.Notify(src, locale("notifications.kill_player", targetPlayer.PlayerData.charinfo.firstname), 'success')
+        AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Matar: %s %s foi morto'):format(targetPlayer.PlayerData.charinfo.firstname, targetPlayer.PlayerData.charinfo.lastname), GetTargetData(targetId))
     else
-        QBCore.Functions.Notify(src, locale("not_online"), 'error')
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error')
     end
 end)
 
 lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(_source, targetIds)
+    if not CheckPerms(_source, 'qadmin.page.livemap') then return {} end
     local coordsList = {}
     if not targetIds or type(targetIds) ~= 'table' then return coordsList end
 
@@ -616,6 +673,7 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerCoords', function(_source, t
 end)
 
 lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(_source)
+    if not CheckPerms(_source, 'qadmin.page.livemap') then return {} end
     local allPlayers = QBCore.Functions.GetPlayers()
     local coordsList = {}
 
@@ -675,24 +733,9 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(_source
     return coordsList
 end)
 
--- Screenshot Logic
-lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(_source, targetId, viewerId)
-    local target = tonumber(targetId)
-    local src = source
-    print('[DEBUG] GetPlayerScreen called. Source:', src, 'Target:', target, 'Viewer:', viewerId)
-
-    if target and target ~= 0 then
-        -- Trigger WebRTC Start on Target
-        -- Default to source if no specialized viewerId provided
-        local vid = viewerId or tostring(src)
-        TriggerClientEvent('mri_Qadmin:client:StartWebRTC', target, vid)
-        return { status = "webrtc_initiated" }
-    end
-    return { status = "error", message = "Invalid Target" }
-end)
-
 -- Real-time vitals for ScreenModal
 lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(_source, targetId)
+    if not CheckPerms(_source, 'qadmin.page.players') then return nil end
     local target = tonumber(targetId)
     if not target or target == 0 then return { error = 'Invalid target' } end
     local player = QBCore.Functions.GetPlayer(target)
@@ -706,3 +749,34 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerVitals', function(_source, t
     }
 end)
 
+-- Global Announcement
+RegisterNetEvent('mri_Qadmin:server:Announce', function(message)
+    local src = source
+    if not CheckPerms(src, 'qadmin.action.announcements') then return end
+
+    if not message or message == "" then return end
+
+    Debug(('[mri_Qadmin] Announce: %s sent message: %s'):format(GetPlayerName(src), message))
+
+    -- Standard QBCore notification to all players
+    TriggerClientEvent('QBCore:Notify', -1, message, 'primary', 10000)
+    
+    -- Optional: Send to chat as well
+    TriggerClientEvent('chat:addMessage', -1, {
+        color = { 255, 0, 0},
+        multiline = true,
+        args = {"ANÚNCIO", message}
+    })
+    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Anúncio global: %s'):format(message), { message = message })
+end)
+
+-- Relay for client-only toggle actions (god mode, noclip, etc.)
+RegisterNetEvent('mri_Qadmin:server:LogClientAction', function(category, level, message, data)
+    local src = source
+    if not CheckPerms(src, 'qadmin.open') then return end
+    local validCats  = { players=true, bans=true, inventory=true, vehicles=true, money=true, server=true, permissions=true, chat=true, actions=true, system=true }
+    local validLevels = { info=true, success=true, warn=true, error=true }
+    category = validCats[category]  and category or 'actions'
+    level    = validLevels[level] and level    or 'info'
+    AddLog(src, 'mri_Qadmin', category, level, tostring(message or ''), type(data) == 'table' and data or {})
+end)

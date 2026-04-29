@@ -263,6 +263,47 @@ local function getPlayers(page, pageSize, search)
         end
     end
 
+    -- 4. Batch ban lookup for all players
+    if #resultPlayers > 0 then
+        local targetLicenses = {}
+        local licenseToIdx = {}
+        for i, p in ipairs(resultPlayers) do
+            local lic = p.license
+            if lic and lic ~= 'N/A' then
+                targetLicenses[#targetLicenses + 1] = lic
+                licenseToIdx[lic] = i
+                local alt
+                if lic:find('^license2:') then
+                    alt = lic:gsub('^license2:', 'license:')
+                elseif lic:find('^license:') then
+                    alt = lic:gsub('^license:', 'license2:')
+                end
+                if alt then
+                    targetLicenses[#targetLicenses + 1] = alt
+                    if not licenseToIdx[alt] then licenseToIdx[alt] = i end
+                end
+            end
+        end
+
+        if #targetLicenses > 0 then
+            local banRows = MySQL.query.await('SELECT id, license, reason, expire, bannedby FROM bans WHERE license IN (?)', { targetLicenses })
+            if banRows then
+                for _, b in ipairs(banRows) do
+                    local idx = licenseToIdx[b.license]
+                    if idx and not resultPlayers[idx].ban then
+                        resultPlayers[idx].ban = {
+                            id = b.id,
+                            reason = b.reason or '',
+                            expire = b.expire,
+                            bannedby = b.bannedby or '',
+                            isPermanent = b.expire == 2147483647
+                        }
+                    end
+                end
+            end
+        end
+    end
+
     return {
         data = resultPlayers,
         total = totalRecords,
@@ -273,6 +314,7 @@ end
 _G.getPlayers = getPlayers
 
 lib.callback.register('mri_Qadmin:callback:GetPlayers', function(_source, page, limit, search)
+    if not CheckPerms(_source, 'qadmin.page.players') then return { players = {}, total = 0 } end
     return getPlayers(page, limit, search)
 end)
 
@@ -332,7 +374,8 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
             exports['qb-phone']:hireUser(tostring(Job), citizenid, tonumber(Grade))
         end
 
-        QBCore.Functions.Notify(src, locale("jobset", name, Job, grade.name), 'success', 5000)
+        QBCore.Functions.Notify(src, locale("notifications.jobset", name, Job, grade.name), 'success', 5000)
+        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Cargo: %s recebeu cargo %s (%s)'):format(name, Job, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, job = Job, grade = Grade })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
@@ -389,7 +432,8 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
             Player.Functions.Save()
         end
 
-        QBCore.Functions.Notify(src, locale("gangset", name, Gang, grade.name), 'success', 5000)
+        QBCore.Functions.Notify(src, locale("notifications.gangset", name, Gang, grade.name), 'success', 5000)
+        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Gangue: %s recebeu gangue %s (%s)'):format(name, Gang, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, gang = Gang, grade = Grade })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
@@ -404,14 +448,17 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
     local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
 
     if not tPlayer then
-        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), "error", 5000)
         return
     end
 
     local name = tPlayer.PlayerData.charinfo.firstname .. ' ' .. tPlayer.PlayerData.charinfo.lastname
 
     QBCore.Functions.AddPermission(tPlayer.PlayerData.source, tostring(rank))
-    QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("player_perms", name, rank), 'success', 5000)
+    QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("notifications.player_perms", name, rank), 'success', 5000)
+    local permLogData = GetTargetData(tonumber(targetId))
+    permLogData.rank = rank
+    AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Permissão: %s recebeu permissão %s'):format(name, rank), permLogData)
 end)
 
 -- Remove Stress
@@ -424,13 +471,14 @@ RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(dataKey, selectedDat
     local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
 
     if not tPlayer then
-        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), "error", 5000)
         return
     end
 
     TriggerClientEvent('mri_Qadmin:client:removeStress', targetId)
 
-    QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("removed_stress_player"), 'success', 5000)
+    QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("notifications.removed_stress_player"), 'success', 5000)
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Stress removido de %s %s'):format(tPlayer.PlayerData.charinfo.firstname, tPlayer.PlayerData.charinfo.lastname), GetTargetData(tonumber(targetId)))
 end)
 
 -- Set Vital (Unified event for Health, Armor, Hunger, Thirst, Stress)
@@ -440,7 +488,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
 
     if not tPlayer then
-        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), "error", 5000)
         return
     end
 
@@ -452,6 +500,12 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     elseif vital == "hunger" or vital == "thirst" or vital == "stress" then
         tPlayer.Functions.SetMetaData(vital, tonumber(value))
     end
+
+    local targetName = tPlayer.PlayerData.charinfo.firstname .. ' ' .. tPlayer.PlayerData.charinfo.lastname
+    local vitalLogData = GetTargetData(tonumber(targetId))
+    vitalLogData.vital = vital
+    vitalLogData.value = value
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Vital: %s de %s definido para %s'):format(vital, targetName, value), vitalLogData)
 
     -- Broadcast update immediate to admins only
     local admins = GetAdminPlayers()
@@ -465,7 +519,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     end
 
     -- Notify staff
-    QBCore.Functions.Notify(src, locale("vitals_set_success"):format(vital, value, targetId), "success")
+    QBCore.Functions.Notify(src, locale("vitals.set_success"):format(vital, value, targetId), "success")
 end)
 
 -- Helper to broadcast vitals/metadata updates to all admins

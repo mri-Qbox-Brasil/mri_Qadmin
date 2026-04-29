@@ -1,6 +1,6 @@
 import React from "react";
 import { useNui } from "@/context/NuiContext";
-import { MriActionButton } from "@mriqbox/ui-kit";
+import { MriActionCard } from "@mriqbox/ui-kit";
 
 interface ActionButtonProps {
     id: string;
@@ -29,11 +29,12 @@ export default function ActionButton({
     };
 
     return (
-        <MriActionButton
+        <MriActionCard
             id={id}
             label={data.label}
             isFavorite={isFavorite}
             isProcessing={isProcessing}
+            disabled={data.disabled}
             onClick={handleClick}
             onToggleFavorite={onToggleFavorite}
         />

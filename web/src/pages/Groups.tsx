@@ -128,7 +128,7 @@ export default function Groups() {
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         <div className="flex items-center gap-2 pb-2 border-b border-border shrink-0">
                             <Briefcase className="h-5 w-5 text-blue-500" />
-                            <h2 className="text-lg font-bold text-foreground">{t('groups_jobs')}</h2>
+                            <h2 className="text-lg font-bold text-foreground">{t('groups.jobs')}</h2>
                         </div>
                         <div className="flex-1 min-h-0">
                             <GroupList
@@ -147,7 +147,7 @@ export default function Groups() {
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         <div className="flex items-center gap-2 pb-2 border-b border-border shrink-0">
                             <Skull className="h-5 w-5 text-red-500" />
-                            <h2 className="text-lg font-bold text-foreground">{t('groups_gangs')}</h2>
+                            <h2 className="text-lg font-bold text-foreground">{t('groups.gangs')}</h2>
                         </div>
                         <div className="flex-1 min-h-0">
                             <GroupList

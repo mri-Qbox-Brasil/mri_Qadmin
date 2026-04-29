@@ -241,11 +241,11 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                                 size="compact"
                                 onAction={(vital: any, label: string, val: number) => setShowVital({ vital, label, value: val })}
                                 labels={{
-                                    health: t('vitals_health'),
-                                    armor: t('vitals_armor'),
-                                    hunger: t('vitals_hunger'),
-                                    thirst: t('vitals_thirst'),
-                                    stress: t('vitals_stress')
+                                    health: t('vitals.health'),
+                                    armor: t('vitals.armor'),
+                                    hunger: t('vitals.hunger'),
+                                    thirst: t('vitals.thirst'),
+                                    stress: t('vitals.stress')
                                 }}
                             />
                         ) : (
@@ -274,12 +274,12 @@ export default function ScreenModal({ playerId, onClose, playerName }: ScreenMod
                     setShowVital(null);
                 }}
                 labels={{
-                    health: t('vitals_health'),
-                    armor: t('vitals_armor'),
-                    hunger: t('vitals_hunger'),
-                    thirst: t('vitals_thirst'),
-                    stress: t('vitals_stress'),
-                    newValue: t('new_value'),
+                    health: t('vitals.health'),
+                    armor: t('vitals.armor'),
+                    hunger: t('vitals.hunger'),
+                    thirst: t('vitals.thirst'),
+                    stress: t('vitals.stress'),
+                    newValue: t('common.new_value'),
                     confirm: t('confirm'),
                     cancel: t('cancel')
                 }}

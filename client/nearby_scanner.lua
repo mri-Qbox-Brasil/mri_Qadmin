@@ -11,11 +11,11 @@ local function GetEntityName(model, type)
     if type == 'Vehicle' then
         return GetDisplayNameFromVehicleModel(model)
     elseif type == 'Ped' then
-        return locale('devmode_ped')
+        return locale('devmode.ped')
     elseif type == 'Object' then
-        return ObjectList[model] or locale('devmode_object')
+        return ObjectList[model] or locale('devmode.object')
     end
-    return locale('devmode_unknown')
+    return locale('devmode.unknown')
 end
 
 
@@ -113,6 +113,7 @@ end
 
 RegisterNetEvent('mri_Qadmin:client:ToggleNearbyScanner', function()
     activeNearbyScanner = not activeNearbyScanner
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', activeNearbyScanner and 'Scanner de entidades: ativado' or 'Scanner de entidades: desativado', {})
     if activeNearbyScanner then
         nextScanTime = 0 -- Force immediate scan
         CreateThread(ScannerLoop)

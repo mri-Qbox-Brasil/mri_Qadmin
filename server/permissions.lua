@@ -1,58 +1,308 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
 -----------------------------------------------------------------------------------------------------------------------------------------
+-- MIGRATION
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+local function RunMigration()
+    local hasOld = MySQL.scalar.await("SELECT count(*) FROM information_schema.tables WHERE table_name = 'mri_qadmin_aces' AND table_schema = DATABASE()")
+    if hasOld > 0 then
+        Debug('[mri_Qadmin] MIGRATION: Old permissions tables found. Running migration to group-based system...')
+
+        local groups = {}
+        local dbPrincipals = MySQL.query.await('SELECT * FROM mri_qadmin_principals') or {}
+        local dbAces = MySQL.query.await('SELECT * FROM mri_qadmin_aces') or {}
+
+        -- Default admin group
+        MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {'admin', 'Administrador', 'Grupo de Administração'})
+        groups['group.admin'] = 'admin'
+
+        for _, p in ipairs(dbPrincipals) do
+            local parent = p.parent
+            if string.find(parent, 'group.') then
+                local groupName = string.gsub(parent, 'group.', '')
+                if not groups[parent] then
+                    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {groupName, groupName:gsub("^%l", string.upper), 'Migrado'})
+                    groups[parent] = groupName
+                end
+
+                local child = p.child
+                if string.find(child, 'license:') or string.find(child, 'license2:') then
+                    local cleanLicense = child:gsub('identifier.', '')
+                    local qbplayers = MySQL.query.await('SELECT citizenid FROM players WHERE license = ?', {cleanLicense}) or {}
+                    for _, row in ipairs(qbplayers) do
+                        MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {row.citizenid, groups[parent]})
+                    end
+                elseif string.find(child, 'char:') then
+                    local cid = child:gsub('char:', '')
+                    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {cid, groups[parent]})
+                end
+            end
+        end
+
+        for _, a in ipairs(dbAces) do
+            local principal = a.principal
+            local obj = a.object
+            if a.allow == 1 and string.find(principal, 'group.') then
+                local groupName = string.gsub(principal, 'group.', '')
+                if not groups[principal] then
+                    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {groupName, groupName:gsub("^%l", string.upper), 'Migrado'})
+                    groups[principal] = groupName
+                end
+                MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_group_permissions (group_id, permission) VALUES (?, ?)', {groupName, obj})
+            end
+
+            if a.allow == 1 and string.find(principal, 'identifier.') and obj == 'qadmin.master' then
+                local lic = principal:gsub('identifier.', '')
+                MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_masters (license) VALUES (?)', {lic})
+            end
+        end
+
+        MySQL.query.await('RENAME TABLE mri_qadmin_aces TO bkp_mri_qadmin_aces')
+        MySQL.query.await('RENAME TABLE mri_qadmin_principals TO bkp_mri_qadmin_principals')
+        Debug('[mri_Qadmin] MIGRATION: Migration complete!')
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------------------------
 -- FUNCTIONS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-local DynamicRoles = {} -- [license] = { job = 'name', gang = 'name' }
+-- Single source of truth for all known permissions.
+-- Each entry: { id, category }
+-- Labels and descriptions live in locales/*/perm_labels and perm_descs.
+-- The flat ALL_KNOWN_QADMIN_PERMS list is derived below for internal ACE operations.
+local PERM_DEFINITIONS = {
+    -- ── System ───────────────────────────────────────────────────────────────
+    { id = 'qadmin.open',   category = 'other'       },
+    { id = 'qadmin.master', category = 'other'       },
+    -- ── Pages ────────────────────────────────────────────────────────────────
+    { id = 'qadmin.page.dashboard',    category = 'dashboard'   },
+    { id = 'qadmin.page.players',      category = 'players'     },
+    { id = 'qadmin.page.groups',       category = 'groups'      },
+    { id = 'qadmin.page.bans',         category = 'bans'        },
+    { id = 'qadmin.page.staffchat',    category = 'staffchat'   },
+    { id = 'qadmin.page.items',        category = 'items'       },
+    { id = 'qadmin.page.vehicles',     category = 'vehicles'    },
+    { id = 'qadmin.page.commands',     category = 'commands'    },
+    { id = 'qadmin.page.actions',      category = 'actions'     },
+    { id = 'qadmin.page.permissions',  category = 'permissions' },
+    { id = 'qadmin.page.resources',    category = 'resources'   },
+    { id = 'qadmin.page.settings',     category = 'settings'    },
+    { id = 'qadmin.page.devmode',      category = 'devmode'     },
+    { id = 'qadmin.page.livemap',      category = 'livemap'     },
+    { id = 'qadmin.page.livescreens',  category = 'livescreens' },
+    { id = 'qadmin.page.logs',         category = 'dashboard'   },
+    { id = 'qadmin.page.statistics',   category = 'dashboard'   },
+    { id = 'qadmin.page.reports',      category = 'players'     },
+    { id = 'qadmin.page.terminal',     category = 'commands'    },
+    { id = 'qadmin.page.staff_point',  category = 'other'       },
+    -- ── Dashboard Actions ────────────────────────────────────────────────────
+    { id = 'qadmin.action.announcements',           category = 'dashboard'   },
+    { id = 'qadmin.action.clear_chat',              category = 'dashboard'   },
+    { id = 'qadmin.action.info_admin',              category = 'dashboard'   },
+    { id = 'qadmin.action.view_detailed_logs',      category = 'dashboard'   },
+    { id = 'qadmin.action.manage_actions',          category = 'dashboard'   },
+    { id = 'qadmin.action.manage_settings',         category = 'dashboard'   },
+    { id = 'qadmin.action.manage_wall',             category = 'dashboard'   },
+    -- ── Player Actions ───────────────────────────────────────────────────────
+    { id = 'qadmin.action.view_player_identifiers', category = 'players'     },
+    { id = 'qadmin.action.track_player',            category = 'players'     },
+    { id = 'qadmin.action.set_vital',               category = 'players'     },
+    { id = 'qadmin.action.tag',                     category = 'players'     },
+    { id = 'qadmin.action.manage_reports',          category = 'players'     },
+    { id = 'qadmin.action.delete_report',           category = 'players'     },
+    { id = 'qadmin.action.staff_clothing',          category = 'players'     },
+    -- ── Actions ──────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.revive',                  category = 'actions'     },
+    { id = 'qadmin.action.revive_all',              category = 'actions'     },
+    { id = 'qadmin.action.revive_self',             category = 'actions'     },
+    { id = 'qadmin.action.kill_player',             category = 'actions'     },
+    { id = 'qadmin.action.kick_player',             category = 'actions'     },
+    { id = 'qadmin.action.warn_player',             category = 'actions'     },
+    { id = 'qadmin.action.verify_player',           category = 'actions'     },
+    { id = 'qadmin.action.delete_character',        category = 'actions'     },
+    { id = 'qadmin.action.spectate_player',         category = 'actions'     },
+    { id = 'qadmin.action.freeze_player',           category = 'actions'     },
+    { id = 'qadmin.action.bring_player',            category = 'actions'     },
+    { id = 'qadmin.action.teleport_to_player',      category = 'actions'     },
+    { id = 'qadmin.action.teleport_back',           category = 'actions'     },
+    { id = 'qadmin.action.teleport_to_coords',      category = 'actions'     },
+    { id = 'qadmin.action.teleport_to_location',    category = 'actions'     },
+    { id = 'qadmin.action.teleport_to_marker',      category = 'actions'     },
+    { id = 'qadmin.action.set_job',                 category = 'actions'     },
+    { id = 'qadmin.action.set_gang',                category = 'actions'     },
+    { id = 'qadmin.action.fire_job',                category = 'actions'     },
+    { id = 'qadmin.action.fire_gang',               category = 'actions'     },
+    { id = 'qadmin.action.set_bucket',              category = 'actions'     },
+    { id = 'qadmin.action.get_bucket',              category = 'actions'     },
+    { id = 'qadmin.action.give_money',              category = 'actions'     },
+    { id = 'qadmin.action.remove_money',            category = 'actions'     },
+    { id = 'qadmin.action.give_money_all',          category = 'actions'     },
+    { id = 'qadmin.action.drunk_player',            category = 'actions'     },
+    { id = 'qadmin.action.remove_stress',           category = 'actions'     },
+    { id = 'qadmin.action.mute_player',             category = 'actions'     },
+    { id = 'qadmin.action.goto_waypoint',           category = 'actions'     },
+    { id = 'qadmin.action.blackout',                category = 'actions'     },
+    { id = 'qadmin.action.toggle_cuffs',            category = 'actions'     },
+    { id = 'qadmin.action.clothing_menu',           category = 'actions'     },
+    { id = 'qadmin.action.set_ped',                 category = 'actions'     },
+    { id = 'qadmin.action.god_mode',                category = 'actions'     },
+    { id = 'qadmin.action.noclip',                  category = 'actions'     },
+    { id = 'qadmin.action.invisibility',            category = 'actions'     },
+    { id = 'qadmin.action.invisible',               category = 'actions'     },
+    { id = 'qadmin.action.set_ammo',                category = 'actions'     },
+    { id = 'qadmin.action.infinite_ammo',           category = 'actions'     },
+    { id = 'qadmin.action.toggle_duty',             category = 'actions'     },
+    { id = 'qadmin.action.toggle_laser',            category = 'actions'     },
+    { id = 'qadmin.action.play_sound',              category = 'actions'     },
+    { id = 'qadmin.action.ban_player',              category = 'actions'     },
+    { id = 'qadmin.action.unban_player',            category = 'actions'     },
+    { id = 'qadmin.action.give_item',               category = 'actions'     },
+    { id = 'qadmin.action.give_item_all',           category = 'actions'     },
+    { id = 'qadmin.action.clear_inventory',         category = 'actions'     },
+    { id = 'qadmin.action.clear_inventory_offline', category = 'actions'     },
+    { id = 'qadmin.action.open_inventory',          category = 'actions'     },
+    { id = 'qadmin.action.view_inventory',          category = 'actions'     },
+    { id = 'qadmin.action.modify_inventory',        category = 'actions'     },
+    { id = 'qadmin.action.open_trunk',              category = 'actions'     },
+    { id = 'qadmin.action.open_stash',              category = 'actions'     },
+    { id = 'qadmin.action.spawn_vehicle',           category = 'actions'     },
+    { id = 'qadmin.action.delete_vehicle',          category = 'actions'     },
+    { id = 'qadmin.action.admin_car',               category = 'actions'     },
+    { id = 'qadmin.action.admincar',                category = 'actions'     },
+    { id = 'qadmin.action.give_car',                category = 'actions'     },
+    { id = 'qadmin.action.change_plate',            category = 'actions'     },
+    { id = 'qadmin.action.fix_vehicle',             category = 'actions'     },
+    { id = 'qadmin.action.fix_vehicle_for',         category = 'actions'     },
+    { id = 'qadmin.action.fix_self_vehicle',        category = 'actions'     },
+    { id = 'qadmin.action.refuel_vehicle',          category = 'actions'     },
+    { id = 'qadmin.action.max_mods',                category = 'actions'     },
+    { id = 'qadmin.action.change_weather',          category = 'actions'     },
+    { id = 'qadmin.action.change_time',             category = 'actions'     },
+    { id = 'qadmin.action.toggle_devmode',          category = 'actions'     },
+    { id = 'qadmin.action.vehicle_dev',             category = 'actions'     },
+    { id = 'qadmin.action.toggle_coords',           category = 'actions'     },
+    { id = 'qadmin.action.toggle_blips',            category = 'actions'     },
+    { id = 'qadmin.action.toggle_names',            category = 'actions'     },
+    { id = 'qadmin.action.enable_wall',             category = 'actions'     },
+    -- ── Items ────────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.copy_inventory',          category = 'items'       },
+    -- ── Vehicles ─────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.manage_vehicles',         category = 'vehicles'    },
+    { id = 'qadmin.action.change_vehicle_property', category = 'vehicles'    },
+    { id = 'qadmin.action.change_vehicle_state',    category = 'vehicles'    },
+    { id = 'qadmin.action.update_vehicle_stock',    category = 'vehicles'    },
+    -- ── Commands ─────────────────────────────────────────────────────────────
+    { id = 'qadmin.commands',                       category = 'commands'    },
+    -- ── Resources ────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.change_resource',         category = 'resources'   },
+    -- ── Settings ─────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.server_time',             category = 'settings'    },
+    -- ── Live Screens ─────────────────────────────────────────────────────────
+    { id = 'qadmin.action.screen_capture',          category = 'livescreens' },
+    -- ── Staff / Other ─────────────────────────────────────────────────────────
+    { id = 'qadmin.action.staff_clock_in',          category = 'other'       },
+    { id = 'qadmin.action.staff_clock_out',         category = 'other'       },
+    { id = 'qadmin.action.staff_chat_send',         category = 'other'       },
+    { id = 'qadmin.action.toggle_mock_mode',        category = 'other'       },
+}
+
+-- Flat ID list derived from PERM_DEFINITIONS for internal ACE operations.
+local ALL_KNOWN_QADMIN_PERMS = {}
+do
+    for _, p in ipairs(PERM_DEFINITIONS) do
+        ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = p.id
+    end
+    if Config.Actions then for _, v in pairs(Config.Actions) do if v.perms then ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = v.perms end end end
+    if Config.PlayerActions then for _, v in pairs(Config.PlayerActions) do if v.perms then ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = v.perms end end end
+    if Config.OtherActions then for _, v in pairs(Config.OtherActions) do if v.perms then ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = v.perms end end end
+end
+
+--- Returns full permission definitions including config-driven entries.
+--- Called by data_sync.lua to include in the initial data payload.
+function GetPermissionDefinitions()
+    local defs = {}
+    for _, p in ipairs(PERM_DEFINITIONS) do defs[#defs + 1] = p end
+    if Config.Actions then
+        for _, v in pairs(Config.Actions) do
+            if v.perms then defs[#defs + 1] = { id = v.perms, label = v.label or v.perms, desc = v.description or '', category = 'actions' } end
+        end
+    end
+    if Config.PlayerActions then
+        for _, v in pairs(Config.PlayerActions) do
+            if v.perms then defs[#defs + 1] = { id = v.perms, label = v.label or v.perms, desc = v.description or '', category = 'actions' } end
+        end
+    end
+    if Config.OtherActions then
+        for _, v in pairs(Config.OtherActions) do
+            if v.perms then defs[#defs + 1] = { id = v.perms, label = v.label or v.perms, desc = v.description or '', category = 'other' } end
+        end
+    end
+    return defs
+end
+
+local function ClearGroupAces(groupId)
+    local principal = 'mri.group.' .. groupId
+    for _, perm in ipairs(ALL_KNOWN_QADMIN_PERMS) do
+        lib.removeAce(principal, perm, true)
+    end
+end
 
 local function LoadPermissions()
-    -- Check/Add Description column for Aces
-    local hasDesc = MySQL.scalar.await("SELECT count(*) FROM information_schema.columns WHERE table_name = 'mri_qadmin_aces' AND column_name = 'description' AND table_schema = DATABASE()")
-    if hasDesc == 0 then
-        MySQL.query.await('ALTER TABLE mri_qadmin_aces ADD COLUMN description VARCHAR(255) DEFAULT NULL')
-        Debug('[mri_Qadmin] Added description column to mri_qadmin_aces')
-    end
+    RunMigration()
 
-    -- Cleanup Duplicates and Inconsistent Identifiers first
-    MySQL.query.await("UPDATE mri_qadmin_principals SET child = REPLACE(child, 'license:license2:', 'license2:') WHERE child LIKE 'license:license2:%'")
-    MySQL.query.await("UPDATE mri_qadmin_principals SET child = REPLACE(child, 'license:license:', 'license:') WHERE child LIKE 'license:license:%'")
-    MySQL.query.await('DELETE t1 FROM mri_qadmin_principals t1 INNER JOIN mri_qadmin_principals t2 WHERE t1.id > t2.id AND t1.child = t2.child AND t1.parent = t2.parent')
-    MySQL.query.await('DELETE t1 FROM mri_qadmin_aces t1 INNER JOIN mri_qadmin_aces t2 WHERE t1.id > t2.id AND t1.principal = t2.principal AND t1.object = t2.object')
+    -- Load Groups and their Aces
+    local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups') or {}
+    for _, g in ipairs(groups) do
+        -- Wipe all known ACEs first so removed permissions don't persist across restarts
+        ClearGroupAces(g.id)
 
-    -- Load Principals (Inheritance)
-    local dbPrincipals = MySQL.query.await('SELECT * FROM mri_qadmin_principals') or {}
+        -- FORCE qadmin.open for any managed group
+        lib.addAce('mri.group.' .. g.id, 'qadmin.open', true)
 
-
-    for _, p in ipairs(dbPrincipals) do
-        local child = NormalizePrincipal(p.child)
-        local parent = p.parent
-
-        -- ACE Consistency: Ensure 'group.' prefix for parents that aren't identifiers/char/job/gang
-        if not string.find(parent, 'group.') and not string.find(parent, 'identifier.') and not string.find(parent, 'char:') and not string.find(parent, 'job.') and not string.find(parent, 'gang.') then
-            parent = 'group.' .. parent
+        local perms = MySQL.query.await('SELECT * FROM mri_qadmin_group_permissions WHERE group_id = ?', {g.id}) or {}
+        for _, p in ipairs(perms) do
+            if p.permission ~= 'qadmin.master' then
+                Debug(('[mri_Qadmin] Applying ACE: mri.group.%s -> %s'):format(g.id, p.permission))
+                lib.addAce('mri.group.' .. g.id, p.permission, true)
+            else
+                print(('^1[mri_Qadmin] SECURITY ALERT: Found forbidden "qadmin.master" for group "%s" in DB. Skipping synchronization.^7'):format(g.id))
+            end
         end
-
-        Debug(('[mri_Qadmin] [DEBUG] Executing: lib.addPrincipal %s %s'):format(child, parent))
-        lib.addPrincipal(child, parent)
     end
-    Debug(('[mri_Qadmin] Loaded %d Principals from DB'):format(#dbPrincipals))
 
-    -- Load Aces (Permissions)
-    local aces = MySQL.query.await('SELECT * FROM mri_qadmin_aces') or {}
-    for _, a in ipairs(aces) do
-        local allow = a.allow == 1
-        local principal = a.principal
+    -- Load Master bypasses
+    local masters = MySQL.query.await('SELECT license FROM mri_qadmin_masters') or {}
+    for _, m in ipairs(masters) do
+        Debug(('[mri_Qadmin] Applying Master Bypass: identifier.%s -> qadmin.master'):format(m.license))
+        lib.addAce('identifier.' .. m.license, 'qadmin.master', true)
+        lib.addAce('identifier.' .. m.license, 'qadmin.open', true)
+    end
 
-        -- ACE Consistency: Normalize principal names
-        if not string.find(principal, 'group.') and not string.find(principal, 'identifier.') and not string.find(principal, 'char:') then
-            principal = 'group.' .. principal
+    Debug(('[mri_Qadmin] Loaded %d Groups from DB'):format(#groups))
+
+    -- Re-sync all online players (essential for script restarts)
+    CreateThread(function()
+        Wait(1000) -- Give QBCore a second
+        local players = QBCore.Functions.GetPlayers()
+        Debug(('[mri_Qadmin] Re-syncing %d online players...'):format(#players))
+        for _, id in ipairs(players) do
+            local attempts = 0
+            while not QBCore.Functions.GetPlayer(id) and attempts < 20 do
+                Wait(500)
+                attempts = attempts + 1
+            end
+
+            local Player = QBCore.Functions.GetPlayer(id)
+            if Player then
+                TriggerEvent('mri_Qadmin:server:Reload', id)
+            else
+                print(('^1[mri_Qadmin] FAILED to sync player %d after 10 seconds. Principal mapping will be missing!^7'):format(id))
+            end
         end
+    end)
 
-        Debug(('[mri_Qadmin] [DEBUG] Executing: lib.addAce %s %s %s'):format(principal, a.object, tostring(allow)))
-        lib.addAce(principal, a.object, allow)
-    end
-    Debug(('[mri_Qadmin] Loaded %d Aces from DB'):format(#aces))
     TriggerEvent('mri_Qadmin:server:PermissionsLoaded')
 end
 
@@ -60,199 +310,88 @@ end
 -- EVENTS & CALLBACKS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
-    local src = source
+-- Cache: stores principal data set on load so unload can clean up without relying on QBCore player data
+local principalCache = {} -- [src] = { fivemPrincipal, citizenid, groups[] }
+
+local function CleanupPlayerPrincipals(src)
+    local cache = principalCache[src]
+    if not cache then return end
+
+    lib.removePrincipal(cache.fivemPrincipal, 'char:' .. cache.citizenid)
+    Debug(('Cleanup: principal removido: %s -> char:%s'):format(cache.fivemPrincipal, cache.citizenid))
+    for _, gid in ipairs(cache.groups) do
+        lib.removePrincipal('char:' .. cache.citizenid, 'mri.group.' .. gid)
+        Debug(('Cleanup: principal removido: %s -> char:%s'):format('mri.group.' .. gid, cache.citizenid))
+    end
+
+    Debug(('[mri_Qadmin] Cleanup: principals revogados para char:%s'):format(cache.citizenid))
+    principalCache[src] = nil
+end
+
+local function SetupPlayerPrincipals(src, isReload)
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return end
 
-    local license = player.PlayerData.license
     local citizenid = player.PlayerData.citizenid
+    local license = QBCore.Functions.GetIdentifier(src, 'license')
+    if not license then return end
 
-    -- 1. Load Player-wide permissions (License)
-    local principalsList1 = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {license}) or {}
-    local principalsList2 = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {'license:' .. license}) or {}
+    local cleanLicense = license:gsub('license:', '')
+    local fivemPrincipal = 'identifier.license:' .. cleanLicense
 
-    local found = {}
-    for _, p in ipairs(principalsList1) do found[p.parent] = true end
-    for _, p in ipairs(principalsList2) do found[p.parent] = true end
+    -- On reload: clean stale cache/principals before re-adding
+    if isReload then CleanupPlayerPrincipals(src) end
 
-    -- 2. Check if this character has any permissions (to decide if we link the session)
-    local charPrincipals1 = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {citizenid}) or {}
-    local charPrincipals2 = MySQL.query.await('SELECT parent FROM mri_qadmin_principals WHERE child = ?', {'char:' .. citizenid}) or {}
+    lib.addPrincipal(fivemPrincipal, 'char:' .. citizenid)
+    Debug(('[mri_Qadmin] Principal Mapping: %s -> char:%s'):format(fivemPrincipal, citizenid))
 
-    for _, p in ipairs(charPrincipals1) do found[p.parent] = true end
-    for _, p in ipairs(charPrincipals2) do found[p.parent] = true end
+    local charGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid}) or {}
+    local foundAdmin = false
+    local activeGroups = {}
 
-    -- Apply Character Permissions (Inheritance: identifier.license:xxx -> char:citizenid)
-    if #charPrincipals1 > 0 or #charPrincipals2 > 0 then
-        local childPrincipal = 'char:' .. citizenid
-        Debug(('[mri_Qadmin] Mapping Character Principal: identifier.license:%s -> %s'):format(license, childPrincipal))
-        lib.addPrincipal('identifier.license:' .. license, childPrincipal)
+    for _, g in ipairs(charGroups) do
+        Debug(('[mri_Qadmin] Group Mapping: char:%s -> mri.group.%s'):format(citizenid, g.group_id))
+        lib.addPrincipal('char:' .. citizenid, 'mri.group.' .. g.group_id)
+        activeGroups[#activeGroups + 1] = g.group_id
+        if g.group_id == 'admin' then foundAdmin = true end
     end
 
-    -- 3. Link Jobs and Gangs (Inheritance: identifier.license:xxx -> job.name / gang.name)
-    local jobName = player.PlayerData.job.name
-    local jobGrade = player.PlayerData.job.grade.level or player.PlayerData.job.grade
-    local gangName = player.PlayerData.gang.name
-    local gangGrade = player.PlayerData.gang.grade.level or player.PlayerData.gang.grade
-
-    if jobName and jobName ~= "" and jobName ~= "unemployed" then
-        local jobPrincipal = 'job.' .. jobName
-        lib.addPrincipal('identifier.license:' .. license, jobPrincipal)
-
-        -- Grade Principal
-        local gradePrincipal = ('job.%s.%s'):format(jobName, jobGrade)
-        Debug(('[mri_Qadmin] Mapping Job Grade Principal: identifier.license:%s -> %s'):format(license, gradePrincipal))
-        lib.addPrincipal('identifier.license:' .. license, gradePrincipal)
+    -- Reverse Permission Sync (QBCore -> mri_Qadmin admin group)
+    if not isReload and Config.QBCoreAutoSync ~= false then
+        local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
+        if hasQBCoreAdmin and not foundAdmin then
+            Debug(('[mri_Qadmin] Auto-Sync: Jogador %s possui permissão de base (QBCore admin). Sincronizando com grupo admin do painel...'):format(GetPlayerName(src)))
+            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {'admin', 'Administrador', 'Default Admin Group'})
+            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, 'admin'})
+            lib.addPrincipal('char:' .. citizenid, 'mri.group.admin')
+            activeGroups[#activeGroups + 1] = 'admin'
+            foundAdmin = true
+        end
     end
 
-    if gangName and gangName ~= "" and gangName ~= "none" then
-        local gangPrincipal = 'gang.' .. gangName
-        lib.addPrincipal('identifier.license:' .. license, gangPrincipal)
+    principalCache[src] = { fivemPrincipal = fivemPrincipal, citizenid = citizenid, groups = activeGroups }
+end
 
-        -- Grade Principal
-        local gradePrincipal = ('gang.%s.%s'):format(gangName, gangGrade)
-        Debug(('[mri_Qadmin] Mapping Gang Grade Principal: identifier.license:%s -> %s'):format(license, gradePrincipal))
-        lib.addPrincipal('identifier.license:' .. license, gradePrincipal)
-    end
-
-    -- 4. Dynamic Tracking
-    DynamicRoles[license] = {
-        job = jobName,
-        jobGrade = jobGrade,
-        gang = gangName,
-        gangGrade = gangGrade
-    }
-
-    -- Reverse Permission Sync (QBCore -> mri_Qadmin)
-    local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
-
-    if hasQBCoreAdmin and not found['group.admin'] then
-        local normalizedId = NormalizeIdentifier(license)
-        Debug(('[mri_Qadmin] Auto-Sync: Jogador %s (%s) possui permissão de base (QBCore admin/god). Sincronizando com group.admin do painel...'):format(GetPlayerName(src), normalizedId))
-
-        -- Insert into the database to persist this link
-        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedId, 'group.admin', 'Auto-Sync (QBCore Admin)'})
-
-        -- Apply the principal to the runtime cache immediately
-        found['group.admin'] = true
-        lib.addPrincipal(NormalizePrincipal(normalizedId), 'group.admin')
-    end
-
-    for parent, _ in pairs(found) do
-        Debug(('[mri_Qadmin] Re-applying permissions natively for %s -> %s (Handled by LoadPermissions / AutoSync)'):format(GetPlayerName(src), parent))
-        -- Applying permissions dynamically handles natively via DB insertion / lib functions.
-    end
-
+RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
+    local src = source
+    SetupPlayerPrincipals(src, false)
     TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', src)
 end)
 
-RegisterNetEvent('QBCore:Server:OnPlayerUnload', function()
+AddEventHandler('mri_Qadmin:server:Reload', function(src)
+    SetupPlayerPrincipals(src, true)
+    TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', src)
+end)
+
+RegisterNetEvent('QBCore:Server:OnPlayerUnload', function(source)
     local src = source
-    local player = QBCore.Functions.GetPlayer(src)
-    if not player then return end
-
-    local license = player.PlayerData.license
-    local citizenid = player.PlayerData.citizenid
-
-    Debug(('[mri_Qadmin] Player Unloaded (%s). Revoking dynamic session principal mappings.'):format(license))
-
-    -- Revoke character, job and gang mapping from session
-    lib.removePrincipal('identifier.license:' .. license, 'char:' .. citizenid)
-
-    if player.PlayerData.job.name then
-        lib.removePrincipal('identifier.license:' .. license, 'job.' .. player.PlayerData.job.name)
-        local grade = player.PlayerData.job.grade.level or player.PlayerData.job.grade
-        lib.removePrincipal('identifier.license:' .. license, ('job.%s.%s'):format(player.PlayerData.job.name, grade))
-    end
-
-    if player.PlayerData.gang.name then
-        lib.removePrincipal('identifier.license:' .. license, 'gang.' .. player.PlayerData.gang.name)
-        local grade = player.PlayerData.gang.grade.level or player.PlayerData.gang.grade
-        lib.removePrincipal('identifier.license:' .. license, ('gang.%s.%s'):format(player.PlayerData.gang.name, grade))
-    end
-
-    DynamicRoles[license] = nil
-
-    -- We can't easily know ALL parents without a full scan, but we at least cleared CID ones.
+    Debug(('OnPlayerUnload chamado para: %s'):format(src))
+    CleanupPlayerPrincipals(src)
+    TriggerClientEvent('mri_Qadmin:client:CloseUI', src)
 end)
 
-RegisterNetEvent('QBCore:Server:OnJobUpdate', function(src, job)
-    local player = QBCore.Functions.GetPlayer(src)
-    if not player or not job then return end
-    local license = player.PlayerData.license
-    local cache = DynamicRoles[license]
-    local newGrade = job.grade.level or job.grade
-
-    -- Skip if nothing changed
-    if cache and cache.job == job.name and cache.jobGrade == newGrade then return end
-
-    -- 1. Handle Job Name Change (Removes old name AND old grade)
-    if cache and cache.job and cache.job ~= job.name then
-        if cache.job ~= "unemployed" then
-            lib.removePrincipal('identifier.license:' .. license, 'job.' .. cache.job)
-            if cache.jobGrade then
-                lib.removePrincipal('identifier.license:' .. license, ('job.%s.%s'):format(cache.job, cache.jobGrade))
-            end
-        end
-    elseif cache and cache.jobGrade and cache.jobGrade ~= newGrade then
-        -- Job is same, but grade changed -> only remove old grade
-        lib.removePrincipal('identifier.license:' .. license, ('job.%s.%s'):format(job.name, cache.jobGrade))
-    end
-
-    -- 2. Add New Job/Grade Principals
-    if job.name and job.name ~= "unemployed" then
-        lib.addPrincipal('identifier.license:' .. license, 'job.' .. job.name)
-        lib.addPrincipal('identifier.license:' .. license, ('job.%s.%s'):format(job.name, newGrade))
-    end
-
-    -- 3. Update Cache
-    if not DynamicRoles[license] then DynamicRoles[license] = {} end
-    DynamicRoles[license].job = job.name
-    DynamicRoles[license].jobGrade = newGrade
-    Debug(('[mri_Qadmin] Dynamic Job Update: %s -> %s (Grade: %s)'):format(license, job.name, newGrade))
-end)
-
-RegisterNetEvent('QBCore:Server:OnGangUpdate', function(src, gang)
-    local player = QBCore.Functions.GetPlayer(src)
-    if not player or not gang then return end
-    local license = player.PlayerData.license
-    local cache = DynamicRoles[license]
-    local newGrade = gang.grade.level or gang.grade
-
-    -- Skip if nothing changed
-    if cache and cache.gang == gang.name and cache.gangGrade == newGrade then return end
-
-    -- 1. Handle Gang Change
-    if cache and cache.gang and cache.gang ~= gang.name then
-        if cache.gang ~= "none" then
-            lib.removePrincipal('identifier.license:' .. license, 'gang.' .. cache.gang)
-            if cache.gangGrade then
-                lib.removePrincipal('identifier.license:' .. license, ('gang.%s.%s'):format(cache.gang, cache.gangGrade))
-            end
-        end
-    elseif cache and cache.gangGrade and cache.gangGrade ~= newGrade then
-        -- Gang is same, but grade changed
-        lib.removePrincipal('identifier.license:' .. license, ('gang.%s.%s'):format(gang.name, cache.gangGrade))
-    end
-
-    -- 2. Add New Gang/Grade Principals
-    if gang.name and gang.name ~= "none" then
-        lib.addPrincipal('identifier.license:' .. license, 'gang.' .. gang.name)
-        lib.addPrincipal('identifier.license:' .. license, ('gang.%s.%s'):format(gang.name, newGrade))
-    end
-
-    -- 3. Update Cache
-    if not DynamicRoles[license] then DynamicRoles[license] = {} end
-    DynamicRoles[license].gang = gang.name
-    DynamicRoles[license].gangGrade = newGrade
-    Debug(('[mri_Qadmin] Dynamic Gang Update: %s -> %s (Grade: %s)'):format(license, gang.name, newGrade))
-end)
-
--- CALLBACKS: ACES
-lib.callback.register('mri_Qadmin:callback:GetAces', function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') then return {} end
-    return MySQL.query.await('SELECT * FROM mri_qadmin_aces')
+AddEventHandler('playerDropped', function()
+    CleanupPlayerPrincipals(source)
 end)
 
 local function BroadcastPermissionUpdate()
@@ -260,425 +399,208 @@ local function BroadcastPermissionUpdate()
     TriggerClientEvent('mri_Qadmin:client:ForceReloadPermissions', -1)
 end
 
--- Hook into existing events
-RegisterNetEvent('mri_Qadmin:server:AddAce', function(principal, object, allow, description)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
+-- Callbacks
+lib.callback.register('mri_Qadmin:callback:GetGroups', function(source)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then return {} end
 
-    Debug(('[mri_Qadmin] AddAce Request: %s %s %s Desc=%s'):format(principal, object, tostring(allow), tostring(description)))
+    local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups ORDER BY createdAt DESC') or {}
+    local perms = MySQL.query.await('SELECT * FROM mri_qadmin_group_permissions') or {}
 
-    -- ACE Consistency: Normalize principal names
-    if not string.find(principal, 'group.') and not string.find(principal, 'identifier.') and not string.find(principal, 'char:') and not string.find(principal, 'job.') and not string.find(principal, 'gang.') then
-        principal = 'group.' .. principal
+    for _, g in ipairs(groups) do
+        g.permissions = {}
+        for _, p in ipairs(perms) do
+            if p.group_id == g.id then
+                table.insert(g.permissions, p.permission)
+            end
+        end
     end
 
-    -- Check if exists
-    local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {principal, object})
-    if exists then
-        Debug(('[mri_Qadmin] Ace already exists (ID: %s). Updating allow state and description.'):format(exists.id))
-        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ?, description = ? WHERE id = ?', {allow and 1 or 0, description, exists.id})
-    else
-        MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {principal, object, allow and 1 or 0, description})
+    return groups
+end)
+
+-- Callbacks: Players and Groups
+lib.callback.register('mri_Qadmin:callback:GetCharacterGroups', function(source, citizenid)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then return {} end
+    local current = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid}) or {}
+    local list = {}
+    for _, g in ipairs(current) do
+        table.insert(list, g.group_id)
+    end
+    return list
+end)
+
+lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label, description)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+        return false, "Acesso Negado."
     end
 
-    local allowState = allow and true or false
-    lib.addAce(principal, object, allowState)
+    local cleanId = id:lower():gsub("%s+", "_")
 
-    TriggerClientEvent('QBCore:Notify', src, 'Ace Added/Updated successfully', 'success')
+    local ok, err = pcall(function()
+        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_groups WHERE id = ?', {cleanId})
+        if exists then
+            MySQL.update.await('UPDATE mri_qadmin_groups SET label = ?, description = ? WHERE id = ?', {label, description, cleanId})
+            TriggerClientEvent('QBCore:Notify', source, 'Grupo atualizado', 'success')
+        else
+            MySQL.insert.await('INSERT INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {cleanId, label, description})
+            TriggerClientEvent('QBCore:Notify', source, 'Grupo criado', 'success')
+        end
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao salvar grupo:^7', err)
+        return false, "Erro ao salvar grupo no banco de dados."
+    end
+
+    AddLog(source, 'mri_Qadmin', 'permissions', 'info', ('Grupo: grupo "%s" criado/atualizado'):format(cleanId), { group = cleanId, label = label })
     BroadcastPermissionUpdate()
+    return true
 end)
 
-RegisterNetEvent('mri_Qadmin:server:RemoveAce', function(id)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
-
-    Debug(('[mri_Qadmin] RemoveAce Request ID: %s'):format(id))
-    local ace = MySQL.single.await('SELECT * FROM mri_qadmin_aces WHERE id = ?', {id})
-    if ace then
-        Debug(('[mri_Qadmin] Removing Ace: %s %s'):format(ace.principal, ace.object))
-        MySQL.query.await('DELETE FROM mri_qadmin_aces WHERE id = ?', {id})
-        local allow = ace.allow == 1
-        lib.removeAce(ace.principal, ace.object, allow)
-        TriggerClientEvent('QBCore:Notify', src, 'Ace Removed successfully', 'success')
-        BroadcastPermissionUpdate()
-    else
-        Debug('[mri_Qadmin] Ace not found in DB')
-    end
-end)
-
-RegisterNetEvent('mri_Qadmin:server:ToggleAce', function(id)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
-
-    Debug(('[mri_Qadmin] ToggleAce ID: %s'):format(id))
-    local ace = MySQL.single.await('SELECT * FROM mri_qadmin_aces WHERE id = ?', {id})
-    if ace then
-        -- Remove old
-        local oldAllow = ace.allow == 1
-        lib.removeAce(ace.principal, ace.object, oldAllow)
-
-        -- Toggle
-        local newAllowVal = ace.allow == 1 and 0 or 1
-        MySQL.update.await('UPDATE mri_qadmin_aces SET allow = ? WHERE id = ?', {newAllowVal, id})
-
-        -- Add new
-        local newAllow = newAllowVal == 1
-        lib.addAce(ace.principal, ace.object, newAllow)
-
-        TriggerClientEvent('QBCore:Notify', src, 'Ace Updated successfully', 'success')
-        BroadcastPermissionUpdate()
-    end
-end)
-
--- CALLBACKS: PRINCIPALS
-lib.callback.register('mri_Qadmin:callback:GetPrincipals', function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') then return {} end
-    return MySQL.query.await('SELECT * FROM mri_qadmin_principals')
-end)
-
-RegisterNetEvent('mri_Qadmin:server:AddPrincipal', function(child, parent, description)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then
-        Debug('[mri_Qadmin] AddPrincipal DENIED (Not Admin/Perms) for src: ' .. tostring(src))
-        return
+lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+        return false, "Acesso Negado."
     end
 
-    Debug(('[mri_Qadmin] AddPrincipal REQUEST: Child=%s Parent=%s Desc=%s'):format(child, parent, tostring(description)))
-
-    -- ACE Consistency: Normalize parent/child names
-    if not string.find(parent, 'group.') and not string.find(parent, 'identifier.') and not string.find(parent, 'char:') and not string.find(parent, 'job.') and not string.find(parent, 'gang.') then
-        parent = 'group.' .. parent
-    end
-
-    -- SAFETY: Normalize identifiers
-    local normalizedChild = NormalizeIdentifier(child)
-    local normalizedPrincipal = NormalizePrincipal(child)
-
-    -- Check if normalized principal already exists in DB to prevent duplicates
-    local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {normalizedChild, parent})
-    if exists then
-        Debug('[mri_Qadmin] Principal already exists in DB (normalized). skipping insert.')
-    else
-        MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedChild, parent, description})
-    end
-
-    lib.addPrincipal(normalizedPrincipal, parent)
-
-    -- Try to find if 'child' is an online player and expand to all their identifiers
-    local allOnlinePlayers = QBCore.Functions.GetPlayers()
-    local foundOnline = false
-    for _, playerSrc in ipairs(allOnlinePlayers) do
-        local pObj = QBCore.Functions.GetPlayer(playerSrc)
-        if pObj then
-            local pLicense = pObj.PlayerData.license
-            local fullLicense = 'license:'..pLicense
-            local fullLicense2 = 'license2:'..pLicense  -- Support for license2 (new FiveM standard)
-            -- Match loosely against license, license2 or exact string
-            -- Also check if child matches any identifier directly
-
-            local match = false
-            if child == pLicense or child == fullLicense or child == fullLicense2 or child == pObj.PlayerData.name then
-                match = true
-            else
-                local num = GetNumPlayerIdentifiers(playerSrc)
-                for i = 0, num-1 do
-                    if GetPlayerIdentifier(playerSrc, i) == child then
-                         match = true
-                         break
-                    end
-                end
-            end
-
-            if match then
-                 Debug(('[mri_Qadmin] Found Online Player for Principal Add: %s (Src: %s)'):format(pObj.PlayerData.name, playerSrc))
-                 -- Player is online, Native FiveM takes care of principal propagation.
-                 foundOnline = true
-                 break
+    local ok, err = pcall(function()
+        local perms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {id})
+        if perms then
+            for _, p in ipairs(perms) do
+                lib.removeAce('mri.group.'..id, p.permission, true)
             end
         end
+
+        local charGroups = MySQL.query.await('SELECT citizenid FROM mri_qadmin_character_groups WHERE group_id = ?', {id})
+        if charGroups then
+            for _, cg in ipairs(charGroups) do
+                lib.removePrincipal('char:'..cg.citizenid, 'mri.group.'..id)
+            end
+        end
+
+        MySQL.query.await('DELETE FROM mri_qadmin_groups WHERE id = ?', {id})
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao deletar grupo:^7', err)
+        return false, "Erro ao deletar grupo do banco de dados."
     end
 
-    if not foundOnline then
-        Debug('[mri_Qadmin] Player not found online for immediate expansion. Permissions will apply when they rejoin/relog.')
-    end
-
-    TriggerClientEvent('QBCore:Notify', src, 'Principal Added successfully', 'success')
+    TriggerClientEvent('QBCore:Notify', source, 'Grupo removido', 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupo: grupo "%s" removido'):format(id), { group = id })
     BroadcastPermissionUpdate()
+    return true
 end)
 
-RegisterNetEvent('mri_Qadmin:server:RemovePrincipal', function(id)
-    local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') then return end
-
-    Debug(('[mri_Qadmin] RemovePrincipal REQUEST from src %d. ID: %s (Type: %s)'):format(src, tostring(id), type(id)))
-
-    local data = MySQL.single.await('SELECT * FROM mri_qadmin_principals WHERE id = ?', {id})
-    if data then
-        Debug(('[mri_Qadmin] Found Principal to delete: %s -> %s'):format(data.child, data.parent))
-        MySQL.query.await('DELETE FROM mri_qadmin_principals WHERE id = ?', {id})
-
-        local normalizedChild = NormalizeIdentifier(data.child)
-        local principalToRemove = NormalizePrincipal(data.child)
-
-        -- Remove ACL entry using normalized principal
-        Debug(('[mri_Qadmin] Executing: lib.removePrincipal %s %s'):format(principalToRemove, data.parent))
-        lib.removePrincipal(principalToRemove, data.parent)
-
-        -- Force refresh for the specific client if they are online to be sure
-        local onlinePlayersForSync = QBCore.Functions.GetPlayers()
-        for _, playerSrc in ipairs(onlinePlayersForSync) do
-             local pObj = QBCore.Functions.GetPlayer(playerSrc)
-             if pObj then
-                 if NormalizeIdentifier(pObj.PlayerData.license) == normalizedChild then
-                     Debug(('[mri_Qadmin] Targeting online player %s (Src: %s) for update'):format(pObj.PlayerData.name, playerSrc))
-                     TriggerClientEvent('QBCore:Notify', playerSrc, 'Suas permissões foram atualizadas.', 'primary')
-
-                     -- Remove from all identifiers just in case
-                     local num = GetNumPlayerIdentifiers(playerSrc)
-                     for i = 0, num-1 do
-                        local ident = GetPlayerIdentifier(playerSrc, i)
-                        lib.removePrincipal(NormalizePrincipal(ident), data.parent)
-                     end
-                 end
-             end
-        end
-
-        -- Logic to remove from all online identifiers if player is online
-        local child = data.child
-        local parent = data.parent
-        local allOnlinePlayersForRemove = QBCore.Functions.GetPlayers()
-        for _, playerSrc in ipairs(allOnlinePlayersForRemove) do
-            local pObj = QBCore.Functions.GetPlayer(playerSrc)
-            if pObj then
-                local pLicense = pObj.PlayerData.license
-                local fullLicense = 'license:'..pLicense
-
-                local match = false
-                if child == pLicense or child == fullLicense or child == pObj.PlayerData.name then
-                    match = true
-                else
-                    local num = GetNumPlayerIdentifiers(playerSrc)
-                    for i = 0, num-1 do
-                        if GetPlayerIdentifier(playerSrc, i) == child then
-                             match = true
-                             break
-                        end
-                    end
-                end
-
-                if match then
-                    Debug(('[mri_Qadmin] Found Online Player for Principal Remove: %s (Src: %s)'):format(pObj.PlayerData.name, playerSrc))
-                    -- Legacy loop to forcefully remove from all identifiers, just to be sure
-                    local num = GetNumPlayerIdentifiers(playerSrc)
-                    for i = 0, num-1 do
-                        local ident = GetPlayerIdentifier(playerSrc, i)
-                        Debug(('[mri_Qadmin] Removing Principal: identifier.%s -> %s'):format(ident, parent))
-                        lib.removePrincipal('identifier.' .. ident, parent)
-                    end
-                    break
-                end
-            end
-        end
-
-        TriggerClientEvent('QBCore:Notify', src, 'Principal Removed successfully', 'success')
-        BroadcastPermissionUpdate()
-        -- Verification Loop
-        local checks = 0
-        local stillHas = true
-        while checks < 5 and stillHas do
-            Wait(100)
-            if IsPrincipalAceAllowed(child, data.parent) or IsPrincipalAceAllowed('identifier.'..child, data.parent) then
-                Debug(('[mri_Qadmin] WARNING: Permission still active after removal attempt %d...'):format(checks+1))
-            else
-                stillHas = false
-                Debug('[mri_Qadmin] SUCCESS: Permission successfully revoked.')
-            end
-            checks = checks + 1
-        end
-        if stillHas then
-            Debug('^1[mri_Qadmin] CRITICAL: Failed to revoke permission! Check if resource has "command.remove_principal" allowed in server.cfg!^7')
-        end
-
-    else
-         Debug('[mri_Qadmin] Principal NOT FOUND in DB with ID: ' .. tostring(id))
+lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(source, groupId, permissionsArray)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+        return false, "Acesso Negado."
     end
+
+    Debug(('[mri_Qadmin] Iniciando atualização de permissões para grupo: %s'):format(groupId))
+
+    local ok, err = pcall(function()
+        local oldPerms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {groupId})
+        if oldPerms then
+            for _, p in ipairs(oldPerms) do
+                lib.removeAce('mri.group.'..groupId, p.permission, true)
+            end
+        end
+        MySQL.query.await('DELETE FROM mri_qadmin_group_permissions WHERE group_id = ?', {groupId})
+
+        for _, p in ipairs(permissionsArray) do
+            if p ~= 'qadmin.master' then
+                MySQL.insert.await('INSERT INTO mri_qadmin_group_permissions (group_id, permission) VALUES (?, ?)', {groupId, p})
+                lib.addAce('mri.group.'..groupId, p, true)
+            end
+        end
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao atualizar permissões do grupo:^7', err)
+        return false, "Erro ao salvar no banco de dados."
+    end
+
+    TriggerClientEvent('QBCore:Notify', source, 'Permissões do grupo atualizadas.', 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Permissões: grupo "%s" teve permissões atualizadas (%d perms)'):format(groupId, #permissionsArray), { group = groupId, count = #permissionsArray })
+    BroadcastPermissionUpdate()
+    return true
 end)
 
-local function verifyAndAdd(group, ace, allow, description)
-    local allowInt = (allow == 1 or allow == true) and 1 or 0
-    local allowState = (allowInt == 1)
-
-    local exists = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {group, ace})
-    if not exists then
-         MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {group, ace, allowInt, description})
-         lib.addAce(group, ace, allowState)
-         return true
-    else
-         -- Re-apply in lib natively just in case it exists in DB but not ACL
-         lib.addAce(group, ace, allowState)
+lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source, citizenid, groupsArray)
+    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+        return false, "Acesso Negado."
     end
-    return false
-end
 
-RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    Debug(('[mri_Qadmin] Atualizando grupos para citizenid: %s'):format(citizenid))
 
-    local hasPerms = IsPlayerAceAllowed(src, 'qadmin.page.permissions')
-    local isMaster = IsPlayerAceAllowed(src, 'qadmin.master')
-
-    if not hasPerms and not isMaster then
-        local num = GetNumPlayerIdentifiers(src)
-        local foundFallback = false
-        for i = 0, num - 1 do
-            local id = GetPlayerIdentifier(src, i)
-            if IsPrincipalAceAllowed('identifier.' .. id, 'qadmin.master') or IsPrincipalAceAllowed(id, 'qadmin.master') then
-                foundFallback = true
-                break
+    local ok, err = pcall(function()
+        local oldGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid})
+        if oldGroups then
+            for _, og in ipairs(oldGroups) do
+                lib.removePrincipal('char:'..citizenid, 'mri.group.'..og.group_id)
             end
         end
-        if not foundFallback then return end
-    end
+        MySQL.query.await('DELETE FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid})
 
-    -- Assign current admin to group.admin if they aren't master yet
-    if not IsPlayerAceAllowed(src, 'qadmin.master') then
-        local license = Player.PlayerData.license
-        lib.addPrincipal('identifier.license:' .. license, 'group.admin')
-        Debug(('[DEBUG] Assigned identifier.license:%s to group.admin'):format(license))
-    end
-
-    local count = 0
-    local pages = {
-        'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
-    }
-
-    for _, page in ipairs(pages) do
-        local ace = 'qadmin.page.' .. page
-        -- Check if exists for group.admin
-        if verifyAndAdd('group.admin', ace, 1, 'Page: ' .. page) then
-            count = count + 1
+        for _, gId in ipairs(groupsArray) do
+            MySQL.insert.await('INSERT INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, gId})
+            lib.addPrincipal('char:'..citizenid, 'mri.group.'..gId)
         end
+    end)
+
+    if not ok then
+        print('^1[mri_Qadmin] ERRO ao atualizar grupos do personagem:^7', err)
+        return false, "Erro ao salvar no banco de dados."
     end
 
-    -- Add qadmin.master
-    if verifyAndAdd('group.admin', 'qadmin.master', 1, 'Master') then
-        count = count + 1
-    end
-
-    -- Core Actions (Direct Execution)
-    local corePermissions = {
-        'qadmin.action.revive', 'qadmin.action.kill_player', 'qadmin.action.ban_player',
-        'qadmin.action.kick_player', 'qadmin.action.warn_player', 'qadmin.action.verify_player',
-        'qadmin.action.set_job', 'qadmin.action.set_gang', 'qadmin.action.give_money',
-        'qadmin.action.remove_money', 'qadmin.action.set_bucket', 'qadmin.action.give_item',
-        'qadmin.action.clear_inventory', 'qadmin.action.delete_vehicle', 'qadmin.action.spectate_player',
-        'qadmin.action.freeze_player', 'qadmin.action.teleport_to_player', 'qadmin.action.bring_player',
-        'qadmin.action.teleport_back', 'qadmin.action.drunk_player', 'qadmin.action.blackout',
-        'qadmin.action.toggle_cuffs', 'qadmin.action.clothing_menu', 'qadmin.action.set_ped',
-        'qadmin.action.unban_player', 'qadmin.action.spawn_vehicle', 'qadmin.action.open_inventory',
-        'qadmin.action.open_trunk', 'qadmin.action.open_stash', 'qadmin.action.admincar',
-        'qadmin.action.delete_character', 'qadmin.action.change_resource'
-    }
-
-    for _, perms in ipairs(corePermissions) do
-        if verifyAndAdd('group.admin', perms, 1, 'Core Action: ' .. perms) then
-            count = count + 1
-        end
-    end
-
-    -- Seed Actions from Config
-    local actionTypes = {
-        { tbl = Config.Actions, label = 'Action' },
-        { tbl = Config.PlayerActions, label = 'Player Action' },
-        { tbl = Config.OtherActions, label = 'Other Action' }
-    }
-
-    for _, typeInfo in ipairs(actionTypes) do
-        if typeInfo.tbl then
-            for k, v in pairs(typeInfo.tbl) do
-                if v.perms and string.find(v.perms, 'qadmin.action.') then
-                    if verifyAndAdd('group.admin', v.perms, 1, typeInfo.label .. ': ' .. (v.label or k)) then
-                        count = count + 1
-                    end
-                end
-            end
-        end
-    end
-
-    -- Add qadmin.open by default too
-    if verifyAndAdd('group.admin', Config.OpenPanelPerms, 1, 'Open Panel') then
-        count = count + 1
-    end
-
-    if count > 0 then
-        TriggerClientEvent('QBCore:Notify', src, ('Seeded %d permissions for group.admin'):format(count), 'success')
-    else
-        TriggerClientEvent('QBCore:Notify', src, 'All permissions already exist', 'primary')
-    end
+    TriggerClientEvent('QBCore:Notify', source, 'Grupos do jogador atualizados.', 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupos: personagem %s teve grupos atualizados: %s'):format(citizenid, table.concat(groupsArray, ', ')), { citizenid = citizenid, groups = groupsArray })
+    BroadcastPermissionUpdate()
+    return true
 end)
 
 local function GetUserPermissions(src)
-    local pages = {
-        'dashboard', 'players', 'groups', 'bans', 'staffchat', 'items', 'vehicles',
-        'commands', 'actions', 'permissions', 'resources', 'settings', 'credits', 'livemap', 'livescreens'
-    }
-
     local allowed = {}
-    -- Always allow dashboard if able to open menu
-    table.insert(allowed, 'qadmin.page.dashboard')
 
-    -- 1. Check Pages
-    for _, page in ipairs(pages) do
-        local node = 'qadmin.page.' .. page
+    -- Check all known permissions dynamically
+    for _, node in ipairs(ALL_KNOWN_QADMIN_PERMS) do
         if HasPerms(src, node) then
-            table.insert(allowed, node)
-        end
-    end
+            -- For Config actions, map them to 'action.xxx' for frontend compatibility if they don't start with qadmin.
+            -- This preserves legacy behavior while supporting native qadmin. nodes
+            if not string.find(node, 'qadmin%.') then
+                -- Try to find the key in config
+                local found = false
+                if Config.Actions then for k, v in pairs(Config.Actions) do if v.perms == node then table.insert(allowed, 'action.'..k) found = true break end end end
+                if not found and Config.PlayerActions then for k, v in pairs(Config.PlayerActions) do if v.perms == node then table.insert(allowed, 'action.'..k) found = true break end end end
 
-    -- 2. Check Actions
-    if Config.Actions then
-        for k, v in pairs(Config.Actions) do
-            if HasPerms(src, v.perms) then
-                table.insert(allowed, 'action.' .. k)
+                if not found then table.insert(allowed, node) end
+            else
+                table.insert(allowed, node)
             end
         end
     end
 
-    -- 3. Check Player Actions
-    if Config.PlayerActions then
-        for k, v in pairs(Config.PlayerActions) do
-            if HasPerms(src, v.perms) then
-                table.insert(allowed, 'action.' .. k)
-            end
-        end
-    end
-
-    -- 4. Check for master bypass
-    if HasPerms(src, 'qadmin.master') then
-        table.insert(allowed, 'qadmin.master')
+    Debug(('[mri_Qadmin] Permissions for Source %s: %d nodes found'):format(src, #allowed))
+    if Config.Debug then
+        print(('[mri_Qadmin] Nodes: %s'):format(table.concat(allowed, ', ')))
     end
 
     return allowed
 end
 _G.GetUserPermissions = GetUserPermissions
 
--- CALLBACKS: MY PERMISSIONS
 lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     local allowed = GetUserPermissions(source)
-    Debug(('[mri_Qadmin] GetMyPermissions for Src %d (%s)'):format(source, GetPlayerName(source)))
-    Debug(('[mri_Qadmin] Allowed: %s'):format(json.encode(allowed)))
-
     return allowed
 end)
 
 lib.addCommand('mri_qadmin.setmaster', {
     help = 'Set a player as Master Admin (Console Only)',
     params = {
-        { name = 'target', help = 'Player ID', type = 'playerId' },
+        { name = 'target', help = 'Player ID, License or License2' },
     },
 }, function(source, args)
-    if source ~= 0 then return end -- Console only
+    if source ~= 0 then return end
 
     local target = args.target
     local license = target
@@ -688,119 +610,258 @@ lib.addCommand('mri_qadmin.setmaster', {
             license = p.PlayerData.license
             print(('[mri_Qadmin] Resolved ID %s to %s (%s)'):format(target, p.PlayerData.name, license))
         else
-            print('^1[mri_Qadmin] Player ID not found online. If using license, provide full string (license:xxx)^7')
+            print('^1[mri_Qadmin] Player ID not found online. Provide full string (license:xxx)^7')
             return
         end
     end
 
     if not string.find(license, 'license:') and not string.find(license, 'license2:') then
-        print('^3[mri_Qadmin] Warning: Target %s does not look like a license. Assuming it is valid.^7')
+        print('^3[mri_Qadmin] Assuming parameter is already a valid identifier.^7')
     end
 
-    -- 1. Insert into DB (As an Ace for Master bypass, and also add them to group.admin)
-    local normalizedLicense = NormalizeIdentifier(license)
-    local masterPrincipal = NormalizePrincipal(license)
+    local cleanLicense = license:gsub("identifier.", "")
 
-    local function doInsert()
-        -- Add to group.admin just in case
-        local existsGrp = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {normalizedLicense, 'group.admin'})
-        if not existsGrp then
-            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedLicense, 'group.admin', 'Master Admin (Console)'})
-        end
+    -- Store in DB immediately
+    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_masters (license) VALUES (?)', {cleanLicense})
 
-        local existsAce = MySQL.single.await('SELECT id FROM mri_qadmin_aces WHERE principal = ? AND object = ?', {masterPrincipal, 'qadmin.master'})
-        if existsAce then
-            print('^3[mri_Qadmin] Master Ace already exists in DB.^7')
-        else
-            MySQL.insert.await('INSERT INTO mri_qadmin_aces (principal, object, allow, description) VALUES (?, ?, ?, ?)', {masterPrincipal, 'qadmin.master', 1, 'Master Admin (Console)'})
-            print('^2[mri_Qadmin] Added Master to database.^7')
+    -- Apply immediately
+    lib.addAce('identifier.' .. cleanLicense, 'qadmin.master', true)
+    print(('^2[mri_Qadmin] Executed: lib.addAce identifier.%s qadmin.master true^7'):format(cleanLicense))
+
+    local players = QBCore.Functions.GetPlayers()
+    for _, id in ipairs(players) do
+        local p = QBCore.Functions.GetPlayer(id)
+        if p and (p.PlayerData.license == cleanLicense) then
+            TriggerEvent('mri_Qadmin:server:Reload', id)
+            TriggerClientEvent('QBCore:Notify', id, 'Você agora é Master Admin!', 'success')
+            BroadcastPermissionUpdate()
         end
     end
-
-    -- Run async
-    CreateThread(function()
-        doInsert()
-
-        -- 2. Apply immediately
-        lib.addPrincipal(masterPrincipal, 'group.admin')
-        lib.addAce(masterPrincipal, 'qadmin.master', true)
-        print(('^2[mri_Qadmin] Executed: lib.addAce %s qadmin.master true^7'):format(masterPrincipal))
-
-        -- 3. If online, notify and reload
-        local players = QBCore.Functions.GetPlayers()
-        for _, id in ipairs(players) do
-            local p = QBCore.Functions.GetPlayer(id)
-            if p and (p.PlayerData.license == license) then
-                print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
-                TriggerEvent('mri_Qadmin:server:Reload', id) -- Re-trigger load logic or just rely on add_principal
-                TriggerClientEvent('QBCore:Notify', id, 'Você agora é Master Admin!', 'success')
-                BroadcastPermissionUpdate()
-            end
-        end
-    end)
 end)
 
-lib.addCommand('mri_qadmin.addpermission', {
-    help = 'Add permission to a player (Console Only)',
+lib.addCommand('mri_qadmin.removemaster', {
+    help = 'Remove a player from Master Admin (Console Only)',
     params = {
-        { name = 'target', help = 'Player ID or License', type = 'string' },
-        { name = 'permission', help = 'Permission node (e.g., group.admin)', type = 'string' },
+        { name = 'target', help = 'Player ID, License or License2' },
     },
 }, function(source, args)
-    if source ~= 0 then return end -- Console only
+    if source ~= 0 then return end
 
     local target = args.target
-    local permission = args.permission
-
     local license = target
-    -- Check if it's a numeric ID (online player)
     if tonumber(target) then
         local p = QBCore.Functions.GetPlayer(tonumber(target))
-        if p then
-            license = p.PlayerData.license
-            print(('[mri_Qadmin] Resolved ID %s to %s (%s)'):format(target, p.PlayerData.name, license))
-        else
-            print('^1[mri_Qadmin] Player ID not found online. If using license, provide full string (license:xxx)^7')
-            return
+        if p then license = p.PlayerData.license end
+    end
+
+    local cleanLicense = license:gsub("identifier.", "")
+
+    MySQL.query.await('DELETE FROM mri_qadmin_masters WHERE license = ?', {cleanLicense})
+    lib.removeAce('identifier.' .. cleanLicense, 'qadmin.master', true)
+
+    print(('^2[mri_Qadmin] Executed: lib.removeAce identifier.%s qadmin.master^7'):format(cleanLicense))
+
+    local players = QBCore.Functions.GetPlayers()
+    for _, id in ipairs(players) do
+        local p = QBCore.Functions.GetPlayer(id)
+        if p and (p.PlayerData.license == cleanLicense) then
+            TriggerEvent('mri_Qadmin:server:Reload', id)
+            TriggerClientEvent('QBCore:Notify', id, 'Seu acesso Master Admin foi revogado.', 'error')
+            BroadcastPermissionUpdate()
+        end
+    end
+end)
+
+lib.addCommand('mri_qadmin.debugperms', {
+    help = 'Debug player permissions (Console Only)',
+    params = {
+        { name = 'target', help = 'Player ID' },
+    },
+}, function(source, args)
+    if source ~= 0 then return end
+    local targetId = tonumber(args.target)
+    if not targetId then print('^1[mri_Qadmin] ID inválido.^7') return end
+
+    local p = QBCore.Functions.GetPlayer(targetId)
+    if not p then print('^1[mri_Qadmin] Jogador não encontrado.^7') return end
+
+    print(('^3--- DEBUG PERMISSIONS: %s (%s) ---^7'):format(p.PlayerData.name, p.PlayerData.citizenid))
+
+    print('PAGES:')
+    for _, def in ipairs(PERM_DEFINITIONS) do
+        if def.id:find('qadmin%.page%.') then
+            local allowed = HasPerms(targetId, def.id)
+            local color = allowed and '^2' or '^1'
+            print(('%s- %s: %s^7'):format(color, def.id, tostring(allowed)))
         end
     end
 
-    if not string.find(license, 'license:') and not string.find(license, 'license2:') then
-        print('^3[mri_Qadmin] Warning: Target '..license..' does not look like a license. Assuming it is valid.^7')
-    end
+    local isMaster = HasPerms(targetId, 'qadmin.master')
+    print(('^5MASTER BYPASS ACTIVE: %s^7'):format(tostring(isMaster)))
 
-    -- 1. Insert into DB
-    local normalizedId = NormalizeIdentifier(license)
-    local function doInsert()
-        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_principals WHERE child = ? AND parent = ?', {normalizedId, permission})
-        if exists then
-            print('^3[mri_Qadmin] Principal already exists in DB.^7')
-        else
-            MySQL.insert.await('INSERT INTO mri_qadmin_principals (child, parent, description) VALUES (?, ?, ?)', {normalizedId, permission, 'Added via Console'})
-            print('^2[mri_Qadmin] Added to database.^7')
+    if isMaster then
+        print('^3RASTREAMENTO DE ORIGEM (MASTER):^7')
+        local principals = { 'identifier.license:' .. p.PlayerData.license, 'char:' .. p.PlayerData.citizenid }
+        local num = GetNumPlayerIdentifiers(targetId)
+        for i = 0, num - 1 do
+            local id = GetPlayerIdentifier(targetId, i)
+            table.insert(principals, 'identifier.' .. id)
+            table.insert(principals, id)
         end
-    end
 
-    -- Run async
-    CreateThread(function()
-        doInsert()
+        -- Check common groups
+        local commonGroups = {'group.admin', 'group.god', 'group.mod', 'group.user'}
+        for _, g in ipairs(commonGroups) do table.insert(principals, g) end
 
-        -- 2. Apply immediately
-        lib.addPrincipal('identifier.' .. license, permission)
-        print(('^2[mri_Qadmin] Executed: lib.addPrincipal identifier.%s %s^7'):format(license, permission))
-
-        -- 3. If online, notify and reload
-        local players = QBCore.Functions.GetPlayers()
-        for _, id in ipairs(players) do
-            local p = QBCore.Functions.GetPlayer(id)
-            if p and (p.PlayerData.license == license) then
-                print(('[mri_Qadmin] Target is online (Src: %s). Reloading permissions...'):format(id))
-                TriggerEvent('mri_Qadmin:server:Reload', id)
-                TriggerClientEvent('QBCore:Notify', id, 'Você recebeu uma nova permissão administrativa.', 'success')
-                BroadcastPermissionUpdate()
+        for _, principal in ipairs(principals) do
+            if IsPrincipalAceAllowed(principal, 'qadmin.master') then
+                print(('^1[!] ACE ENCONTRADO NO PRINCIPAL: %s^7'):format(principal))
             end
         end
-    end)
+    end
+
+    -- Check Database masters
+    local dbMasters = MySQL.query.await('SELECT * FROM mri_qadmin_masters') or {}
+    print(('^3DATABASE MASTERS (%d found):^7'):format(#dbMasters))
+    for _, m in ipairs(dbMasters) do
+        local isThisOne = (p.PlayerData.license == m.license)
+        print(('%s- %s %s^7'):format(isThisOne and '^2' or '^7', m.license, isThisOne and '[SUA LICENÇA]' or ''))
+    end
+
+    -- DB groups for this character
+    local dbGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {p.PlayerData.citizenid}) or {}
+    print(('^3DB GROUPS para %s (%d found):^7'):format(p.PlayerData.citizenid, #dbGroups))
+    if #dbGroups == 0 then
+        print('^1  (nenhum — char não está em nenhum grupo no banco)^7')
+    end
+    for _, g in ipairs(dbGroups) do
+        print(('  - group.%s'):format(g.group_id))
+    end
+
+    -- Principal source trace for qadmin.page.dashboard
+    local tracePerm = 'qadmin.page.dashboard'
+    print(('^5--- ORIGIN TRACE (%s) ---^7'):format(tracePerm))
+    print(('^5  IsPlayerAceAllowed(src): %s^7'):format(tostring(IsPlayerAceAllowed(targetId, tracePerm))))
+
+    -- Check FiveM native groups (txAdmin/server.cfg)
+    local nativeGroups = {'group.admin', 'group.god', 'group.mod', 'group.user', 'group.superadmin'}
+    for _, g in ipairs(nativeGroups) do
+        if IsPrincipalAceAllowed(g, tracePerm) then
+            print(('^1  [WARN] %s tem %s -> ACE vazando do FiveM nativo! (txAdmin/server.cfg)^7'):format(g, tracePerm))
+        end
+    end
+
+    -- Check mri.group.* principals (nosso namespace isolado)
+    local mriGroupRows = MySQL.query.await('SELECT id FROM mri_qadmin_groups') or {}
+    for _, gr in ipairs(mriGroupRows) do
+        local mriPrincipal = 'mri.group.' .. gr.id
+        if IsPrincipalAceAllowed(mriPrincipal, tracePerm) then
+            print(('^2  [OK] %s tem %s -> via namespace isolado (correto)^7'):format(mriPrincipal, tracePerm))
+        end
+    end
+
+    local charAllow = IsPrincipalAceAllowed('char:' .. p.PlayerData.citizenid, tracePerm)
+    print(('^5  char:%s -> %s^7'):format(p.PlayerData.citizenid, tostring(charAllow)))
+
+    local numIds = GetNumPlayerIdentifiers(targetId)
+    for i = 0, numIds - 1 do
+        local id = GetPlayerIdentifier(targetId, i)
+        if IsPrincipalAceAllowed('identifier.' .. id, tracePerm) or IsPrincipalAceAllowed(id, tracePerm) then
+            print(('^1  [SOURCE] identifier.%s -> ALLOW (vazamento de principal externo!)^7'):format(id))
+        end
+    end
+    print('^3------------------------------------------^7')
+end)
+
+lib.addCommand('mri_qadmin.purgemasters', {
+    help = 'WIPE ALL Master Bypasses from DB and Session (Console Only)',
+}, function(source, args)
+    if source ~= 0 then return end
+
+    local masters = MySQL.query.await('SELECT license FROM mri_qadmin_masters') or {}
+    for _, m in ipairs(masters) do
+        lib.removeAce('identifier.' .. m.license, 'qadmin.master', true)
+        lib.removeAce('identifier.' .. m.license, 'qadmin', true)
+    end
+
+    -- Force clean common groups just in case
+    local targets = {'group.admin', 'group.god', 'group.mod', 'group.user'}
+    for _, t in ipairs(targets) do
+        lib.removeAce(t, 'qadmin.master', true)
+        lib.removeAce(t, 'qadmin', true)
+    end
+
+    -- Clean group permissions for master too! (THE SMOKING GUN)
+    MySQL.query.await('DELETE FROM mri_qadmin_group_permissions WHERE permission = "qadmin.master"')
+
+    MySQL.query.await('DELETE FROM mri_qadmin_masters')
+    print('^2[mri_Qadmin] DATABASE WIPED: mri_qadmin_masters and Master nodes for groups are now empty.^7')
+    print('^2[mri_Qadmin] SESSION CLEANED: Master ACES removed from known licenses and common groups.^7')
+
+    BroadcastPermissionUpdate()
+end)
+
+lib.addCommand('mri_qadmin.inspectdb', {
+    help = 'Inspect Permission Tables for Hidden Master Rows (Console Only)',
+}, function(source, args)
+    if source ~= 0 then return end
+
+    print('^3--- DATABASE INSPECTION ---^7')
+
+    -- Check Groups
+    local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups') or {}
+    print(('^5Groups Found: %d^7'):format(#groups))
+    for _, g in ipairs(groups) do
+        print(('  - %s (%s)'):format(g.id, g.label))
+    end
+
+    -- Check Group Permissions for Master
+    local groupPerms = MySQL.query.await('SELECT * FROM mri_qadmin_group_permissions WHERE permission LIKE ?', {'%qadmin%'}) or {}
+    print(('^5Relevant Group Permissions Found: %d^7'):format(#groupPerms))
+    for _, p in ipairs(groupPerms) do
+        local color = p.permission == 'qadmin.master' and '^1' or '^7'
+        print(('%s  - Group: %s | Perm: %s^7'):format(color, p.group_id, p.permission))
+    end
+
+    -- Check Legacy Tables
+    local tables = MySQL.query.await("SHOW TABLES LIKE 'mri_qadmin_aces'") or {}
+    if #tables > 0 then
+        print('^1[!] ALERT: Legacy table mri_qadmin_aces STILL EXISTS. This may cause re-migration.^7')
+    else
+        print('^2Legacy table mri_qadmin_aces not found (Good).^7')
+    end
+
+    print('^3---------------------------^7')
+end)
+
+RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
+    local src = source
+    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') and not IsPlayerAceAllowed(src, 'qadmin.master') then return end
+
+    local count = 0
+    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {'admin', 'Administrador', 'Default Admin Group'})
+
+    local function addSafe(perm)
+        if perm == 'qadmin.master' then return end -- SECURITY: Never seed master to group
+        local exists = MySQL.single.await('SELECT id FROM mri_qadmin_group_permissions WHERE group_id = "admin" AND permission = ?', {perm})
+        if not exists then
+            MySQL.insert.await('INSERT INTO mri_qadmin_group_permissions (group_id, permission) VALUES ("admin", ?)', {perm})
+            lib.addAce('mri.group.admin', perm, true)
+            count = count + 1
+        end
+    end
+
+    -- Seed everything from ALL_KNOWN_QADMIN_PERMS (already includes Config.Actions entries)
+    for _, perm in ipairs(ALL_KNOWN_QADMIN_PERMS) do addSafe(perm) end
+
+    if type(Config.OpenPanelPerms) == "string" then addSafe(Config.OpenPanelPerms) end
+
+    if count > 0 then
+        TriggerClientEvent('QBCore:Notify', src, ('Seeded %d permissions for \'admin\' group'):format(count), 'success')
+        BroadcastPermissionUpdate()
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'All permissions already exist', 'primary')
+    end
 end)
 
 RegisterNetEvent('mri_Qadmin:db:ready', function()
