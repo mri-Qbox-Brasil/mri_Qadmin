@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.0...v1.9.1) (2026-04-30)
+
+
+### Bug Fixes
+
+* tradução ([f20c7e7](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/f20c7e737dedc7d355e268fbd365c3259429f729))
+
 # [1.9.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.8.0...v1.9.0) (2026-04-29)
 
 
