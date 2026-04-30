@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useI18n } from '@/hooks/useI18n'
 import { Loader2, MapPin, User, ChevronLeft } from 'lucide-react'
 import { MriButton } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
@@ -10,6 +11,7 @@ import { Player } from '@/types'
 
 export default function PlayerGroups({ groups, searchQuery }: { groups: GroupData[], searchQuery: string }) {
     const { sendNui } = useNui()
+    const { t } = useI18n()
     const [loading, setLoading] = useState(false)
     const [searchingPlayers, setSearchingPlayers] = useState(false)
     
@@ -103,7 +105,7 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
                         {playersList.length === 0 && !searchingPlayers ? (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
                                 <User className="w-16 h-16 mb-4" />
-                                <p className="text-lg">Nenhum jogador encontrado.</p>
+                                <p className="text-lg">{t('permissions.player_groups.no_players')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -118,7 +120,7 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
                                             <div className={cn("absolute bottom-0 w-full h-1.5", p.online ? "bg-green-500" : "bg-red-500")} />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="font-bold text-foreground truncate">{p.name || 'Desconhecido'}</span>
+                                            <span className="font-bold text-foreground truncate">{p.name || t('common.unknown')}</span>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <span className="text-[10px] uppercase font-mono font-bold bg-muted px-1.5 py-0.5 rounded text-muted-foreground">ID: {p.id}</span>
                                                 <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground truncate">{p.citizenid}</span>
@@ -136,7 +138,7 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
                         onClick={() => setActivePlayer(null)}
                         className="flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors w-fit font-medium text-sm"
                     >
-                        <ChevronLeft className="w-5 h-5 mr-1" /> Voltar para busca
+                        <ChevronLeft className="w-5 h-5 mr-1" /> {t('permissions.player_groups.back_to_search')}
                     </button>
 
                     <div className="bg-card/40 border border-border/50 rounded-2xl p-8 backdrop-blur-sm shadow-xl relative overflow-hidden">
@@ -163,7 +165,7 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
 
                         <div className="mb-8">
                             <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-                                <MapPin className="w-4 h-4" /> Grupos de Acesso Atribuídos
+                                <MapPin className="w-4 h-4" /> {t('permissions.player_groups.assigned_groups')}
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 {groups.map(g => (
@@ -181,16 +183,16 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
                                     </div>
                                 ))}
                                 {groups.length === 0 && (
-                                    <span className="col-span-full text-center text-muted-foreground py-4 text-sm bg-muted/30 rounded-lg">Crie grupos primeiro na aba Gerenciar Grupos</span>
+                                    <span className="col-span-full text-center text-muted-foreground py-4 text-sm bg-muted/30 rounded-lg">{t('permissions.player_groups.no_groups_hint')}</span>
                                 )}
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-3 pt-6 border-t border-border/50">
-                            <MriButton variant="outline" onClick={() => setActivePlayer(null)}>Cancelar</MriButton>
+                            <MriButton variant="outline" onClick={() => setActivePlayer(null)}>{t('common.cancel')}</MriButton>
                             <MriButton onClick={handleSave} disabled={loading} className="px-10 shadow-lg shadow-primary/20 text-md h-12">
                                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                Salvar Vínculos
+                                {t('permissions.player_groups.save_links')}
                             </MriButton>
                         </div>
                     </div>

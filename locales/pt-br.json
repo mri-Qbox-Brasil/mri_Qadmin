@@ -349,7 +349,7 @@
         "yes": "Yes",
         "no": "No",
         "na": "N/A",
-        "unknown": "Unknown",
+        "unknown": "Desconhecido",
         "you": "You",
         "refresh": "Refresh",
         "clear": "Clear",
@@ -586,6 +586,45 @@
             "remove_principal": "Tem certeza que deseja REMOVER herança '%s' -> '%s'?",
             "add_ace": "Tem certeza que deseja ADICIONAR permissão '%s' para '%s'?",
             "remove_ace": "Tem certeza que deseja REMOVER permissão '%s' de '%s'?"
+        },
+        "tabs": {
+            "manage_groups": "Gerenciar Grupos",
+            "assign_players": "Atribuir a Jogadores"
+        },
+        "count_label": "Grupos Cadastrados",
+        "search_groups": "Buscar Grupos...",
+        "search_players": "Buscar Jogadores...",
+        "group_manager": {
+            "new_group": "Novo Grupo",
+            "empty_title": "Nenhum grupo encontrado",
+            "empty_subtitle": "Ajuste os filtros ou crie um novo grupo",
+            "create_title": "Criar Novo Grupo",
+            "id_label": "ID do Grupo",
+            "id_placeholder": "ex: suporte.tecnico",
+            "validation_chars": "Apenas números, letras, pontos e underlines são aceitos.",
+            "validation_dot": "O ID não pode começar nem terminar com um ponto.",
+            "id_hint": "O identificador interno único (ex: adm_nivel.1). Letras minúsculas, números, pontos e _.",
+            "label_label": "Nome (Label)",
+            "label_placeholder": "ex: Suporte Avançado",
+            "desc_label": "Descrição (Opcional)",
+            "desc_placeholder": "Descreva as responsabilidades...",
+            "delete_title": "Excluir Grupo",
+            "delete_confirm_btn": "Excluir Grupo",
+            "delete_confirm_prefix": "Tem certeza que deseja apagar o grupo",
+            "delete_warning": "Atenção: Todos os jogadores com este grupo perderão imediatamente essas permissões."
+        },
+        "player_groups": {
+            "no_players": "Nenhum jogador encontrado.",
+            "back_to_search": "Voltar para busca",
+            "assigned_groups": "Grupos de Acesso Atribuídos",
+            "no_groups_hint": "Crie grupos primeiro na aba de Gerenciar Grupos",
+            "save_links": "Salvar Vínculos"
+        },
+        "group_editor": {
+            "editing_prefix": "Editando:",
+            "save": "Salvar Permissões",
+            "toggle_category_hint": "Clique para marcar/desmarcar todas as permissões desta categoria",
+            "unlock_tab": "Liberar Aba/Menu"
         }
     },
     "action_manager": {
@@ -661,7 +700,12 @@
             "gangs": "Gangues do Servidor",
             "items": "Lista de Itens",
             "custom": "Lista Personalizada"
-        }
+        },
+        "new_field_default": "Novo Campo",
+        "edit_title": "Editando Ação: %s",
+        "perm_ace_placeholder": "Nó de permissão ACE",
+        "button_field_hint": "Este campo serve como o gatilho final para executar a ação no menu.",
+        "no_fields": "Nenhum campo configurado ainda."
     },
     "permission_wizard": {
         "title": "Assistente de Permissões",

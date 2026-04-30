@@ -249,8 +249,32 @@ local function ClearGroupAces(groupId)
     end
 end
 
+local function SeedGodGroup()
+    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)',
+        {'god', 'God', 'Perfil com acesso total a todas as permissões'})
+
+    local existing = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = "god"') or {}
+    local existingSet = {}
+    for _, row in ipairs(existing) do existingSet[row.permission] = true end
+
+    local toAdd = {}
+    for _, def in ipairs(GetPermissionDefinitions()) do
+        if def.id ~= 'qadmin.master' and not existingSet[def.id] then
+            toAdd[#toAdd + 1] = def.id
+        end
+    end
+
+    if #toAdd > 0 then
+        for _, perm in ipairs(toAdd) do
+            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_group_permissions (group_id, permission) VALUES ("god", ?)', {perm})
+        end
+        Debug(('[mri_Qadmin] SeedGodGroup: %d permissões adicionadas ao grupo god'):format(#toAdd))
+    end
+end
+
 local function LoadPermissions()
     RunMigration()
+    SeedGodGroup()
 
     -- Load Groups and their Aces
     local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups') or {}
@@ -346,26 +370,31 @@ local function SetupPlayerPrincipals(src, isReload)
     Debug(('[mri_Qadmin] Principal Mapping: %s -> char:%s'):format(fivemPrincipal, citizenid))
 
     local charGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid}) or {}
-    local foundAdmin = false
     local activeGroups = {}
 
     for _, g in ipairs(charGroups) do
         Debug(('[mri_Qadmin] Group Mapping: char:%s -> mri.group.%s'):format(citizenid, g.group_id))
         lib.addPrincipal('char:' .. citizenid, 'mri.group.' .. g.group_id)
         activeGroups[#activeGroups + 1] = g.group_id
-        if g.group_id == 'admin' then foundAdmin = true end
     end
 
-    -- Reverse Permission Sync (QBCore -> mri_Qadmin admin group)
-    if not isReload and Config.QBCoreAutoSync ~= false then
-        local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
-        if hasQBCoreAdmin and not foundAdmin then
-            Debug(('[mri_Qadmin] Auto-Sync: Jogador %s possui permissão de base (QBCore admin). Sincronizando com grupo admin do painel...'):format(GetPlayerName(src)))
-            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {'admin', 'Administrador', 'Default Admin Group'})
-            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, 'admin'})
-            lib.addPrincipal('char:' .. citizenid, 'mri.group.admin')
-            activeGroups[#activeGroups + 1] = 'admin'
-            foundAdmin = true
+    -- Reverse Permission Sync (QBCore -> mri_Qadmin)
+    -- Only fires on first load (not reload) and only when the player has no group yet.
+    -- QBCore 'god' maps to mri_Qadmin 'god'; QBCore 'admin' maps to mri_Qadmin 'admin'.
+    if not isReload and Config.QBCoreAutoSync ~= false and #activeGroups == 0 then
+        local hasQBCoreGod   = QBCore.Functions.HasPermission(src, 'god')
+        local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin')
+
+        if hasQBCoreGod or hasQBCoreAdmin then
+            local targetGroup = hasQBCoreGod and 'god' or 'admin'
+            local targetLabel = hasQBCoreGod and 'God' or 'Administrador'
+            local targetDesc  = hasQBCoreGod and 'Perfil com acesso total a todas as permissões' or 'Default Admin Group'
+
+            Debug(('[mri_Qadmin] Auto-Sync: Jogador %s possui permissão QBCore "%s". Sincronizando com grupo "%s" do painel...'):format(GetPlayerName(src), hasQBCoreGod and 'god' or 'admin', targetGroup))
+            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {targetGroup, targetLabel, targetDesc})
+            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, targetGroup})
+            lib.addPrincipal('char:' .. citizenid, 'mri.group.' .. targetGroup)
+            activeGroups[#activeGroups + 1] = targetGroup
         end
     end
 

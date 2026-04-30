@@ -78,9 +78,9 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
     };
 
     const handleAddField = () => {
-        setDropdownFields([...dropdownFields, { 
-            label: 'New Field', 
-            option: 'text' 
+        setDropdownFields([...dropdownFields, {
+            label: t('action_wizard.new_field_default'),
+            option: 'text'
         }]);
     };
 
@@ -138,7 +138,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-6 border-b border-border pb-4">
                     <Wand2 className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-bold">{editId ? `Edit Action: ${editId}` : t('action_wizard.title')}</h2>
+                    <h2 className="text-xl font-bold">{editId ? t('action_wizard.edit_title').replace('%s', editId) : t('action_wizard.title')}</h2>
                 </div>
 
                 {/* Stepper Header */}
@@ -271,7 +271,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                     }))}
                                     value={perms}
                                     onChange={setPerms}
-                                    placeholder="Nó de permissão ACE"
+                                    placeholder={t('action_wizard.perm_ace_placeholder')}
                                 />
                                 <p className="text-xs text-muted-foreground mt-2">
                                     {t('action_wizard.descriptions.perm')}
@@ -352,7 +352,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
                                         {field.option === 'button' && (
                                             <div className="p-3 bg-primary/5 rounded border border-primary/10 flex items-center gap-3">
                                                 <HelpCircle className="w-4 h-4 text-primary" />
-                                                <p className="text-[10px] text-primary/80">Este campo serve como o gatilho final para executar a ação no menu.</p>
+                                                <p className="text-[10px] text-primary/80">{t('action_wizard.button_field_hint')}</p>
                                             </div>
                                         )}
                                     </div>
@@ -360,7 +360,7 @@ export default function ActionWizard({ isOpen, onClose, onFinish, initialData, e
 
                                 {dropdownFields.length === 0 && (
                                     <div className="p-12 border border-dashed border-border rounded-xl text-center">
-                                        <p className="text-sm text-muted-foreground italic">Nenhum campo configurado ainda.</p>
+                                        <p className="text-sm text-muted-foreground italic">{t('action_wizard.no_fields')}</p>
                                     </div>
                                 )}
                             </div>

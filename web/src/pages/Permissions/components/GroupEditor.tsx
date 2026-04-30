@@ -105,13 +105,13 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                     <div>
                         <h2 className="text-xl font-bold flex items-center gap-2">
                             <ShieldCheck className="w-5 h-5 text-primary" />
-                            Editando: <span className="text-primary">{group.label}</span>
+                            {t('permissions.group_editor.editing_prefix')} <span className="text-primary">{group.label}</span>
                         </h2>
                         <p className="text-xs text-muted-foreground/80 font-mono tracking-widest uppercase mt-1">{group.id}</p>
                     </div>
                 </div>
                 <MriButton onClick={handleSave} disabled={saving} className="shadow-lg shadow-primary/20">
-                    <Save className="w-4 h-4 mr-2" /> Salvar Permissões
+                    <Save className="w-4 h-4 mr-2" /> {t('permissions.group_editor.save')}
                 </MriButton>
             </div>
 
@@ -137,7 +137,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-lg">{cat.label}</h3>
-                                        <p className="text-xs text-muted-foreground">Clique para marcar/desmarcar todos as permissões desta categoria</p>
+                                        <p className="text-xs text-muted-foreground">{t('permissions.group_editor.toggle_category_hint')}</p>
                                     </div>
                                 </div>
                                 <div className={cn(
@@ -166,7 +166,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                             {permissions.has(data.pageNode) && <ShieldCheck className="w-3 h-3" />}
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-semibold">Liberar Aba/Menu</span>
+                                            <span className="text-sm font-semibold">{t('permissions.group_editor.unlock_tab')}</span>
                                             <span className="text-[10px] text-muted-foreground font-mono">{data.pageNode}</span>
                                         </div>
                                     </div>

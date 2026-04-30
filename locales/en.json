@@ -586,6 +586,45 @@
             "remove_principal": "Are you sure you want to REMOVE inheritance '%s' -> '%s'?",
             "add_ace": "Are you sure you want to ADD permission '%s' to '%s'?",
             "remove_ace": "Are you sure you want to REMOVE permission '%s' from '%s'?"
+        },
+        "tabs": {
+            "manage_groups": "Manage Groups",
+            "assign_players": "Assign to Players"
+        },
+        "count_label": "Registered Groups",
+        "search_groups": "Search Groups...",
+        "search_players": "Search Players...",
+        "group_manager": {
+            "new_group": "New Group",
+            "empty_title": "No groups found",
+            "empty_subtitle": "Adjust your filters or create a new group",
+            "create_title": "Create New Group",
+            "id_label": "Group ID",
+            "id_placeholder": "e.g. support.advanced",
+            "validation_chars": "Only letters, numbers, dots and underscores are allowed.",
+            "validation_dot": "The ID cannot start or end with a dot.",
+            "id_hint": "Unique internal identifier (e.g. adm_level.1). Lowercase letters, numbers, dots and _.",
+            "label_label": "Name (Label)",
+            "label_placeholder": "e.g. Advanced Support",
+            "desc_label": "Description (Optional)",
+            "desc_placeholder": "Describe the responsibilities...",
+            "delete_title": "Delete Group",
+            "delete_confirm_btn": "Delete Group",
+            "delete_confirm_prefix": "Are you sure you want to delete the group",
+            "delete_warning": "Warning: All players in this group will immediately lose these permissions."
+        },
+        "player_groups": {
+            "no_players": "No players found.",
+            "back_to_search": "Back to search",
+            "assigned_groups": "Assigned Access Groups",
+            "no_groups_hint": "Create groups first in the Manage Groups tab",
+            "save_links": "Save Assignments"
+        },
+        "group_editor": {
+            "editing_prefix": "Editing:",
+            "save": "Save Permissions",
+            "toggle_category_hint": "Click to check/uncheck all permissions in this category",
+            "unlock_tab": "Unlock Tab/Menu"
         }
     },
     "action_manager": {
@@ -661,7 +700,12 @@
             "gangs": "Server Gangs",
             "items": "Items List",
             "custom": "Custom List"
-        }
+        },
+        "new_field_default": "New Field",
+        "edit_title": "Editing Action: %s",
+        "perm_ace_placeholder": "ACE permission node",
+        "button_field_hint": "This field acts as the final trigger to execute the action in the menu.",
+        "no_fields": "No fields configured yet."
     },
     "permission_wizard": {
         "title": "Permission Wizard",

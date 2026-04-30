@@ -78,7 +78,7 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
         <div className="flex flex-col h-full space-y-4 relative">
             <div className="flex justify-end relative z-10 mr-4">
                 <MriButton onClick={() => setCreating(true)} className="shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
-                    <Plus className="w-4 h-4 mr-2" /> Novo Grupo
+                    <Plus className="w-4 h-4 mr-2" /> {t('permissions.group_manager.new_group')}
                 </MriButton>
             </div>
 
@@ -98,15 +98,15 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
                 {filtered.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center p-12 text-muted-foreground/60 border-2 border-dashed border-border/50 rounded-2xl">
                         <Users className="w-12 h-12 mb-4 opacity-50" />
-                        <p className="font-medium text-lg">Nenhum grupo encontrado</p>
-                        <p className="text-sm opacity-70">Ajuste os filtros ou crie um novo grupo</p>
+                        <p className="font-medium text-lg">{t('permissions.group_manager.empty_title')}</p>
+                        <p className="text-sm opacity-70">{t('permissions.group_manager.empty_subtitle')}</p>
                     </div>
                 )}
             </div>
 
             {creating && (
                 <MriActionModal
-                    title="Criar Novo Grupo"
+                    title={t('permissions.group_manager.create_title')}
                     icon={Shield}
                     onClose={() => !saving && setCreating(false)}
                     onConfirm={handleCreate}
@@ -114,9 +114,9 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
                 >
                     <div className="flex flex-col gap-4 py-2">
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold uppercase text-muted-foreground">ID do Grupo</label>
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">{t('permissions.group_manager.id_label')}</label>
                             <MriInput
-                                placeholder="ex: suporte.tecnico"
+                                placeholder={t('permissions.group_manager.id_placeholder')}
                                 value={newGroupId}
                                 onChange={e => setNewGroupId(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
                                 disabled={saving}
@@ -124,26 +124,26 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
                             />
                             {hasFormattingErrors ? (
                                 <p className="text-[10px] text-red-500 font-semibold">
-                                    {hasInvalidIdChars ? 'Apenas números, letras, pontos e underlines são aceitos. ' : ''}
-                                    {startsWithDot || endsWithDot ? 'O ID não pode começar nem terminar com um ponto.' : ''}
+                                    {hasInvalidIdChars ? t('permissions.group_manager.validation_chars') + ' ' : ''}
+                                    {startsWithDot || endsWithDot ? t('permissions.group_manager.validation_dot') : ''}
                                 </p>
                             ) : (
-                                <p className="text-[10px] text-muted-foreground">O identificador interno único (ex: adm_nivel.1). Letras minúsculas, números, pontos e _.</p>
+                                <p className="text-[10px] text-muted-foreground">{t('permissions.group_manager.id_hint')}</p>
                             )}
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold uppercase text-muted-foreground">Nome (Label)</label>
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">{t('permissions.group_manager.label_label')}</label>
                             <MriInput
-                                placeholder="ex: Suporte Avançado"
+                                placeholder={t('permissions.group_manager.label_placeholder')}
                                 value={newGroupLabel}
                                 onChange={e => setNewGroupLabel(e.target.value)}
                                 disabled={saving}
                             />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold uppercase text-muted-foreground">Descrição (Opcional)</label>
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">{t('permissions.group_manager.desc_label')}</label>
                             <MriInput
-                                placeholder="Descreva as responsabilidades..."
+                                placeholder={t('permissions.group_manager.desc_placeholder')}
                                 value={newGroupDesc}
                                 onChange={e => setNewGroupDesc(e.target.value)}
                                 disabled={saving}
@@ -155,20 +155,20 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
 
             {groupToDelete && (
                 <MriActionModal
-                    title="Excluir Grupo"
+                    title={t('permissions.group_manager.delete_title')}
                     icon={Shield}
                     variant="destructive"
                     onClose={() => !saving && setGroupToDelete(null)}
                     onConfirm={handleDelete}
                     isConfirmDisabled={saving}
-                    confirmText="Excluir Grupo"
+                    confirmText={t('permissions.group_manager.delete_confirm_btn')}
                 >
                     <div className="py-2">
                         <p className="text-sm text-foreground mb-2">
-                            Tem certeza que deseja apagar o grupo <strong>{groupToDelete}</strong>?
+                            {t('permissions.group_manager.delete_confirm_prefix')} <strong>{groupToDelete}</strong>?
                         </p>
                         <p className="text-xs text-red-500">
-                            Atenção: Todos os jogadores com este grupo perderão imediatamente essas permissões.
+                            {t('permissions.group_manager.delete_warning')}
                         </p>
                     </div>
                 </MriActionModal>

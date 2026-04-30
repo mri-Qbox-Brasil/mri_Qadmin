@@ -586,6 +586,45 @@
             "remove_principal": "¿Seguro que quieres ELIMINAR herencia '%s' -> '%s'?",
             "add_ace": "¿Seguro que quieres AGREGAR permiso '%s' a '%s'?",
             "remove_ace": "¿Seguro que quieres ELIMINAR permiso '%s' de '%s'?"
+        },
+        "tabs": {
+            "manage_groups": "Administrar Grupos",
+            "assign_players": "Asignar a Jugadores"
+        },
+        "count_label": "Grupos Registrados",
+        "search_groups": "Buscar Grupos...",
+        "search_players": "Buscar Jugadores...",
+        "group_manager": {
+            "new_group": "Nuevo Grupo",
+            "empty_title": "No se encontraron grupos",
+            "empty_subtitle": "Ajusta los filtros o crea un nuevo grupo",
+            "create_title": "Crear Nuevo Grupo",
+            "id_label": "ID del Grupo",
+            "id_placeholder": "ej: soporte.avanzado",
+            "validation_chars": "Solo se permiten letras, números, puntos y guiones bajos.",
+            "validation_dot": "El ID no puede comenzar ni terminar con un punto.",
+            "id_hint": "Identificador interno único (ej: adm_nivel.1). Letras minúsculas, números, puntos y _.",
+            "label_label": "Nombre (Label)",
+            "label_placeholder": "ej: Soporte Avanzado",
+            "desc_label": "Descripción (Opcional)",
+            "desc_placeholder": "Describe las responsabilidades...",
+            "delete_title": "Eliminar Grupo",
+            "delete_confirm_btn": "Eliminar Grupo",
+            "delete_confirm_prefix": "¿Seguro que quieres eliminar el grupo",
+            "delete_warning": "Atención: Todos los jugadores con este grupo perderán inmediatamente estos permisos."
+        },
+        "player_groups": {
+            "no_players": "No se encontraron jugadores.",
+            "back_to_search": "Volver a la búsqueda",
+            "assigned_groups": "Grupos de Acceso Asignados",
+            "no_groups_hint": "Crea grupos primero en la pestaña Administrar Grupos",
+            "save_links": "Guardar Asignaciones"
+        },
+        "group_editor": {
+            "editing_prefix": "Editando:",
+            "save": "Guardar Permisos",
+            "toggle_category_hint": "Haz clic para marcar/desmarcar todos los permisos de esta categoría",
+            "unlock_tab": "Desbloquear Pestaña/Menú"
         }
     },
     "action_manager": {
@@ -661,7 +700,12 @@
             "gangs": "Pandillas del Servidor",
             "items": "Lista de Ítems",
             "custom": "Lista Personalizada"
-        }
+        },
+        "new_field_default": "Nuevo Campo",
+        "edit_title": "Editando Acción: %s",
+        "perm_ace_placeholder": "Nodo de permiso ACE",
+        "button_field_hint": "Este campo sirve como disparador final para ejecutar la acción en el menú.",
+        "no_fields": "Ningún campo configurado aún."
     },
     "permission_wizard": {
         "title": "Asistente de Permisos",

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
 import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
-import { Shield, Key, RefreshCw, Wand2, UserPlus } from 'lucide-react'
+import { Shield, Key, RefreshCw, UserPlus } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
-import ConfirmAction from '@/components/players/ConfirmAction'
 import GroupManager, { GroupData } from './components/GroupManager'
 import PlayerGroups from './components/PlayerGroups'
 import { isEnvBrowser } from '@/utils/misc'
@@ -18,9 +17,7 @@ export default function Permissions() {
     const [search, setSearch] = useState('')
     const [refreshTrigger, setRefreshTrigger] = useState(0)
     const [refreshing, setRefreshing] = useState(false)
-    const [seeding, setSeeding] = useState(false)
     const [groups, setGroups] = useState<GroupData[]>([])
-    const [showSeedConfirm, setShowSeedConfirm] = useState(false)
 
     const handleRefresh = useCallback(() => {
         setRefreshTrigger(prev => prev + 1)
@@ -52,20 +49,9 @@ export default function Permissions() {
         loadGroups()
     }, [refreshTrigger, loadGroups])
 
-    const handleSeed = async () => {
-        setSeeding(true)
-        try {
-            await sendNui('seed_pages') // Usually triggers an action
-            setShowSeedConfirm(false)
-            setTimeout(handleRefresh, 1000)
-        } finally {
-            setSeeding(false)
-        }
-    }
-
     const permissionTabs: MriTabItem[] = [
-        { id: 'groups', label: 'Gerenciar Grupos', icon: Shield },
-        { id: 'players', label: 'Atribuir a Jogadores', icon: UserPlus },
+        { id: 'groups', label: t('permissions.tabs.manage_groups'), icon: Shield },
+        { id: 'players', label: t('permissions.tabs.assign_players'), icon: UserPlus },
     ]
 
     return (
@@ -74,7 +60,7 @@ export default function Permissions() {
                 title={t('permissions.title')}
                 icon={Key}
                 count={groups.length}
-                countLabel={'Grupos Cadastrados'}
+                countLabel={t('permissions.count_label')}
             >
                 <div className="flex items-center gap-3">
                     <MriTabs
@@ -85,7 +71,7 @@ export default function Permissions() {
 
                     <div className="flex items-center gap-2">
                         <MriExpandableSearch
-                            placeholder={activeTab === 'groups' ? "Buscar Grupos..." : "Buscar Jogadores..."}
+                            placeholder={activeTab === 'groups' ? t('permissions.search_groups') : t('permissions.search_players')}
                             value={search}
                             onChange={(val) => setSearch(val)}
                         />
@@ -102,16 +88,6 @@ export default function Permissions() {
                         {!refreshing && <RefreshCw className="w-4 h-4" />}
                     </MriButton>
 
-                    <MriButton
-                        size="icon"
-                        variant="outline"
-                        isLoading={seeding}
-                        className="h-10 w-10 border-input bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowSeedConfirm(true)}
-                        title="Aplicar Permissões Padrão"
-                    >
-                        {!seeding && <Wand2 className="w-4 h-4" />}
-                    </MriButton>
                 </div>
             </MriPageHeader>
 
@@ -145,13 +121,6 @@ export default function Permissions() {
                 </div>
             </div>
 
-            {showSeedConfirm && (
-                <ConfirmAction
-                    text="Isso irá popular o banco de dados com configurações padrão baseadas nos módulos atuais. Tem certeza?"
-                    onConfirm={handleSeed}
-                    onCancel={() => setShowSeedConfirm(false)}
-                />
-            )}
         </div>
     )
 }
