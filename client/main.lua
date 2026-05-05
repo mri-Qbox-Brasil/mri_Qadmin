@@ -233,7 +233,7 @@ end)
 
 -- Change resource state
 RegisterNUICallback("setResourceState", function(data, cb)
-	local resources = lib.callback.await('mri_Qadmin:callback:ChangeResourceState', data)
+	local resources = lib.callback.await('mri_Qadmin:callback:ChangeResourceState', false, data)
 	cb(resources)
 end)
 
