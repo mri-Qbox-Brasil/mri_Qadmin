@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { MriButton, MriCopyButton } from '@mriqbox/ui-kit'
+import { MriButton } from '@mriqbox/ui-kit'
+import { CopyButton } from '@/components/ui/CopyButton'
 import { Box } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
@@ -56,7 +57,7 @@ export default function ItemGridCard({ item, onSpawn }: ItemGridCardProps) {
     return (
         <div className="bg-card border border-border rounded-xl p-4 flex gap-4 hover:border-primary/50 hover:bg-muted/50 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                <MriCopyButton text={item.item} className="h-8 w-8 text-muted-foreground hover:text-foreground" />
+                <CopyButton text={item.item} className="h-8 w-8 text-muted-foreground hover:text-foreground" />
             </div>
 
             <div className="w-20 h-20 bg-muted/30 rounded-lg flex items-center justify-center border border-border shrink-0 p-2">

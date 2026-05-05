@@ -43,6 +43,7 @@ import {
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
 import InventoryViewerModal from '@/components/players/InventoryViewerModal'
+import { useClipboard } from '@/hooks/useClipboard'
 
 /* Atomic Components */
 import PlayerGridCard from '@/components/players/PlayerGridCard'
@@ -87,6 +88,7 @@ export default function Players() {
     }, [viewMode])
 
     const { sendNui } = useNui()
+    const { copy } = useClipboard()
     const { players, setPlayers, selectedPlayer, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch, myPermissions } = useAppState()
     const canDo = (perm: string) => hasPermission(myPermissions, perm)
     const { t } = useI18n()
@@ -735,7 +737,7 @@ export default function Players() {
                                                         const p = selectedPlayer.metadata?.position;
                                                         if (p) {
                                                             const text = `vector4(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}, ${p.heading.toFixed(2)})`;
-                                                            navigator.clipboard.writeText(text);
+                                                            copy(text);
                                                         }
                                                     }}
                                                 >

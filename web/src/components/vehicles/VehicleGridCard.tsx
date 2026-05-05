@@ -1,4 +1,5 @@
-import { MriButton, MriCopyButton, MriStatusBadge } from '@mriqbox/ui-kit'
+import { MriButton, MriStatusBadge } from '@mriqbox/ui-kit'
+import { CopyButton } from '@/components/ui/CopyButton'
 import VehicleImage from '@/pages/Vehicles/components/VehicleImage'
 import { useI18n } from '@/hooks/useI18n'
 import { DollarSign, Tag } from 'lucide-react'
@@ -42,9 +43,8 @@ export default function VehicleGridCard({ vehicle, onSpawn, onUpdateStock }: Veh
                 </div>
 
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                    <MriCopyButton
+                    <CopyButton
                         text={vehicle.model}
-                        variant="ghost"
                         iconSize={3}
                         className="h-6 w-6 text-zinc-400 hover:text-white bg-black/50 hover:bg-black/80"
                     />

@@ -117,6 +117,11 @@ RegisterNUICallback("sendNUI", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("setClipboard", function(data, cb)
+    lib.setClipboard(data.value)
+    cb("ok")
+end)
+
 -- Event Handlers
 AddEventHandler("QBCore:Client:OnPlayerLoaded", function()
 	setupMenu()
