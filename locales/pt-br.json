@@ -137,11 +137,11 @@
         "id": "ID",
         "ping": "Ping",
         "bucket": "Bucket",
-        "players_label": "Players",
-        "vehicles_label": "Vehicles",
-        "inventory_label": "Inventory",
-        "name_label": "Player Name",
-        "search_placeholder": "Search by name, ID or license",
+        "players_label": "Jogadores",
+        "vehicles_label": "Veículos",
+        "inventory_label": "Inventário",
+        "name_label": "Nome do Jogador",
+        "search_placeholder": "Pesquisar por nome, ID ou licença",
         "info": {
             "title": "Informações do Personagem",
             "citizen_id": "Citizen ID",
@@ -169,35 +169,35 @@
         },
         "labels": {
             "ip": "IP",
-            "no_job": "No job",
-            "no_gang": "No gang",
-            "last_logout": "Last logout",
-            "connection_info": "CONNECTION INFO",
+            "no_job": "Sem emprego",
+            "no_gang": "Sem gangue",
+            "last_logout": "Último logout",
+            "connection_info": "INFORMAÇÕES DE CONEXÃO",
             "steam_id": "STEAM ID",
-            "ip_address": "IP ADDRESS",
-            "fivem_license": "FIVEM LICENSE",
+            "ip_address": "ENDEREÇO IP",
+            "fivem_license": "LICENÇA FIVEM",
             "discord_id": "ID DISCORD",
-            "license": "LICENSE",
-            "license2": "LICENSE 2",
-            "no_personal_vehicles": "No personal vehicles found."
+            "license": "LICENÇA",
+            "license2": "LICENÇA 2",
+            "no_personal_vehicles": "Nenhum veículo pessoal encontrado."
         },
         "sections": {
-            "moderation": "Moderation",
-            "teleportation": "Teleportation",
-            "offline_actions": "Offline Actions",
-            "economy": "Economy",
-            "quick_actions": "Quick Actions",
-            "inventory": "Inventory Management"
+            "moderation": "Moderação",
+            "teleportation": "Teleportação",
+            "offline_actions": "Ações Offline",
+            "economy": "Economia",
+            "quick_actions": "Ações Rápidas",
+            "inventory": "Gerenciamento de Inventário"
         },
         "inventory": {
-            "open": "Open Inventory",
-            "open_stash": "Open Stash",
+            "open": "Abrir Inventário",
+            "open_stash": "Abrir Stash",
             "stash_id": "Stash ID",
-            "clear": "Clear Inventory",
-            "view": "View Inventory",
-            "empty": "Inventory is empty.",
-            "items_label": "Items",
-            "give_item": "Give Item"
+            "clear": "Limpar Inventário",
+            "view": "Ver Inventário",
+            "empty": "Inventário vazio.",
+            "items_label": "Itens",
+            "give_item": "Dar Item"
         },
         "actions": {
             "revive": "Reviver",
@@ -205,7 +205,7 @@
             "spectate": "Espectar",
             "warn": "Advertência",
             "kick": "Kickar",
-            "delete_character": "Delete Character",
+            "delete_character": "Deletar Personagem",
             "ban": {
                 "title": "Banir jogador",
                 "reason": "Motivo",
@@ -214,7 +214,7 @@
                 "duration": "Duração",
                 "expire": "Expira",
                 "banned_by": "Banido por",
-                "permanent_label": "Permanent",
+                "permanent_label": "Permanente",
                 "durations": {
                     "10m": "10 Minutos",
                     "30m": "30 Minutos",
@@ -228,18 +228,18 @@
                     "custom": "Data personalizada"
                 },
                 "labels": {
-                    "name": "Name",
-                    "reason_label": "Reason",
-                    "expire_label": "Expires",
-                    "banned_by_label": "Banned by",
-                    "license": "License",
+                    "name": "Nome",
+                    "reason_label": "Motivo",
+                    "expire_label": "Expira",
+                    "banned_by_label": "Banido por",
+                    "license": "Licença",
                     "discord": "Discord",
                     "ip": "IP",
-                    "action": "Action"
+                    "action": "Ação"
                 },
                 "status": {
-                    "permanent": "Permanent Ban",
-                    "temp": "Temp Ban"
+                    "permanent": "Ban Permanente",
+                    "temp": "Ban Temporário"
                 }
             },
             "unban": "Desbanir",
