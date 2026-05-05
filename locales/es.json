@@ -1058,115 +1058,115 @@
     "qadmin": {
         "page": {
             "dashboard": "Dashboard",
-            "livemap": "Live Map",
-            "livescreens": "Screens",
-            "players": "Players",
-            "groups": "Groups",
+            "livemap": "Mapa en Vivo",
+            "livescreens": "Pantallas",
+            "players": "Jugadores",
+            "groups": "Grupos",
             "staffchat": "Staff Chat",
-            "items": "Items",
-            "vehicles": "Vehicles",
-            "actions": "Actions",
-            "permissions": "Perms",
-            "resources": "Resources",
+            "items": "Ítems",
+            "vehicles": "Vehículos",
+            "actions": "Acciones",
+            "permissions": "Permisos",
+            "resources": "Recursos",
             "logs": "Logs",
-            "settings": "Settings",
+            "settings": "Configuración",
             "devmode": "Dev Mode",
-            "commands": "Commands"
+            "commands": "Comandos"
         },
         "dashboard": {
             "title": "Dashboard",
-            "subtitle": "Management & Monitoring",
+            "subtitle": "Gestión y Monitoreo",
             "section": {
-                "stats": "Server Statistics",
-                "active_players": "Active Players",
-                "announcement": "Server Announcement",
-                "quick_actions": "Suggested Tools"
+                "stats": "Estadísticas del Servidor",
+                "active_players": "Jugadores Activos",
+                "announcement": "Anuncio del Servidor",
+                "quick_actions": "Herramientas Sugeridas"
             },
             "announcement": {
-                "title": "Global Announcement",
-                "placeholder": "Type message for all players..."
+                "title": "Anuncio Global",
+                "placeholder": "Escribe el mensaje para todos..."
             },
             "quick": {
                 "revive": {
-                    "title": "Revive",
-                    "desc": "Revive your character instantly"
+                    "title": "Revivir",
+                    "desc": "Revive tu personaje instantáneamente"
                 },
                 "chat": {
-                    "title": "Clear Chat",
-                    "desc": "Global chat clear for everyone"
+                    "title": "Limpiar Chat",
+                    "desc": "Limpiar el chat global para todos"
                 },
                 "waypoint": {
-                    "title": "Go to Waypoint",
-                    "desc": "Teleport to your map marker"
+                    "title": "Ir al Waypoint",
+                    "desc": "Teleportarte a tu marcador del mapa"
                 },
                 "fix": {
-                    "title": "Fix Vehicle",
-                    "desc": "Completely repair current vehicle"
+                    "title": "Reparar Vehículo",
+                    "desc": "Reparar completamente el vehículo actual"
                 },
                 "noclip": {
                     "title": "NoClip",
-                    "desc": "Toggle ghost mode"
+                    "desc": "Activar/desactivar modo fantasma"
                 },
                 "god": {
-                    "title": "God Mode",
-                    "desc": "Become invulnerable to damage"
+                    "title": "Modo Dios",
+                    "desc": "Volverse invulnerable al daño"
                 },
                 "invisible": {
-                    "title": "Invisibility",
-                    "desc": "Become invisible to other players"
+                    "title": "Invisibilidad",
+                    "desc": "Volverse invisible para otros jugadores"
                 },
                 "blackout": {
                     "title": "Blackout",
-                    "desc": "Toggle city lights"
+                    "desc": "Activar/desactivar luces de la ciudad"
                 },
                 "refuel": {
-                    "title": "Refuel",
-                    "desc": "Fill current vehicle tank"
+                    "title": "Reabastecer",
+                    "desc": "Llenar el tanque del vehículo actual"
                 }
             },
-            "search_placeholder": "Filter by name or ID..."
+            "search_placeholder": "Filtrar por nombre o ID..."
         },
         "commands": {
-            "search_placeholder": "Search command...",
-            "none_found": "No commands found for your search"
+            "search_placeholder": "Buscar comando...",
+            "none_found": "No se encontraron comandos para tu búsqueda"
         }
     },
     "quick": {
         "revive": {
-            "title": "Revive Self",
-            "desc": "Restores your health and status"
+            "title": "Revivirme",
+            "desc": "Restaura tu vida y estado"
         },
         "chat": {
-            "title": "Clear Chat",
-            "desc": "Remove messages for all players"
+            "title": "Limpiar Chat",
+            "desc": "Eliminar mensajes para todos"
         },
         "waypoint": {
-            "title": "Goto Waypoint",
-            "desc": "Teleport to the map waypoint"
+            "title": "Ir al Waypoint",
+            "desc": "Teleportarte al marcador del mapa"
         },
         "fix": {
-            "title": "Fix Vehicle",
-            "desc": "Repairs the current vehicle"
+            "title": "Reparar Vehículo",
+            "desc": "Repara el vehículo actual"
         },
         "noclip": {
             "title": "NoClip",
-            "desc": "Toggle flight mode"
+            "desc": "Activar/desactivar modo vuelo"
         },
         "god": {
-            "title": "God Mode",
-            "desc": "Total invincibility"
+            "title": "Modo Dios",
+            "desc": "Invencibilidad total"
         },
         "invisible": {
             "title": "Invisible",
-            "desc": "Toggle invisibility"
+            "desc": "Activar/desactivar invisibilidad"
         },
         "blackout": {
             "title": "Blackout",
-            "desc": "Toggle city lights"
+            "desc": "Activar/desactivar luces de la ciudad"
         },
         "refuel": {
-            "title": "Refuel",
-            "desc": "Fills up the fuel tank"
+            "title": "Reabastecer",
+            "desc": "Llena el tanque de combustible"
         }
     },
     "announcement": {
