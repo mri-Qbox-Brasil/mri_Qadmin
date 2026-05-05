@@ -49,6 +49,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 server = initialData and initialData.serverInfo or {},
                 vehicleImages = Config.VehicleImages,
                 permissions = perms,
+                permissionDefinitions = initialData and initialData.permissionDefinitions or {},
                 supportedLanguages = Config.SupportedLanguages,
                 webrtcUrl = Config.WebRTCUrl,
                 signalingProvider = Config.SignalingProvider,

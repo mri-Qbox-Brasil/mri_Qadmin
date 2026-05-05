@@ -70,6 +70,10 @@ export default function Listeners() {
                 otherActions: data.otherActions || prev.otherActions || {},
             }))
 
+            if (data.permissionDefinitions && Array.isArray(data.permissionDefinitions) && data.permissionDefinitions.length > 0) {
+                setPermissionDefinitions(data.permissionDefinitions)
+            }
+
             if (data.players) {
                 setPlayers(data.players)
                 setPagination((prev: any) => ({

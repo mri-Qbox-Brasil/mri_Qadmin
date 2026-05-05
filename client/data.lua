@@ -15,6 +15,7 @@ function GetCoreData()
         actions = Config.Actions,
         playerActions = Config.PlayerActions,
         otherActions = Cache.otherActions or Config.OtherActions,
+        permissionDefinitions = Cache.permissionDefinitions or {},
         vehicleImages = Config.VehicleImages,
         webrtcUrl = Config.WebRTCUrl,
         players = Cache.players and Cache.players.data or {},
