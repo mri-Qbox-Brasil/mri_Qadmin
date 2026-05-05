@@ -140,7 +140,6 @@ export default function StaffChat() {
         } catch (e) {
             console.error(e)
         } finally {
-            setSending(true) // Wait, should be false! Fixing below.
             setSending(false)
         }
     }

@@ -49,7 +49,7 @@ AddEventHandler('playerDropped', function()
     end
 end)
 
-RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, mentions)
+RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, mentions)
     local src = source
     if not IsPlayerAceAllowed(src, 'qadmin.page.staffchat') then
         return QBCore.Functions.Notify(src, "Sem permissão para usar o chat.", "error")
@@ -58,6 +58,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, m
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return end
 
+    local citizenid = player.PlayerData.citizenid
     local fullname = player.PlayerData.charinfo.firstname .. " " .. player.PlayerData.charinfo.lastname
     local role = getPlayerRole(citizenid)
     local createdAt = os.time() * 1000
@@ -65,7 +66,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, citizenid, m
     local newMsg = { message = message, citizenid = citizenid, fullname = fullname, role = role, createdAt = createdAt }
     messages[#messages + 1] = newMsg
 
-    MySQL.insert('INSERT INTO mri_qadmin_chat (message, citizenid, fullname, role) VALUES (?, ?, ?, ?)', {
+    MySQL.insert.await('INSERT INTO mri_qadmin_chat (message, citizenid, fullname, role) VALUES (?, ?, ?, ?)', {
         message, citizenid, fullname, role
     })
     AddLog(src, 'mri_Qadmin', 'chat', 'info', ('[Staff Chat] %s: %s'):format(fullname, message), { citizenid = citizenid, role = role })
