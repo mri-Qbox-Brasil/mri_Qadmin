@@ -99,35 +99,35 @@
         "weatherType": "Clima cambiado a: %s"
     },
     "commands": {
-        "admin_desc": "Toggle Admin Menu",
-        "noclip_desc": "Toggle NoClip"
+        "admin_desc": "Alternar Menú Admin",
+        "noclip_desc": "Alternar NoClip"
     },
     "labels": {
-        "item_name": "Item (name)",
-        "name": "Name",
-        "license": "License",
-        "char": "Character",
-        "job": "Job",
-        "gang": "Gang",
-        "grade": "Grade",
-        "select_language": "Select Language",
+        "item_name": "Ítem (nombre)",
+        "name": "Nombre",
+        "license": "Licencia",
+        "char": "Personaje",
+        "job": "Trabajo",
+        "gang": "Pandilla",
+        "grade": "Rango",
+        "select_language": "Seleccionar Idioma",
         "rg": "ID",
-        "job_label": "Job",
-        "gang_label": "Gang",
-        "phone": "Phone",
-        "identifiers": "Identifiers"
+        "job_label": "Trabajo",
+        "gang_label": "Pandilla",
+        "phone": "Teléfono",
+        "identifiers": "Identificadores"
     },
     "credits": {
-        "title": "Credits",
-        "developed_by": "Developed by",
-        "thanks": "Special thanks to",
+        "title": "Créditos",
+        "developed_by": "Desarrollado por",
+        "thanks": "Agradecimientos especiales a",
         "changelog": "Changelog",
-        "changelog_error": "Error loading changelog.",
+        "changelog_error": "Error al cargar el changelog.",
         "server_changelog": "Changelog",
-        "no_changelog": "No changelog found.",
-        "loading_changelog": "Loading changelog...",
-        "changelog_error_server": "Error loading changelog.",
-        "records": "Records"
+        "no_changelog": "No se encontró changelog.",
+        "loading_changelog": "Cargando changelog...",
+        "changelog_error_server": "Error al cargar el changelog.",
+        "records": "Registros"
     },
     "player": {
         "management": "Gestión de Jugadores",
