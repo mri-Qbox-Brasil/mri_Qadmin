@@ -419,7 +419,7 @@
             "crypto": "Cripto",
             "online": "En Línea Ahora",
             "vehicles": "Vehículos Totales",
-            "error_loading_data": "Error loading server data"
+            "error_loading_data": "Error al cargar datos del servidor"
         },
         "section": {
             "stats": "Estadísticas",
@@ -1180,8 +1180,8 @@
         }
     },
     "success": {
-        "coords_copied": "Coordinates copied to clipboard",
-        "heading_copied": "Heading copied to clipboard"
+        "coords_copied": "Coordenadas copiadas al portapapeles",
+        "heading_copied": "Heading copiado al portapapeles"
     },
     "perm_labels": {
         "qadmin": {
