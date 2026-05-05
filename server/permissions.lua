@@ -380,21 +380,16 @@ local function SetupPlayerPrincipals(src, isReload)
 
     -- Reverse Permission Sync (QBCore -> mri_Qadmin)
     -- Only fires on first load (not reload) and only when the player has no group yet.
-    -- QBCore 'god' maps to mri_Qadmin 'god'; QBCore 'admin' maps to mri_Qadmin 'admin'.
+    -- Any QBCore 'god' or 'admin' maps to mri_Qadmin 'god' (already seeded with all perms).
+    -- Sub-tiers (mod/staff) devem ser criados manualmente via UI pelo dono do servidor.
     if not isReload and Config.QBCoreAutoSync ~= false and #activeGroups == 0 then
-        local hasQBCoreGod   = QBCore.Functions.HasPermission(src, 'god')
-        local hasQBCoreAdmin = QBCore.Functions.HasPermission(src, 'admin')
+        local hasQBCorePriv = QBCore.Functions.HasPermission(src, 'god') or QBCore.Functions.HasPermission(src, 'admin')
 
-        if hasQBCoreGod or hasQBCoreAdmin then
-            local targetGroup = hasQBCoreGod and 'god' or 'admin'
-            local targetLabel = hasQBCoreGod and 'God' or 'Administrador'
-            local targetDesc  = hasQBCoreGod and 'Perfil com acesso total a todas as permissões' or 'Default Admin Group'
-
-            Debug(('[mri_Qadmin] Auto-Sync: Jogador %s possui permissão QBCore "%s". Sincronizando com grupo "%s" do painel...'):format(GetPlayerName(src), hasQBCoreGod and 'god' or 'admin', targetGroup))
-            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {targetGroup, targetLabel, targetDesc})
-            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, targetGroup})
-            lib.addPrincipal('char:' .. citizenid, 'mri.group.' .. targetGroup)
-            activeGroups[#activeGroups + 1] = targetGroup
+        if hasQBCorePriv then
+            Debug(('[mri_Qadmin] Auto-Sync: Jogador %s possui permissão admin/god do QBCore. Sincronizando com grupo "god" do painel...'):format(GetPlayerName(src)))
+            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, 'god'})
+            lib.addPrincipal('char:' .. citizenid, 'mri.group.god')
+            activeGroups[#activeGroups + 1] = 'god'
         end
     end
 
