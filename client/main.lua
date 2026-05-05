@@ -244,8 +244,8 @@ RegisterNUICallback("getPlayers", function(data, cb)
 end)
 
 -- Get Groups
-RegisterNUICallback("mri_Qadmin:callback:GetGroups", function(_, cb)
-    local groups = lib.callback.await('mri_Qadmin:callback:GetGroups')
+RegisterNUICallback("getGroupsData", function(_, cb)
+    local groups = lib.callback.await('mri_Qadmin:callback:GetGroupsData')
     cb(groups or {})
 end)
 
