@@ -1,3 +1,15 @@
+## [1.9.3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.2...v1.9.3) (2026-05-06)
+
+
+### Bug Fixes
+
+* adicionar traduções faltantes btn_spawn, btn_trunk, btn_glovebox ([0fb0d65](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/0fb0d6578c9011a691734e647467e75c4133b1d0))
+* botões de copiar usando lib.setClipboard via NUI ([aa96677](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/aa96677b420f25fb5a5a44947332d8d0bb184c66))
+* bugs no staff chat ([f08e886](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/f08e886fde124697c94581226b700d4deb9d1409))
+* corrigir NUI callback de grupos/gangs sem dados ([892767f](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/892767fad89cc192ae065b0194ca90b482198602))
+* erro ao reiniciar resource por data nil ([64ff8a1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/64ff8a196d5ca7f7fbbe1f43a23fb0837893697b))
+* permissionDefinitions não chegava ao frontend ([ec92b4e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/ec92b4e0ad6fbc3e824de74ccee9e2e756ebcea5))
+
 ## [1.9.2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.1...v1.9.2) (2026-05-05)
 
 

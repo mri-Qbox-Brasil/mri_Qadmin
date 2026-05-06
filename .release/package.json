@@ -1,6 +1,6 @@
 {
   "name": "mri_qadmin",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Painel Administrativo Profissional e Moderno para servidores Qbox e QbCore.",
   "main": "index.js",
   "scripts": {
