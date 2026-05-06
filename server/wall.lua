@@ -20,14 +20,15 @@ local function toRGBString(col)
 end
 
 local function LoadWallData()
+    -- Migrate legacy "group.*" entries to "mri.group.*"
+    MySQL.query.await("UPDATE mri_qadmin_wall_colors SET principal = CONCAT('mri.', principal) WHERE principal LIKE 'group.%' AND principal NOT LIKE 'mri.%'")
+
     -- Load Principal Colors
     principal_colors = {}
     local colors = MySQL.query.await('SELECT * FROM mri_qadmin_wall_colors')
     if colors then
         for _, v in pairs(colors) do
             principal_colors[v.principal] = toRGBString(v.color)
-            -- Ensure the principal itself is an allowed ACE so IsPlayerInPrincipal checks pass
-            lib.addAce(v.principal, v.principal, true)
         end
     end
 
@@ -161,6 +162,12 @@ lib.callback.register('mri_Qadmin:callback:GetWallSettings', function(_source)
         colors = principal_colors,
         settings = wall_settings
     }
+end)
+
+lib.callback.register('mri_Qadmin:callback:GetWallGroups', function(source)
+    if not CheckPerms(source, 'qadmin.open') then return {} end
+    local groups = MySQL.query.await('SELECT id, label FROM mri_qadmin_groups ORDER BY id') or {}
+    return groups
 end)
 
 RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)

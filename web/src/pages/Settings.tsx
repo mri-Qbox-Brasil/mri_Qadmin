@@ -99,12 +99,9 @@ export default function Settings() {
             setWallSettings(data)
             setLocalWallSettings(JSON.parse(JSON.stringify(data)))
 
-            const aces = await sendNui("mri_Qadmin:callback:GetAces", {}, [])
-            if (Array.isArray(aces)) {
-                const uniqueGroups = Array.from(
-                    new Set(aces.map((a: any) => a.principal)),
-                ).filter((p: string) => p.startsWith("group.")) as string[]
-                setAvailableGroups(uniqueGroups)
+            const groups = await sendNui<{ id: string; label: string }[]>("mri_Qadmin:callback:GetWallGroups", {}, [])
+            if (Array.isArray(groups)) {
+                setAvailableGroups(groups.map(g => `mri.group.${g.id}`))
             }
         } catch (e) {
             console.error(e)
