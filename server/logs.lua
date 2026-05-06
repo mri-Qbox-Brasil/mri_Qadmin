@@ -15,7 +15,10 @@ local logBuffer = {}
 
 local function LoadLogSettings()
     local ok, raw = pcall(LoadResourceFile, GetCurrentResourceName(), SETTINGS_FILE)
-    if not ok or not raw then return end
+    if not ok or not raw then
+        SaveLogSettings()
+        return
+    end
     local data = json.decode(raw)
     if not data then return end
     if data.Webhooks        then Config.Logs.Webhooks        = data.Webhooks        end
