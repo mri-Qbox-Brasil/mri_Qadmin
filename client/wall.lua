@@ -443,6 +443,11 @@ RegisterNUICallback("mri_Qadmin:callback:GetWallSettings", function(_data, cb)
     cb(results or {})
 end)
 
+RegisterNUICallback("mri_Qadmin:callback:GetWallGroups", function(_data, cb)
+    local groups = lib.callback.await('mri_Qadmin:callback:GetWallGroups', false)
+    cb(groups or {})
+end)
+
 RegisterNUICallback("mri_Qadmin:client:SaveLocalWallSetting", function(data, cb)
     if data and data.key then
         local value = data.value
