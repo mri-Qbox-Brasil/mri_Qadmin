@@ -1,3 +1,12 @@
+## [1.9.8](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.7...v1.9.8) (2026-05-06)
+
+
+### Bug Fixes
+
+* fecha o painel ao ativar o modo dev ([b8c4d8a](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/b8c4d8aba4fe14f1325ddfff0ffe75040378b098))
+* groups translation ([1e05418](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/1e0541811e7d850fae7f5ec51ced98400310c6c6))
+* rebuild web assets ([814bf3a](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/814bf3aa057f78533bdf34052b63403f388cd28e))
+
 ## [1.9.7](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.6...v1.9.7) (2026-05-06)
 
 

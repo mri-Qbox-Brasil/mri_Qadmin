@@ -1,6 +1,6 @@
 {
     "name": "mri_qadmin",
-    "version": "1.9.7",
+    "version": "1.9.8",
     "type": "module",
     "private": true,
     "scripts": {
