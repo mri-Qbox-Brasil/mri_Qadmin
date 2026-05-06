@@ -1,177 +1,227 @@
-# MRI QAdmin
+# mri_Qadmin 🛡️
 
-Painel Administrativo Profissional e Moderno para servidores Qbox e QbCore.
+Painel administrativo completo para QBCore/Qbox Framework com interface React moderna. Gerenciamento de jogadores, veículos, inventário, mapa ao vivo, WebRTC, logs, permissões e staff chat.
 
-[Read in English](README.en.md)
+## Principais recursos
 
-## 🌟 Funcionalidades Principais
+- 👥 **Gerenciamento de Jogadores** — Lista online/offline com pesquisa, paginação, ações (ban, inventory, money, bucket, job/gang).
+- 🚗 **Gerenciamento de Veículos** — Grid de veículos, spawn wizard, gerenciamento de estoque.
+- 🗺️ **Live Map** — Mapa Leaflet com marcadores de jogadores em tempo real.
+- 📺 **Live Screens** — Visualização de telas de jogadores via WebRTC.
+- 📋 **Logs** — Viewer com filtros por categoria, nível e resource.
+- 🔐 **Permissões** — Gerenciamento de grupos e atribuição de permissões.
+- 💬 **Staff Chat** — Chat em tempo real com menções.
+- 📊 **Dashboard** — Stats do servidor, status de resources, ações rápidas.
+- 🎮 **Overlays** — Vehicle Dev (telemetria), Coords, Entity Info, Nearby Entities.
+- 🎨 **UI Moderna** — React 18 + TypeScript + Vite + TailwindCSS + `@mriqbox/ui-kit`.
+- ⚡ **Performance** — `react-virtuoso` para listas grandes (100+ jogadores a 60fps).
 
-- **Dashboard Detalhada**: Visão geral do status do servidor, jogadores online e métricas.
-- **Gerenciamento Completo de Jogadores**:
-  - Lista de jogadores online/offline.
-  - Ações Rápidas: Reviver, Curar, Matar, Congelar, Espectar, Teleportar.
-  - Punições: Banir, Kickar, Avisar (Warn).
-  - Economia: Adicionar/Remover Dinheiro (Dinheiro, Banco, Crypto).
-  - Inventário: Visualizar e Limpar inventário local ou offline, Dar Itens.
-  - Veículos: Visualizar veículos do jogador, Spawnar, Deletar (DV), Abrir Porta-malas, Consertar, Reabastecer.
-  - Personalização: Menu de Roupas, Setar Ped.
-- **Gerenciamento de Grupos**:
-  - Controlar Empregos (Jobs) e Gangues facilmente.
-- **Sistema Avançado de Banimentos**:
-  - Lista completa de banimentos e gerenciamento intuitivo no painel.
-- **Gerenciamento de Veículos**:
-  - Spawn de veículos administrativos, tunagem máxima e gerenciamento das garagens.
-- **Banco de Dados de Itens**:
-  - Pesquisar itens por nome base e facilmente entregar para qualquer jogador.
-- **Desenvolvedor e Ferramentas**:
-  - Chat integrado para a equipe da STAFF.
-  - Menu de Desenvolvedor de Veículos.
-  - Informações de entidades, gerenciamento de buckets de roteamento.
-  - Copiar Coordenadas diretamente.
-  - **Wall (ESP) Dinâmico**: Visualização de jogadores (Cores personalizadas para mortos, invisíveis, ou através de Cargos ACE).
-- **Visualização ao Vivo Avançada**:
-  - **Live Keyboard Visualizer**: Veja as teclas pressionadas pelo jogador em tempo real durante a observação (Suporte a Numpad e Mouse).
-  - **Mapa Dinâmico**: Reset inteligente de visão, filtros avançados de jogadores e integração com live screens.
-- **Altamente Customizável**:
-  - Temas Claro/Escuro.
-  - Cores dinâmicas (Suporte a Hex, RGB, HSL para destaque do painel).
-  - **Auto-Scaling Inteligente**: O painel se ajusta automaticamente para resoluções acima de 1920px (4K, Ultra-wide) e é otimizado para telas menores (1366x768).
-  - WebRTC nativo ou Cloudflare SFU para visualizações ao vivo avançadas.
-- **Sistema de Permissões Híbrido e Dinâmico**:
-  - Controle granular por Licença, Personagem, Job ou Gang.
-  - Sincronização em tempo real de heranças e permissões.
-  - **Permission Wizard (NOVO)**: Assistente guiado para criação de permissões complexas (Alvo -> Herança Opcional -> ACEs -> Resumo).
+## Instalação rápida
 
-## 📦 Dependências Necessárias
+1. Copie a pasta `mri_Qadmin` para a pasta de resources do servidor.
+2. Instale as dependências do frontend:
+   ```bash
+   cd mri_Qadmin/web
+   npm install
+   npm run build
+   ```
+3. Adicione `ensure mri_Qadmin` no `server.cfg` (após `qbx_core`, `ox_lib`, `oxmysql`).
+4. Execute o script SQL:
+   ```sql
+   source database.sql
+   ```
 
-Para garantir que o MRI QAdmin funcione perfeitamente, os seguintes recursos são necessários:
+## Configuração
 
-- `ox_lib`
-- `oxmysql`
-- `qb-core` ou `qbx_core` (Framework)
+### Dependências obrigatórias
 
-## 🛡️ Sistema de Permissões Híbrido
+- `ox_lib` — Locale system, menus, notificações.
+- `oxmysql` — Banco de dados.
 
-O MRI QAdmin utiliza um modelo avançado de controle de acesso (Hybrid ACL) que permite uma gestão flexível e poderosa:
+### Estrutura do banco de dados
 
-- **Global (`license:xxxx`)**: Permissões vinculadas à conta do jogador. Valem para todos os personagens.
-- **Administrativo (`group.xxxx`)**: Grupos ACE padronizados (ex: `group.admin`, `group.mod`).
-- **Personagem (`char:citizenid`)**: Permissões específicas para um único personagem.
-- **Emprego/Gangue (`job.name` / `gang.name`)**: Permissões automáticas baseadas no cargo atual do jogador (ex: `job.police`).
+O arquivo `database.sql` cria as tabelas necessárias:
+- Tabela de logs
+- Tabela de permissões/grupos
+- Tabela de configurações
 
-### Hierarquia e Precedência
+### Permissões
 
-A hierarquia lógica recomendada é `Licença > Grupo > Personagem > Job`. As permissões são acumulativas e injetadas dinamicamente na sessão do jogador ao logar ou trocar de cargo/personagem, sem necessidade de reconexão.
+Sistema de permissões baseado em ACE principals e grupos:
+- `admin` — Acesso total.
+- `mod` — Acesso moderado.
+- Grupos customizáveis via painel de permissões.
 
-## 💻 Comandos e Permissões (Console de Servidor)
+Ver `PERMISSIONS.md` para detalhes completos.
 
-Você pode gerenciar permissões fundamentais usando o terminal (console) do próprio servidor:
+## Painel Web (React)
 
-### `mri_qadmin.setmaster [id/license]`
+### Stack
 
-Concede o acesso de **Master Admin** (Painel Completo com controle total) de forma imediata e permanente.
-**Exemplos:**
+| Tecnologia | Versão | Propósito |
+|---|---|---|
+| React | 18 | Framework UI. |
+| TypeScript | 5.x | Type safety. |
+| Vite | 6 | Build tool. |
+| TailwindCSS | 3 | Styling. |
+| `@mriqbox/ui-kit` | local | Componentes MRI customizados. |
+| `react-virtuoso` | — | Virtualização de listas. |
+| Leaflet | — | Live map. |
+| WebRTC | — | Live screens. |
 
-- `mri_qadmin.setmaster 1` (ID online)
-- `mri_qadmin.setmaster license:1234...` (License)
+### Páginas
 
-### `mri_qadmin.addpermission [id/license/prefix] [permissão_ou_grupo]`
+| Página | Descrição |
+|---|---|
+| **Dashboard** | Stats do servidor, status de resources, ações rápidas. |
+| **Players** | Lista online/offline, pesquisa, modais de ação. |
+| **Vehicles** | Grid de veículos, spawn wizard, estoque. |
+| **Live Map** | Mapa com marcadores de jogadores. |
+| **Live Screens** | Viewer WebRTC de telas de jogadores. |
+| **Logs** | Viewer com filtros (categoria, nível, resource). |
+| **Permissions** | Gerenciamento de grupos e permissões. |
+| **Staff Chat** | Chat em tempo real com menções. |
 
-_(Avançado)_ Concede uma permissão ou grupo permanentemente no banco de dados.
-**Exemplos:**
+### Overlays
 
-- `mri_qadmin.addpermission license:abcd... group.admin` (Adiciona ao Grupo Admin).
-- `mri_qadmin.addpermission char:ABC12345 group.mod` (Dá Mod para um personagem específico).
-- `mri_qadmin.addpermission job.police qadmin.action.revive` (Dá permissão de reviver para TODA a polícia).
+| Overlay | Descrição |
+|---|---|
+| **VehicleDev** | Telemetria ao vivo (velocidade, marcha, RPM, combustível, saúde). |
+| **Coords** | Coordenadas atuais do jogador. |
+| **EntityInfo** | Info da entidade apontada pelo laser. |
+| **NearbyEntities** | Lista de peds/veículos/objetos próximos. |
 
-## 🚀 Instalação
+### Mock Mode
 
-1.  Baixe a versão mais recente do MRI QAdmin.
-2.  Extraia para a pasta `resources` do seu servidor.
-3.  Importe o arquivo `database.sql` para o seu banco de dados.
-4.  Adicione `ensure mri_Qadmin` ao seu `server.cfg`.
-5.  Certifique-se de que o recurso tenha permissões para executar comandos de ACE (se necessário).
-
-## 🛠️ API / Exports para Desenvolvedores
-
-O MRI QAdmin expõe diversas funções úteis para integração com outros sistemas.
-
-### Server-side Exports
-
-#### `HasPerms(source, node)`
-
-Verifica se um jogador possui uma permissão ACE específica ou pertence a um grupo.
-
-```lua
-local hasAccess = exports.mri_Qadmin:HasPerms(source, 'qadmin.page.dashboard')
+Para desenvolver no browser sem FiveM:
+```bash
+localStorage.setItem('mri_qadmin_use_mocks', 'true')
 ```
 
-#### `CheckPerms(source, node)`
+## Comandos
 
-Verifica a permissão e envia uma notificação de erro ao jogador caso ele não tenha acesso.
+| Comando | Descrição |
+|---|---|
+| `/adm` | Abrir painel admin. |
 
-```lua
-if exports.mri_Qadmin:CheckPerms(source, 'qadmin.action.revive') then
-    -- Executar revival
-end
+## Exports
+
+### Client
+
+| Export | Descrição |
+|---|---|
+| `ToggleUI` | Alternar visibilidade da UI. |
+| `OpenUI` | Abrir painel admin. |
+| `IsMenuVisible` | Verificar se o menu está visível. |
+
+### Server
+
+| Export | Descrição |
+|---|---|
+| `HasPerms` | Verificar permissões. |
+| `CheckPerms` | Checar permissões detalhadas. |
+| `IsPlayerInPrincipal` | Verificar se jogador está em principal. |
+| `GeneratePlate` | Gerar placa de veículo. |
+| `GetActions` | Obter ações disponíveis. |
+| `AddLog` | Adicionar log: `(resource, category, level, message, data)`. |
+
+## Server Modules
+
+| Módulo | Descrição |
+|---|---|
+| `db.lua` | Operações de banco de dados. |
+| `main.lua` | Lógica principal. |
+| `utils.lua` | Utilitários. |
+| `logs.lua` | Sistema de logs. |
+| `chat.lua` | Chat integration. |
+| `commands.lua` | Comandos. |
+| `groups.lua` | Gerenciamento de grupos. |
+| `inventory.lua` | Visualização de inventário. |
+| `items.lua` | Gerenciamento de itens. |
+| `locations.lua` | Locações salvas. |
+| `misc.lua` | Diversos. |
+| `peds.lua` | Gerenciamento de peds. |
+| `permissions.lua` | Sistema de permissões. |
+| `settings.lua` | Configurações. |
+| `actions.lua` | Ações admin. |
+| `players.lua` | Gerenciamento de jogadores. |
+| `resources.lua` | Gerenciamento de resources. |
+| `server_data.lua` | Dados do servidor. |
+| `spectate.lua` | Sistema de spectate. |
+| `teleport.lua` | Teleporte. |
+| `trolls.lua` | Troll actions. |
+| `vehicle.lua` | Gerenciamento de veículos. |
+| `wall.lua` | Invisible wall. |
+| `key_manager.lua` | Gerenciamento de chaves. |
+| `webrtc.lua` | WebRTC server. |
+| `data_sync.lua` | Sync de dados. |
+
+## Client Modules
+
+| Módulo | Descrição |
+|---|---|
+| `main.lua` | Entry point. |
+| `utils.lua` | Utilitários. |
+| `data.lua` | Dados locais. |
+| `chat.lua` | Chat integration. |
+| `inventory.lua` | Inventory overlay. |
+| `misc.lua` | Diversos. |
+| `noclip.lua` | Noclip. |
+| `players.lua` | Player ESP. |
+| `spectate.lua` | Spectate. |
+| `teleport.lua` | Teleporte. |
+| `toggle_laser.lua` | Laser de seleção. |
+| `troll.lua` | Troll actions. |
+| `vehicles.lua` | Vehicle ESP/dev. |
+| `wall.lua` | Invisible wall. |
+| `world.lua` | World controls. |
+| `key_capture.lua` | Key capture. |
+| `nearby_scanner.lua` | Scanner de entidades próximas. |
+| `logs.lua` | Logs overlay. |
+| `webrtc.lua` | WebRTC client. |
+
+## Estrutura de arquivos 📁
+
+```
+mri_Qadmin/
+├── client/                    # Scripts cliente
+│   ├── main.lua               # Entry point
+│   ├── modules/               # Módulos cliente
+│   └── ...
+├── server/                    # Scripts servidor
+│   ├── main.lua               # Lógica principal
+│   ├── db.lua                 # Database ops
+│   ├── logs.lua               # Sistema de logs
+│   └── ...                    # 25+ modules
+├── shared/                    # Configurações compartilhadas
+├── web/                       # Frontend React
+│   ├── src/
+│   │   ├── pages/             # Páginas do painel
+│   │   ├── components/        # Componentes reutilizáveis
+│   │   └── ...
+│   └── build/                 # Output do build
+├── data/                      # Dados estáticos
+│   ├── weapons.lua            # Lista de armas
+│   ├── ped.lua                # Lista de peds
+│   └── object.lua             # Lista de objetos
+├── locales/                   # Traduções JSON
+├── database.sql               # Schema do banco
+├── fxmanifest.lua
+├── README.md
+├── README.en.md
+├── PERMISSIONS.md             # Documentação de permissões
+├── LOGS.md                    # Documentação de logs
+├── CHANGELOG.md
+└── TODO.md
 ```
 
-#### `IsPlayerInPrincipal(source, principal)`
+## Observações importantes ⚠️
 
-Verifica se o jogador pertence a um principal (grupo) específico.
+- O frontend usa `react-virtuoso` para virtualização de listas — essencial para performance com 100+ jogadores.
+- WebRTC requer configuração adequada de TURN/STUN servers para funcionar em produção.
+- O sistema de logs suporta múltiplas categorias e níveis de severidade.
+- O painel de permissões permite criar grupos customizados com permissões granulares.
+- Staff chat suporta menções com `@nome`.
+- Mock mode permite desenvolver a UI no browser sem precisar do FiveM rodando.
 
-```lua
-if exports.mri_Qadmin:IsPlayerInPrincipal(source, 'group.admin') then
-    print("O jogador é um administrador!")
-end
-```
-
-#### `GeneratePlate()`
-
-Gera uma placa de veículo aleatória de 8 caracteres que não existe no banco de dados.
-
-```lua
-local newPlate = exports.mri_Qadmin:GeneratePlate()
-```
-
-### Client-side Exports
-
-#### `ToggleUI(show)`
-
-Abre ou fecha o painel administrativo.
-
-```lua
-exports.mri_Qadmin:ToggleUI(true) -- Abre
-```
-
-#### `OpenUI()`
-
-Atalho para abrir o painel.
-
-```lua
-exports.mri_Qadmin:OpenUI()
-```
-
-#### `IsMenuVisible()`
-
-Retorna `true` se o painel estiver aberto na tela.
-
-```lua
-local isOpen = exports.mri_Qadmin:IsMenuVisible()
-```
-
-## 👏 Créditos e Agradecimentos
-
-Este projeto é uma versão fortemente modificada, aprimorada e modernizada inspirada no excelente **ps-adminmenu**.
-Expressamos nossa sincera gratidão à equipe do [Project Sloth](https://github.com/Project-Sloth) e contribuidores pelo trabalho original para fundação na comunidade FiveM.
-
-## 📄 Licença
-
-Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.
-Você pode compartilhar e adaptar o material, sob as condições que:
-
-- Você dê os devidos créditos.
-- Você **NÃO PODE** usar este material para fins comerciais (não pode ser vendido).
-- Se você modificar, você deve distribuir suas contribuições sob a mesma licença.
-
-Leia o arquivo [LICENSE](LICENSE) completo para todos os detalhes legais.
+Contribuições e melhorias são bem-vindas — abra PRs ou issues. 🙌

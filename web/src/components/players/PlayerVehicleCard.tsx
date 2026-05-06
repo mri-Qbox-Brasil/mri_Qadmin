@@ -86,7 +86,7 @@ export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onOpe
                         className="w-full h-8 text-xs bg-muted/50 hover:bg-primary/20 hover:text-primary border border-border/50 transition-all"
                         onClick={() => onSpawn(vehicle.plate)}
                     >
-                        {t('btn_spawn')}
+                        {t('common.btn_spawn')}
                     </MriButton>
                 )}
                 <div className="grid grid-cols-2 gap-1.5">
@@ -97,7 +97,7 @@ export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onOpe
                             className="h-7 text-[10px] bg-muted/30 hover:bg-muted/80 border border-border/30"
                             onClick={() => onOpenTrunk(vehicle.plate)}
                         >
-                            {t('btn_trunk')}
+                            {t('common.btn_trunk')}
                         </MriButton>
                     )}
                     {onOpenGlovebox && (
@@ -107,7 +107,7 @@ export default function PlayerVehicleCard({ vehicle, onSpawn, onOpenTrunk, onOpe
                             className="h-7 text-[10px] bg-muted/30 hover:bg-muted/80 border border-border/30"
                             onClick={() => onOpenGlovebox(vehicle.plate)}
                         >
-                            {t('btn_glovebox')}
+                            {t('common.btn_glovebox')}
                         </MriButton>
                     )}
                 </div>

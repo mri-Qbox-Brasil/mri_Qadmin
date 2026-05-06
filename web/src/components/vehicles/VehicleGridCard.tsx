@@ -87,7 +87,7 @@ export default function VehicleGridCard({ vehicle, onSpawn, onUpdateStock }: Veh
                             className="flex-1 h-8 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50 text-foreground"
                             onClick={() => onSpawn(vehicle.model)}
                         >
-                            {t('btn_spawn')}
+                            {t('common.btn_spawn')}
                         </MriButton>
                     )}
                 </div>

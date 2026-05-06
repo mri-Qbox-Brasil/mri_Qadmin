@@ -770,7 +770,7 @@ export default function Players() {
                                     {canDo('qadmin.action.mute_player') && <MriGridActionButton icon={VolumeX} label={t('player.actions.mute')} onClick={() => sendAction({ event: 'mri_Qadmin:client:MutePlayer', type: 'client', perms: 'qadmin.action.mute_player' })} disabled={!selectedPlayer.online} />}
                                     {canDo('qadmin.action.warn_player') && <MriGridActionButton icon={AlertTriangle} label={`${t('player.actions.warn')} `} variant="warning" onClick={() => setShowWarnModal(true)} disabled={!selectedPlayer.online} />}
                                     {canDo('qadmin.action.kick_player') && <MriGridActionButton icon={LogOut} label={`${t('player.actions.kick')} `} onClick={() => setShowKickModal(true)} disabled={!selectedPlayer.online} />}
-                                    {canDo('qadmin.action.ban_player') && <MriGridActionButton icon={Ban} label={`${t('player.actions.ban')} `} variant="destructive" onClick={() => setShowBanModal(true)} />}
+                                    {canDo('qadmin.action.ban_player') && <MriGridActionButton icon={Ban} label={`${t('player.actions.ban.title')} `} variant="destructive" onClick={() => setShowBanModal(true)} />}
                                 </div>
                             </section>
 

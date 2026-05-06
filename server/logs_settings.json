@@ -1,75 +1,75 @@
 {
-    "ResourceMode": "blacklist",
-    "ForwardEvent": "",
     "DBEnabled": true,
-    "MaxMemory": 500,
+    "ResourceEntries": [],
     "Webhooks": {
         "Fallback": ""
     },
-    "ResourceEntries": [],
     "Categories": [
         {
-            "relay": false,
             "label": "👤 Players",
             "db": true,
+            "relay": false,
             "discord": true,
             "id": "players"
         },
         {
-            "relay": true,
             "label": "🔨 Bans",
             "db": false,
+            "relay": true,
             "discord": true,
             "id": "bans"
         },
         {
-            "relay": false,
             "label": "🎒 Inventário",
             "db": false,
+            "relay": false,
             "discord": true,
             "id": "inventory"
         },
         {
-            "relay": true,
             "label": "🚗 Veículos",
             "db": false,
+            "relay": true,
             "discord": true,
             "id": "vehicles"
         },
         {
-            "relay": true,
             "label": "💰 Dinheiro",
             "db": false,
+            "relay": true,
             "discord": false,
             "id": "money"
         },
         {
-            "relay": false,
             "label": "⚙️ Servidor",
             "db": true,
+            "relay": false,
             "discord": false,
             "id": "server"
         },
         {
-            "relay": false,
             "label": "🛡️ Permissões",
             "db": true,
+            "relay": false,
             "discord": false,
             "id": "permissions"
         },
         {
-            "relay": false,
             "label": "💬 Chat",
             "db": true,
+            "relay": false,
             "discord": false,
             "id": "chat"
         },
         {
-            "relay": false,
             "label": "🖥️ Sistema",
             "db": true,
+            "relay": false,
             "discord": false,
             "id": "system"
         }
-    ]
+    ],
+    "ResourceMode": "blacklist",
+    "MaxMemory": 500,
+    "ForwardEvent": ""
 }

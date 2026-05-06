@@ -95,7 +95,7 @@ export default function ItemGridCard({ item, onSpawn }: ItemGridCardProps) {
                             className="h-7 text-xs bg-secondary hover:bg-secondary/80 hover:text-primary border border-border hover:border-primary/50"
                             onClick={() => onSpawn(item)}
                         >
-                            {t('btn_spawn')}
+                            {t('common.btn_spawn')}
                         </MriButton>
                     )}
                 </div>
