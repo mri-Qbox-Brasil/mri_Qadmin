@@ -436,21 +436,21 @@ export default function Dashboard() {
                             {/* Row 2 */}
                             <StatCard
                                 icon={Car}
-                                label={t('qadmin.vehicle.title')}
+                                label={t('dashboard.stats.vehicles')}
                                 value={summary.vehicleCount ?? 0}
                                 bgIcon="bg-blue-500/10"
                                 iconColor="text-blue-500"
                             />
                             <StatCard
                                 icon={Gavel}
-                                label={t('qadmin.dashboard.stats.bans')}
+                                label={t('dashboard.stats.bans')}
                                 value={summary.bansCount ?? 0}
                                 bgIcon="bg-red-500/10"
                                 iconColor="text-red-500"
                             />
                             <StatCard
                                 icon={User}
-                                label={t('qadmin.dashboard.stats.chars')}
+                                label={t('dashboard.stats.chars')}
                                 value={summary.characterCount ?? 0}
                                 bgIcon="bg-orange-500/10"
                                 iconColor="text-orange-500"
