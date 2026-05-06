@@ -28,7 +28,7 @@ export default function VehicleGridCard({ vehicle, onSpawn, onUpdateStock }: Veh
     return (
         <div className="bg-card border border-border rounded-xl flex flex-col hover:border-primary/50 hover:bg-muted transition-all group overflow-hidden relative">
             {/* Image & Header Section */}
-            <div className="relative w-full h-40 bg-muted/30 overflow-hidden">
+            <div className="relative w-full h-32 bg-muted/30 overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center p-2">
                     <VehicleImage model={vehicle.model} name={vehicle.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
                 </div>

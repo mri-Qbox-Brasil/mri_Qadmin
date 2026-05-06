@@ -58,7 +58,7 @@ export default function VehicleImage({ model, name, className }: VehicleImagePro
             <img
                 src={src}
                 alt={name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 onError={handleError}
                 loading="lazy"
             />
