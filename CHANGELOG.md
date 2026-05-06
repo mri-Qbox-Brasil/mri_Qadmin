@@ -1,3 +1,11 @@
+## [1.9.7](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.6...v1.9.7) (2026-05-06)
+
+
+### Bug Fixes
+
+* preview de veiculos cabendo corretamente no card ([4d28ae2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/4d28ae2c274d22e58929c9a09a46054e0bd6d0ab))
+* rebuild web assets ([f7fbb46](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/f7fbb46f6f5bc354e0ce2f59d77af8f2e584da38))
+
 ## [1.9.6](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.5...v1.9.6) (2026-05-06)
 
 
