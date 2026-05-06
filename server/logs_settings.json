@@ -1,75 +1,75 @@
 {
-    "DBEnabled": true,
-    "ResourceEntries": [],
+    "ForwardEvent": "",
     "Webhooks": {
         "Fallback": ""
     },
     "Categories": [
         {
+            "discord": true,
+            "id": "players",
             "label": "👤 Players",
             "db": true,
-            "relay": false,
-            "discord": true,
-            "id": "players"
+            "relay": false
         },
         {
+            "discord": true,
+            "id": "bans",
             "label": "🔨 Bans",
             "db": false,
-            "relay": true,
-            "discord": true,
-            "id": "bans"
+            "relay": true
         },
         {
+            "discord": true,
+            "id": "inventory",
             "label": "🎒 Inventário",
             "db": false,
-            "relay": false,
-            "discord": true,
-            "id": "inventory"
+            "relay": false
         },
         {
+            "discord": true,
+            "id": "vehicles",
             "label": "🚗 Veículos",
             "db": false,
-            "relay": true,
-            "discord": true,
-            "id": "vehicles"
+            "relay": true
         },
         {
+            "discord": false,
+            "id": "money",
             "label": "💰 Dinheiro",
             "db": false,
-            "relay": true,
-            "discord": false,
-            "id": "money"
+            "relay": true
         },
         {
+            "discord": false,
+            "id": "server",
             "label": "⚙️ Servidor",
             "db": true,
-            "relay": false,
-            "discord": false,
-            "id": "server"
+            "relay": false
         },
         {
+            "discord": false,
+            "id": "permissions",
             "label": "🛡️ Permissões",
             "db": true,
-            "relay": false,
-            "discord": false,
-            "id": "permissions"
+            "relay": false
         },
         {
+            "discord": false,
+            "id": "chat",
             "label": "💬 Chat",
             "db": true,
-            "relay": false,
-            "discord": false,
-            "id": "chat"
+            "relay": false
         },
         {
+            "discord": false,
+            "id": "system",
             "label": "🖥️ Sistema",
             "db": true,
-            "relay": false,
-            "discord": false,
-            "id": "system"
+            "relay": false
         }
     ],
+    "ResourceEntries": [],
     "ResourceMode": "blacklist",
-    "MaxMemory": 500,
-    "ForwardEvent": ""
+    "DBEnabled": true,
+    "MaxMemory": 500
 }
