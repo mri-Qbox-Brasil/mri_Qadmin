@@ -108,7 +108,7 @@ export default function Groups() {
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
-            <MriPageHeader title={t('groups')} icon={Briefcase}>
+            <MriPageHeader title={t('nav.groups')} icon={Briefcase}>
                 <div className="flex items-center gap-2">
                     <MriExpandableSearch
                         placeholder={t('search_placeholder_players')}
