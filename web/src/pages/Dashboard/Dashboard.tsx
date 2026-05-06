@@ -345,7 +345,7 @@ export default function Dashboard() {
     if (!summary) {
         return (
             <div className="h-full w-full flex flex-col p-4 space-y-4">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[...Array(8)].map((_, i) => <StatSkeleton key={i} />)}
                 </div>
                 <MriSkeleton className="flex-1 rounded-xl" />
@@ -387,10 +387,10 @@ export default function Dashboard() {
                 {debugMode && <DevLocaleSwitcher className="w-40" />}
             </MriPageHeader>
 
-            <div className="flex-1 flex flex-col py-4 px-2 no-scrollbar overflow-hidden">
+            <div className="flex-1 flex flex-col py-4 px-2 no-scrollbar overflow-y-auto">
                 {loadingSummary && !summary ? (
                     <div className="h-full w-full flex flex-col space-y-4">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {[...Array(8)].map((_, i) => <StatSkeleton key={i} />)}
                         </div>
                         <MriSkeleton className="flex-1 rounded-xl" />
@@ -398,7 +398,7 @@ export default function Dashboard() {
                 ) : activeView === 'dashboard' && canSeeDashboard ? (
                     <>
                         {/* Stats Grid */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                             {hasPermission(myPermissions, 'qadmin.action.info_admin') && (
                                 <>
                                     <StatCard
@@ -468,7 +468,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Quick Actions Grid */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                             {canDo('qadmin.action.revive_self') && (
                                 <MriActionCard
                                     label={t('qadmin.dashboard.quick.revive.title')}
@@ -501,7 +501,7 @@ export default function Dashboard() {
 
                         {/* Self Tools */}
                         {(canDo('qadmin.action.noclip') || canDo('qadmin.action.god_mode') || canDo('qadmin.action.invisibility') || canDo('qadmin.action.blackout') || canDo('qadmin.action.refuel_vehicle')) && (
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                                 {canDo('qadmin.action.noclip') && (
                                     <MriActionCard
                                         label={t('qadmin.dashboard.quick.noclip.title')}
@@ -577,13 +577,13 @@ export default function Dashboard() {
 
                         {/* Players Table Section */}
                         {hasPermission(myPermissions, 'qadmin.page.statistics') && (
-                            <div className="flex-1 min-h-0 flex flex-col relative">
+                            <div className="flex-1 min-h-[400px] flex flex-col relative">
                                 <div className="flex items-center gap-2 mb-4 shrink-0">
                                     <Users className="w-6 h-6 text-primary" />
                                     <h2 className="text-lg font-bold text-foreground">{t('qadmin.dashboard.section.stats')}</h2>
                                 </div>
 
-                                <div className="border border-border rounded-xl bg-card flex-1 min-h-0 relative overflow-hidden">
+                                <div className="border border-border rounded-xl bg-card flex-1 min-h-[300px] relative overflow-hidden">
                                     <TableVirtuoso
                                         data={displayedPlayers}
                                         components={{
