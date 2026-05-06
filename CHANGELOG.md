@@ -1,3 +1,10 @@
+## [1.9.5](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.4...v1.9.5) (2026-05-06)
+
+
+### Bug Fixes
+
+* laser thread 1ms ([bacaf5c](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/bacaf5c9f5e78101fb42c13e571a6843dfddb8ba))
+
 ## [1.9.4](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.3...v1.9.4) (2026-05-06)
 
 
