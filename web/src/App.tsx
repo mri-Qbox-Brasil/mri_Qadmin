@@ -237,6 +237,7 @@ export default function App() {
                     const handleRoute = (r: any) => {
                         if (r === 'devmode') {
                             sendNui('clickButton', { data: 'toggleDevmode' })
+                            sendNui('hideUI')
                             return
                         }
                         setRoute(r)
