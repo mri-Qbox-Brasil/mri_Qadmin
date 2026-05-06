@@ -98,7 +98,7 @@ export default function App() {
             setGameData(MOCK_GAME_DATA)
             setPlayers(MOCK_PLAYERS)
             setSettings({ MapBaseUrl: 'https://assets.mriqbox.com.br/admin/map/' })
-            setMyPermissions(['qadmin.page.*', 'action.*'])
+            setMyPermissions(['qadmin.page.*', 'qadmin.action.*'])
             setPermissionDefinitions(MOCK_GAME_DATA.permissionDefinitions)
         }
     }, [setGameData, setPlayers, setMyPermissions, setSettings, setPermissionDefinitions])
