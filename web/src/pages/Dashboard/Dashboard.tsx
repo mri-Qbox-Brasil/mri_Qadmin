@@ -471,33 +471,28 @@ export default function Dashboard() {
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                             {canDo('qadmin.action.revive_self') && (
                                 <MriActionCard
-                                    title={t('qadmin.dashboard.quick.revive.title')}
-                                    description={t('qadmin.dashboard.quick.revive.desc')}
+                                    label={t('qadmin.dashboard.quick.revive.title')}
                                     icon={Heart}
-                                    variant="premium"
                                     onClick={() => sendNui('mri_Qadmin:server:ReviveSelf')}
                                 />
                             )}
                             {canDo('qadmin.action.clear_chat') && (
                                 <MriActionCard
-                                    title={t('qadmin.dashboard.quick.chat.title')}
-                                    description={t('qadmin.dashboard.quick.chat.desc')}
+                                    label={t('qadmin.dashboard.quick.chat.title')}
                                     icon={MessageSquare}
                                     onClick={() => sendNui('mri_Qadmin:server:ClearChat')}
                                 />
                             )}
                             {canDo('qadmin.action.goto_waypoint') && (
                                 <MriActionCard
-                                    title={t('qadmin.dashboard.quick.waypoint.title')}
-                                    description={t('qadmin.dashboard.quick.waypoint.desc')}
+                                    label={t('qadmin.dashboard.quick.waypoint.title')}
                                     icon={MapPin}
                                     onClick={() => sendNui('mri_Qadmin:server:GoToWaypoint')}
                                 />
                             )}
                             {canDo('qadmin.action.fix_vehicle') && (
                                 <MriActionCard
-                                    title={t('qadmin.dashboard.quick.fix.title')}
-                                    description={t('qadmin.dashboard.quick.fix.desc')}
+                                    label={t('qadmin.dashboard.quick.fix.title')}
                                     icon={Shield}
                                     onClick={() => sendNui('mri_Qadmin:server:FixVehicle')}
                                 />
@@ -509,40 +504,35 @@ export default function Dashboard() {
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                                 {canDo('qadmin.action.noclip') && (
                                     <MriActionCard
-                                        title={t('qadmin.dashboard.quick.noclip.title')}
-                                        description={t('qadmin.dashboard.quick.noclip.desc')}
+                                        label={t('qadmin.dashboard.quick.noclip.title')}
                                         icon={Ghost}
                                         onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:ToggleNoClip', type: 'client' } })}
                                     />
                                 )}
                                 {canDo('qadmin.action.god_mode') && (
                                     <MriActionCard
-                                        title={t('qadmin.dashboard.quick.god.title')}
-                                        description={t('qadmin.dashboard.quick.god.desc')}
+                                        label={t('qadmin.dashboard.quick.god.title')}
                                         icon={Shield}
                                         onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:ToggleGodmode', type: 'client' } })}
                                     />
                                 )}
                                 {canDo('qadmin.action.invisible') && (
                                     <MriActionCard
-                                        title={t('qadmin.dashboard.quick.invisible.title')}
-                                        description={t('qadmin.dashboard.quick.invisible.desc')}
+                                        label={t('qadmin.dashboard.quick.invisible.title')}
                                         icon={EyeOff}
                                         onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:ToggleInvisible', type: 'client' } })}
                                     />
                                 )}
                                 {canDo('qadmin.action.blackout') && (
                                     <MriActionCard
-                                        title={t('qadmin.dashboard.quick.blackout.title')}
-                                        description={t('qadmin.dashboard.quick.blackout.desc')}
+                                        label={t('qadmin.dashboard.quick.blackout.title')}
                                         icon={ZapOff}
                                         onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:server:ToggleBlackout', type: 'server' } })}
                                     />
                                 )}
                                 {canDo('qadmin.action.refuel_vehicle') && (
                                     <MriActionCard
-                                        title={t('qadmin.dashboard.quick.refuel.title')}
-                                        description={t('qadmin.dashboard.quick.refuel.desc')}
+                                        label={t('qadmin.dashboard.quick.refuel.title')}
                                         icon={Fuel}
                                         onClick={() => sendNui('clickButton', { data: { event: 'mri_Qadmin:client:RefuelVehicle', type: 'client' } })}
                                     />
