@@ -1,3 +1,15 @@
+## [1.9.4](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.3...v1.9.4) (2026-05-06)
+
+
+### Bug Fixes
+
+* callback NUI GetGroups na pagina de permissoes ([e76720a](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/e76720a5c92452935b4583cbefb18251dec56c12))
+* chaves de tradução nos stat cards do dashboard ([adde393](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/adde39371613766f6da5831d4c3cc1d2fcbf42e7))
+* permissões wildcard do modo dev ([1f0b1cb](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/1f0b1cbea9d4df831d39d0e5cf99c4a58ad319ee))
+* props do MriActionCard nos quick actions ([03bcc40](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/03bcc40298400346d6d1f43933c8faae8b1bbf95))
+* rebuild web assets ([148447f](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/148447f27a37fb38136543cbfe96cad68a506e70))
+* scroll e layout do dashboard ([4844c8d](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/4844c8d04103defbd5d1a4ea34f173698c712e39))
+
 ## [1.9.3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.2...v1.9.3) (2026-05-06)
 
 
