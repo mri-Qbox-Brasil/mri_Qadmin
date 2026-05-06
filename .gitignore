@@ -2,6 +2,8 @@ node_modules
 mri_Qadmin.code-workspace
 SECURITY_AUDIT.md
 server/server_secrets.json
+server/logs_queue.json
+server/logs_settings.json
 web/package-lock.json
 web/node_modules
 .release/node_modules
