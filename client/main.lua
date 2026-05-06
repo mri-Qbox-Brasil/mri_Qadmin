@@ -412,6 +412,11 @@ RegisterNUICallback("seed_pages", function(_, cb)
     cb('ok')
 end)
 
+RegisterNUICallback("mri_Qadmin:callback:GetGroups", function(_, cb)
+    local groups = lib.callback.await('mri_Qadmin:callback:GetGroups')
+    cb(groups or {})
+end)
+
 RegisterNUICallback("mri_Qadmin:server:SaveGroup", function(data, cb)
     local success, errorMsg = lib.callback.await('mri_Qadmin:server:SaveGroup', false, data.id, data.label, data.description)
     cb({ status = success and "ok" or "error", message = errorMsg })
