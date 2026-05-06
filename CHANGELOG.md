@@ -1,3 +1,14 @@
+## [1.9.6](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.5...v1.9.6) (2026-05-06)
+
+
+### Bug Fixes
+
+* add missing GetAces and GetPrincipals server callbacks ([59b2d89](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/59b2d89310627c462b466cd3e1af29d50da23822))
+* declare missing setLoadingPlayers state in Dashboard ([7c0e36e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/7c0e36e9cb2e6e86bd4228ccb964c541ad635c86))
+* **logs:** auto-create logs_settings.json with defaults if missing ([55a50ff](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/55a50ff52afe627aa3dc8bac6d8e1177c6324342))
+* **wall:** add missing GetWallGroups NUI callback on client ([f4a443f](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/f4a443f18618f00ec22e7bf7915bfb6a68f7c3dc))
+* **wall:** align group colors with mri.group.* principal system ([c1134de](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/c1134de821eb1b938dac1945e26ff84bd6d549b9))
+
 ## [1.9.5](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.4...v1.9.5) (2026-05-06)
 
 
