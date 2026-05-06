@@ -618,6 +618,32 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     return allowed
 end)
 
+lib.callback.register('mri_Qadmin:callback:GetAces', function(source)
+    if not CheckPerms(source, 'qadmin.open') then return {} end
+    local raw = GetAces() or ''
+    local result = {}
+    for line in raw:gmatch('[^\n]+') do
+        local atype, principal, object = line:match('^(%S+)%s+(%S+)%s+(%S+)$')
+        if atype and principal and object then
+            table.insert(result, { type = atype, principal = principal, object = object })
+        end
+    end
+    return result
+end)
+
+lib.callback.register('mri_Qadmin:callback:GetPrincipals', function(source)
+    if not CheckPerms(source, 'qadmin.open') then return {} end
+    local raw = GetPrincipals() or ''
+    local result = {}
+    for line in raw:gmatch('[^\n]+') do
+        local child, parent = line:match('^(%S+)%s+(%S+)$')
+        if child and parent then
+            table.insert(result, { child = child, parent = parent })
+        end
+    end
+    return result
+end)
+
 lib.addCommand('mri_qadmin.setmaster', {
     help = 'Set a player as Master Admin (Console Only)',
     params = {
