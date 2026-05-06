@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.1...v1.9.2) (2026-05-05)
+
+
+### Bug Fixes
+
+* autosync qbcore admin perm ([25d5fa8](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/25d5fa89c4a29024b3c6cbc42b60e2e41a0991d7))
+
 ## [1.9.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.0...v1.9.1) (2026-04-30)
 
 
