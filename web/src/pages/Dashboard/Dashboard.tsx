@@ -78,6 +78,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, iconColor
 export default function Dashboard() {
     const [loadingSummary, setLoadingSummary] = useState(true)
     const [loadingCommands, setLoadingCommands] = useState(false)
+    const [, setLoadingPlayers] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [summary, setSummary] = useState<SummaryData | null>(null)
     const { sendNui, debugMode } = useNui()
