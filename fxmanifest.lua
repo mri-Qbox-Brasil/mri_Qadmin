@@ -5,7 +5,7 @@ use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
 author "MRI Qbox Team"
-version "1.9.8"
+version "1.9.9"
 
 ox_lib "locale"
 

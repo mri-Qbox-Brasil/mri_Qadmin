@@ -1,3 +1,12 @@
+## [1.9.9](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.8...v1.9.9) (2026-05-07)
+
+
+### Bug Fixes
+
+* **permissions:** bloqueia rotas não mapeadas quando permissionDefinitions está vazio ([e133bf2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/e133bf2190375eb7c05a1bc55131528278672ba5))
+* **permissions:** corrige ACE e reload de principals ao criar/alterar grupos ([2af757d](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/2af757d4a743f75d48975b0d65fecf79bcbd2ea3))
+* **permissions:** re-inicializa dados ao usuário ganhar acesso pela primeira vez ([c598c87](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/c598c87eed69107b02ad6bba300e6e2984bae586))
+
 ## [1.9.8](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.7...v1.9.8) (2026-05-06)
 
 
