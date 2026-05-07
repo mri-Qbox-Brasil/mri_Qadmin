@@ -68,7 +68,6 @@
 
     body {
         @apply bg-transparent text-foreground antialiased;
-        font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
         display: flex;
         align-items: center;
         justify-content: center;
