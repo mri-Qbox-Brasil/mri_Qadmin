@@ -459,6 +459,7 @@ lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label,
     end
 
     local cleanId = id:lower():gsub("%s+", "_")
+    local isNew = false
 
     local ok, err = pcall(function()
         local exists = MySQL.single.await('SELECT id FROM mri_qadmin_groups WHERE id = ?', {cleanId})
@@ -468,12 +469,18 @@ lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label,
         else
             MySQL.insert.await('INSERT INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {cleanId, label, description})
             TriggerClientEvent('QBCore:Notify', source, 'Grupo criado', 'success')
+            isNew = true
         end
     end)
 
     if not ok then
         print('^1[mri_Qadmin] ERRO ao salvar grupo:^7', err)
         return false, "Erro ao salvar grupo no banco de dados."
+    end
+
+    if isNew then
+        lib.addAce('mri.group.' .. cleanId, 'qadmin.open', true)
+        Debug(('[mri_Qadmin] Novo grupo "%s": ACE qadmin.open aplicado imediatamente'):format(cleanId))
     end
 
     AddLog(source, 'mri_Qadmin', 'permissions', 'info', ('Grupo: grupo "%s" criado/atualizado'):format(cleanId), { group = cleanId, label = label })
@@ -575,6 +582,16 @@ lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source
     if not ok then
         print('^1[mri_Qadmin] ERRO ao atualizar grupos do personagem:^7', err)
         return false, "Erro ao salvar no banco de dados."
+    end
+
+    local players = QBCore.Functions.GetPlayers()
+    for _, id in ipairs(players) do
+        local p = QBCore.Functions.GetPlayer(id)
+        if p and p.PlayerData.citizenid == citizenid then
+            SetupPlayerPrincipals(id, true)
+            Debug(('[mri_Qadmin] Principals recarregados para source %d (%s) após mudança de grupos'):format(id, citizenid))
+            break
+        end
     end
 
     TriggerClientEvent('QBCore:Notify', source, 'Grupos do jogador atualizados.', 'success')
