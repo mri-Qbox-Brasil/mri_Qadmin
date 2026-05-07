@@ -142,27 +142,25 @@ export default function App() {
                 const firstAllowed = Object.entries(pagePermissions).find(([, p]) => hasPermission(myPermissions, p))
                 return firstAllowed ? firstAllowed[0] : 'no_access'
             }
+        } else if (route !== 'credits') {
+            if (permissionDefinitions.length === 0) {
+                const firstAllowed = Object.entries(pagePermissions).find(([, p]) => hasPermission(myPermissions, p))
+                return firstAllowed ? firstAllowed[0] : 'no_access'
+            }
         }
         return route
-    }, [route, myPermissions, pagePermissions])
+    }, [route, myPermissions, pagePermissions, permissionDefinitions])
 
-    // Sync state back to dashboard if access is revoked (Side effect)
-    // Removed setRoute in useEffect to avoid cascading renders.
-    // effectiveRoute handles the correct view rendering.
-
-    // Listen for NUI visibility messages from the client resource
     useEffect(() => {
         const onVisible = (data: any) => {
             const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.data) : Boolean(data)
             setVisible(newVis)
 
             if (newVis && !isEnvBrowser()) {
-                // Fetch permissions
                 sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
                     if (Array.isArray(perms)) setMyPermissions(perms)
                 }).catch(console.error)
 
-                // Fetch Dynamic Settings
                 sendNui('getSettings').then((settingsData) => {
                     if (settingsData && typeof settingsData === 'object') {
                         setSettings(settingsData)
@@ -178,7 +176,6 @@ export default function App() {
 
 
 
-    // expose helper in dev so user can toggle persistent dev-open state
     useEffect(() => {
         if (!isDev) return
             ; (window as any).psToggleDevPanel = (persist?: boolean) => {

@@ -48,9 +48,11 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     ].filter(item => {
         if (item.divider) return true
         if (!item.route) return true
+        if (item.route === 'credits') return true
         if (item.route in pagePermissions) {
             return hasPermission(myPermissions, pagePermissions[item.route])
         }
+        if (permissionDefinitions.length === 0) return false
         return true
     })
 
