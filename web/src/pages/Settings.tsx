@@ -518,7 +518,6 @@ export default function Settings() {
                                                                 onChange={(val) => setNewGroupColor(prev => ({ ...prev, color: val }))}
                                                                 active={true}
                                                                 format="hex"
-                                                                className="scale-110"
                                                             />
                                                             <MriButton
                                                                 onClick={() => saveWallSetting('principal', newGroupColor.group, newGroupColor.color)}
