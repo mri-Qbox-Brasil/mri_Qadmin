@@ -31,6 +31,10 @@ function SetDataCache(data)
 end
 _G.SetDataCache = SetDataCache
 
+function HasInitialData()
+    return Cache.permissionDefinitions ~= nil and #Cache.permissionDefinitions > 0
+end
+
 function GetData()
     local data = GetCoreData()
     SendNUIMessage({

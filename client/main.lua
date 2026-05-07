@@ -6,9 +6,9 @@ local isAdminPlayer = false
 local function setupMenu()
 	Wait(500)
     Debug('Initiating consolidated setupMenu (Latent)...')
-    
+
 	PlayerData = QBCore.Functions.GetPlayerData()
-    
+
     TriggerServerEvent('mri_Qadmin:server:GetInitialData')
 end
 
@@ -31,7 +31,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
         -- Update local cache in client/data.lua
         SetDataCache(initialData)
         Debug('^2[mri_Qadmin] Initial data received via Latent Event and cached.^7')
-        
+
         -- Automatically notify NUI that fresh data (items, vehicles, etc) is ready
         GetData()
 
@@ -203,15 +203,15 @@ end)
 -- Open UI Event
 RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
     print('^3[mri_Qadmin] Tentativa de abrir painel iniciada...^7')
-    
+
     local hasPerm = CheckPerms("qadmin.open")
     print('^3[mri_Qadmin] Check qadmin.open: ' .. tostring(hasPerm) .. '^7')
-    
-    if not hasPerm then 
+
+    if not hasPerm then
         print('^1[mri_Qadmin] Acesso negado pela verificação de qadmin.open!^7')
-        return 
+        return
     end
-    
+
     local tbl, locale = GetTranslations()
     if tbl then
         print('^2[mri_Qadmin] Traduções carregadas: ' .. locale .. '^7')
@@ -222,7 +222,7 @@ RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
 
     print('^2[mri_Qadmin] Chamando ToggleUI(true)...^7')
     ToggleUI(true)
-    
+
     -- resend translations shortly after opening UI
     if tbl then
         CreateThread(function()
@@ -322,8 +322,10 @@ RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
     SendNUIMessage({
         action = "refreshPermissionsLists"
     })
-    -- Optional: Notify usually not needed for silent sync, but if user explicitly asked
-    -- TriggerEvent('QBCore:Notify', 'Permissions synchronized', 'primary', 2000)
+
+    if isAdminPlayer and not HasInitialData() then
+        TriggerServerEvent('mri_Qadmin:server:GetInitialData')
+    end
 end)
 
 RegisterNetEvent('mri_Qadmin:client:UpdateSettings', function(newSettings)
