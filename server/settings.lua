@@ -1,5 +1,23 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+local DEFAULT_ACCENT = '#00E699'
+local HEX_PATTERN = '^#%x%x%x%x%x%x$'
+
+local function isValidHex(value)
+    return type(value) == 'string' and value:match(HEX_PATTERN) ~= nil
+end
+
+-- Reaplica a convar replicada `mri:color` a partir do que está persistido no DB.
+-- Roda no boot pra que players carreguem com a cor certa antes da primeira NUI render.
+local function applyAccentConvar()
+    local color = isValidHex(Config.accent_color) and Config.accent_color or DEFAULT_ACCENT
+    Config.accent_color = color
+    -- API Lua nativa equivalente a `setr mri:color "#hex"` — mais robusta que
+    -- ExecuteCommand (sem parsing de string, sem questão de aspas).
+    SetConvarReplicated('mri:color', color)
+    print(('^2[mri_Qadmin] Convar mri:color aplicada: %s^7'):format(color))
+end
+
 local function LoadSettings()
     print('^2[mri_Qadmin] Iniciando o sincronizador de configuracoes com DB...^7')
 
@@ -95,4 +113,54 @@ end)
 
 RegisterNetEvent('mri_Qadmin:db:ready', function()
     LoadSettings()
+    applyAccentConvar()
+end)
+
+-- Broadcast em runtime quando a convar `mri:color` muda (admin via UI ou
+-- console). Mesmo padrão do mri_Qmultichar/mri_Qspawn — a suite MRI
+-- compartilha a cor de destaque.
+AddConvarChangeListener('mri:color', function(name)
+    if name ~= 'mri:color' then return end
+    local color = GetConvar('mri:color', DEFAULT_ACCENT)
+    if not isValidHex(color) then return end
+    TriggerClientEvent('mri_Qadmin:client:accentColorChanged', -1, color)
+end)
+
+-- Define a cor de destaque global da suite MRI. Persiste no DB e atualiza a
+-- convar replicada `mri:color`, que o AddConvarChangeListener (em main.lua)
+-- broadcast pra todos os clients (Qadmin, Qmultichar, Qspawn, ...).
+RegisterNetEvent('mri_Qadmin:server:SetGlobalAccentColor', function(color)
+    local src = source
+    print(('^3[mri_Qadmin] SetGlobalAccentColor recebido: src=%s color=%s^7'):format(src, tostring(color)))
+
+    if not HasPerms(src, 'qadmin.page.settings') then
+        print('^1[mri_Qadmin] SetGlobalAccentColor: permissão negada^7')
+        return
+    end
+
+    if not isValidHex(color) then
+        QBCore.Functions.Notify(src, 'Cor inválida (esperado #RRGGBB).', 'error')
+        return
+    end
+
+    color = color:upper()
+
+    SetConvarReplicated('mri:color', color)
+
+    MySQL.insert.await([[
+        INSERT INTO mri_qadmin_settings (`name`, `value`, `type`)
+        VALUES (?, ?, 'string')
+        ON DUPLICATE KEY UPDATE `value` = ?, `type` = 'string'
+    ]], { 'accent_color', color, color })
+
+    Config.accent_color = color
+
+    -- Não chamamos TriggerClientEvent manualmente: SetConvarReplicated acima já
+    -- dispara o AddConvarChangeListener (definido logo abaixo neste arquivo),
+    -- que faz o broadcast. Disparar aqui também causaria duplicidade.
+
+    QBCore.Functions.Notify(src, ('Cor global de destaque definida: %s'):format(color), 'success')
+    AddLog(src, 'mri_Qadmin', 'server', 'info',
+        ('Cor global de destaque alterada para %s'):format(color),
+        { color = color })
 end)

@@ -1,6 +1,6 @@
 import React from 'react'
 import { MriButton, MriCard, MriPageHeader, MriSelect, MriInput, MriSearchInput, MriScrollArea } from '@mriqbox/ui-kit'
-import { Sun, Check, Palette, Settings as SettingsIcon, Accessibility, RotateCcw, Eye, Ghost, User, Plus, Trash2, Search, Code, Server } from 'lucide-react'
+import { Sun, Palette, Settings as SettingsIcon, Accessibility, RotateCcw, Eye, Ghost, User, Plus, Trash2, Search, Code, Server } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 
@@ -11,16 +11,6 @@ import { MriColorPicker } from '@mriqbox/ui-kit'
 import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { hasPermission } from '@/utils/permissions'
-
-const COLORS = [
-    { id: 'green', value: '160 100% 45%', class: 'bg-green-500' },
-    { id: 'blue', value: '221 83% 53%', class: 'bg-blue-500' },
-    { id: 'purple', value: '262 83% 58%', class: 'bg-purple-500' },
-    { id: 'red', value: '346 84% 61%', class: 'bg-red-500' },
-    { id: 'orange', value: '25 95% 53%', class: 'bg-orange-500' },
-    { id: 'pink', value: '316 73% 52%', class: 'bg-pink-500' },
-    { id: 'yellow', value: '47 95% 57%', class: 'bg-yellow-500' },
-]
 
 const WALL_DEFAULTS = {
     dead: '#FF0000',
@@ -44,10 +34,30 @@ const rgbToHex = (rgb: string) => {
 
 export default function Settings() {
     const { t, locale, preferredLocale, setPreferredLocale, supportedLanguages } = useI18n()
-    const { accent, setAccent, scale, setScale } = useTheme()
+    const { accentColor, serverAccentColor, setAccentColor, scale, setScale } = useTheme()
     const { sendNui } = useNui()
     const { settings, setSettings, gameData, useMocks, setUseMocks, myPermissions } = useAppState()
     const canDo = (perm: string) => hasPermission(myPermissions, perm)
+    const canEditAccent = canDo('qadmin.page.settings')
+
+    const hasAccentDraft = accentColor.toUpperCase() !== serverAccentColor.toUpperCase()
+    const [confirmingAccent, setConfirmingAccent] = React.useState(false)
+
+    const handleAccentDraftChange = (hex: string) => {
+        if (!canEditAccent) return
+        // Preview ao vivo — só atualiza CSS vars locais; nada vai pro servidor.
+        setAccentColor(hex)
+    }
+
+    const cancelAccentDraft = () => {
+        setAccentColor(serverAccentColor)
+    }
+
+    const applyGlobalAccent = () => {
+        // Confirmado pelo admin — manda pro server. Broadcast volta atualizando
+        // serverAccentColor, eliminando o draft.
+        sendNui('mri_Qadmin:server:SetGlobalAccentColor', { color: accentColor.toUpperCase() })
+    }
 
     const [wallSettings, setWallSettings] = React.useState<any>({ colors: {}, settings: {}, localSettings: {} })
     const [localWallSettings, setLocalWallSettings] = React.useState<any>({ colors: {}, settings: {}, localSettings: {} })
@@ -238,26 +248,48 @@ export default function Settings() {
 
                                 <MriCard className="p-6 space-y-8 bg-card border-border">
                                     <div className="space-y-3">
-                                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings.accent_color')}</h3>
-                                        <div className="flex flex-wrap gap-3">
-                                            {COLORS.map((color) => (
-                                                <button
-                                                    key={color.id}
-                                                    onClick={() => setAccent(color.id)}
-                                                    className={cn(
-                                                        "w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-ring shadow-lg",
-                                                        color.class
-                                                    )}
-                                                >
-                                                    {accent === color.id && <Check className="w-5 h-5 text-white stroke-[3px]" />}
-                                                </button>
-                                            ))}
+                                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                            {t('settings.accent_color')}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground leading-5">
+                                            {t('settings.accent_color_description') || 'Esta cor é a fonte da verdade da suite MRI (mri_Qmultichar, mri_Qspawn, ...). Aplicar muda para todos os jogadores online.'}
+                                        </p>
+                                        <div className="flex items-center gap-3">
                                             <MriColorPicker
-                                                color={COLORS.some(c => c.id === accent) ? '#00E396' : accent}
-                                                onChange={setAccent}
+                                                color={accentColor}
+                                                onChange={handleAccentDraftChange}
                                                 active={true}
+                                                format="hex"
                                             />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-mono text-sm font-semibold uppercase text-foreground">
+                                                    {accentColor}
+                                                </p>
+                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                    {!canEditAccent
+                                                        ? (t('settings.accent_color_locked') || 'Apenas administradores podem alterar')
+                                                        : hasAccentDraft
+                                                            ? (t('settings.accent_color_draft') || 'Pré-visualização (não aplicada)')
+                                                            : (t('settings.accent_color_global_hint') || 'Padrão global do servidor')}
+                                                </p>
+                                            </div>
                                         </div>
+
+                                        {canEditAccent && hasAccentDraft && (
+                                            <div className="flex items-center justify-between gap-2 pt-2">
+                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                    {(t('settings.accent_color_server_hint') || 'Servidor: %s').replace('%s', serverAccentColor)}
+                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <MriButton variant="ghost" size="sm" onClick={cancelAccentDraft}>
+                                                        {t('settings.accent_color_cancel') || 'Cancelar'}
+                                                    </MriButton>
+                                                    <MriButton size="sm" onClick={() => setConfirmingAccent(true)}>
+                                                        {t('settings.accent_color_apply') || 'Aplicar para o servidor'}
+                                                    </MriButton>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="space-y-3 pt-6 border-t border-border/50">
@@ -736,6 +768,17 @@ export default function Settings() {
                         setConfirmDelete(null)
                     }}
                     onCancel={() => setConfirmDelete(null)}
+                />
+            )}
+
+            {confirmingAccent && (
+                <ConfirmAction
+                    text={(t('settings.accent_color_confirm') || 'Aplicar a cor %s para todos os jogadores online da suite MRI?').replace('%s', accentColor)}
+                    onConfirm={() => {
+                        applyGlobalAccent()
+                        setConfirmingAccent(false)
+                    }}
+                    onCancel={() => setConfirmingAccent(false)}
                 />
             )}
         </div>
