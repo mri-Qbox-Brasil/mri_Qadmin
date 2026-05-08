@@ -31,11 +31,13 @@ export default function ChangeGroupModal({
 
     const selectedGroupData = groupOptions.find(o => o.value === group)
 
-    const gradeOptions = selectedGroupData?.original?.grades
-        ? Object.entries(selectedGroupData.original.grades).map(([level, g]: [string, any]) => ({
-            label: `${g.name} (${level})`,
-            value: level
-        }))
+    const gradeOptions = selectedGroupData?.original?.grades && Object.keys(selectedGroupData.original.grades).length > 0
+        ? Object.entries(selectedGroupData.original.grades)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([level, g]: [string, any]) => ({
+                label: `${g.label || g.name} (${level})`,
+                value: level
+            }))
         : []
 
     return (
@@ -65,7 +67,7 @@ export default function ChangeGroupModal({
                     {gradeOptions.length > 0 ? (
                         <MriSelect
                             options={gradeOptions}
-                            value={grade}
+                            value={String(grade)}
                             onChange={(val) => setGrade(Number(val))}
                             placeholder={t('actions.search_placeholder')}
                         />
