@@ -20,11 +20,11 @@ local function getGroups()
     end
 
     for k, v in pairs(allJobs) do
-        jobs[k] = { name = k, label = v.label, type = 'job', members = {} }
+        jobs[k] = { name = k, label = v.label, type = 'job', grades = v.grades or {}, members = {} }
     end
 
     for k, v in pairs(allGangs) do
-        gangs[k] = { name = k, label = v.label, type = 'gang', members = {} }
+        gangs[k] = { name = k, label = v.label, type = 'gang', grades = v.grades or {}, members = {} }
     end
 
     local onlinePlayers = QBCore.Functions.GetQBPlayers()
