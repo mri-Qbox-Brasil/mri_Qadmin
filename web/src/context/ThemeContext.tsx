@@ -84,19 +84,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
             const apply = (hex: string) => {
                 const upper = hex.toUpperCase()
-                console.info('[ThemeContext] applying accent from server:', upper)
                 setAccentColorState(upper)
                 setServerAccentColorState(upper)
             }
 
             if (action === 'setupUI' && data && typeof data.accentColor === 'string' && isValidHex(data.accentColor)) {
                 apply(data.accentColor)
-            } else if (action === 'updateAccentColor') {
-                if (typeof msgAccent === 'string' && isValidHex(msgAccent)) {
-                    apply(msgAccent)
-                } else {
-                    console.warn('[ThemeContext] updateAccentColor com payload inválido:', event.data)
-                }
+            } else if (action === 'updateAccentColor' && typeof msgAccent === 'string' && isValidHex(msgAccent)) {
+                apply(msgAccent)
             }
         }
 

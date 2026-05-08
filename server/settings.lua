@@ -131,12 +131,7 @@ end)
 -- broadcast pra todos os clients (Qadmin, Qmultichar, Qspawn, ...).
 RegisterNetEvent('mri_Qadmin:server:SetGlobalAccentColor', function(color)
     local src = source
-    print(('^3[mri_Qadmin] SetGlobalAccentColor recebido: src=%s color=%s^7'):format(src, tostring(color)))
-
-    if not HasPerms(src, 'qadmin.page.settings') then
-        print('^1[mri_Qadmin] SetGlobalAccentColor: permissão negada^7')
-        return
-    end
+    if not HasPerms(src, 'qadmin.page.settings') then return end
 
     if not isValidHex(color) then
         QBCore.Functions.Notify(src, 'Cor inválida (esperado #RRGGBB).', 'error')

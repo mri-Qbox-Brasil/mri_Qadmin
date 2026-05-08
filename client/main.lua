@@ -130,7 +130,6 @@ end)
 
 -- Broadcast: convar `mri:color` mudou, propaga pra NUI já aberta.
 RegisterNetEvent('mri_Qadmin:client:accentColorChanged', function(newColor)
-    Debug(('[mri_Qadmin] accentColorChanged recebido: %s'):format(tostring(newColor)))
     SendNUIMessage({ action = 'updateAccentColor', accentColor = newColor })
 end)
 
