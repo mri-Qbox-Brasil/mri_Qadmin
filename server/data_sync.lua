@@ -20,7 +20,8 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         peds = Peds or {},
         locations = {},
         settings = GetPrimitiveSettings(),
-        players = getPlayers(1, 100, "")
+        players = getPlayers(1, 100, ""),
+        qboxEnabled = GetResourceState("mri_Qbox") == 'started'
     }
 
     -- 200,000 bytes per second (approx 200KB/s) to be fast but safe

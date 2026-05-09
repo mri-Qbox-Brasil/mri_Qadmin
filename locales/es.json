@@ -201,6 +201,7 @@
         },
         "actions": {
             "revive": "Revivir",
+            "set_vip": "Asignar VIP",
             "kill": "Matar",
             "spectate": "Espectar",
             "warn": "Advertir",
@@ -287,6 +288,7 @@
         "online": "En línea",
         "offline": "Desconectado",
         "banned": "Baneados",
+        "vip": "VIP",
         "placeholder": "Buscar por Nombre, ID o Licencia..."
     },
     "actions": {
@@ -1077,6 +1079,7 @@
             "permissions": "Permisos",
             "resources": "Recursos",
             "logs": "Logs",
+            "vip": "VIP",
             "settings": "Configuración",
             "devmode": "Dev Mode",
             "commands": "Comandos"
@@ -1447,6 +1450,76 @@
                 "toggle_mock_mode": "Habilitar datos de prueba"
             },
             "commands": "Acceder a la lista de comandos del servidor"
+        }
+    },
+    "vip": {
+        "title": "VIP",
+        "none_found": "No se encontraron jugadores VIP.",
+        "add_first": "Agregar Primer VIP",
+        "permanent": "Permanente",
+        "expired": "Expirado",
+        "expires_in_days": "Expira en %s días",
+        "expires_in_hours": "Expira en %s horas",
+        "online": "En línea",
+        "add_title": "Agregar Jugador VIP",
+        "add_confirm": "Agregar VIP",
+        "edit_title": "Editar VIP",
+        "edit_vip": "Editar VIP",
+        "remove_vip": "Quitar VIP",
+        "editing_player": "Editando",
+        "set_vip_title": "Asignar VIP",
+        "expiration": "Expiración",
+        "salary": "Salario",
+        "salary_type": "Moneda",
+        "inventory_limit": "Límite de Inventario",
+        "tab": {
+            "ranks": "Rangos",
+            "players": "Jugadores"
+        },
+        "rank": {
+            "label_select": "Rango VIP",
+            "no_rank": "Sin Rango",
+            "none_found": "No se encontraron rangos VIP.",
+            "create_first": "Crear Primer Rango",
+            "create_title": "Crear Rango VIP",
+            "edit_title": "Editar Rango VIP",
+            "create_confirm": "Crear Rango",
+            "id": "ID (Clave)",
+            "label": "Nombre",
+            "color": "Color",
+            "preview": "Vista previa",
+            "delete_title": "Eliminar Cargo VIP",
+            "delete_confirm": "¿Estás seguro de que quieres eliminar el cargo \"%s\"?",
+            "delete_players_assigned": "%s jugador(es) con este cargo se verán afectados.",
+            "delete_no_players": "Ningún jugador tiene este cargo asignado.",
+            "delete_btn": "Eliminar Cargo"
+        },
+        "method": {
+            "label": "Método de Adición",
+            "citizenid": "Citizen ID",
+            "source": "Source ID"
+        },
+        "labels": {
+            "name": "Nombre",
+            "citizenid": "Citizen ID",
+            "expiration": "Expiración",
+            "salary": "Salario",
+            "inventory_limit": "Límite Inv.",
+            "vehicles": "Vehículos",
+            "rank": "Rango"
+        },
+        "vehicle": {
+            "title": "Vehículos VIP",
+            "add": "Agregar Vehículo",
+            "add_title": "Agregar Vehículo VIP",
+            "add_confirm": "Agregar",
+            "none": "No hay vehículos registrados.",
+            "count": "%s vehículos",
+            "model": "Modelo del Vehículo",
+            "plate": "Matrícula",
+            "plate_hint": "Dejar vacío para generación automática",
+            "expiration": "Fecha de Expiración",
+            "expiration_hint": "Dejar vacío para sin expiración"
         }
     }
 }

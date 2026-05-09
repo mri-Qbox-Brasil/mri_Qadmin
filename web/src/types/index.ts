@@ -111,6 +111,7 @@ export interface GameData {
     signalingProvider?: 'websocket' | 'fivem-native' | 'cloudflare-sfu'
     descriptions?: Record<string, string>
     settingOptions?: Record<string, { label: string, value: string }[]>
+    qboxEnabled?: boolean
 }
 
 export interface EntityInfoData {
@@ -143,6 +144,37 @@ export interface PaginationState {
     total: number
     totalPages: number
     search: string
+}
+
+export interface VipRank {
+    id: string
+    label: string
+    color: string
+    salary: number
+    salaryType: string
+    inventoryLimit: number
+    createdAt?: number
+}
+
+export interface VipVehicle {
+    model: string
+    plate: string
+    label?: string
+    expiration: number
+}
+
+export interface VipPlayer {
+    id?: string | number
+    citizenid: string
+    name: string
+    rankId?: string
+    expiration: number
+    salary: number
+    salaryType: string
+    inventoryLimit: number
+    vehicles: VipVehicle[]
+    online?: boolean
+    createdAt?: number
 }
 
 export type Handler = (data: any) => void

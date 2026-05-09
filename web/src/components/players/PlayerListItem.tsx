@@ -1,6 +1,6 @@
 import { useI18n } from '@/hooks/useI18n'
 import { MriButton } from '@mriqbox/ui-kit'
-import { Eye, Crosshair, Monitor } from 'lucide-react'
+import { Eye, Crosshair, Monitor, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import { Player } from '@/types'
@@ -9,6 +9,7 @@ import { hasPermission } from '@/utils/permissions'
 
 interface PlayerListItemProps {
     player: Player
+    vipRank?: { label: string; color: string }
     isSelected: boolean
     onClick: (player: Player) => void
     onAction: (action: string, data?: any, player?: Player) => void
@@ -37,7 +38,7 @@ const formatDate = (val: any, t: any) => {
     return `${day}/${month}/${year} ${hours}:${minutes}`
 }
 
-export default function PlayerListItem({ player, isSelected, onClick, onAction }: PlayerListItemProps) {
+export default function PlayerListItem({ player, vipRank, isSelected, onClick, onAction }: PlayerListItemProps) {
     const { t } = useI18n()
     const { myPermissions } = useAppState()
     const canDo = (perm: string) => hasPermission(myPermissions, perm)
@@ -83,6 +84,15 @@ export default function PlayerListItem({ player, isSelected, onClick, onAction }
                             <div className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 rounded border border-border font-bold tracking-wider">{t('player.status.verified')}</div>
                         ) : (
                             <div className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('player.status.suspect')}</div>
+                        )}
+                        {vipRank && (
+                            <div
+                                className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded border font-bold tracking-wider"
+                                style={{ color: vipRank.color, borderColor: vipRank.color + '55', background: vipRank.color + '18' }}
+                            >
+                                <Crown className="w-2.5 h-2.5 shrink-0" />
+                                {vipRank.label}
+                            </div>
                         )}
                     </div>
                 </div>

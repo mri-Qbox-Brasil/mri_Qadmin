@@ -1,6 +1,6 @@
 import { useI18n } from '@/hooks/useI18n'
 import { MriButton } from '@mriqbox/ui-kit'
-import { Eye, Crosshair, Monitor } from 'lucide-react'
+import { Eye, Crosshair, Monitor, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import { Player } from '@/types'
@@ -9,6 +9,7 @@ import { hasPermission } from '@/utils/permissions'
 
 interface PlayerGridCardProps {
     player: Player
+    vipRank?: { label: string; color: string }
     onClick: (player: Player) => void
     onAction: (action: string, data?: any, player?: Player) => void
 }
@@ -36,7 +37,7 @@ const formatDate = (val: any, t: any) => {
     return `${day}/${month}/${year} ${hours}:${minutes}`
 }
 
-export default function PlayerGridCard({ player, onClick, onAction }: PlayerGridCardProps) {
+export default function PlayerGridCard({ player, vipRank, onClick, onAction }: PlayerGridCardProps) {
     const { t } = useI18n()
     const { myPermissions } = useAppState()
     const canDo = (perm: string) => hasPermission(myPermissions, perm)
@@ -83,7 +84,7 @@ export default function PlayerGridCard({ player, onClick, onAction }: PlayerGrid
             </div>
 
             <div className="flex items-end justify-between mt-auto">
-                <div className="flex items-center gap-1 h-6">
+                <div className="flex items-center gap-1 h-6 flex-wrap">
                     {player.online && player.health !== undefined && (
                         <span className={cn(
                             "text-[10px] px-2 py-0.5 rounded border font-bold tracking-wider",
@@ -106,6 +107,15 @@ export default function PlayerGridCard({ player, onClick, onAction }: PlayerGrid
                         <div className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded border border-border font-bold tracking-wider">{t('player.status.verified')}</div>
                     ) : (
                         <div className="bg-red-500/20 text-red-500 text-[10px] px-2 py-0.5 rounded border border-red-500/10 font-bold tracking-wider">{t('player.status.suspect')}</div>
+                    )}
+                    {vipRank && (
+                        <div
+                            className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border font-bold tracking-wider"
+                            style={{ color: vipRank.color, borderColor: vipRank.color + '55', background: vipRank.color + '18' }}
+                        >
+                            <Crown className="w-2.5 h-2.5 shrink-0" />
+                            {vipRank.label}
+                        </div>
                     )}
                 </div>
                 <div className="gap-1 flex pl-1">

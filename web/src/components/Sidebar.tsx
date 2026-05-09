@@ -1,7 +1,7 @@
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
-import { MriSidebar, MriSidebarItem, MriScrollArea } from '@mriqbox/ui-kit'
-import { LayoutDashboard, Users, Box, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText } from 'lucide-react'
+import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
+import { LayoutDashboard, Users, Box, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText, Crown } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 import pkg from '../../package.json'
@@ -16,7 +16,8 @@ import { useMemo } from 'react'
 
 export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     const { t } = useI18n()
-    const { menuWide, setMenuWide, myPermissions, permissionDefinitions } = useAppState()
+    const { menuWide, setMenuWide, myPermissions, permissionDefinitions, gameData } = useAppState()
+    const qboxEnabled = !!gameData?.qboxEnabled
     const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { theme, setTheme } = useTheme()
 
@@ -37,6 +38,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
         { icon: MessageSquare, label: t('qadmin.page.staffchat'), route: 'staffchat' },
         { icon: Box, label: t('qadmin.page.items'), route: 'items' },
         { icon: Car, label: t('qadmin.page.vehicles'), route: 'vehicles' },
+        ...(qboxEnabled ? [{ icon: Crown, label: t('qadmin.page.vip') || 'VIP', route: 'vip' }] : []),
         { icon: Wand2, label: t('qadmin.page.actions'), route: 'actions' },
         { icon: Shield, label: t('qadmin.page.permissions') || 'Permissions', route: 'permissions' },
         { icon: Container, label: t('qadmin.page.resources'), route: 'resources' },
@@ -58,7 +60,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
 
     return (
         <div className="flex flex-col h-full bg-card border-r border-border">
-            <MriScrollArea className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
                 <MriSidebar
                     items={items}
                     activeRoute={currentRoute}
@@ -66,7 +68,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
                     collapsed={!menuWide}
                     onToggleCollapse={() => setMenuWide(!menuWide)}
                 />
-            </MriScrollArea>
+            </div>
 
             <div className={cn(
                 "p-3 border-t border-border flex flex-col gap-2 transition-all duration-300",

@@ -97,6 +97,7 @@ local PERM_DEFINITIONS = {
     { id = 'qadmin.page.reports',      category = 'players'     },
     { id = 'qadmin.page.terminal',     category = 'commands'    },
     { id = 'qadmin.page.staff_point',  category = 'other'       },
+    { id = 'qadmin.page.vip',          category = 'vip'         },
     -- ── Dashboard Actions ────────────────────────────────────────────────────
     { id = 'qadmin.action.announcements',           category = 'dashboard'   },
     { id = 'qadmin.action.clear_chat',              category = 'dashboard'   },
@@ -201,6 +202,8 @@ local PERM_DEFINITIONS = {
     { id = 'qadmin.action.server_time',             category = 'settings'    },
     -- ── Live Screens ─────────────────────────────────────────────────────────
     { id = 'qadmin.action.screen_capture',          category = 'livescreens' },
+    -- ── VIP ──────────────────────────────────────────────────────────────────────
+    { id = 'qadmin.action.manage_vip',              category = 'vip'         },
     -- ── Staff / Other ─────────────────────────────────────────────────────────
     { id = 'qadmin.action.staff_clock_in',          category = 'other'       },
     { id = 'qadmin.action.staff_clock_out',         category = 'other'       },

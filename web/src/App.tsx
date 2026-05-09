@@ -18,6 +18,7 @@ import Permissions from '@/pages/Permissions/Permissions'
 import LiveMapPage from './pages/LiveMapPage'
 import LiveScreensPage from './pages/LiveScreensPage'
 import Logs from '@/pages/Logs'
+import Vip from '@/pages/Vip'
 import NearbyEntities from '@/components/overlays/NearbyEntities'
 
 import { useAppState } from '@/context/AppState'
@@ -30,7 +31,7 @@ import { MOCK_GAME_DATA, MOCK_PLAYERS } from '@/utils/mockData'
 import { hasPermission, getPagePermissions } from '@/utils/permissions'
 
 export default function App() {
-    const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'actions' | 'items' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens' | 'logs'>('dashboard')
+    const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'actions' | 'items' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens' | 'logs' | 'vip'>('dashboard')
     const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings, permissionDefinitions, setPermissionDefinitions } = useAppState()
     const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { on, off, sendNui } = useNui()
@@ -262,6 +263,7 @@ export default function App() {
                                                                 effectiveRoute === 'livemap' ? <LiveMapPage /> :
                                                                     effectiveRoute === 'livescreens' ? <LiveScreensPage /> :
                                                                         effectiveRoute === 'logs' ? <Logs /> :
+                                                                            effectiveRoute === 'vip' ? <Vip /> :
                                                                             null}
                 </div>
             </div>

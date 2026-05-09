@@ -42,6 +42,7 @@ server_scripts {
     "server/trolls.lua",
     "server/vehicle.lua",
     "server/wall.lua",
+    "server/vip.lua",
     "server/key_manager.lua",
     "server/webrtc.lua",
     "server/data_sync.lua",
@@ -65,6 +66,7 @@ client_scripts {
     "client/world.lua",
     "client/key_capture.lua",
     "client/nearby_scanner.lua",
+    "client/vip.lua",
     "client/logs.lua",
     "client/webrtc.lua",
 

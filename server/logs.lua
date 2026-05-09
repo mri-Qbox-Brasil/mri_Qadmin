@@ -42,7 +42,10 @@ local function SaveLogSettings()
     }, { indent = true }), -1)
 end
 
-LoadLogSettings()
+local loadOk, loadErr = pcall(LoadLogSettings)
+if not loadOk then
+    print(('[mri_Qadmin] WARN: falha ao carregar logs_settings.json: ' .. tostring(loadErr)))
+end
 
 -- ─── Helpers ─────────────────────────────────────────────────────────────────
 
