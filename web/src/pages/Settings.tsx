@@ -779,6 +779,8 @@ export default function Settings() {
                         setConfirmingAccent(false)
                     }}
                     onCancel={() => setConfirmingAccent(false)}
+                    hideBlur
+                    hideOverlay
                 />
             )}
         </div>
