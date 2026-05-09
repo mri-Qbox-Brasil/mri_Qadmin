@@ -14,8 +14,12 @@ end
 
 local function executeQueries(queries, callback)
     for index, query in ipairs(queries) do
-        MySQL.query.await(query)
-        print("Tabela verificada/criada: " .. index)
+        local ok, err = pcall(MySQL.query.await, query)
+        if ok then
+            print("Tabela verificada/criada: " .. index)
+        else
+            print("[mri_Qadmin] WARN: query " .. index .. " falhou: " .. tostring(err))
+        end
     end
     if callback then callback() end
 end

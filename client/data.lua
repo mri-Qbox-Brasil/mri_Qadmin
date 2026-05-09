@@ -20,7 +20,8 @@ function GetCoreData()
         webrtcUrl = Config.WebRTCUrl,
         players = Cache.players and Cache.players.data or {},
         playersTotal = Cache.players and Cache.players.total or 0,
-        playersPages = Cache.players and Cache.players.pages or 1
+        playersPages = Cache.players and Cache.players.pages or 1,
+        qboxEnabled = Cache.qboxEnabled or false
     }
 end
 

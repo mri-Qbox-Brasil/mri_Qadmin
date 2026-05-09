@@ -201,6 +201,7 @@
         },
         "actions": {
             "revive": "Revive",
+            "set_vip": "Set VIP",
             "kill": "Kill",
             "spectate": "Spectate",
             "warn": "Warn",
@@ -287,6 +288,7 @@
         "online": "Online",
         "offline": "Offline",
         "banned": "Banned",
+        "vip": "VIP",
         "placeholder": "Search by Name, ID or License..."
     },
     "actions": {
@@ -1077,6 +1079,7 @@
             "permissions": "Perms",
             "resources": "Resources",
             "logs": "Logs",
+            "vip": "VIP",
             "settings": "Settings",
             "devmode": "Dev Mode",
             "commands": "Commands"
@@ -1447,6 +1450,76 @@
                 "toggle_mock_mode": "Enable mock data for testing"
             },
             "commands": "Access the server commands list"
+        }
+    },
+    "vip": {
+        "title": "VIP",
+        "none_found": "No VIP players found.",
+        "add_first": "Add First VIP",
+        "permanent": "Permanent",
+        "expired": "Expired",
+        "expires_in_days": "Expires in %s days",
+        "expires_in_hours": "Expires in %s hours",
+        "online": "Online",
+        "add_title": "Add VIP Player",
+        "add_confirm": "Add VIP",
+        "edit_title": "Edit VIP",
+        "edit_vip": "Edit VIP",
+        "remove_vip": "Remove VIP",
+        "editing_player": "Editing",
+        "set_vip_title": "Set VIP",
+        "expiration": "Expiration",
+        "salary": "Salary",
+        "salary_type": "Currency",
+        "inventory_limit": "Inventory Limit",
+        "tab": {
+            "ranks": "Ranks",
+            "players": "Players"
+        },
+        "rank": {
+            "label_select": "VIP Rank",
+            "no_rank": "No Rank",
+            "none_found": "No VIP ranks found.",
+            "create_first": "Create First Rank",
+            "create_title": "Create VIP Rank",
+            "edit_title": "Edit VIP Rank",
+            "create_confirm": "Create Rank",
+            "id": "ID (Key)",
+            "label": "Name",
+            "color": "Color",
+            "preview": "Preview",
+            "delete_title": "Delete VIP Rank",
+            "delete_confirm": "Are you sure you want to delete the rank \"%s\"?",
+            "delete_players_assigned": "%s player(s) with this rank will be affected.",
+            "delete_no_players": "No players have this rank assigned.",
+            "delete_btn": "Delete Rank"
+        },
+        "method": {
+            "label": "Add Method",
+            "citizenid": "Citizen ID",
+            "source": "Source ID"
+        },
+        "labels": {
+            "name": "Name",
+            "citizenid": "Citizen ID",
+            "expiration": "Expiration",
+            "salary": "Salary",
+            "inventory_limit": "Inv. Limit",
+            "vehicles": "Vehicles",
+            "rank": "Rank"
+        },
+        "vehicle": {
+            "title": "VIP Vehicles",
+            "add": "Add Vehicle",
+            "add_title": "Add VIP Vehicle",
+            "add_confirm": "Add Vehicle",
+            "none": "No vehicles registered.",
+            "count": "%s vehicles",
+            "model": "Vehicle Model",
+            "plate": "Plate",
+            "plate_hint": "Leave empty for auto-generated plate",
+            "expiration": "Expiration Date",
+            "expiration_hint": "Leave empty for no expiration"
         }
     }
 }

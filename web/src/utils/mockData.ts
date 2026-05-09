@@ -185,6 +185,7 @@ export const MOCK_PERMISSION_DEFINITIONS = [
 
 export const MOCK_GAME_DATA = {
     permissionDefinitions: MOCK_PERMISSION_DEFINITIONS,
+    qboxEnabled: true,
     items: [
         { name: "water", label: "Water Bottle", description: "A refreshing bottle of water.", weight: 100, type: 'item', image: "water.png" },
         { name: "sandwich", label: "Sandwich", description: "A tasty sandwich.", weight: 200, type: 'item', image: "sandwich.png" },
@@ -450,3 +451,77 @@ export const MOCK_LOG_SETTINGS = {
         { name: 'monitor',    db: false, discord: false, relay: false },
     ],
 }
+
+export const MOCK_VIP_RANKS = [
+    { id: 'bronze',   label: 'Bronze',   color: '#cd7f32', salary: 2000, salaryType: 'cash',   inventoryLimit: 60  },
+    { id: 'silver',   label: 'Silver',   color: '#c0c0c0', salary: 4000, salaryType: 'cash',   inventoryLimit: 100 },
+    { id: 'gold',     label: 'Gold',     color: '#ffd700', salary: 7000, salaryType: 'bank',   inventoryLimit: 150 },
+    { id: 'diamond',  label: 'Diamond',  color: '#b9f2ff', salary: 12000, salaryType: 'bank',  inventoryLimit: 200 },
+]
+
+export const MOCK_VIP = [
+    {
+        citizenid: 'BRL9MRI12345',
+        name: 'John Doe',
+        rankId: 'gold',
+        expiration: now + 86400 * 25,
+        salary: 7000,
+        salaryType: 'bank',
+        inventoryLimit: 150,
+        online: true,
+        vehicles: [
+            { model: 'adder', label: 'Adder', plate: 'VIP 001', expiration: now + 86400 * 20 },
+            { model: 'zentorno', label: 'Zentorno', plate: 'VIP 002', expiration: 0 },
+        ],
+    },
+    {
+        citizenid: 'BRL9MRI67890',
+        name: 'Jane Smith',
+        rankId: 'silver',
+        expiration: now + 86400 * 6,
+        salary: 4000,
+        salaryType: 'cash',
+        inventoryLimit: 100,
+        online: true,
+        vehicles: [],
+    },
+    {
+        citizenid: 'BRL9MRI11223',
+        name: 'Carlos Mendez',
+        rankId: 'diamond',
+        expiration: 0,
+        salary: 12000,
+        salaryType: 'bank',
+        inventoryLimit: 200,
+        online: false,
+        vehicles: [
+            { model: 'infernus', label: 'Infernus', plate: 'VIP 010', expiration: now + 86400 * 15 },
+        ],
+    },
+    {
+        citizenid: 'BRL9MRI44556',
+        name: 'Ana Oliveira',
+        rankId: 'bronze',
+        expiration: now - 86400 * 2,
+        salary: 2000,
+        salaryType: 'cash',
+        inventoryLimit: 60,
+        online: false,
+        vehicles: [],
+    },
+    {
+        citizenid: 'BRL9MRI77889',
+        name: 'Pedro Alves',
+        rankId: 'gold',
+        expiration: now + 86400 * 60,
+        salary: 7000,
+        salaryType: 'bank',
+        inventoryLimit: 150,
+        online: false,
+        vehicles: [
+            { model: 'elegy2', label: 'Elegy Retro', plate: 'VIP 020', expiration: 0 },
+            { model: 'banshee2', label: 'Banshee 900R', plate: 'VIP 021', expiration: now + 86400 * 30 },
+            { model: 'reaper', label: 'Reaper', plate: 'VIP 022', expiration: now + 86400 * 5 },
+        ],
+    },
+]

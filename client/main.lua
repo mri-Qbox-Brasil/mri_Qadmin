@@ -57,7 +57,8 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 settingOptions = Config.Options,
                 inventory = Config.Inventory,
                 selfId = GetPlayerServerId(PlayerId()),
-                accentColor = GetConvar('mri:color', '#00E699')
+                accentColor = GetConvar('mri:color', '#00E699'),
+                qboxEnabled = initialData and initialData.qboxEnabled or false
             }
         })
     else

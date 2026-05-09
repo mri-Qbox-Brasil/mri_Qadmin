@@ -38,12 +38,13 @@ import {
     Ban, Eye, ShoppingBag,
     Wallet, Car, AlertTriangle, Crosshair, Download, Undo, Lock, LogOut,
     Users, Check, Navigation, UserMinus, UserCog, Map as MapIcon,
-    VolumeX, Activity, Waves, Archive
+    VolumeX, Activity, Waves, Archive, Crown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MOCK_PLAYERS } from '@/utils/mockData'
 import InventoryViewerModal from '@/components/players/InventoryViewerModal'
 import { useClipboard } from '@/hooks/useClipboard'
+import SetVipModal from '@/components/vip/SetVipModal'
 
 /* Atomic Components */
 import PlayerGridCard from '@/components/players/PlayerGridCard'
@@ -89,7 +90,8 @@ export default function Players() {
 
     const { sendNui } = useNui()
     const { copy } = useClipboard()
-    const { players, setPlayers, selectedPlayer, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch, myPermissions } = useAppState()
+    const { players, setPlayers, selectedPlayer, setSelectedPlayer, pagination, setPagination, lastPlayersFetch, setLastPlayersFetch, myPermissions, gameData } = useAppState()
+    const qboxEnabled = !!gameData?.qboxEnabled
     const canDo = (perm: string) => hasPermission(myPermissions, perm)
     const { t } = useI18n()
 
@@ -116,7 +118,10 @@ export default function Players() {
     const [showDismissConfirm, setShowDismissConfirm] = useState<'job' | 'gang' | null>(null)
     const [vitalAdjustModal, setVitalAdjustModal] = useState<{ vital: string; label: string; value: number } | null>(null)
 
-    const [filterGroup, setFilterGroup] = useState<'all' | 'online' | 'offline' | 'banned'>('all')
+    const [filterGroup, setFilterGroup] = useState<'all' | 'online' | 'offline' | 'banned' | 'vip'>('all')
+    const [vipCitizenIds, setVipCitizenIds] = useState<Set<string>>(new Set())
+    const [vipRankMap, setVipRankMap] = useState<Record<string, { label: string; color: string }>>({})
+    const [showSetVipModal, setShowSetVipModal] = useState(false)
     const [showOpenStashModal, setShowOpenStashModal] = useState(false)
     const [stashInput, setStashInput] = useState('')
 
@@ -314,6 +319,43 @@ export default function Players() {
     }, [search, fetchPlayers])
 
 
+    const loadVipData = useCallback(async () => {
+        try {
+            const { MOCK_VIP, MOCK_VIP_RANKS } = await import('@/utils/mockData')
+            const [vipData, rankData] = await Promise.all([
+                sendNui<any[]>('getVipPlayers', {}, MOCK_VIP),
+                sendNui<any[]>('getVipRanks', {}, MOCK_VIP_RANKS),
+            ])
+            if (Array.isArray(vipData)) {
+                const rankLookup: Record<string, { label: string; color: string }> = {}
+                if (Array.isArray(rankData)) {
+                    rankData.forEach((r: any) => { rankLookup[r.id] = { label: r.label, color: r.color } })
+                }
+                const ids = new Set<string>()
+                const map: Record<string, { label: string; color: string }> = {}
+                vipData.forEach((p: any) => {
+                    if (p.citizenid) {
+                        ids.add(p.citizenid)
+                        if (p.rankId && rankLookup[p.rankId]) {
+                            map[p.citizenid] = rankLookup[p.rankId]
+                        }
+                    }
+                })
+                setVipCitizenIds(ids)
+                setVipRankMap(map)
+            }
+        } catch { /* silently ignore */ }
+    }, [sendNui])
+
+    const handleFilterChange = useCallback(async (f: 'all' | 'online' | 'offline' | 'banned' | 'vip') => {
+        setFilterGroup(f)
+        if (f === 'vip' && vipCitizenIds.size === 0) {
+            loadVipData()
+        }
+    }, [vipCitizenIds.size, loadVipData])
+
+    useEffect(() => { loadVipData() }, [loadVipData])
+
     const filteredPlayers = useMemo(() => {
         return players.filter((p: Player) => {
             const matchesSearch = (p.name || '').toLowerCase().includes(search.toLowerCase()) || String(p.id).includes(search)
@@ -321,9 +363,10 @@ export default function Players() {
                 || (filterGroup === 'online' && p.online)
                 || (filterGroup === 'offline' && !p.online)
                 || (filterGroup === 'banned' && !!p.ban)
+                || (filterGroup === 'vip' && vipCitizenIds.has(p.citizenid || ''))
             return matchesSearch && matchesGroup
         })
-    }, [players, search, filterGroup])
+    }, [players, search, filterGroup, vipCitizenIds])
 
     useEffect(() => {
         if (viewMode === 'list' && !selectedPlayer && filteredPlayers.length > 0) {
@@ -433,23 +476,26 @@ export default function Players() {
                 </div>
 
                 <div className="flex items-center bg-card border border-border rounded-lg p-1 gap-1 text-xs font-medium">
-                    {(['all', 'online', 'offline', 'banned'] as const).map(f => (
+                    {(['all', 'online', 'offline', 'banned', 'vip'] as const).filter(f => f !== 'vip' || qboxEnabled).map(f => (
                         <button
                             key={f}
-                            onClick={() => setFilterGroup(f)}
+                            onClick={() => handleFilterChange(f)}
                             className={cn(
                                 "px-3 py-1.5 rounded transition-all capitalize",
                                 filterGroup === f
                                     ? f === 'banned'
                                         ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                                        : "bg-primary text-primary-foreground"
+                                        : f === 'vip'
+                                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                            : "bg-primary text-primary-foreground"
                                     : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             {f === 'all' ? t('filter.all')
                                 : f === 'online' ? t('filter.online')
                                     : f === 'offline' ? t('filter.offline')
-                                        : t('filter.banned')}
+                                        : f === 'vip' ? t('filter.vip')
+                                            : t('filter.banned')}
                         </button>
                     ))}
                 </div>
@@ -484,7 +530,7 @@ export default function Players() {
                                 data={filteredPlayers}
                                 listClassName="grid grid-cols-4 gap-4"
                                 itemContent={(index: number, p: Player) => (
-                                    <PlayerGridCard key={getPlayerKey(p)} player={p} onClick={setSelectedPlayer} onAction={sendAction} />
+                                    <PlayerGridCard key={getPlayerKey(p)} player={p} vipRank={vipRankMap[p.citizenid || '']} onClick={setSelectedPlayer} onAction={sendAction} />
                                 )}
                             />
                         </div>
@@ -504,6 +550,7 @@ export default function Players() {
                                         <PlayerListItem
                                             key={getPlayerKey(p)}
                                             player={p}
+                                            vipRank={vipRankMap[p.citizenid || '']}
                                             isSelected={isSelected(p)}
                                             onClick={(p) => setSelectedPlayer(p)}
                                             onAction={sendAction}
@@ -558,6 +605,21 @@ export default function Players() {
                                                 {t('player.status.suspect')}
                                             </span>
                                         )}
+
+                                        {/* VIP Status */}
+                                        {(() => {
+                                            const vipRank = vipRankMap[selectedPlayer.citizenid || '']
+                                            if (!vipRank) return null
+                                            return (
+                                                <span
+                                                    className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border font-bold uppercase tracking-wider whitespace-nowrap"
+                                                    style={{ color: vipRank.color, borderColor: vipRank.color + '55', background: vipRank.color + '18' }}
+                                                >
+                                                    <Crown className="w-3 h-3" />
+                                                    {vipRank.label}
+                                                </span>
+                                            )
+                                        })()}
 
                                         {/* Ban Status */}
                                         {selectedPlayer.ban && (
@@ -859,7 +921,7 @@ export default function Players() {
                                     )}
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <div className="bg-card border border-border p-3 rounded-lg flex items-center justify-between">
                                         <span className="text-sm font-medium">{t('labels.job_label')}</span>
                                         <div className="flex items-center gap-2">
@@ -900,6 +962,57 @@ export default function Players() {
                                             </div>
                                         </div>
                                     </div>
+                                    {/* VIP card */}
+                                    {qboxEnabled && (() => {
+                                        const vipRank = vipRankMap[selectedPlayer.citizenid || '']
+                                        return (
+                                            <div
+                                                className="bg-card border border-border p-3 rounded-lg flex items-center justify-between"
+                                                style={vipRank ? { borderColor: vipRank.color + '55' } : undefined}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Crown className="w-4 h-4" style={{ color: vipRank?.color ?? 'var(--muted-foreground)' }} />
+                                                    <span className="text-sm font-medium">VIP</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {vipRank ? (
+                                                        <span
+                                                            className="text-[11px] font-bold px-2 py-0.5 rounded border"
+                                                            style={{ color: vipRank.color, borderColor: vipRank.color + '55', background: vipRank.color + '18' }}
+                                                        >
+                                                            {vipRank.label}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">{t('vip.rank.no_rank')}</span>
+                                                    )}
+                                                    {canDo('qadmin.action.manage_vip') && (
+                                                        <div className="flex items-center bg-background/50 border border-border rounded-md overflow-hidden ml-1">
+                                                            <MriButton
+                                                                variant="ghost" size="icon"
+                                                                className="h-7 w-7 border-r border-border rounded-none hover:bg-primary/10"
+                                                                onClick={() => setShowSetVipModal(true)}
+                                                            >
+                                                                <UserCog className="w-3.5 h-3.5 text-primary" />
+                                                            </MriButton>
+                                                            {vipRank && (
+                                                                <MriButton
+                                                                    variant="ghost" size="icon"
+                                                                    className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-none"
+                                                                    onClick={async () => {
+                                                                        await sendNui('removeVipPlayer', { citizenid: selectedPlayer.citizenid })
+                                                                        setVipRankMap(prev => { const n = { ...prev }; delete n[selectedPlayer.citizenid || '']; return n })
+                                                                        setVipCitizenIds(prev => { const n = new Set(prev); n.delete(selectedPlayer.citizenid || ''); return n })
+                                                                    }}
+                                                                >
+                                                                    <UserMinus className="w-3.5 h-3.5" />
+                                                                </MriButton>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )
+                                    })()}
                                 </div>
                             </section>
 
@@ -1236,6 +1349,30 @@ export default function Players() {
                     <InventoryViewerModal
                         target={showInventoryViewer.target}
                         onClose={() => setShowInventoryViewer(null)}
+                    />
+                )}
+
+                {showSetVipModal && selectedPlayer && (
+                    <SetVipModal
+                        playerName={selectedPlayer.name}
+                        citizenid={selectedPlayer.citizenid || ''}
+                        source={selectedPlayer.id}
+                        onClose={() => setShowSetVipModal(false)}
+                        onSubmit={async ({ rankId, expiration, salary, salaryType, inventoryLimit }) => {
+                            setShowSetVipModal(false)
+                            const alreadyVip = !!vipRankMap[selectedPlayer.citizenid || '']
+                            const event = alreadyVip ? 'updateVipPlayer' : 'addVipPlayer'
+                            await sendNui(event, {
+                                method: 'citizenid',
+                                citizenid: selectedPlayer.citizenid,
+                                rankId,
+                                expiration,
+                                salary,
+                                salaryType,
+                                inventoryLimit,
+                            })
+                            loadVipData()
+                        }}
                     />
                 )}
 
