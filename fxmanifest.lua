@@ -46,6 +46,7 @@ server_scripts {
     "server/key_manager.lua",
     "server/webrtc.lua",
     "server/data_sync.lua",
+    "server/plugins.lua",
 }
 
 client_scripts {
@@ -69,7 +70,7 @@ client_scripts {
     "client/vip.lua",
     "client/logs.lua",
     "client/webrtc.lua",
-
+    "client/plugins.lua",
 }
 
 dependencies {

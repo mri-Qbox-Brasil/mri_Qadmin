@@ -109,31 +109,12 @@
     }
 }
 
+/* #root + .app-shell sizing/frame removidos: MriTabletFrame (ui-kit 4.2.0)
+   substitui o que tinhamos aqui. Body continua transparent + flex center
+   pra centrar o frame na tela do FiveM. */
 #root {
-    height: 92%;
-    width: 95%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1000px; /* Prevent collapse on very small widths */
-    min-height: 600px;
-}
-
-@media (min-width: 1600px) {
-    #root {
-        height: 85%;
-        width: 85%;
-    }
-}
-
-.app-shell {
-    height: 100%;
     width: 100%;
-    display: flex;
-    @apply bg-background border border-border rounded-xl shadow-2xl;
-    overflow: hidden;
-    isolation: isolate;
-    transform: translateZ(0);
+    height: 100%;
 }
 
 /* Custom Scrollbar */

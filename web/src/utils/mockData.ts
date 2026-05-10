@@ -1,4 +1,20 @@
 
+// Mock plugins pra dev/browser mode. No FiveM real, vem do registry Lua via
+// `mri_Qadmin:registerPlugin` event. Em browser, o iframe nao vai conseguir
+// carregar `https://cfx-nui-mri_Qspawn/...` (so existe em CEF), entao o
+// MriPluginHost vai cair no error overlay apos timeout — esperado, valida
+// a UI mas nao o iframe end-to-end.
+export const MOCK_PLUGINS = {
+    spawns: {
+        id: 'spawns',
+        label: 'Spawns',
+        icon: 'map-pin',
+        resource: 'mri_Qspawn',
+        requiredPerms: [],
+        description: 'CRUD de spawns iniciais do servidor',
+    },
+}
+
 export const MOCK_PLAYERS = [
     {
         id: 1,

@@ -1,20 +1,34 @@
 import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
+import * as LucideIcons from 'lucide-react'
 import { LayoutDashboard, Users, Box, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText, Crown } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 import pkg from '../../package.json'
+import { MriPluginManifest } from '@/plugin/types'
 
 interface SidebarProps {
     onRoute: (r: any) => void
     currentRoute: string
+    plugins?: Record<string, MriPluginManifest>
+}
+
+// Resolve nome de icone lucide ('map-pin' -> MapPin) pra component. Fallback
+// pra Box se icone nao existir. Usado pra plugins que mandam icone como string
+// no manifest (nao da pra serializar component pelo bridge Lua->NUI).
+const resolveLucideIcon = (name: string) => {
+    const pascal = name
+        .split('-')
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join('')
+    return (LucideIcons as any)[pascal] || Box
 }
 
 import { hasPermission, getPagePermissions } from '@/utils/permissions'
 import { useMemo } from 'react'
 
-export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
+export default function Sidebar({ onRoute, currentRoute, plugins = {} }: SidebarProps) {
     const { t } = useI18n()
     const { menuWide, setMenuWide, myPermissions, permissionDefinitions, gameData } = useAppState()
     const qboxEnabled = !!gameData?.qboxEnabled
@@ -28,6 +42,17 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
     }
 
     const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor
+
+    // Plugin items dinamicos (vem do registry Lua via mri_Qadmin:registerPlugin).
+    // Server-side ja filtra por ACE perm do source antes de enviar — qualquer
+    // plugin que chegar aqui e acessivel pelo user atual.
+    const pluginItems: MriSidebarItem[] = useMemo(() => {
+        return Object.values(plugins).map((p) => ({
+            icon: resolveLucideIcon(p.icon),
+            label: p.label,
+            route: `plugin:${p.id}`,
+        }))
+    }, [plugins])
 
     const items: MriSidebarItem[] = [
         { icon: LayoutDashboard, label: t('qadmin.page.dashboard'), route: 'dashboard' },
@@ -43,6 +68,8 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
         { icon: Shield, label: t('qadmin.page.permissions') || 'Permissions', route: 'permissions' },
         { icon: Container, label: t('qadmin.page.resources'), route: 'resources' },
         { icon: ScrollText, label: t('qadmin.page.logs') || 'Logs', route: 'logs' },
+        // Divider entre items built-in e plugins (so aparece se tem plugin)
+        ...(pluginItems.length > 0 ? [{ icon: Box, label: '', divider: true }, ...pluginItems] : []),
         { icon: Box, label: '', divider: true },
         { icon: Settings, label: t('nav.settings'), route: 'settings' },
         { icon: Info, label: t('nav.credits'), route: 'credits' },
@@ -51,6 +78,7 @@ export default function Sidebar({ onRoute, currentRoute }: SidebarProps) {
         if (item.divider) return true
         if (!item.route) return true
         if (item.route === 'credits') return true
+        if (item.route.startsWith('plugin:')) return true // ja filtrado em pluginItems
         if (item.route in pagePermissions) {
             return hasPermission(myPermissions, pagePermissions[item.route])
         }

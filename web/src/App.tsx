@@ -3,6 +3,10 @@ import Dashboard from '@/pages/Dashboard/Dashboard'
 import Players from '@/pages/Players'
 import Items from '@/pages/Items'
 import Sidebar from '@/components/Sidebar'
+import { MriPluginHost } from '@/plugin/MriPluginHost'
+import { MriPluginManifest } from '@/plugin/types'
+import { useI18n } from '@/hooks/useI18n'
+import { MriTabletFrame } from '@mriqbox/ui-kit'
 import Listeners from '@/components/Listeners'
 import VehicleDev from '@/components/overlays/VehicleDev'
 import ToggleCoords from '@/components/overlays/ToggleCoords'
@@ -26,16 +30,19 @@ import { useTheme } from '@/context/ThemeContext'
 import { useNui } from '@/context/NuiContext'
 import WebRTCStreamer from '@/components/WebRTCStreamer'
 import { isEnvBrowser } from '@/utils/misc'
-import { MOCK_GAME_DATA, MOCK_PLAYERS } from '@/utils/mockData'
+import { MOCK_GAME_DATA, MOCK_PLAYERS, MOCK_PLUGINS } from '@/utils/mockData'
 
 import { hasPermission, getPagePermissions } from '@/utils/permissions'
 
 export default function App() {
-    const [route, setRoute] = useState<'staffchat' | 'players' | 'resources' | 'actions' | 'items' | 'vehicles' | 'groups' | 'credits' | 'dashboard' | 'settings' | 'permissions' | 'livemap' | 'livescreens' | 'logs' | 'vip'>('dashboard')
+    // Routes built-in tipadas + escape pra `plugin:{id}` (string aberta)
+    const [route, setRoute] = useState<string>('dashboard')
     const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings, permissionDefinitions, setPermissionDefinitions } = useAppState()
     const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { on, off, sendNui } = useNui()
-    const { scale } = useTheme()
+    const { scale, accentColor } = useTheme()
+    const { locale } = useI18n()
+    const [plugins, setPlugins] = useState<Record<string, MriPluginManifest>>({})
     const isDev = (import.meta as any)?.env?.DEV === true
     const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
     const devParam = query ? query.get('devpanel') === '1' : false
@@ -101,6 +108,7 @@ export default function App() {
             setSettings({ MapBaseUrl: 'https://assets.mriqbox.com.br/admin/map/' })
             setMyPermissions(['qadmin.page.*', 'qadmin.action.*'])
             setPermissionDefinitions(MOCK_GAME_DATA.permissionDefinitions)
+            setPlugins(MOCK_PLUGINS)
         }
     }, [setGameData, setPlayers, setMyPermissions, setSettings, setPermissionDefinitions])
 
@@ -130,8 +138,33 @@ export default function App() {
         }
     }, [on, off, setMyPermissions, setPermissionRefreshTrigger, setSettings])
 
+    // Plugin registry sync — fetch lista inicial + listen broadcasts em runtime.
+    useEffect(() => {
+        if (isEnvBrowser()) return
+        sendNui<Record<string, MriPluginManifest>>('getPlugins')
+            .then((p) => {
+                if (p && typeof p === 'object') setPlugins(p)
+            })
+            .catch(console.error)
+
+        const onPluginsUpdated = (data: { plugins?: Record<string, MriPluginManifest> } | undefined) => {
+            const next = data?.plugins
+            if (next && typeof next === 'object') setPlugins(next)
+        }
+        on('pluginsUpdated', onPluginsUpdated)
+        return () => off('pluginsUpdated', onPluginsUpdated)
+    }, [on, off, sendNui])
+
     // Derived route based on permissions
     const effectiveRoute = useMemo(() => {
+        // Plugin routes: server-side ja filtrou por ACE perm antes de mandar
+        // o manifest. Se o plugin chegou no client, e acessivel pelo user.
+        if (route.startsWith('plugin:')) {
+            const id = route.slice('plugin:'.length)
+            const manifest = plugins[id]
+            return manifest ? route : 'no_access' // 'no_access' so se resource parou
+        }
+
         if (route === 'dashboard') {
             if (!hasPermission(myPermissions, 'qadmin.page.dashboard') && !hasPermission(myPermissions, 'qadmin.page.commands')) {
                 const firstAllowed = Object.entries(pagePermissions).find(([, p]) => hasPermission(myPermissions, p))
@@ -150,7 +183,7 @@ export default function App() {
             }
         }
         return route
-    }, [route, myPermissions, pagePermissions, permissionDefinitions])
+    }, [route, myPermissions, pagePermissions, permissionDefinitions, plugins])
 
     useEffect(() => {
         const onVisible = (data: any) => {
@@ -221,15 +254,15 @@ export default function App() {
 
     return (
         <>
-            <div
-                className="app-shell bg-background text-foreground"
-                style={{
-                    display: visible ? 'flex' : 'none',
-                    transform: `scale(${(scale / 100) * autoScale})`,
-                    transformOrigin: 'center'
-                }}
+            <MriTabletFrame
+                visible={visible}
+                scale={scale * autoScale}
+                size="lg"
             >
-
+                {/* Wrapper flex obrigatorio: MriTabletFrame forca display:block
+                    via inline style, entao o layout sidebar+conteudo precisa
+                    do flex container interno. */}
+                <div className="flex w-full h-full">
                 {/* Overlays */}
                 {(() => {
                     const handleRoute = (r: any) => {
@@ -241,7 +274,7 @@ export default function App() {
                         setRoute(r)
                     }
 
-                    return <Sidebar onRoute={handleRoute} currentRoute={effectiveRoute} />
+                    return <Sidebar onRoute={handleRoute} currentRoute={effectiveRoute} plugins={plugins} />
                 })()}
                 <div className="flex-1 p-2 overflow-hidden flex flex-col min-h-0 min-w-0">
                     {effectiveRoute === 'no_access' ? (
@@ -249,6 +282,21 @@ export default function App() {
                             <span className="text-4xl">🔒</span>
                             <p className="text-sm font-medium">Sem permissão de acesso</p>
                         </div>
+                    ) : effectiveRoute.startsWith('plugin:') ? (
+                        (() => {
+                            const id = effectiveRoute.slice('plugin:'.length)
+                            const manifest = plugins[id]
+                            if (!manifest) return null
+                            return (
+                                <MriPluginHost
+                                    manifest={manifest}
+                                    accentColor={accentColor}
+                                    locale={locale}
+                                    perms={myPermissions}
+                                    onRequestClose={() => sendNui('hideUI')}
+                                />
+                            )
+                        })()
                     ) : effectiveRoute === 'resources' ? <Resources /> :
                         effectiveRoute === 'players' ? <Players /> :
                             effectiveRoute === 'actions' ? <Actions /> :
@@ -266,7 +314,8 @@ export default function App() {
                                                                             effectiveRoute === 'vip' ? <Vip /> :
                                                                             null}
                 </div>
-            </div>
+                </div>
+            </MriTabletFrame>
             {/* Background elements and Overlays */}
             <Listeners />
 
