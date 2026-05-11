@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.0...v1.11.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* remove backdrop-blur (nao renderiza no CEF do FiveM) ([dac3dab](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/dac3dab09f76b81cce230b11d73fe40aca6a6d98))
+
 # [1.11.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.10.0...v1.11.0) (2026-05-11)
 
 
