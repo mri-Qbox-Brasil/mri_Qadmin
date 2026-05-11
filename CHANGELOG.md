@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.10.0...v1.11.0) (2026-05-11)
+
+
+### Features
+
+* htmlPath opcional no manifest do plugin ([4339d9c](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/4339d9c2be96622861a6d9b082cc6118c055c7ed))
+
 # [1.10.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.9...v1.10.0) (2026-05-11)
 
 
