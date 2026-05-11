@@ -1,3 +1,21 @@
+# [1.10.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.9...v1.10.0) (2026-05-11)
+
+
+### Bug Fixes
+
+* ux setgroup ([8313381](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/831338174a8267654a835717f5ec88ee3894b87d))
+
+
+### Features
+
+* new ui confirm modal props ([0a62c1f](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/0a62c1f420550d6828feffa286b9991751b74933))
+* plugin host registry + MriTabletFrame ([ed6749e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/ed6749e4bdbfd7e203a764110a4c3feb3ced29a4))
+* remove debugs ([d798ad9](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/d798ad98d6b5bf6398cd79f0e4f494f45850d1eb))
+* remove yarn ([92b2c05](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/92b2c05e3799a794d9ca8805464da3b84a643960))
+* sistema de gerenciamento VIP ([61bd757](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/61bd75731776dc04f31d761c1ecfecf0a89d729b))
+* theme color global convar ([8f40be2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/8f40be2ae5126bb44725bea95a8571982772e71e))
+* update uikit ([ff035f0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/ff035f0b779819aa9e0c37349d1a94c09d2d548d))
+
 ## [1.9.9](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.9.8...v1.9.9) (2026-05-07)
 
 
