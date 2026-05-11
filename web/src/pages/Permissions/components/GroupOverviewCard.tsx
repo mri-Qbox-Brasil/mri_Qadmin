@@ -24,7 +24,7 @@ export default function GroupOverviewCard({
     const displayedPerms = permissions.slice(0, 5)
 
     return (
-        <div className="group relative flex flex-col p-5 rounded-2xl border border-border bg-card/40 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 h-full">
+        <div className="group relative flex flex-col p-5 rounded-2xl border border-border bg-card/40 transition-all duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 h-full">
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">

@@ -72,7 +72,7 @@ export const DragGhost = () => {
                 transform: 'translate(-50%, -50%) rotate(3deg) scale(1.1)',
             }}
         >
-            <div className="w-16 h-16 bg-card/80 backdrop-blur-md border-2 border-primary/50 rounded shadow-2xl flex items-center justify-center p-2">
+            <div className="w-16 h-16 bg-card/80 border-2 border-primary/50 rounded shadow-2xl flex items-center justify-center p-2">
                 <img src={iconUrl} className="w-full h-full object-contain drop-shadow-lg" alt="" />
             </div>
             <div className="bg-primary px-2 py-0.5 rounded shadow-lg">

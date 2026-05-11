@@ -97,7 +97,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
 
     return (
         <div className="flex flex-col h-full bg-card/10 rounded-2xl border border-border/50 overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-card/40 backdrop-blur-md">
+            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-card/40">
                 <div className="flex items-center gap-4">
                     <MriButton variant="outline" size="icon" onClick={onBack} className="h-10 w-10">
                         <ChevronLeft className="w-5 h-5" />

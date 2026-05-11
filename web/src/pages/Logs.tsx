@@ -150,7 +150,7 @@ function ToggleBtn({ active, onClick, icon: Icon, title, danger }: {
 
 function WizardModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-in fade-in duration-150">
             <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
                     <h2 className="text-sm font-semibold text-foreground">{title}</h2>

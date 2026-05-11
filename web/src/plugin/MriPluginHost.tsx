@@ -75,7 +75,7 @@ export function MriPluginHost({
 
       {/* Loading overlay enquanto plugin nao manda `ready` */}
       {!ready && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/80">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Carregando {manifest.label}...</p>
         </div>

@@ -39,7 +39,7 @@ function StatCard({ title, value, icon, variant = 'default' }: StatCardProps) {
             variants[variant] || variants.default
         )}>
             <div className="flex items-start justify-between mb-4">
-                <div className="p-2.5 rounded-xl bg-background/50 backdrop-blur-sm border border-current/10 group-hover:border-current/20 transition-colors">
+                <div className="p-2.5 rounded-xl bg-background/50 border border-current/10 group-hover:border-current/20 transition-colors">
                     {icon}
                 </div>
             </div>

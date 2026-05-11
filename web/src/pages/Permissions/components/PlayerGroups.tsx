@@ -141,7 +141,7 @@ export default function PlayerGroups({ groups, searchQuery }: { groups: GroupDat
                         <ChevronLeft className="w-5 h-5 mr-1" /> {t('permissions.player_groups.back_to_search')}
                     </button>
 
-                    <div className="bg-card/40 border border-border/50 rounded-2xl p-8 backdrop-blur-sm shadow-xl relative overflow-hidden">
+                    <div className="bg-card/40 border border-border/50 rounded-2xl p-8 shadow-xl relative overflow-hidden">
                         {/* Header Profile */}
                         <div className="flex items-start gap-6 border-b border-border/50 pb-8 mb-8">
                             <div className="w-24 h-24 rounded-2xl bg-muted border border-border flex items-center justify-center relative shadow-lg">
