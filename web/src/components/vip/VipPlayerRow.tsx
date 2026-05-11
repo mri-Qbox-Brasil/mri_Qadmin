@@ -1,6 +1,5 @@
 import { Crown, Trash2, Settings, Clock, Car } from 'lucide-react'
-import { MriButton } from '@mriqbox/ui-kit'
-import { MriTableCell } from '@/components/ui/MriTable'
+import { MriButton, MriTableCell } from '@mriqbox/ui-kit'
 import { useI18n } from '@/hooks/useI18n'
 import { cn } from '@/lib/utils'
 import { VipPlayer, VipRank } from '@/types'

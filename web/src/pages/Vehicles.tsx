@@ -3,15 +3,18 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { MriButton, MriPageHeader, MriSkeleton, MriExpandableSearch } from '@mriqbox/ui-kit'
 import {
+    MriButton,
+    MriPageHeader,
+    MriSkeleton,
+    MriExpandableSearch,
     MriTable,
     MriTableHeader,
     MriTableBody,
     MriTableHead,
     MriTableRow,
-    MriTableCell
-} from '@/components/ui/MriTable'
+    MriTableCell,
+} from '@mriqbox/ui-kit'
 import { VirtuosoGrid, TableVirtuoso } from 'react-virtuoso'
 
 import { Car, RefreshCw, Gift, LayoutGrid, Table as TableIcon } from 'lucide-react'
