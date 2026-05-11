@@ -59,6 +59,7 @@ local function registerPlugin(manifest)
         label = manifest.label or manifest.id,
         icon = manifest.icon or 'box',
         resource = manifest.resource,
+        htmlPath = manifest.htmlPath, -- opcional; default no host (web/build/index.html)
         requiredPerms = manifest.requiredPerms or {},
         description = manifest.description,
     }

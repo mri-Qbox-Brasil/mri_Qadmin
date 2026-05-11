@@ -15,6 +15,10 @@ export interface MriPluginManifest {
   icon: string
   /** Nome do resource FiveM (eg 'mri_Qspawn'). Usado pra montar a URL do iframe. */
   resource: string
+  /** Path do HTML buildado dentro do resource (relativo a raiz). Default
+   * `web/build/index.html` por compat. Plugins novos que builadam pra `html/`
+   * passam `html/index.html`. */
+  htmlPath?: string
   /** ACE perms que liberam o plugin. Semantica OR — user precisa de QUALQUER
    * uma delas. Vazio = sempre visivel. Ex: ['mri_Qspawn.admin', 'command']
    * libera pra quem tem ace especifica OU pra console/god. */

@@ -58,7 +58,8 @@ export function MriPluginHost({
     return () => clearTimeout(timer)
   }, [ready, manifest])
 
-  const src = `https://cfx-nui-${manifest.resource}/web/build/index.html?embedded=1`
+  const htmlPath = manifest.htmlPath ?? 'web/build/index.html'
+  const src = `https://cfx-nui-${manifest.resource}/${htmlPath}?embedded=1`
 
   return (
     <div className="relative w-full h-full bg-background">
