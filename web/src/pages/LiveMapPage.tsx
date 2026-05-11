@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import LiveMap from '@/components/map/LiveMap'
 import { useNui } from '@/context/NuiContext'
-import { MriPageHeader, MriButton } from '@mriqbox/ui-kit'
-import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
+import { MriPageHeader, MriButton, MriExpandableSearch } from '@mriqbox/ui-kit'
 import { Map as MapIcon, ShieldCheck, User, Skull, RefreshCcw, Settings, Sun, Moon, Map as MapTypeIcon, Globe, Grid } from 'lucide-react'
 import { useI18n } from '@/hooks/useI18n'
-import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
+import { MriSegmentedTabs as MriTabs, type MriSegmentedTabsItem as MriTabItem } from '@mriqbox/ui-kit'
 import ScreenModal from '@/components/players/ScreenModal'
 import { cn } from '@/lib/utils'
 

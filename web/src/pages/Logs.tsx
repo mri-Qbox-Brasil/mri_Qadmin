@@ -9,7 +9,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { MOCK_LOGS, MOCK_LOG_SETTINGS } from '@/utils/mockData'
-import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
+import { MriSegmentedTabs as MriTabs, type MriSegmentedTabsItem as MriTabItem } from '@mriqbox/ui-kit'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

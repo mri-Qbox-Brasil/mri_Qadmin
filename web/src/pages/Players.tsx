@@ -12,8 +12,8 @@ import {
     MriVitalAdjustModal,
     MriActionModal,
     MriInput,
+    MriExpandableSearch,
 } from '@mriqbox/ui-kit'
-import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
 
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso'
 import { Player } from '@/types'

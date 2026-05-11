@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useTheme } from '@/context/ThemeContext'
 import { MriColorPicker } from '@mriqbox/ui-kit'
-import { MriTabs, MriTabItem } from '@/components/ui/MriTabs'
+import { MriSegmentedTabs as MriTabs, type MriSegmentedTabsItem as MriTabItem } from '@mriqbox/ui-kit'
 import ConfirmAction from '@/components/players/ConfirmAction'
 import { hasPermission } from '@/utils/permissions'
 

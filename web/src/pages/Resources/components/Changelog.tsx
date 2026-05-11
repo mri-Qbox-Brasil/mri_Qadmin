@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '@/hooks/useI18n'
-import Spinner from '@/components/Spinner'
 import { Github, ExternalLink, User, Calendar, History } from 'lucide-react'
-import { MriPageHeader } from '@mriqbox/ui-kit'
+import { MriPageHeader, MriSpinner } from '@mriqbox/ui-kit'
 import { useAppState } from '@/context/AppState'
 import { MOCK_CHANGELOG } from '@/utils/mockData'
 
@@ -75,7 +74,7 @@ export default function Changelog() {
             <MriPageHeader title={t('credits.server_changelog')} icon={History} countLabel={t('credits.records')} count={changelogs.length}>
             </MriPageHeader>
             <div className="p-4 w-full h-full">
-                <Spinner />
+                <MriSpinner />
             </div>
         </div>
     )

@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/Skeleton"
+import { MriSkeleton as Skeleton } from "@mriqbox/ui-kit"
 
 export default function ActionsSkeleton() {
     return (

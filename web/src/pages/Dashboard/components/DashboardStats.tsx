@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import Spinner from '@/components/Spinner'
+import { MriSpinner } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
@@ -88,7 +88,7 @@ export default function DashboardStats() {
 
     if (loading) return (
         <div className="h-48 w-full flex items-center justify-center bg-card/50 rounded-2xl border border-dashed border-border">
-            <Spinner />
+            <MriSpinner />
         </div>
     )
 

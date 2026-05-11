@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/Skeleton"
+import { MriSkeleton as Skeleton } from "@mriqbox/ui-kit"
 import { Shield } from "lucide-react"
 
 export default function PermissionsSkeleton() {

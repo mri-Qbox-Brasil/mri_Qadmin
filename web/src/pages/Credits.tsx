@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import Spinner from '@/components/Spinner'
 import { useI18n } from '@/hooks/useI18n'
 import { Info } from 'lucide-react'
-import { MriPageHeader } from '@mriqbox/ui-kit'
+import { MriPageHeader, MriSpinner } from '@mriqbox/ui-kit'
 
 export default function Credits() {
     const [loading, setLoading] = useState(true)
@@ -14,7 +13,7 @@ export default function Credits() {
 
             {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-                    <Spinner />
+                    <MriSpinner />
                 </div>
             )}
             <iframe

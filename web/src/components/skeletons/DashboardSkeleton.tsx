@@ -1,5 +1,4 @@
-import { Skeleton } from "@/components/ui/Skeleton"
-import { MriPageHeader } from '@mriqbox/ui-kit'
+import { MriSkeleton as Skeleton, MriPageHeader } from '@mriqbox/ui-kit'
 import { LayoutDashboard } from "lucide-react"
 
 export default function DashboardSkeleton() {

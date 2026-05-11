@@ -3,9 +3,7 @@ import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
-import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
-import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
-import { MriSkeleton } from '@/components/ui/MriSkeleton'
+import { MriButton, MriPageHeader, MriSkeleton, MriExpandableSearch } from '@mriqbox/ui-kit'
 import {
     MriTable,
     MriTableHeader,

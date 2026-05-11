@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '@/hooks/useI18n'
-import Spinner from '@/components/Spinner'
+import { MriSpinner } from '@mriqbox/ui-kit'
 import { Github, ExternalLink, User, Calendar, History, GitCommit } from 'lucide-react'
 
 interface ChangelogItem {
@@ -62,7 +62,7 @@ export default function Changelog() {
                 <h2 className="text-xl font-bold text-foreground">{t('credits.changelog') || 'Changelog'}</h2>
             </div>
             <div className="flex-1 flex items-center justify-center">
-                <Spinner />
+                <MriSpinner />
             </div>
         </div>
     )
