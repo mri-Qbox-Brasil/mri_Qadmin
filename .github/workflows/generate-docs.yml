@@ -20,3 +20,4 @@ jobs:
     with:
       ai-base-url: ${{ vars.AI_BASE_URL }}
       ai-model: ${{ vars.AI_MODEL }}
+      ai-chunks: ${{ vars.AI_CHUNKS }}
