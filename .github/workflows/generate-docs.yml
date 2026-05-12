@@ -1,0 +1,21 @@
+name: Generate Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'fxmanifest.lua'
+      - '.github/templates/**'
+
+jobs:
+  docs:
+    uses: mri-Qbox-Brasil/template-fivem/.github/workflows/callable-generate-docs.yml@main
+    secrets:
+      AI_API_KEY: ${{ secrets.AI_API_KEY }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    with:
+      ai-base-url: ${{ vars.AI_BASE_URL }}
+      ai-model: ${{ vars.AI_MODEL }}
