@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.1...v1.11.2) (2026-05-12)
+
+
+### Bug Fixes
+
+* add workflow_dispatch to generate-docs ([1356f14](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/1356f1481275718d34b33062d0e6a4c8d3c887b2))
+
 ## [1.11.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.0...v1.11.1) (2026-05-11)
 
 
