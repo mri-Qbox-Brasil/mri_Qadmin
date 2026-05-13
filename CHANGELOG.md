@@ -1,3 +1,10 @@
+## [1.11.4](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.3...v1.11.4) (2026-05-13)
+
+
+### Bug Fixes
+
+* pass ai-provider var to callable generate-docs workflow ([30d4243](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/30d4243a16f74e43384fbd06b161ce43021911d3))
+
 ## [1.11.3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.2...v1.11.3) (2026-05-12)
 
 
