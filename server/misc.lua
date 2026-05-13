@@ -39,6 +39,11 @@ RegisterNetEvent('mri_Qadmin:server:delete_cid', function(_, selectedData)
         return
     end
 
+    -- Se o personagem deletado pertence a um master que está online, bloqueia
+    -- a menos que o próprio actor seja master.
+    local onlinePlayer = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+    if onlinePlayer and not CheckTargetable(src, onlinePlayer.PlayerData.source) then return end
+
     -- Cleanup em cascata: vehicles, warns, group memberships do mri_Qadmin
     -- e licenses-related bans devem ser tratados separadamente pelo unban.
     MySQL.query.await('DELETE FROM player_vehicles WHERE citizenid = ?', { citizenid })
@@ -67,9 +72,11 @@ end)
 -- Ban Player
 RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.ban_player') then return end
+    if not RateLimit(source, 'ban_player', 1000) then return end
 
     Debug(('[BanPlayer] actionKey: %s | selectedData: %s'):format(tostring(actionKey), json.encode(selectedData)))
     local player = tonumber(GetValue(selectedData, "Player"))
+    if player and not CheckTargetable(source, player) then return end
     local reason = tostring(GetValue(selectedData, "Reason") or "")
     local duration = GetValue(selectedData, "Duration") or GetValue(selectedData, "Duração")
     local time = tonumber(duration)
@@ -221,8 +228,9 @@ end)
 RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.kick_player') then return end
     local src = source
-    local playerVal = GetValue(selectedData, "Player")
-    local target = QBCore.Functions.GetPlayer(tonumber(playerVal))
+    local playerVal = tonumber(GetValue(selectedData, "Player"))
+    if not CheckTargetable(src, playerVal) then return end
+    local target = QBCore.Functions.GetPlayer(playerVal)
     local reason = GetValue(selectedData, "Reason")
 
     if not target then
@@ -413,6 +421,7 @@ end
 -- Give Money
 RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_money') then return end
+    if not RateLimit(source, 'give_money', 500) then return end
 
     local src = source
     local target = GetValue(selectedData, "Player")
@@ -449,6 +458,9 @@ end)
 -- Give Money to all
 RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_money') then return end
+    if not RateLimit(source, 'give_money_all', 5000) then
+        return QBCore.Functions.Notify(source, 'Aguarde antes de repetir essa ação.', 'error', 3000)
+    end
 
     local src = source
     local amount = GetValue(selectedData, "Amount")
@@ -475,6 +487,7 @@ end)
 -- Take Money
 RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.remove_money') then return end
+    if not RateLimit(source, 'take_money', 500) then return end
 
     local src = source
     local target = GetValue(selectedData, "Player")
@@ -519,6 +532,7 @@ end)
 local Blackout = false
 RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(_)
     if not CheckPerms(source, 'qadmin.action.blackout') then return end
+    if not RateLimit(source, 'blackout', 1500) then return end
     local src = source
 
     Blackout = not Blackout
@@ -538,6 +552,7 @@ RegisterNetEvent('mri_Qadmin:server:CuffPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.toggle_cuffs') then return end
 
     local target = tonumber(GetValue(selectedData, "Player"))
+    if not CheckTargetable(source, target) then return end
 
     if GetResourceState("ND_Police") == "started" then
         local playerIsCuffed = Player(target).state.isCuffed
@@ -587,6 +602,7 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
 
     local ped = GetValue(selectedData, "Ped Models") -- Assuming label as default if table
     local tsrc = tonumber(GetValue(selectedData, "Player"))
+    if not CheckTargetable(src, tsrc) then return end
     local Player = QBCore.Functions.GetPlayer(tsrc)
 
     if not Player then
@@ -659,6 +675,7 @@ RegisterNetEvent('mri_Qadmin:server:KillPlayer', function(_, selectedData)
 
     local src = source
     local targetId = tonumber(GetValue(selectedData, "Player"))
+    if not CheckTargetable(src, targetId) then return end
     local targetPlayer = QBCore.Functions.GetPlayer(targetId)
 
     Debug(('[mri_Qadmin] KillPlayer: Admin %s killing Target %s'):format(src, targetId))
@@ -787,8 +804,13 @@ end)
 RegisterNetEvent('mri_Qadmin:server:Announce', function(message)
     local src = source
     if not CheckPerms(src, 'qadmin.action.announcements') then return end
+    if not RateLimit(src, 'announce', 2000) then
+        return QBCore.Functions.Notify(src, 'Aguarde antes de enviar outro anúncio.', 'error', 3000)
+    end
 
     if not message or message == "" then return end
+    if type(message) ~= 'string' then return end
+    if #message > 500 then message = message:sub(1, 500) end
 
     Debug(('[mri_Qadmin] Announce: %s sent message: %s'):format(GetPlayerName(src), message))
 

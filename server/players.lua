@@ -326,7 +326,15 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
 
     local playerId = GetValue(selectedData, "Player")
     local Job = GetValue(selectedData, "Job")
-    local Grade = GetValue(selectedData, "Grade")
+    local Grade = tonumber(GetValue(selectedData, "Grade"))
+
+    if type(Job) ~= 'string' or Job == '' then
+        return TriggerClientEvent('QBCore:Notify', src, 'Job inválido.', 'error')
+    end
+    if not Grade or Grade < 0 or Grade > 100 then
+        return TriggerClientEvent('QBCore:Notify', src, 'Grade inválido.', 'error')
+    end
+    Grade = math.floor(Grade)
 
     local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
     if not Player then
@@ -389,7 +397,15 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
 
     local playerId = GetValue(selectedData, "Player")
     local Gang = GetValue(selectedData, "Gang")
-    local Grade = GetValue(selectedData, "Grade")
+    local Grade = tonumber(GetValue(selectedData, "Grade"))
+
+    if type(Gang) ~= 'string' or Gang == '' then
+        return TriggerClientEvent('QBCore:Notify', src, 'Gang inválido.', 'error')
+    end
+    if not Grade or Grade < 0 or Grade > 100 then
+        return TriggerClientEvent('QBCore:Notify', src, 'Grade inválido.', 'error')
+    end
+    Grade = math.floor(Grade)
 
     local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
     if not Player then
@@ -449,8 +465,9 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
     local src = source
     local rank = GetValue(selectedData, "Permissions")
-    local targetId = GetValue(selectedData, "Player")
-    local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
+    local targetId = tonumber(GetValue(selectedData, "Player"))
+    if not CheckTargetable(src, targetId) then return end
+    local tPlayer = QBCore.Functions.GetPlayer(targetId)
 
     if not tPlayer then
         QBCore.Functions.Notify(src, locale("notifications.not_online"), "error", 5000)

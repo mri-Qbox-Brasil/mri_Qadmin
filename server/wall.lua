@@ -186,10 +186,21 @@ RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
         wall_settings[key] = value
         MySQL.query.await('INSERT INTO mri_qadmin_settings (name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', { 'wall_' .. key, value, value })
     elseif type == 'principal' then
+        -- Whitelist de prefixos: só aceita principals já gerenciados pelo Qadmin
+        -- (mri.group.*, group.*, job.*, gang.*, char:*). Isso impede um admin
+        -- de injetar entradas que façam o sistema chamar lib.addAce em
+        -- principals arbitrários como "qadmin.master".
+        local allowed = false
+        local prefixes = { 'mri.group.', 'group.', 'job.', 'gang.', 'char:' }
+        for _, p in ipairs(prefixes) do
+            if key:sub(1, #p) == p then allowed = true; break end
+        end
+        if not allowed then
+            QBCore.Functions.Notify(src, 'Principal inválido: ' .. tostring(key), 'error')
+            return
+        end
         principal_colors[key] = value
         MySQL.query.await('INSERT INTO mri_qadmin_wall_colors (principal, color) VALUES (?, ?) ON DUPLICATE KEY UPDATE color = ?', { key, value, value })
-        -- Ensure the principal itself is an allowed ACE so IsPlayerInPrincipal checks pass
-        lib.addAce(key, key, true)
     end
 
     -- Refresh all online players colors silently

@@ -2,9 +2,11 @@ local spectating = {}
 
 RegisterNetEvent('mri_Qadmin:server:SpectateTarget', function(data, selectedData)
     if not CheckPerms(source, 'qadmin.action.spectate_player') then return end
-    local player = GetValue(selectedData, "Player")
+    local player = tonumber(GetValue(selectedData, "Player"))
     local type = "1"
     if spectating[source] then type = "0" end
+
+    if player and not CheckTargetable(source, player) then return end
 
     if player and player ~= source then
         CheckRoutingbucket(source, player)

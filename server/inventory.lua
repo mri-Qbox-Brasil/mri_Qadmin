@@ -3,8 +3,9 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.clear_inventory') then return end
 
     local src = source
-    local player = GetValue(selectedData, "Player")
-    local Player = QBCore.Functions.GetPlayer(tonumber(player))
+    local player = tonumber(GetValue(selectedData, "Player"))
+    if not CheckTargetable(src, player) then return end
+    local Player = QBCore.Functions.GetPlayer(player)
 
     if not Player then
         return QBCore.Functions.Notify(source, locale("notifications.not_online"), 'error', 7500)
@@ -58,6 +59,7 @@ RegisterNetEvent('mri_Qadmin:server:OpenInv', function(data)
     if source == targetPlayer then
         return TriggerClientEvent("QBCore:Notify", source, locale("notifications.no_self"), "error", 7500)
     end
+    if not CheckTargetable(source, targetPlayer) then return end
     exports.ox_inventory:forceOpenInventory(source, 'player', targetPlayer)
     AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Inventário: admin abriu inventário de %s'):format(GetPlayerName(targetPlayer) or targetPlayer), GetTargetData(targetPlayer))
 end)
@@ -84,39 +86,53 @@ RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(actionData, vehiclePlat
     AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Porta-malas: admin abriu porta-malas do veículo %s'):format(plate), { plate = plate })
 end)
 
+local MAX_ITEM_AMOUNT = 10000
+
 -- Give Item
 RegisterNetEvent('mri_Qadmin:server:GiveItem', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_item') then return end
+    if not RateLimit(source, 'give_item', 500) then return end
 
     local target = GetValue(selectedData, "Player")
     local item = GetValue(selectedData, "Item")
-    local amount = GetValue(selectedData, "Amount")
+    local amount = tonumber(GetValue(selectedData, "Amount"))
     local Player = QBCore.Functions.GetPlayer(tonumber(target))
 
-    if not item or not amount then return end
+    if type(item) ~= 'string' or item == '' then return end
+    if not amount or amount <= 0 then
+        return QBCore.Functions.Notify(source, "Quantidade inválida.", 'error', 5000)
+    end
+    if amount > MAX_ITEM_AMOUNT then amount = MAX_ITEM_AMOUNT end
     if not Player then
         return QBCore.Functions.Notify(source, locale("notifications.not_online"), 'error', 7500)
     end
 
     local playerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
     Player.Functions.AddItem(item, amount)
-    QBCore.Functions.Notify(source, locale("notifications.give_item", tonumber(amount) .. " " .. item, playerName), "success", 7500)
+    QBCore.Functions.Notify(source, locale("notifications.give_item", amount .. " " .. item, playerName), "success", 7500)
     local giveItemData = GetTargetData(tonumber(target))
     giveItemData.item = item
-    giveItemData.amount = tonumber(amount)
-    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Dar item: %dx %s dado a %s'):format(tonumber(amount), item, playerName), giveItemData)
+    giveItemData.amount = amount
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Dar item: %dx %s dado a %s'):format(amount, item, playerName), giveItemData)
 end)
 
 -- Give Item to All
 RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(actionKey, selectedData)
     local actionData = CheckDataFromKey(actionKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
+    if not RateLimit(source, 'give_item_all', 5000) then
+        return QBCore.Functions.Notify(source, 'Aguarde antes de repetir essa ação.', 'error', 3000)
+    end
 
     local item = GetValue(selectedData, "Item")
-    local amount = GetValue(selectedData, "Amount")
+    local amount = tonumber(GetValue(selectedData, "Amount"))
     local players = QBCore.Functions.GetPlayers()
 
-    if not item or not amount then return end
+    if type(item) ~= 'string' or item == '' then return end
+    if not amount or amount <= 0 then
+        return QBCore.Functions.Notify(source, "Quantidade inválida.", 'error', 5000)
+    end
+    if amount > MAX_ITEM_AMOUNT then amount = MAX_ITEM_AMOUNT end
 
     for _, id in pairs(players) do
         local Player = QBCore.Functions.GetPlayer(id)
@@ -125,5 +141,5 @@ RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(actionKey, selectedDa
         end
     end
     QBCore.Functions.Notify(source, locale("notifications.give_item_all", amount .. " " .. item), "success", 7500)
-    AddLog(source, 'mri_Qadmin', 'inventory', 'warn', ('Dar item a todos: %dx %s dado a todos os jogadores'):format(tonumber(amount), item), { item = item, amount = tonumber(amount) })
+    AddLog(source, 'mri_Qadmin', 'inventory', 'warn', ('Dar item a todos: %dx %s dado a todos os jogadores'):format(amount, item), { item = item, amount = amount })
 end)

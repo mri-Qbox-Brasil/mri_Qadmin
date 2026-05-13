@@ -47,6 +47,7 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerInventory', function(source,
 
     local target = tonumber(targetId)
     if not target then return nil end
+    if not CheckTargetable(source, target) then return nil end
 
     if Config.Inventory == 'ox_inventory' then
         local inventory = exports.ox_inventory:GetInventory(target)
@@ -168,6 +169,12 @@ end)
 lib.callback.register('mri_Qadmin:server:RemoveInventoryItem', function(source, targetId, item, count, slot, invType)
     if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
 
+    count = tonumber(count)
+    if not count or count <= 0 then return false end
+    if count > 1000000 then return false end
+    if type(item) ~= 'string' or item == '' then return false end
+    if invType and not ({ player = true, trunk = true, glovebox = true })[invType] then return false end
+
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
 
@@ -224,6 +231,12 @@ end)
 lib.callback.register('mri_Qadmin:server:GiveInventoryItem', function(source, targetId, item, count, invType)
     if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
 
+    count = tonumber(count)
+    if not count or count <= 0 then return false end
+    if count > 1000000 then return false end
+    if type(item) ~= 'string' or item == '' then return false end
+    if invType and not ({ player = true, trunk = true, glovebox = true })[invType] then return false end
+
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
 
@@ -246,6 +259,12 @@ end)
 
 lib.callback.register('mri_Qadmin:server:TransferItemToSelf', function(source, targetId, item, count, slot, invType)
     if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
+
+    count = tonumber(count)
+    if not count or count <= 0 then return false end
+    if count > 1000000 then return false end
+    if type(item) ~= 'string' or item == '' then return false end
+    if invType and not ({ player = true, trunk = true, glovebox = true })[invType] then return false end
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
@@ -311,7 +330,24 @@ end)
 
 lib.callback.register('mri_Qadmin:server:MoveInventoryItem', function(source, data)
     if not CheckPerms(source, 'qadmin.action.modify_inventory') then return false end
+    if type(data) ~= 'table' then return false end
     Debug("Move Request:", json.encode(data))
+
+    -- Validate count: must be positive integer
+    local count = tonumber(data.count)
+    if not count or count <= 0 then return false end
+    if count > 1000000 then return false end -- cap absurdamente alto, mas finito
+    data.count = math.floor(count)
+
+    -- Validate slot fields
+    local fromSlot = tonumber(data.fromSlot)
+    local toSlot = tonumber(data.toSlot)
+    if not fromSlot or not toSlot then return false end
+
+    -- Whitelist types
+    local VALID_TYPES = { player = true, trunk = true, glovebox = true }
+    if data.fromType and not VALID_TYPES[data.fromType] then return false end
+    if data.toType and not VALID_TYPES[data.toType] then return false end
 
     local fromTarget = (not data.fromType or data.fromType == 'player') and tonumber(data.fromId) or (data.fromType == 'trunk' and 'trunk'..data.fromId or 'glovebox'..data.fromId)
     local toTarget = (not data.toType or data.toType == 'player') and tonumber(data.toId) or (data.toType == 'trunk' and 'trunk'..data.toId or 'glovebox'..data.toId)

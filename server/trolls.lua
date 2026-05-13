@@ -4,7 +4,8 @@ RegisterNetEvent('mri_Qadmin:server:FreezePlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.freeze_player') then return end
     local src = source
 
-    local target = selectedData["Player"].value
+    local target = tonumber(selectedData["Player"] and selectedData["Player"].value)
+    if not CheckTargetable(src, target) then return end
 
     local ped = GetPlayerPed(target)
     local Player = QBCore.Functions.GetPlayer(target)
@@ -31,7 +32,8 @@ RegisterNetEvent('mri_Qadmin:server:DrunkPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.drunk_player') then return end
 
     local src = source
-    local target = selectedData["Player"].value
+    local target = tonumber(selectedData["Player"] and selectedData["Player"].value)
+    if not CheckTargetable(src, target) then return end
     local Player = QBCore.Functions.GetPlayer(target)
 
     if not Player then

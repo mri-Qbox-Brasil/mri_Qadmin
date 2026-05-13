@@ -285,3 +285,61 @@ function GetAdminPlayers()
     end
     return admins
 end
+
+--- Garante que `source` pode aplicar ação destrutiva em `target`.
+--- Regra: ninguém abaixo de master pode tocar em um master. Self-target
+--- também é permitido livremente (admin pode kickar a si mesmo, por ex.).
+--- @param source number admin que está agindo
+--- @param target number player alvo da ação
+--- @return boolean allowed, string|nil reason
+function CanTargetPlayer(source, target)
+    if not target or target == 0 then return false, "target inválido" end
+    if source == target then return true end
+    -- Master pode mirar qualquer um
+    if HasPerms(source, 'qadmin.master') then return true end
+    -- Não-master não pode mirar master
+    if HasPerms(target, 'qadmin.master') then
+        return false, "Alvo é Master Admin — apenas outro Master pode aplicar essa ação."
+    end
+    return true
+end
+
+--- Helper: notifica e retorna false se o alvo não pode ser atingido.
+--- Encapsula o pattern repetido nos NetEvents.
+function CheckTargetable(source, target)
+    local ok, reason = CanTargetPlayer(source, target)
+    if not ok then
+        local QBCore = exports['qb-core']:GetCoreObject()
+        QBCore.Functions.Notify(source, reason or "Acesso negado.", "error", 5000)
+        AddLog(source, 'mri_Qadmin', 'security', 'warn', ('Hierarquia: %s tentou ação em %s mas foi bloqueado (%s)'):format(GetPlayerName(source) or source, GetPlayerName(target) or target, reason or ''), { actor = source, target = target })
+        return false
+    end
+    return true
+end
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Rate limiting: protege contra admin malicioso ou client comprometido
+-- chamando events sensíveis em loop. Uso: RateLimit(source, "key", minIntervalMs)
+-- Retorna true se passou, false se bloqueado.
+-- ─────────────────────────────────────────────────────────────────────────────
+local rateBuckets = {} -- [src] = { [key] = lastMs }
+
+function RateLimit(src, key, minIntervalMs)
+    if not src or src <= 0 then return true end
+    local now = GetGameTimer()
+    local bucket = rateBuckets[src]
+    if not bucket then
+        bucket = {}
+        rateBuckets[src] = bucket
+    end
+    local last = bucket[key]
+    if last and (now - last) < minIntervalMs then
+        return false
+    end
+    bucket[key] = now
+    return true
+end
+
+AddEventHandler('playerDropped', function()
+    rateBuckets[source] = nil
+end)
