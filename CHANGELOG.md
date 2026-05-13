@@ -1,3 +1,10 @@
+## [1.11.3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.2...v1.11.3) (2026-05-12)
+
+
+### Bug Fixes
+
+* pass AI_CHUNKS variable to generate-docs callable workflow ([9009115](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/90091159dd0660d3f406bf4920c527431cb67d9a))
+
 ## [1.11.2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.1...v1.11.2) (2026-05-12)
 
 
