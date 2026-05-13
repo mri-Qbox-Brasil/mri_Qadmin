@@ -1,4 +1,5 @@
 node_modules
+.env
 mri_Qadmin.code-workspace
 SECURITY_AUDIT.md
 server/server_secrets.json
