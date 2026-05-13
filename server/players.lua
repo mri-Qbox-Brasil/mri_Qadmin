@@ -439,6 +439,11 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
 end)
 
 -- Set Perms
+-- SECURITY: ranks que escalam para god/admin do QBCore só podem ser atribuídos
+-- por quem tem qadmin.master, senão um admin de tier médio promoveria players
+-- ao god QBCore (que auto-sincroniza para o grupo "god" do Qadmin via
+-- QBCoreAutoSync).
+local ELEVATED_QBCORE_RANKS = { god = true, admin = true, superadmin = true }
 RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
     local actionData = CheckDataFromKey(dataKey)
     if not actionData or not CheckPerms(source, actionData.perms) then return end
@@ -452,9 +457,21 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
         return
     end
 
+    rank = tostring(rank or ''):lower()
+    if rank == '' then
+        QBCore.Functions.Notify(src, "Rank inválido.", "error", 5000)
+        return
+    end
+
+    if ELEVATED_QBCORE_RANKS[rank] and not HasPerms(src, 'qadmin.master') then
+        QBCore.Functions.Notify(src, "Apenas Master Admins podem atribuir o rank '" .. rank .. "'.", "error", 5000)
+        AddLog(src, 'mri_Qadmin', 'players', 'error', ('Tentativa de escalada: %s tentou atribuir rank "%s"'):format(GetPlayerName(src), rank), { target = targetId, rank = rank })
+        return
+    end
+
     local name = tPlayer.PlayerData.charinfo.firstname .. ' ' .. tPlayer.PlayerData.charinfo.lastname
 
-    QBCore.Functions.AddPermission(tPlayer.PlayerData.source, tostring(rank))
+    QBCore.Functions.AddPermission(tPlayer.PlayerData.source, rank)
     QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("notifications.player_perms", name, rank), 'success', 5000)
     local permLogData = GetTargetData(tonumber(targetId))
     permLogData.rank = rank
@@ -494,13 +511,36 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
         return
     end
 
+    local numValue = tonumber(value)
+    if not numValue then
+        QBCore.Functions.Notify(src, "Valor de vital inválido.", "error", 5000)
+        return
+    end
+
+    -- Clamp ranges para evitar valores absurdos / negativos
+    local VITAL_RANGES = {
+        health = { min = 0, max = 200 },
+        armor  = { min = 0, max = 100 },
+        hunger = { min = 0, max = 100 },
+        thirst = { min = 0, max = 100 },
+        stress = { min = 0, max = 100 },
+    }
+    local range = VITAL_RANGES[vital]
+    if not range then
+        QBCore.Functions.Notify(src, "Vital desconhecido: " .. tostring(vital), "error", 5000)
+        return
+    end
+    if numValue < range.min then numValue = range.min end
+    if numValue > range.max then numValue = range.max end
+    value = numValue
+
     local ped = GetPlayerPed(tonumber(targetId))
     if vital == "health" then
-        TriggerClientEvent("mri_Qadmin:client:SetHealth", tonumber(targetId), tonumber(value))
+        TriggerClientEvent("mri_Qadmin:client:SetHealth", tonumber(targetId), numValue)
     elseif vital == "armor" then
-        SetPedArmour(ped, tonumber(value))
+        SetPedArmour(ped, numValue)
     elseif vital == "hunger" or vital == "thirst" or vital == "stress" then
-        tPlayer.Functions.SetMetaData(vital, tonumber(value))
+        tPlayer.Functions.SetMetaData(vital, numValue)
     end
 
     local targetName = tPlayer.PlayerData.charinfo.firstname .. ' ' .. tPlayer.PlayerData.charinfo.lastname

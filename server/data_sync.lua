@@ -14,20 +14,29 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         serverInfo.totalCrypto = nil
     end
 
+    -- PII gate: getPlayers retorna license/IP/discord/steam/fivem dos jogadores.
+    -- Não enviar nada disso para quem só tem qadmin.open mas não qadmin.page.players.
+    local playersPayload
+    if HasPerms(src, 'qadmin.page.players') then
+        playersPayload = getPlayers(1, 100, "")
+    else
+        playersPayload = { data = {}, total = 0, pages = 0 }
+    end
+
     local data = {
         serverInfo = serverInfo,
-        resources = RefreshResources(),
+        resources = HasPerms(src, 'qadmin.page.resources') and RefreshResources() or {},
         permissions = GetUserPermissions(src),
         permissionDefinitions = GetPermissionDefinitions(),
         actions = GetAllDynamicActions(),
-        groups = GetGroupsData(),
-        items = GetItemsList(),
-        vehicles = GetVehiclesList(),
+        groups = HasPerms(src, 'qadmin.page.groups') and GetGroupsData() or { jobs = {}, gangs = {} },
+        items = HasPerms(src, 'qadmin.page.items') and GetItemsList() or {},
+        vehicles = HasPerms(src, 'qadmin.page.vehicles') and GetVehiclesList() or {},
         commands = GetCommandsList(src),
         peds = Peds or {},
         locations = {},
-        settings = GetPrimitiveSettings(),
-        players = getPlayers(1, 100, ""),
+        settings = HasPerms(src, 'qadmin.page.settings') and GetPrimitiveSettings() or {},
+        players = playersPayload,
         qboxEnabled = GetResourceState("mri_Qbox") == 'started'
     }
 

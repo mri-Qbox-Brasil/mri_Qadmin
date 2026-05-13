@@ -51,6 +51,33 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
     local src = source
     if not CheckPerms(src, 'qadmin.action.admincar') then return end
 
+    -- SECURITY: nunca confiar em vehicle.model/hash vindos do cliente.
+    -- Resolver o model a partir de QBCore.Shared.Vehicles usando a chave que
+    -- o cliente envia em `mods.model` (já vem de lib.getVehicleProperties).
+    local modelKey = type(mods) == 'table' and tostring(mods.model or '') or ''
+    if modelKey == '' then
+        return TriggerClientEvent('QBCore:Notify', src, locale("notifications.cannot_store_veh"), 'error', 3000)
+    end
+
+    -- Em FiveM, mods.model é o hash (number/uint). Buscamos o trusted entry
+    -- correspondente no shared table.
+    local trustedEntry
+    for k, v in pairs(QBCore.Shared.Vehicles or {}) do
+        if tostring(v.hash) == modelKey or tostring(k) == modelKey then
+            trustedEntry = v
+            trustedEntry._sharedKey = k
+            break
+        end
+    end
+    if not trustedEntry then
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'error', ('Admin Car rejeitado: modelo desconhecido %s'):format(modelKey), { received = modelKey })
+        return TriggerClientEvent('QBCore:Notify', src, locale("notifications.cannot_store_veh"), 'error', 3000)
+    end
+
+    if type(plate) ~= 'string' or #plate == 0 or #plate > 8 then
+        return TriggerClientEvent('QBCore:Notify', src, locale("notifications.plate_max"), 'error', 3000)
+    end
+
     local Player = QBCore.Functions.GetPlayer(src)
     local result = MySQL.query.await('SELECT plate FROM player_vehicles WHERE plate = ?', { plate })
 
@@ -60,14 +87,14 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
             {
                 Player.PlayerData.license,
                 Player.PlayerData.citizenid,
-                vehicle.model,
-                vehicle.hash,
+                trustedEntry.model or trustedEntry._sharedKey,
+                trustedEntry.hash,
                 json.encode(mods),
                 plate,
                 0
             })
         TriggerClientEvent('QBCore:Notify', src, locale("veh_owner"), 'success', 5000)
-        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Admin Car: veículo %s salvo com placa %s'):format(vehicle.model, plate), { model = vehicle.model, plate = plate })
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Admin Car: veículo %s salvo com placa %s'):format(trustedEntry.model or trustedEntry._sharedKey, plate), { model = trustedEntry.model, plate = plate })
     else
         TriggerClientEvent('QBCore:Notify', src, locale("notifications.u_veh_owner"), 'error', 3000)
     end
@@ -237,7 +264,16 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     local src = source
     if not CheckPerms(src, 'qadmin.action.change_plate') then return end
 
+    if type(newPlate) ~= 'string' or type(currentPlate) ~= 'string' then return end
+    if #newPlate == 0 or #newPlate > 8 then
+        return QBCore.Functions.Notify(src, locale("notifications.plate_max"), 'error', 5000)
+    end
+    if #currentPlate == 0 or #currentPlate > 16 then return end
+
     newPlate = newPlate:upper()
+    currentPlate = currentPlate:upper()
+
+    if newPlate == currentPlate then return end
 
     if Config.Inventory == 'ox_inventory' then
         exports.ox_inventory:UpdateVehicle(currentPlate, newPlate)

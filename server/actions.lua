@@ -81,10 +81,58 @@ lib.callback.register('mri_Qadmin:callback:GetActions', function(source)
     return GetAllDynamicActions()
 end)
 
+-- SECURITY: limita o `event` salvo em uma action a prefixos seguros, para que
+-- admin com qadmin.action.manage_actions não consiga forjar uma action que
+-- dispare server events arbitrários (ex.: txAdmin) através de outros admins.
+local ALLOWED_EVENT_PREFIXES = { 'mri_Qadmin:', 'mri_wall:' }
+local ALLOWED_CATEGORIES = { Actions = true, PlayerActions = true, OtherActions = true }
+local ALLOWED_ACTION_TYPES = { client = true, server = true, command = true }
+
+local function eventIsAllowed(ev)
+    if type(ev) ~= 'string' or ev == '' then return false end
+    for _, prefix in ipairs(ALLOWED_EVENT_PREFIXES) do
+        if ev:sub(1, #prefix) == prefix then return true end
+    end
+    return false
+end
+
+local function validateActionPayload(data)
+    if type(data) ~= 'table' then return false, 'payload inválido' end
+    if data.event and not eventIsAllowed(data.event) then
+        return false, 'event fora do whitelist: ' .. tostring(data.event)
+    end
+    if data.type and not ALLOWED_ACTION_TYPES[data.type] then
+        return false, 'type inválido: ' .. tostring(data.type)
+    end
+    if data.dropdown and type(data.dropdown) == 'table' then
+        for _, entry in pairs(data.dropdown) do
+            if type(entry) == 'table' and entry.event and not eventIsAllowed(entry.event) then
+                return false, 'dropdown.event fora do whitelist: ' .. tostring(entry.event)
+            end
+            if type(entry) == 'table' and entry.type and not ALLOWED_ACTION_TYPES[entry.type] then
+                return false, 'dropdown.type inválido: ' .. tostring(entry.type)
+            end
+        end
+    end
+    return true
+end
+
 -- Endpoint to Save or Create an action
 RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
     local src = source
     if not HasPerms(src, 'qadmin.action.manage_actions') then return end
+
+    if type(id) ~= 'string' or id == '' or #id > 64 then
+        return QBCore.Functions.Notify(src, 'ID de ação inválido.', 'error')
+    end
+    if not ALLOWED_CATEGORIES[category] then
+        return QBCore.Functions.Notify(src, 'Categoria inválida.', 'error')
+    end
+    local ok, err = validateActionPayload(data)
+    if not ok then
+        AddLog(src, 'mri_Qadmin', 'server', 'error', ('Action rejeitada: %s'):format(err), { id = id, category = category })
+        return QBCore.Functions.Notify(src, 'Ação rejeitada: ' .. err, 'error')
+    end
 
     local jsonString = json.encode(data)
 
@@ -116,6 +164,13 @@ end)
 RegisterNetEvent('mri_Qadmin:server:DeleteAction', function(id, category)
     local src = source
     if not HasPerms(src, 'qadmin.action.manage_actions') then return end
+
+    if type(id) ~= 'string' or id == '' or #id > 64 then
+        return QBCore.Functions.Notify(src, 'ID de ação inválido.', 'error')
+    end
+    if not ALLOWED_CATEGORIES[category] then
+        return QBCore.Functions.Notify(src, 'Categoria inválida.', 'error')
+    end
 
     MySQL.query.await('DELETE FROM mri_qadmin_actions WHERE id = ?', {id})
 
