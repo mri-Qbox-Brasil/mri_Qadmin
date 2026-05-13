@@ -499,7 +499,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Self Tools */}
-                        {(canDo('qadmin.action.noclip') || canDo('qadmin.action.god_mode') || canDo('qadmin.action.invisibility') || canDo('qadmin.action.blackout') || canDo('qadmin.action.refuel_vehicle')) && (
+                        {(canDo('qadmin.action.noclip') || canDo('qadmin.action.god_mode') || canDo('qadmin.action.invisible') || canDo('qadmin.action.blackout') || canDo('qadmin.action.refuel_vehicle')) && (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                                 {canDo('qadmin.action.noclip') && (
                                     <MriActionCard

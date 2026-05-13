@@ -150,7 +150,6 @@ local PERM_DEFINITIONS = {
     { id = 'qadmin.action.set_ped',                 category = 'actions'     },
     { id = 'qadmin.action.god_mode',                category = 'actions'     },
     { id = 'qadmin.action.noclip',                  category = 'actions'     },
-    { id = 'qadmin.action.invisibility',            category = 'actions'     },
     { id = 'qadmin.action.invisible',               category = 'actions'     },
     { id = 'qadmin.action.set_ammo',                category = 'actions'     },
     { id = 'qadmin.action.infinite_ammo',           category = 'actions'     },
@@ -170,7 +169,6 @@ local PERM_DEFINITIONS = {
     { id = 'qadmin.action.open_stash',              category = 'actions'     },
     { id = 'qadmin.action.spawn_vehicle',           category = 'actions'     },
     { id = 'qadmin.action.delete_vehicle',          category = 'actions'     },
-    { id = 'qadmin.action.admin_car',               category = 'actions'     },
     { id = 'qadmin.action.admincar',                category = 'actions'     },
     { id = 'qadmin.action.give_car',                category = 'actions'     },
     { id = 'qadmin.action.change_plate',            category = 'actions'     },
@@ -428,7 +426,7 @@ end
 
 -- Callbacks
 lib.callback.register('mri_Qadmin:callback:GetGroups', function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then return {} end
+    if not HasPerms(source, 'qadmin.page.permissions') then return {} end
 
     local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups ORDER BY createdAt DESC') or {}
     local perms = MySQL.query.await('SELECT * FROM mri_qadmin_group_permissions') or {}
@@ -447,7 +445,7 @@ end)
 
 -- Callbacks: Players and Groups
 lib.callback.register('mri_Qadmin:callback:GetCharacterGroups', function(source, citizenid)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then return {} end
+    if not HasPerms(source, 'qadmin.page.permissions') then return {} end
     local current = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid}) or {}
     local list = {}
     for _, g in ipairs(current) do
@@ -457,7 +455,7 @@ lib.callback.register('mri_Qadmin:callback:GetCharacterGroups', function(source,
 end)
 
 lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label, description)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+    if not HasPerms(source, 'qadmin.page.permissions') then
         return false, "Acesso Negado."
     end
 
@@ -492,7 +490,7 @@ lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label,
 end)
 
 lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+    if not HasPerms(source, 'qadmin.page.permissions') then
         return false, "Acesso Negado."
     end
 
@@ -526,7 +524,7 @@ lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
 end)
 
 lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(source, groupId, permissionsArray)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+    if not HasPerms(source, 'qadmin.page.permissions') then
         return false, "Acesso Negado."
     end
 
@@ -561,7 +559,7 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
 end)
 
 lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source, citizenid, groupsArray)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.permissions') and not IsPlayerAceAllowed(source, 'qadmin.master') then
+    if not HasPerms(source, 'qadmin.page.permissions') then
         return false, "Acesso Negado."
     end
 
@@ -906,7 +904,7 @@ end)
 
 RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
     local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.permissions') and not IsPlayerAceAllowed(src, 'qadmin.master') then return end
+    if not HasPerms(src, 'qadmin.page.permissions') then return end
 
     local count = 0
     MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {'admin', 'Administrador', 'Default Admin Group'})

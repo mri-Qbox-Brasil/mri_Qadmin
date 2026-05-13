@@ -7,8 +7,15 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
 
     Debug(('[mri_Qadmin] Iniciando envio latente de dados iniciais para %s (%s)'):format(GetPlayerName(src), src))
 
+    local serverInfo = GetServerData()
+    if not HasPerms(src, 'qadmin.action.info_admin') then
+        serverInfo.totalCash = nil
+        serverInfo.totalBank = nil
+        serverInfo.totalCrypto = nil
+    end
+
     local data = {
-        serverInfo = GetServerData(),
+        serverInfo = serverInfo,
         resources = RefreshResources(),
         permissions = GetUserPermissions(src),
         permissionDefinitions = GetPermissionDefinitions(),

@@ -89,6 +89,7 @@ end
 _G.GetGroupsData = getGroups
 
 lib.callback.register('mri_Qadmin:callback:GetGroupsData', function(_source)
+    if not CheckPerms(_source, 'qadmin.page.groups') then return { jobs = {}, gangs = {} } end
     return getGroups()
 end)
 

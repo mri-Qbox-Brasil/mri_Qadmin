@@ -548,7 +548,7 @@ lib.callback.register('mri_Qadmin:callback:GetLogSettings', function(source)
 end)
 
 lib.callback.register('mri_Qadmin:callback:SaveLogSettings', function(source, data)
-    if not CheckPerms(source, 'qadmin.logs.settings') then return false end
+    if not CheckPerms(source, 'qadmin.action.manage_settings') then return false end
     if not data then return false end
 
     local newCats = {}

@@ -1,10 +1,10 @@
 return {
     Actions = {
-        ["admin_car"] = {
+        ["admincar"] = {
             label = "Admin Car",
             type = "client",
             event = "mri_Qadmin:client:Admincar",
-            perms = "qadmin.action.admin_car",
+            perms = "qadmin.action.admincar",
         },
 
         ["ban_player"] = {

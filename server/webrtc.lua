@@ -17,6 +17,7 @@ end)
 -- Stop WebRTC streaming on the target player
 RegisterServerEvent('mri_Qadmin:server:StopPlayerScreen', function(targetId, viewerId)
     local src = source
+    if not CheckPerms(src, 'qadmin.page.livescreens') then return end
     local target = tonumber(targetId)
     if target and target ~= 0 then
         TriggerClientEvent('mri_Qadmin:client:StopWebRTC', target, viewerId)

@@ -100,7 +100,7 @@ Este documento serve como a fonte única de verdade para todas as permissões do
 | :--- | :--- | :--- |
 | `qadmin.action.god_mode` | God Mode | Imunidade a dano |
 | `qadmin.action.noclip` | Noclip | Atravessar paredes e voar |
-| `qadmin.action.invisibility` | Invisibility | Ficar invisível para outros |
+| `qadmin.action.invisible` | Invisibility | Ficar invisível para outros |
 | `qadmin.action.tag` | Player Tags | Ver nomes/IDs acima dos players |
 | `qadmin.action.staff_clock_in` | Clock In | Entrar em serviço |
 | `qadmin.action.staff_clock_out` | Clock Out | Sair de serviço |

@@ -483,7 +483,9 @@ end)
 
 -- Set Vital (Unified event for Health, Armor, Hunger, Thirst, Stress)
 RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
-    if not CheckPerms(source, 'qadmin.action.revive') then return end
+    -- Health usa revive perm (curar vida); demais vitals usam set_vital
+    local requiredPerm = vital == 'health' and 'qadmin.action.revive' or 'qadmin.action.set_vital'
+    if not CheckPerms(source, requiredPerm) then return end
     local src = source
     local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
 

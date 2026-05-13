@@ -5,6 +5,7 @@ local viewers = {} -- targetId -> {adminSource1, adminSource2, ...}
 -- When an admin starts watching a player's screen
 RegisterNetEvent('mri_Qadmin:server:StartWatchingPlayer', function(targetId)
     local adminSrc = source
+    if not CheckPerms(adminSrc, 'qadmin.action.spectate_player') and not CheckPerms(adminSrc, 'qadmin.page.livescreens') then return end
     local target = tonumber(targetId)
     if not target then return end
 
@@ -32,6 +33,12 @@ RegisterNetEvent('mri_Qadmin:server:StopWatchingPlayer', function(targetId)
     local adminSrc = source
     local target = tonumber(targetId)
     if not target or not viewers[target] then return end
+    -- Soft guard: só permite remover a si próprio do viewers list
+    local isViewer = false
+    for _, src in ipairs(viewers[target]) do
+        if src == adminSrc then isViewer = true; break end
+    end
+    if not isViewer then return end
 
     local removed = false
     for i, src in ipairs(viewers[target]) do

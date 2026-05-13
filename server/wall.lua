@@ -130,6 +130,9 @@ RegisterNetEvent("mri_Qadmin:server:enableWall", function(data)
 end)
 
 QBCore.Functions.CreateCallback('mri_wall:getWallInfos', function(_source, cb)
+    if not HasPerms(_source, 'qadmin.action.enable_wall') and not HasPerms(_source, 'qadmin.master') then
+        return cb({})
+    end
     cb(wall_infos)
 end)
 
@@ -137,13 +140,16 @@ end)
 -- CONNECT/DISCONNECT
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- Player permissions ready event (replaces standard PlayerLoaded to avoid race conditions)
-RegisterNetEvent('mri_Qadmin:server:PlayerPermissionsReady', function(source)
-    updateWallInfos(source)
+-- IMPORTANTE: aceita apenas trigger interno (source == "") — clients não podem
+-- forjar o source via TriggerServerEvent.
+AddEventHandler('mri_Qadmin:server:PlayerPermissionsReady', function(target)
+    if source ~= "" then return end -- bloqueia chamadas vindas do client
+    updateWallInfos(target)
 end)
 
 -- Global permissions loaded event (initialization)
--- Global permissions loaded event (initialization)
-RegisterNetEvent('mri_Qadmin:server:PermissionsLoaded', function()
+AddEventHandler('mri_Qadmin:server:PermissionsLoaded', function()
+    if source ~= "" then return end -- bloqueia chamadas vindas do client
     local Players = QBCore.Functions.GetPlayers()
     LoadWallData()
     for _, PlayerId in pairs(Players) do

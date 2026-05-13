@@ -160,7 +160,7 @@ Esses três campos são excluídos do bloco `Data` do embed — ficam apenas em 
 | Permissão              | O que libera                                     |
 |------------------------|--------------------------------------------------|
 | `qadmin.page.logs`     | Ver logs e receber atualizações em tempo real    |
-| `qadmin.logs.settings` | Editar configurações de logs pelo painel         |
+| `qadmin.action.manage_settings` | Editar configurações de logs pelo painel         |
 
 ---
 

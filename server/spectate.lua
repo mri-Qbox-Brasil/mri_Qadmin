@@ -32,11 +32,13 @@ AddEventHandler('mri_Qadmin:spectate', function(target, on, source, perms)
 end)
 
 RegisterNetEvent('mri_Qadmin:spectate:teleport', function(target)
-    local source = source
+    local src = source
+    if not CheckPerms(src, 'qadmin.action.spectate_player') then return end
+    if not spectating[src] then return end
     local ped = GetPlayerPed(target)
     if DoesEntityExist(ped) then
         local targetCoords = GetEntityCoords(ped)
-        SetEntityCoords(GetPlayerPed(source), targetCoords.x, targetCoords.y, targetCoords.z - 10)
-        FreezeEntityPosition(GetPlayerPed(source), true)
+        SetEntityCoords(GetPlayerPed(src), targetCoords.x, targetCoords.y, targetCoords.z - 10)
+        FreezeEntityPosition(GetPlayerPed(src), true)
     end
 end)

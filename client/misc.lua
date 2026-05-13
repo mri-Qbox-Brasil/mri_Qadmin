@@ -164,7 +164,7 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
 end)
 
 RegisterNetEvent('mri_Qadmin:client:SetAmmoAdmin', function()
-    if not CheckPerms("qadmin.command.setammo") then return end
+    if not CheckPerms("qadmin.action.set_ammo") then return end
     local weapon = GetSelectedPedWeapon(cache.ped)
     local ammo = 999
     if weapon ~= nil then

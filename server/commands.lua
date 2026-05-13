@@ -44,6 +44,7 @@ end)
 lib.addCommand('adm', {
     help = 'Open the admin menu',
 }, function(source)
+    if not HasPerms(source, 'qadmin.open') then return end
     TriggerClientEvent('mri_Qadmin:client:OpenUI', source)
 end)
 
@@ -57,47 +58,55 @@ end)
 lib.addCommand("vector2", {
     help = 'Copy vector2 coordinates to clipboard',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.toggle_coords') then return end
     TriggerClientEvent('mri_Qadmin:client:CopyCoords', source, "vector2")
 end)
 
 lib.addCommand("vec2", {
     help = 'Copy vector2 coordinates to clipboard',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.toggle_coords') then return end
     TriggerClientEvent('mri_Qadmin:client:CopyCoords', source, "vector2")
 end)
 
 lib.addCommand("vector3", {
     help = 'Copy vector3 coordinates to clipboard',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.toggle_coords') then return end
     TriggerClientEvent('mri_Qadmin:client:CopyCoords', source, "vector3")
 end)
 
 lib.addCommand("vec3", {
     help = 'Copy vector3 coordinates to clipboard',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.toggle_coords') then return end
     TriggerClientEvent('mri_Qadmin:client:CopyCoords', source, "vector3")
 end)
 
 lib.addCommand("vector4", {
     help = 'Copy vector4 coordinates to clipboard',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.toggle_coords') then return end
     TriggerClientEvent('mri_Qadmin:client:CopyCoords', source, "vector4")
 end)
 
 lib.addCommand("vec4", {
     help = 'Copy vector4 coordinates to clipboard',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.toggle_coords') then return end
     TriggerClientEvent('mri_Qadmin:client:CopyCoords', source, "vector4")
 end)
 
 lib.addCommand("heading", {
     help = 'Copy heading to clipboard',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.toggle_coords') then return end
     TriggerClientEvent('mri_Qadmin:client:CopyCoords', source, "heading")
 end)
 
 lib.addCommand("setammo", {
     help = 'Set ammo to 999 for current weapon',
 }, function(source)
+    if not HasPerms(source, 'qadmin.action.set_ammo') then return end
     TriggerClientEvent('mri_Qadmin:client:SetAmmoAdmin', source)
 end)

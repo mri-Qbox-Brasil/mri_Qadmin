@@ -77,14 +77,14 @@ end)
 
 -- API Callbacks for NUI (CRUD operations for future UI tab)
 lib.callback.register('mri_Qadmin:callback:GetActions', function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.open') then return {} end
+    if not HasPerms(source, 'qadmin.open') then return {} end
     return GetAllDynamicActions()
 end)
 
 -- Endpoint to Save or Create an action
 RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
     local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.settings') then return end
+    if not HasPerms(src, 'qadmin.action.manage_actions') then return end
 
     local jsonString = json.encode(data)
 
@@ -115,7 +115,7 @@ end)
 -- Endpoint to Delete an action
 RegisterNetEvent('mri_Qadmin:server:DeleteAction', function(id, category)
     local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.settings') then return end
+    if not HasPerms(src, 'qadmin.action.manage_actions') then return end
 
     MySQL.query.await('DELETE FROM mri_qadmin_actions WHERE id = ?', {id})
 

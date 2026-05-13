@@ -5,7 +5,7 @@ local function notifyPlayers(src)
     local players = QBCore.Functions.GetPlayers()
     for i = 1, #players do
         local p = players[i]
-        if p ~= src and IsPlayerAceAllowed(p, 'qadmin.page.staffchat') then
+        if p ~= src and HasPerms(p, 'qadmin.page.staffchat') then
             QBCore.Functions.Notify(p, locale("notifications.new_staffchat"), "inform", 7500)
         end
     end
@@ -51,8 +51,11 @@ end)
 
 RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, mentions)
     local src = source
-    if not IsPlayerAceAllowed(src, 'qadmin.page.staffchat') then
+    if not HasPerms(src, 'qadmin.page.staffchat') then
         return QBCore.Functions.Notify(src, "Sem permissão para usar o chat.", "error")
+    end
+    if not HasPerms(src, 'qadmin.action.staff_chat_send') then
+        return QBCore.Functions.Notify(src, "Sem permissão para enviar mensagens.", "error")
     end
 
     local player = QBCore.Functions.GetPlayer(src)
@@ -84,7 +87,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, men
     for i = 1, #players do
         local p = players[i]
 
-        if IsPlayerAceAllowed(p, 'qadmin.page.staffchat') then
+        if HasPerms(p, 'qadmin.page.staffchat') then
             TriggerClientEvent('mri_Qadmin:client:newMessage', p, newMsg)
         end
 
@@ -98,11 +101,11 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, men
 end)
 
 lib.callback.register('mri_Qadmin:callback:GetStaffPlayers', function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.staffchat') then return {} end
+    if not HasPerms(source, 'qadmin.page.staffchat') then return {} end
     local staff = {}
     local players = QBCore.Functions.GetPlayers()
     for _, p in ipairs(players) do
-        if IsPlayerAceAllowed(p, 'qadmin.page.staffchat') then
+        if HasPerms(p, 'qadmin.page.staffchat') then
             local player = QBCore.Functions.GetPlayer(p)
             if player then
                 local ci = player.PlayerData.charinfo
@@ -117,7 +120,7 @@ lib.callback.register('mri_Qadmin:callback:GetStaffPlayers', function(source)
 end)
 
 lib.callback.register("mri_Qadmin:callback:GetMessages", function(source)
-    if not IsPlayerAceAllowed(source, 'qadmin.page.staffchat') then return {} end
+    if not HasPerms(source, 'qadmin.page.staffchat') then return {} end
     return messages
 end)
 

@@ -38,6 +38,13 @@ lib.callback.register(
     "mri_Qadmin:callback:GetServerInfo",
     function(source)
         if not CheckPerms(source, 'qadmin.open') then return nil end
-        return GetServerData()
+        local data = GetServerData()
+        -- Mascarar totais sensíveis se o player não tem perm de info_admin
+        if not HasPerms(source, 'qadmin.action.info_admin') then
+            data.totalCash = nil
+            data.totalBank = nil
+            data.totalCrypto = nil
+        end
+        return data
     end
 )
