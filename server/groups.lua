@@ -118,8 +118,17 @@ lib.callback.register('mri_Qadmin:callback:GetGroupMembers', function(source, gr
 
     -- Process Offline Players from DB
     -- Note: This is still heavy if not indexed, but much better than fetching ALL players
-    local field = (groupType == 'job') and 'job' or 'gang'
-    local results = MySQL.query.await("SELECT charinfo, citizenid, " .. field .. " as group_info FROM players WHERE " .. field .. " LIKE ?", { '%' .. groupName .. '%' })
+    -- SECURITY: whitelist field para evitar SQL injection via groupType, e
+    -- sanitiza groupName para LIKE wildcard abuse.
+    local field
+    if groupType == 'job' then field = 'job'
+    elseif groupType == 'gang' then field = 'gang'
+    else return members end
+
+    local cleanGroupName = SanitizeLikeSearch(groupName, 64)
+    if cleanGroupName == '' then return members end
+
+    local results = MySQL.query.await(("SELECT charinfo, citizenid, %s as group_info FROM players WHERE %s LIKE ?"):format(field, field), { '%' .. cleanGroupName .. '%' })
 
     if results then
         for _, player in ipairs(results) do

@@ -343,3 +343,22 @@ end
 AddEventHandler('playerDropped', function()
     rateBuckets[source] = nil
 end)
+
+--- Escapa wildcards LIKE (%, _, \) e remove caracteres não-imprimíveis.
+--- Use sempre que interpolar `search` do client em `LIKE '%...%'`.
+--- Também aplica cap de tamanho para limitar full-scans.
+--- @param search string|nil
+--- @param maxLen number|nil default 64
+--- @return string
+function SanitizeLikeSearch(search, maxLen)
+    if type(search) ~= 'string' or search == '' then return '' end
+    maxLen = maxLen or 64
+    if #search > maxLen then search = search:sub(1, maxLen) end
+    -- Remove ASCII control chars
+    search = search:gsub('[%c]', '')
+    -- Escapa LIKE wildcards (em MySQL: % _ \)
+    search = search:gsub('\\', '\\\\')
+    search = search:gsub('%%', '\\%%')
+    search = search:gsub('_', '\\_')
+    return search
+end

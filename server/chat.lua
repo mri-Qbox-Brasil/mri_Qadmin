@@ -49,6 +49,10 @@ AddEventHandler('playerDropped', function()
     end
 end)
 
+local MAX_MESSAGE_LEN = 1000
+local MAX_MENTIONS = 20
+local CHAT_MIN_INTERVAL_MS = 750
+
 RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, mentions)
     local src = source
     if not HasPerms(src, 'qadmin.page.staffchat') then
@@ -57,6 +61,11 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, men
     if not HasPerms(src, 'qadmin.action.staff_chat_send') then
         return QBCore.Functions.Notify(src, "Sem permissão para enviar mensagens.", "error")
     end
+    if not RateLimit(src, 'chat_send', CHAT_MIN_INTERVAL_MS) then return end
+
+    -- Sanitizar inputs do client
+    if type(message) ~= 'string' or message == '' then return end
+    if #message > MAX_MESSAGE_LEN then message = message:sub(1, MAX_MESSAGE_LEN) end
 
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return end
@@ -76,10 +85,18 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, men
 
     notifyPlayers(src)
 
-    -- Build mention set for O(1) lookup
+    -- Build mention set for O(1) lookup. Cap em MAX_MENTIONS para evitar
+    -- payloads gigantes que forçariam loop em todos os players.
     local mentionSet = {}
+    local mentionCount = 0
     if type(mentions) == 'table' then
-        for _, cid in ipairs(mentions) do mentionSet[cid] = true end
+        for _, cid in ipairs(mentions) do
+            if mentionCount >= MAX_MENTIONS then break end
+            if type(cid) == 'string' and #cid > 0 and #cid <= 64 then
+                mentionSet[cid] = true
+                mentionCount = mentionCount + 1
+            end
+        end
     end
     local hasMentions = next(mentionSet) ~= nil
 

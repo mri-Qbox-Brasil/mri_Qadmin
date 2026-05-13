@@ -71,6 +71,18 @@ function GetPlayerESPColor(src)
     return bestColor, table.concat(matches, ", ")
 end
 
+-- SECURITY: o wall_infos contém citizenid/job/gang de TODOS os players. Não
+-- broadcast para -1 (todos) — só para quem tem perm de enable_wall ou
+-- qadmin.master. Outros players recebem objeto vazio.
+local function broadcastWallInfos()
+    local players = QBCore.Functions.GetPlayers()
+    for _, pid in ipairs(players) do
+        if HasPerms(pid, 'qadmin.action.enable_wall') or HasPerms(pid, 'qadmin.master') then
+            TriggerClientEvent('mri_wall:updateWallUsers', pid, wall_infos)
+        end
+    end
+end
+
 local function updateWallInfos(source, silent)
     local Player = QBCore.Functions.GetPlayer(source)
     if Player then
@@ -91,9 +103,8 @@ local function updateWallInfos(source, silent)
         wall_infos[srcStr].inv_color = wall_settings.invisible
         wall_infos[srcStr].default_color = wall_settings.default
 
-        -- Broadcast update to all clients with wall enabled (or just all clients for simplicity/sync)
         if not silent then
-            TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
+            broadcastWallInfos()
         end
     end
 end
@@ -111,8 +122,7 @@ local function enableWall(source)
         TriggerClientEvent(encrypt..":toggleWall", src, wall_infos[srcStr].wallstats)
     end
 
-    -- Broadcast update regarding wallstats change
-    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
+    broadcastWallInfos()
 end
 
 QBCore.Commands.Add("wall", "Enable/Disable wall", {}, false, function(source, _args)
@@ -155,7 +165,7 @@ AddEventHandler('mri_Qadmin:server:PermissionsLoaded', function()
     for _, PlayerId in pairs(Players) do
         updateWallInfos(PlayerId, true)
     end
-    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
+    broadcastWallInfos()
 end)
 
 -----------------------------------------------------------------------------------------------------------------------------------------
@@ -210,7 +220,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
     end
 
     -- Single broadcast
-    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
+    broadcastWallInfos()
 
     TriggerClientEvent('QBCore:Notify', src, 'Wall settings updated', 'success')
     AddLog(src, 'mri_Qadmin', 'server', 'info', ('Wall: configuração "%s/%s" atualizada'):format(type, key), { type = type, key = key, value = value })
@@ -230,7 +240,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principa
     end
 
     -- Single broadcast
-    TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
+    broadcastWallInfos()
 
     TriggerClientEvent('QBCore:Notify', src, 'Principal color removed', 'success')
     AddLog(src, 'mri_Qadmin', 'server', 'info', ('Wall: cor do principal "%s" removida'):format(principal), { principal = principal })
@@ -241,6 +251,6 @@ AddEventHandler('playerDropped', function()
     local srcStr = tostring(src)
     if wall_infos[srcStr] then
         wall_infos[srcStr] = nil
-        TriggerClientEvent('mri_wall:updateWallUsers', -1, wall_infos)
+        broadcastWallInfos()
     end
 end)

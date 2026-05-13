@@ -125,8 +125,10 @@ local function getPlayers(page, pageSize, search)
     local queryParams = {}
     local whereClause = ""
 
-    if search and search ~= "" then
-        local lowerSearch = "%" .. string.lower(search) .. "%"
+    -- Sanitiza search para evitar LIKE wildcard abuse (DoS via full scan)
+    local cleanSearch = SanitizeLikeSearch(search, 64)
+    if cleanSearch ~= "" then
+        local lowerSearch = "%" .. string.lower(cleanSearch) .. "%"
         whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
         queryParams = { lowerSearch, lowerSearch, lowerSearch }
         

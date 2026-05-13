@@ -451,13 +451,19 @@ lib.callback.register('mri_Qadmin:callback:GetLogs', function(src, filters)
             conds[#conds+1] = 'level IN (' .. table.concat(ph, ', ') .. ')'
         end
         if filters.resource and filters.resource ~= '' then
-            conds[#conds+1] = 'resource LIKE ?'
-            params[#params+1] = '%' .. filters.resource .. '%'
+            local res = SanitizeLikeSearch(filters.resource, 64)
+            if res ~= '' then
+                conds[#conds+1] = 'resource LIKE ?'
+                params[#params+1] = '%' .. res .. '%'
+            end
         end
         if filters.search and filters.search ~= '' then
-            conds[#conds+1] = '(message LIKE ? OR admin LIKE ?)'
-            params[#params+1] = '%' .. filters.search .. '%'
-            params[#params+1] = '%' .. filters.search .. '%'
+            local s = SanitizeLikeSearch(filters.search, 128)
+            if s ~= '' then
+                conds[#conds+1] = '(message LIKE ? OR admin LIKE ?)'
+                params[#params+1] = '%' .. s .. '%'
+                params[#params+1] = '%' .. s .. '%'
+            end
         end
     end
 

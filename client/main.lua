@@ -166,10 +166,38 @@ end)
 
 local actionCooldowns = {}
 
+-- SECURITY: clickButton só dispara eventos que passem por estas regras de
+-- whitelist. Defesa em profundidade — o servidor já checa perm em cada
+-- handler, mas evitamos que a NUI (potencialmente comprometida) chame
+-- TriggerServerEvent para qualquer namespace.
+local ALLOWED_EVENT_PREFIXES = { 'mri_Qadmin:', 'mri_wall:', 'hospital:client:Revive', 'qbx_medical:client:revive', 'QBCore:Client:Revive' }
+local ALLOWED_ACTION_TYPES = { client = true, server = true, command = true }
+local ALLOWED_COMMAND_NAMES = {
+    -- comandos client conhecidos que o painel pode disparar
+    adm = true, nc = true, vector2 = true, vec2 = true,
+    vector3 = true, vec3 = true, vector4 = true, vec4 = true,
+    heading = true, setammo = true,
+}
+
+local function eventIsAllowed(ev)
+    if type(ev) ~= 'string' or ev == '' then return false end
+    for _, prefix in ipairs(ALLOWED_EVENT_PREFIXES) do
+        if ev:sub(1, #prefix) == prefix then return true end
+    end
+    return false
+end
+
+local function commandIsAllowed(cmd)
+    if type(cmd) ~= 'string' or cmd == '' then return false end
+    -- Extrai apenas o nome do comando (primeira palavra)
+    local name = cmd:match('^(%S+)')
+    return name and ALLOWED_COMMAND_NAMES[name] or false
+end
+
 RegisterNUICallback("clickButton", function(nuiData, cb)
     local selectedData = nuiData.selectedData
 	local action = nuiData.data
-    local actionKey = type(action) == "string" and action or (action.event or "unknown")
+    local actionKey = type(action) == "string" and action or (action and action.event or "unknown")
 
     -- Cooldown check
     local now = GetGameTimer()
@@ -182,14 +210,40 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
 
     Debug("Button clicked:", json.encode(nuiData))
 
+    -- Sempre preferir resolução por chave em Config.* (fonte de verdade do
+    -- servidor). Só cair de volta no payload da NUI se ele for self-contained
+    -- E passar pelo whitelist.
     local actionData
-    if type(action) == "table" then
-        actionData = action
-    else
+    if type(action) == "string" then
         actionData = CheckDataFromKey(action)
+    elseif type(action) == "table" then
+        -- Se a NUI mandou um payload table, tenta resolver pela chave conhecida
+        -- (action.id ou action.event); se não houver, aceita o payload mas
+        -- exige que `event` esteja no whitelist.
+        if action.id then actionData = CheckDataFromKey(action.id) end
+        if not actionData then actionData = action end
     end
 
-	if not actionData or not CheckPerms(actionData.perms) then
+    if not actionData then cb("ok"); return end
+
+    if not ALLOWED_ACTION_TYPES[actionData.type] then
+        Debug(("[clickButton] type inválido rejeitado: %s"):format(tostring(actionData.type)))
+        cb("ok"); return
+    end
+
+    if actionData.type == "command" then
+        if not commandIsAllowed(actionData.event) then
+            Debug(("[clickButton] command fora do whitelist: %s"):format(tostring(actionData.event)))
+            cb("ok"); return
+        end
+    else
+        if not eventIsAllowed(actionData.event) then
+            Debug(("[clickButton] event fora do whitelist: %s"):format(tostring(actionData.event)))
+            cb("ok"); return
+        end
+    end
+
+	if not CheckPerms(actionData.perms) then
 		cb("ok")
 		return
 	end

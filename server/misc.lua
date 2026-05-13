@@ -618,9 +618,9 @@ end)
 -- Callback para listar bans com paginação e busca
 lib.callback.register('mri_Qadmin:callback:GetBans', function(_source, data)
     if not CheckPerms(_source, 'qadmin.page.bans') then return { bans = {}, total = 0 } end
-    local page = data and tonumber(data.page) or 1
-    local pageSize = data and tonumber(data.pageSize) or 50
-    local search = data and data.search or ""
+    local page = math.max(1, tonumber(data and data.page) or 1)
+    local pageSize = math.min(200, math.max(1, tonumber(data and data.pageSize) or 50))
+    local search = SanitizeLikeSearch(data and data.search or "", 64)
     local offset = (page - 1) * pageSize
 
     local query = 'SELECT * FROM bans'
@@ -628,6 +628,7 @@ lib.callback.register('mri_Qadmin:callback:GetBans', function(_source, data)
     local params = {}
 
     if search ~= "" then
+        -- SanitizeLikeSearch já escapou wildcards; default ESCAPE de MySQL é `\`
         local pattern = "%" .. search .. "%"
         query = query .. ' WHERE name LIKE ? OR reason LIKE ? OR license LIKE ?'
         countQuery = countQuery .. ' WHERE name LIKE ? OR reason LIKE ? OR license LIKE ?'
