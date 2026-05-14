@@ -61,10 +61,25 @@ end)
 -- Receive key updates from the player and relay to viewers
 RegisterNetEvent('mri_Qadmin:server:UpdatePressedKeys', function(keys)
     local playerSrc = source
-    if viewers[playerSrc] then
-        for _, adminSrc in ipairs(viewers[playerSrc]) do
-            TriggerClientEvent('mri_Qadmin:client:ReceivePlayerKeys', adminSrc, playerSrc, keys)
+    if not viewers[playerSrc] or #viewers[playerSrc] == 0 then return end
+
+    -- Rate limit: aceitamos no máximo ~10 updates/s por player. Sem isso, um
+    -- client malicioso poderia martelar TriggerClientEvent para todos os admins
+    -- que estão observando.
+    if not RateLimit(playerSrc, 'pressed_keys', 100) then return end
+
+    -- Sanitiza o payload: array de strings curtas, cap em 20 entradas.
+    if type(keys) ~= 'table' then return end
+    local clean = {}
+    for i = 1, math.min(#keys, 20) do
+        local v = keys[i]
+        if type(v) == 'string' and #v <= 32 then
+            clean[#clean + 1] = v
         end
+    end
+
+    for _, adminSrc in ipairs(viewers[playerSrc]) do
+        TriggerClientEvent('mri_Qadmin:client:ReceivePlayerKeys', adminSrc, playerSrc, clean)
     end
 end)
 

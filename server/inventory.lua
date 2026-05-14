@@ -28,7 +28,13 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(_, selected
 
     local src = source
     local citizenId = GetValue(selectedData, "Citizen ID")
+    if type(citizenId) ~= 'string' or citizenId == '' or #citizenId > 64 then
+        return QBCore.Functions.Notify(src, "CID inválido.", 'error', 5000)
+    end
     local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
+
+    -- Hierarquia: se o dono do char está online e é master, bloqueia.
+    if Player and not CheckTargetable(src, Player.PlayerData.source) then return end
 
     if Player then
         if Config.Inventory == 'ox_inventory' then

@@ -633,8 +633,12 @@ end)
 -- Sync Death Status from Client
 RegisterNetEvent('mri_Qadmin:server:SyncDeathStatus', function(isDead)
     local src = source
+    if not RateLimit(src, 'sync_death', 500) then return end
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return end
+
+    -- Coerce para boolean — qualquer outra coisa é rejeitada.
+    if type(isDead) ~= 'boolean' then return end
 
     -- Sync to metadata for standard QBCore compatibility
     player.Functions.SetMetaData("isdead", isDead)

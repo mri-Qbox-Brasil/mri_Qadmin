@@ -5,7 +5,8 @@ RegisterNetEvent('mri_Qadmin:server:TeleportToPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.teleport_to_player') then return end
 
     local src = source
-    local player = selectedData["Player"].value
+    local player = tonumber(selectedData["Player"] and selectedData["Player"].value)
+    if not player then return end
     local targetPed = GetPlayerPed(player)
     local coords = GetEntityCoords(targetPed)
 
@@ -19,7 +20,9 @@ RegisterNetEvent('mri_Qadmin:server:BringPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.bring_player') then return end
 
     local src = source
-    local targetId = selectedData["Player"].value
+    local targetId = tonumber(selectedData["Player"] and selectedData["Player"].value)
+    if not targetId then return end
+    if not CheckTargetable(src, targetId) then return end
     -- BRING PLAYER LOGIC
     local targetPed = GetPlayerPed(targetId)
     local adminPed = GetPlayerPed(src)
@@ -71,7 +74,9 @@ end)
 RegisterNetEvent('mri_Qadmin:server:SendPlayerBack', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.teleport_back') then return end
 
-    local targetId = selectedData["Player"].value
+    local targetId = tonumber(selectedData["Player"] and selectedData["Player"].value)
+    if not targetId then return end
+    if not CheckTargetable(source, targetId) then return end
     local lastPos = previousPositions[targetId]
 
     if lastPos then

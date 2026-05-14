@@ -229,6 +229,7 @@ end)
 RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principal)
     local src = source
     if not CheckPerms(src, 'qadmin.page.permissions') then return end
+    if type(principal) ~= 'string' or principal == '' or #principal > 128 then return end
 
     principal_colors[principal] = nil
     MySQL.query.await('DELETE FROM mri_qadmin_wall_colors WHERE principal = ?', { principal })

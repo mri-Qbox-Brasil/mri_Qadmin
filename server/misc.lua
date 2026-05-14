@@ -3,7 +3,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_cid', function(_, selectedData)
 
     local src = source
     local citizenid = GetValue(selectedData, "cid")
-    if not citizenid then
+    if type(citizenid) ~= 'string' or citizenid == '' or #citizenid > 64 then
         TriggerClientEvent('QBCore:Notify', src, "CID inválido.", "error", 5000)
         return
     end
@@ -583,6 +583,7 @@ RegisterNetEvent('mri_Qadmin:server:ClothingMenu', function(_, selectedData)
     if target == nil then
         return QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error', 7500)
     end
+    if not CheckTargetable(src, target) then return end
 
     if target == src then
         TriggerClientEvent("mri_Qadmin:client:CloseUI", src)
@@ -828,12 +829,20 @@ RegisterNetEvent('mri_Qadmin:server:Announce', function(message)
 end)
 
 -- Relay for client-only toggle actions (god mode, noclip, etc.)
+-- SECURITY: rate-limit + caps de tamanho para evitar spam que enche
+-- mri_qadmin_logs e DB io.
 RegisterNetEvent('mri_Qadmin:server:LogClientAction', function(category, level, message, data)
     local src = source
     if not CheckPerms(src, 'qadmin.open') then return end
+    if not RateLimit(src, 'log_client_action', 250) then return end
+
     local validCats  = { players=true, bans=true, inventory=true, vehicles=true, money=true, server=true, permissions=true, chat=true, actions=true, system=true }
     local validLevels = { info=true, success=true, warn=true, error=true }
     category = validCats[category]  and category or 'actions'
     level    = validLevels[level] and level    or 'info'
-    AddLog(src, 'mri_Qadmin', category, level, tostring(message or ''), type(data) == 'table' and data or {})
+
+    local msgStr = tostring(message or '')
+    if #msgStr > 500 then msgStr = msgStr:sub(1, 500) end
+
+    AddLog(src, 'mri_Qadmin', category, level, msgStr, type(data) == 'table' and data or {})
 end)

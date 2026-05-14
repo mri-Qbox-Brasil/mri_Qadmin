@@ -109,27 +109,32 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
         return
     end
 
-    local vehmodel = selectedData['Vehicle'].value
+    local vehmodel = selectedData['Vehicle'] and selectedData['Vehicle'].value
+    if type(vehmodel) ~= 'string' or vehmodel == '' or not QBCore.Shared.Vehicles[vehmodel] then
+        return QBCore.Functions.Notify(src, locale("notifications.cannot_store_veh"), "error", 5000)
+    end
+
     local vehicleData = lib.callback.await("mri_Qadmin:client:getvehData", src, vehmodel)
 
     if not next(vehicleData) then
         return
     end
 
-    local tsrc = selectedData['Player'].value
+    local tsrc = tonumber(selectedData['Player'] and selectedData['Player'].value)
+    if not tsrc then return end
     local plate = selectedData['Placa (Opcional)'] and selectedData['Placa (Opcional)'].value or vehicleData.plate
     local garage = selectedData['Garagem (Opcional)'] and selectedData['Garagem (Opcional)'].value or Config.DefaultGarage
     local Player = QBCore.Functions.GetPlayer(tsrc)
 
-    if plate and #plate < 1 then
+    if type(plate) ~= 'string' or #plate < 1 then
         plate = vehicleData.plate
     end
 
-    if garage and #garage < 1 then
+    if type(garage) ~= 'string' or #garage < 1 then
         garage = Config.DefaultGarage
     end
 
-    if plate:len() > 8 then
+    if type(plate) ~= 'string' or #plate > 8 then
         QBCore.Functions.Notify(src, locale("notifications.plate_max"), "error", 5000)
         return
     end
@@ -177,11 +182,19 @@ RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
         return
     end
 
+    if type(data) ~= 'table' then return end
     local playerId = tonumber(data.playerId)
     local model = data.model
+    if type(model) ~= 'string' or model == '' or not QBCore.Shared.Vehicles[model] then
+        return QBCore.Functions.Notify(src, locale("notifications.cannot_store_veh"), "error")
+    end
     local garage = data.garage or Config.DefaultGarage
-    local props = data.props or {}
-    local plate = props.plate and props.plate:upper() or nil
+    if type(garage) ~= 'string' or garage == '' then garage = Config.DefaultGarage end
+    local props = type(data.props) == 'table' and data.props or {}
+    local plate = type(props.plate) == 'string' and props.plate:upper() or nil
+    if plate and #plate > 8 then
+        return QBCore.Functions.Notify(src, locale("notifications.plate_max"), "error")
+    end
 
     local Player = QBCore.Functions.GetPlayer(playerId)
     if not Player then
