@@ -58,12 +58,18 @@ end)
 lib.callback.register('mri_Qadmin:vip:createRank', function(source, data)
     if not CheckPerms(source, 'qadmin.action.manage_vip') then return { status = 'error' } end
     local ok = exports['mri_Qbox']:createRank(data)
+    AddLog(source, 'mri_Qadmin', 'permissions', ok ~= false and 'info' or 'error',
+        ('VIP: rank criado "%s"'):format(tostring(data and (data.id or data.label) or '?')),
+        { rank = data, result = ok ~= false })
     return { status = ok ~= false and 'ok' or 'error' }
 end)
 
 lib.callback.register('mri_Qadmin:vip:updateRank', function(source, data)
     if not CheckPerms(source, 'qadmin.action.manage_vip') then return { status = 'error' } end
     local ok = exports['mri_Qbox']:updateRank(data)
+    AddLog(source, 'mri_Qadmin', 'permissions', ok ~= false and 'info' or 'error',
+        ('VIP: rank atualizado "%s"'):format(tostring(data and (data.id or data.label) or '?')),
+        { rank = data, result = ok ~= false })
     return { status = ok ~= false and 'ok' or 'error' }
 end)
 
@@ -71,6 +77,9 @@ lib.callback.register('mri_Qadmin:vip:deleteRank', function(source, data)
     if not CheckPerms(source, 'qadmin.action.manage_vip') then return { status = 'error' } end
     -- deleteRank espera { id = '...' }
     local ok = exports['mri_Qbox']:deleteRank(data)
+    AddLog(source, 'mri_Qadmin', 'permissions', ok ~= false and 'warn' or 'error',
+        ('VIP: rank removido "%s"'):format(tostring(data and data.id or '?')),
+        { rank = data, result = ok ~= false })
     return { status = ok ~= false and 'ok' or 'error' }
 end)
 
@@ -109,6 +118,9 @@ lib.callback.register('mri_Qadmin:vip:addVipPlayer', function(source, data)
         citizenID     = data.citizenid,
         dataExpiracao = data.expiration,
     })
+    AddLog(source, 'mri_Qadmin', 'permissions', ok ~= false and 'warn' or 'error',
+        ('VIP: player %s adicionado ao rank "%s" (expira: %s)'):format(tostring(data.citizenid), tostring(data.rankId), tostring(data.expiration)),
+        { citizenid = data.citizenid, rankId = data.rankId, expiration = data.expiration, result = ok ~= false })
     return { status = ok ~= false and 'ok' or 'error' }
 end)
 
@@ -120,6 +132,9 @@ lib.callback.register('mri_Qadmin:vip:removeVipPlayer', function(source, data)
     local ok = exports['mri_Qbox']:removeVipPlayer({
         citizenID = data.citizenid,
     })
+    AddLog(source, 'mri_Qadmin', 'permissions', ok ~= false and 'warn' or 'error',
+        ('VIP: player %s removido do VIP'):format(tostring(data and data.citizenid or '?')),
+        { citizenid = data and data.citizenid, result = ok ~= false })
     return { status = ok ~= false and 'ok' or 'error' }
 end)
 
@@ -133,5 +148,8 @@ lib.callback.register('mri_Qadmin:vip:updateVipPlayer', function(source, data)
         citizenID     = data.citizenid,
         dataExpiracao = data.expiration,
     })
+    AddLog(source, 'mri_Qadmin', 'permissions', ok ~= false and 'info' or 'error',
+        ('VIP: player %s atualizado (rank "%s", expira: %s)'):format(tostring(data.citizenid), tostring(data.rankId), tostring(data.expiration)),
+        { citizenid = data.citizenid, rankId = data.rankId, expiration = data.expiration, result = ok ~= false })
     return { status = ok ~= false and 'ok' or 'error' }
 end)

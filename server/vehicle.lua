@@ -370,12 +370,14 @@ lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, acti
             model, stock, vehInfo.name or model, vehInfo.brand or "", vehInfo.category or "", vehInfo.price or 0, vehInfo.hash or 0
         })
         QBCore.Functions.Notify(src, "Stock updated for " .. model, "success")
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estoque do veículo %s alterado para %d'):format(model, stock), { model = model, stock = stock })
         return true
     else
         -- Fallback if not in shared vehicles, just try to update existing record
         local affected = MySQL.update.await('UPDATE vehicles_data SET stock = ? WHERE model = ?', { stock, model })
         if affected and affected >= 0 then
              QBCore.Functions.Notify(src, "Stock updated for " .. model, "success")
+             AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estoque do veículo %s alterado para %d (fallback)'):format(model, stock), { model = model, stock = stock })
              return true
         end
     end

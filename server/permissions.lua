@@ -696,6 +696,9 @@ lib.addCommand('mri_qadmin.setmaster', {
     lib.addAce('identifier.' .. cleanLicense, 'qadmin.master', true)
     print(('^2[mri_Qadmin] Executed: lib.addAce identifier.%s qadmin.master true^7'):format(cleanLicense))
 
+    -- AUDIT: master grant é a ação mais privilegiada do sistema.
+    AddLog(0, 'mri_Qadmin', 'permissions', 'error', ('Master Admin CONCEDIDO via console: %s'):format(cleanLicense), { license = cleanLicense, actor = 'console' })
+
     local players = QBCore.Functions.GetPlayers()
     for _, id in ipairs(players) do
         local p = QBCore.Functions.GetPlayer(id)
@@ -728,6 +731,9 @@ lib.addCommand('mri_qadmin.removemaster', {
     lib.removeAce('identifier.' .. cleanLicense, 'qadmin.master', true)
 
     print(('^2[mri_Qadmin] Executed: lib.removeAce identifier.%s qadmin.master^7'):format(cleanLicense))
+
+    -- AUDIT
+    AddLog(0, 'mri_Qadmin', 'permissions', 'warn', ('Master Admin REVOGADO via console: %s'):format(cleanLicense), { license = cleanLicense, actor = 'console' })
 
     local players = QBCore.Functions.GetPlayers()
     for _, id in ipairs(players) do
@@ -862,9 +868,14 @@ lib.addCommand('mri_qadmin.purgemasters', {
     -- Clean group permissions for master too! (THE SMOKING GUN)
     MySQL.query.await('DELETE FROM mri_qadmin_group_permissions WHERE permission = "qadmin.master"')
 
+    local affectedMasters = MySQL.query.await('SELECT COUNT(*) AS c FROM mri_qadmin_masters')
+    local mastersCount = (affectedMasters and affectedMasters[1] and affectedMasters[1].c) or 0
     MySQL.query.await('DELETE FROM mri_qadmin_masters')
     print('^2[mri_Qadmin] DATABASE WIPED: mri_qadmin_masters and Master nodes for groups are now empty.^7')
     print('^2[mri_Qadmin] SESSION CLEANED: Master ACES removed from known licenses and common groups.^7')
+
+    -- AUDIT: wipe global de masters — operação irreversível.
+    AddLog(0, 'mri_Qadmin', 'permissions', 'error', ('PURGE MASTERS via console: %d masters removidos do DB, group_permissions limpos'):format(mastersCount), { actor = 'console', count = mastersCount })
 
     BroadcastPermissionUpdate()
 end)
@@ -926,6 +937,7 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
 
     if count > 0 then
         TriggerClientEvent('QBCore:Notify', src, ('Seeded %d permissions for \'admin\' group'):format(count), 'success')
+        AddLog(src, 'mri_Qadmin', 'permissions', 'warn', ('SeedAces: %d permissões adicionadas ao grupo "admin"'):format(count), { count = count })
         BroadcastPermissionUpdate()
     else
         TriggerClientEvent('QBCore:Notify', src, 'All permissions already exist', 'primary')
