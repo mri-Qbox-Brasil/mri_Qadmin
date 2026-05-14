@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react'
-import { ChevronLeft, Save, ShieldCheck } from 'lucide-react'
-import { MriButton } from '@mriqbox/ui-kit'
+import React, { useState, useMemo, useRef, KeyboardEvent } from 'react'
+import { ChevronLeft, Save, ShieldCheck, Link2, X, Plus } from 'lucide-react'
+import { MriButton, MriInput } from '@mriqbox/ui-kit'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
@@ -8,11 +8,20 @@ import { GroupData } from './GroupManager'
 import { CATEGORIES, getPermIcon, getFriendlyPermissionName } from '../utils/categorization'
 import { cn } from '@/lib/utils'
 
+const ALLOWED_LINKED_PREFIXES = ['group.', 'job.', 'gang.']
+function isValidLinkedPrincipal(p: string): boolean {
+    return ALLOWED_LINKED_PREFIXES.some(prefix => p.startsWith(prefix)) && p.length <= 128
+}
+
 export default function GroupEditor({ group, onBack }: { group: GroupData, onBack: () => void }) {
     const { sendNui } = useNui()
     const { t } = useI18n()
     const { gameData, permissionDefinitions } = useAppState()
     const [permissions, setPermissions] = useState<Set<string>>(new Set(group.permissions))
+    const [linkedPrincipals, setLinkedPrincipals] = useState<string[]>(group.linkedPrincipals ?? [])
+    const [lpInput, setLpInput] = useState('')
+    const [lpError, setLpError] = useState('')
+    const lpInputRef = useRef<HTMLInputElement>(null)
     const [saving, setSaving] = useState(false)
 
     const { categoriesWithPerms, dynamicPermInfo } = useMemo(() => {
@@ -62,6 +71,30 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
         return { categoriesWithPerms: result, dynamicPermInfo: extra }
     }, [gameData, permissionDefinitions])
 
+    const addLinkedPrincipal = () => {
+        const val = lpInput.trim().toLowerCase()
+        if (!val) return
+        if (!isValidLinkedPrincipal(val)) {
+            setLpError(t('permissions.group_editor.linked_principals_invalid'))
+            return
+        }
+        if (linkedPrincipals.includes(val)) {
+            setLpError(t('permissions.group_editor.linked_principals_duplicate'))
+            return
+        }
+        setLinkedPrincipals(prev => [...prev, val])
+        setLpInput('')
+        setLpError('')
+    }
+
+    const removeLinkedPrincipal = (lp: string) => {
+        setLinkedPrincipals(prev => prev.filter(p => p !== lp))
+    }
+
+    const handleLpKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') { e.preventDefault(); addLinkedPrincipal() }
+    }
+
     const togglePermission = (perm: string) => {
         const next = new Set(permissions)
         if (next.has(perm)) {
@@ -88,7 +121,11 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
 
     const handleSave = async () => {
         setSaving(true)
-        const response: any = await sendNui('mri_Qadmin:server:UpdateGroupPermissions', { id: group.id, permissions: Array.from(permissions) })
+        const response: any = await sendNui('mri_Qadmin:server:UpdateGroupPermissions', {
+            id: group.id,
+            permissions: Array.from(permissions),
+            linkedPrincipals,
+        })
         setSaving(false)
         if (response?.status === 'ok') {
             onBack()
@@ -116,6 +153,56 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* Linked Principals Section */}
+                <div className="bg-background/40 border border-border/50 rounded-xl overflow-hidden">
+                    <div className="flex items-center gap-3 p-4 border-b border-border/50">
+                        <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                            <Link2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-lg">{t('permissions.group_editor.linked_principals_title')}</h3>
+                            <p className="text-xs text-muted-foreground">{t('permissions.group_editor.linked_principals_desc')}</p>
+                        </div>
+                    </div>
+                    <div className="p-4 space-y-3">
+                        <div className="flex gap-2">
+                            <MriInput
+                                ref={lpInputRef}
+                                placeholder={t('permissions.group_editor.linked_principals_placeholder')}
+                                value={lpInput}
+                                onChange={e => { setLpInput(e.target.value); setLpError('') }}
+                                onKeyDown={handleLpKeyDown}
+                                className={cn('flex-1 font-mono text-sm', lpError && 'border-red-500 focus-visible:ring-red-500')}
+                            />
+                            <MriButton variant="outline" size="icon" onClick={addLinkedPrincipal} className="shrink-0">
+                                <Plus className="w-4 h-4" />
+                            </MriButton>
+                        </div>
+                        {lpError && <p className="text-xs text-red-500 font-semibold">{lpError}</p>}
+                        <p className="text-[10px] text-muted-foreground/70">{t('permissions.group_editor.linked_principals_hint')}</p>
+                        {linkedPrincipals.length === 0 ? (
+                            <p className="text-sm text-muted-foreground/50 italic py-2">{t('permissions.group_editor.linked_principals_empty')}</p>
+                        ) : (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                                {linkedPrincipals.map(lp => (
+                                    <span
+                                        key={lp}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-mono text-primary"
+                                    >
+                                        {lp}
+                                        <button
+                                            onClick={() => removeLinkedPrincipal(lp)}
+                                            className="hover:text-red-500 transition-colors"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {Object.entries(CATEGORIES).map(([catId, cat]) => {
                     const data = categoriesWithPerms[catId]
                     if (!data.pageNode && data.actions.length === 0) return null

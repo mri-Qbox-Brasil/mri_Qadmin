@@ -13,6 +13,7 @@ export interface GroupData {
     label: string;
     description: string;
     permissions: string[];
+    linkedPrincipals: string[];
 }
 
 export default function GroupManager({ searchQuery, onCountChange, groups }: { searchQuery: string, onCountChange?: (n: number) => void, groups: GroupData[] }) {

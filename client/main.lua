@@ -500,7 +500,7 @@ RegisterNUICallback("mri_Qadmin:server:DeleteGroup", function(data, cb)
 end)
 
 RegisterNUICallback("mri_Qadmin:server:UpdateGroupPermissions", function(data, cb)
-    local success, errorMsg = lib.callback.await('mri_Qadmin:server:UpdateGroupPermissions', false, data.id, data.permissions)
+    local success, errorMsg = lib.callback.await('mri_Qadmin:server:UpdateGroupPermissions', false, data.id, data.permissions, data.linkedPrincipals or {})
     cb({ status = success and "ok" or "error", message = errorMsg })
 end)
 

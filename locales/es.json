@@ -637,7 +637,14 @@
             "editing_prefix": "Editando:",
             "save": "Guardar Permisos",
             "toggle_category_hint": "Haz clic para marcar/desmarcar todos los permisos de esta categoría",
-            "unlock_tab": "Desbloquear Pestaña/Menú"
+            "unlock_tab": "Desbloquear Pestaña/Menú",
+            "linked_principals_title": "Principales Vinculados",
+            "linked_principals_desc": "Vincula este grupo a principales nativos de FiveM. Al unirse al grupo, el jugador también recibe estos principales.",
+            "linked_principals_placeholder": "ej: group.admin",
+            "linked_principals_hint": "Prefijos permitidos: group., job., gang.",
+            "linked_principals_empty": "Sin principales vinculados",
+            "linked_principals_invalid": "Principal inválido. Usa: group.*, job.* o gang.*",
+            "linked_principals_duplicate": "Este principal ya fue agregado"
         }
     },
     "action_manager": {

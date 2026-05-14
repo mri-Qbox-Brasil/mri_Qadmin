@@ -4,7 +4,37 @@ local QBCore = exports['qb-core']:GetCoreObject()
 -- MIGRATION
 -----------------------------------------------------------------------------------------------------------------------------------------
 
+local ALLOWED_LINKED_PREFIXES = { 'group.', 'job.', 'gang.' }
+local function isValidLinkedPrincipal(p)
+    if type(p) ~= 'string' or p == '' or #p > 128 then return false end
+    for _, prefix in ipairs(ALLOWED_LINKED_PREFIXES) do
+        if p:sub(1, #prefix) == prefix then return true end
+    end
+    return false
+end
+
+-- Cache: linked principals per group (populated on LoadPermissions)
+local groupLinkedPrincipals = {} -- [groupId] = { 'group.admin', ... }
+
+local function parseLinkedPrincipals(raw)
+    if not raw or raw == '' then return {} end
+    local ok, parsed = pcall(json.decode, raw)
+    if not ok or type(parsed) ~= 'table' then return {} end
+    local result = {}
+    for _, p in ipairs(parsed) do
+        if isValidLinkedPrincipal(p) then result[#result + 1] = p end
+    end
+    return result
+end
+
 local function RunMigration()
+    -- Add linked_principals column if missing (idempotent)
+    local hasLPCol = MySQL.scalar.await("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'mri_qadmin_groups' AND column_name = 'linked_principals' AND table_schema = DATABASE()")
+    if hasLPCol == 0 then
+        MySQL.query.await("ALTER TABLE mri_qadmin_groups ADD COLUMN linked_principals TEXT NULL DEFAULT NULL")
+        Debug('[mri_Qadmin] MIGRATION: Added linked_principals column to mri_qadmin_groups')
+    end
+
     local hasOld = MySQL.scalar.await("SELECT count(*) FROM information_schema.tables WHERE table_name = 'mri_qadmin_aces' AND table_schema = DATABASE()")
     if hasOld > 0 then
         Debug('[mri_Qadmin] MIGRATION: Old permissions tables found. Running migration to group-based system...')
@@ -278,6 +308,7 @@ local function LoadPermissions()
     SeedGodGroup()
 
     -- Load Groups and their Aces
+    groupLinkedPrincipals = {}
     local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups') or {}
     for _, g in ipairs(groups) do
         -- Wipe all known ACEs first so removed permissions don't persist across restarts
@@ -294,6 +325,11 @@ local function LoadPermissions()
             else
                 print(('^1[mri_Qadmin] SECURITY ALERT: Found forbidden "qadmin.master" for group "%s" in DB. Skipping synchronization.^7'):format(g.id))
             end
+        end
+
+        groupLinkedPrincipals[g.id] = parseLinkedPrincipals(g.linked_principals)
+        if #groupLinkedPrincipals[g.id] > 0 then
+            Debug(('[mri_Qadmin] Linked principals for group "%s": %s'):format(g.id, table.concat(groupLinkedPrincipals[g.id], ', ')))
         end
     end
 
@@ -341,6 +377,12 @@ local principalCache = {} -- [src] = { fivemPrincipal, citizenid, groups[] }
 local function CleanupPlayerPrincipals(src)
     local cache = principalCache[src]
     if not cache then return end
+
+    -- Remove linked principals before group principals
+    for _, lp in ipairs(cache.linkedPrincipals or {}) do
+        lib.removePrincipal('char:' .. cache.citizenid, lp)
+        Debug(('Cleanup: linked principal removido: char:%s -> %s'):format(cache.citizenid, lp))
+    end
 
     lib.removePrincipal(cache.fivemPrincipal, 'char:' .. cache.citizenid)
     Debug(('Cleanup: principal removido: %s -> char:%s'):format(cache.fivemPrincipal, cache.citizenid))
@@ -394,7 +436,21 @@ local function SetupPlayerPrincipals(src, isReload)
         end
     end
 
-    principalCache[src] = { fivemPrincipal = fivemPrincipal, citizenid = citizenid, groups = activeGroups }
+    -- Apply linked principals from each group (deduplicated via set)
+    local linkedSet = {}
+    for _, gid in ipairs(activeGroups) do
+        for _, lp in ipairs(groupLinkedPrincipals[gid] or {}) do
+            if not linkedSet[lp] then
+                linkedSet[lp] = true
+                lib.addPrincipal('char:' .. citizenid, lp)
+                Debug(('[mri_Qadmin] Linked: char:%s -> %s (grupo: %s)'):format(citizenid, lp, gid))
+            end
+        end
+    end
+    local linkedList = {}
+    for lp, _ in pairs(linkedSet) do linkedList[#linkedList + 1] = lp end
+
+    principalCache[src] = { fivemPrincipal = fivemPrincipal, citizenid = citizenid, groups = activeGroups, linkedPrincipals = linkedList }
 end
 
 RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
@@ -438,6 +494,8 @@ lib.callback.register('mri_Qadmin:callback:GetGroups', function(source)
                 table.insert(g.permissions, p.permission)
             end
         end
+        g.linkedPrincipals = parseLinkedPrincipals(g.linked_principals)
+        g.linked_principals = nil -- drop raw DB field
     end
 
     return groups
@@ -494,6 +552,18 @@ lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
         return false, "Acesso Negado."
     end
 
+    -- Collect online players in this group before deleting
+    local affectedSources = {}
+    local players = QBCore.Functions.GetPlayers()
+    for _, pid in ipairs(players) do
+        local cache = principalCache[pid]
+        if cache then
+            for _, gid in ipairs(cache.groups or {}) do
+                if gid == id then affectedSources[#affectedSources + 1] = pid; break end
+            end
+        end
+    end
+
     local ok, err = pcall(function()
         local perms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {id})
         if perms then
@@ -510,11 +580,17 @@ lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
         end
 
         MySQL.query.await('DELETE FROM mri_qadmin_groups WHERE id = ?', {id})
+        groupLinkedPrincipals[id] = nil
     end)
 
     if not ok then
         print('^1[mri_Qadmin] ERRO ao deletar grupo:^7', err)
         return false, "Erro ao deletar grupo do banco de dados."
+    end
+
+    -- Re-sync affected players so linked principals are also revoked
+    for _, pid in ipairs(affectedSources) do
+        SetupPlayerPrincipals(pid, true)
     end
 
     TriggerClientEvent('QBCore:Notify', source, 'Grupo removido', 'success')
@@ -523,12 +599,24 @@ lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
     return true
 end)
 
-lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(source, groupId, permissionsArray)
+lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(source, groupId, permissionsArray, linkedPrincipals)
     if not HasPerms(source, 'qadmin.page.permissions') then
         return false, "Acesso Negado."
     end
 
     Debug(('[mri_Qadmin] Iniciando atualização de permissões para grupo: %s'):format(groupId))
+
+    -- Validate and sanitize linked principals
+    local cleanLinked = {}
+    if type(linkedPrincipals) == 'table' then
+        for _, p in ipairs(linkedPrincipals) do
+            if isValidLinkedPrincipal(p) then
+                cleanLinked[#cleanLinked + 1] = p
+            else
+                print(('^3[mri_Qadmin] WARN: Linked principal ignorado (inválido): %s^7'):format(tostring(p)))
+            end
+        end
+    end
 
     local ok, err = pcall(function()
         local oldPerms = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = ?', {groupId})
@@ -545,6 +633,11 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
                 lib.addAce('mri.group.'..groupId, p, true)
             end
         end
+
+        -- Persist linked principals
+        local lpJson = json.encode(cleanLinked)
+        MySQL.update.await('UPDATE mri_qadmin_groups SET linked_principals = ? WHERE id = ?', { lpJson, groupId })
+        groupLinkedPrincipals[groupId] = cleanLinked
     end)
 
     if not ok then
@@ -552,8 +645,24 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
         return false, "Erro ao salvar no banco de dados."
     end
 
+    -- Re-sync online players who belong to this group
+    local players = QBCore.Functions.GetPlayers()
+    for _, id in ipairs(players) do
+        local cache = principalCache[id]
+        if cache then
+            for _, gid in ipairs(cache.groups or {}) do
+                if gid == groupId then
+                    SetupPlayerPrincipals(id, true)
+                    break
+                end
+            end
+        end
+    end
+
     TriggerClientEvent('QBCore:Notify', source, 'Permissões do grupo atualizadas.', 'success')
-    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Permissões: grupo "%s" teve permissões atualizadas (%d perms)'):format(groupId, #permissionsArray), { group = groupId, count = #permissionsArray })
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn',
+        ('Permissões: grupo "%s" atualizado (%d perms, %d linked principals)'):format(groupId, #permissionsArray, #cleanLinked),
+        { group = groupId, count = #permissionsArray, linkedPrincipals = cleanLinked })
     BroadcastPermissionUpdate()
     return true
 end)

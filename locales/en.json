@@ -637,7 +637,14 @@
             "editing_prefix": "Editing:",
             "save": "Save Permissions",
             "toggle_category_hint": "Click to check/uncheck all permissions in this category",
-            "unlock_tab": "Unlock Tab/Menu"
+            "unlock_tab": "Unlock Tab/Menu",
+            "linked_principals_title": "Linked Principals",
+            "linked_principals_desc": "Link this group to native FiveM principals. When a player joins the group, they also receive these principals.",
+            "linked_principals_placeholder": "e.g. group.admin",
+            "linked_principals_hint": "Allowed prefixes: group., job., gang.",
+            "linked_principals_empty": "No linked principals",
+            "linked_principals_invalid": "Invalid principal. Use: group.*, job.* or gang.*",
+            "linked_principals_duplicate": "This principal has already been added"
         }
     },
     "action_manager": {
