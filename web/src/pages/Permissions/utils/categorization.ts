@@ -59,7 +59,6 @@ export const CATEGORIES: Record<string, PermissionCategory> = {
     dashboard:   { id: 'dashboard',   label: 'Dashboard',      icon: LayoutDashboard },
     players:     { id: 'players',     label: 'Jogadores',      icon: Users           },
     moderation:  { id: 'moderation',  label: 'Moderação',      icon: Gavel           },
-    bans:        { id: 'bans',        label: 'Banimentos',     icon: Ban             },
     staffchat:   { id: 'staffchat',   label: 'Staff Chat',     icon: MessageSquare   },
     items:       { id: 'items',       label: 'Itens',          icon: Package         },
     vehicles:    { id: 'vehicles',    label: 'Veículos',       icon: Car             },
@@ -82,7 +81,6 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
     dashboard:   LayoutDashboard,
     players:     Users,
     moderation:  Gavel,
-    bans:        Ban,
     staffchat:   MessageSquare,
     items:       Package,
     vehicles:    Car,
@@ -171,7 +169,7 @@ const PERM_ICONS: Partial<Record<string, LucideIcon>> = {
     'qadmin.action.toggle_cuffs':       Lock,
     'qadmin.action.drunk_player':       Zap,
     'qadmin.action.play_sound':         Megaphone,
-    // Bans
+    // Bans (now in players screen)
     'qadmin.action.ban_player':         Ban,
     'qadmin.action.unban_player':       Unlock,
     // Staff Chat

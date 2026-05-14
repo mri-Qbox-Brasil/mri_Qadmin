@@ -110,7 +110,7 @@ local PERM_DEFINITIONS = {
     { id = 'qadmin.page.dashboard',    category = 'dashboard'   },
     { id = 'qadmin.page.players',      category = 'players'     },
     { id = 'qadmin.page.groups',       category = 'groups'      },
-    { id = 'qadmin.page.bans',         category = 'bans'        },
+    -- qadmin.page.bans removido: banimentos agora são filtro na tela de jogadores
     { id = 'qadmin.page.staffchat',    category = 'staffchat'   },
     { id = 'qadmin.page.items',        category = 'items'       },
     { id = 'qadmin.page.vehicles',     category = 'vehicles'    },
@@ -176,9 +176,9 @@ local PERM_DEFINITIONS = {
     { id = 'qadmin.action.toggle_cuffs',            category = 'moderation' },
     { id = 'qadmin.action.drunk_player',            category = 'moderation' },
     { id = 'qadmin.action.play_sound',              category = 'moderation' },
-    -- ── Bans ─────────────────────────────────────────────────────────────────
-    { id = 'qadmin.action.ban_player',              category = 'bans'       },
-    { id = 'qadmin.action.unban_player',            category = 'bans'       },
+    -- ── Bans (na tela de jogadores) ───────────────────────────────────────────
+    { id = 'qadmin.action.ban_player',              category = 'players'    },
+    { id = 'qadmin.action.unban_player',            category = 'players'    },
     -- ── Staff Chat ───────────────────────────────────────────────────────────
     { id = 'qadmin.action.staff_chat_send',         category = 'staffchat'  },
     -- ── Items / Inventory ─────────────────────────────────────────────────────

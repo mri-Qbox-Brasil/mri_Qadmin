@@ -618,7 +618,7 @@ end)
 
 -- Callback para listar bans com paginação e busca
 lib.callback.register('mri_Qadmin:callback:GetBans', function(_source, data)
-    if not CheckPerms(_source, 'qadmin.page.bans') then return { bans = {}, total = 0 } end
+    if not CheckPerms(_source, 'qadmin.page.players') then return { bans = {}, total = 0 } end
     local page = math.max(1, tonumber(data and data.page) or 1)
     local pageSize = math.min(200, math.max(1, tonumber(data and data.pageSize) or 50))
     local search = SanitizeLikeSearch(data and data.search or "", 64)
