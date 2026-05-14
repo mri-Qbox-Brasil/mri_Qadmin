@@ -41,6 +41,10 @@ import {
     Activity,
     Fuel,
     Navigation,
+    AlertTriangle,
+    Gavel,
+    Wand2,
+    Star,
 } from 'lucide-react';
 import type { PermDef } from '@/utils/permissions';
 
@@ -50,34 +54,41 @@ export interface PermissionCategory {
     icon: LucideIcon;
 }
 
+// Display order matters — this is the order sections appear in the GroupEditor.
 export const CATEGORIES: Record<string, PermissionCategory> = {
-    dashboard:   { id: 'dashboard',   label: 'Dashboard',    icon: LayoutDashboard },
-    players:     { id: 'players',     label: 'Players',      icon: Users           },
-    staffchat:   { id: 'staffchat',   label: 'Staff Chat',   icon: MessageSquare   },
-    items:       { id: 'items',       label: 'Items',        icon: Package         },
-    vehicles:    { id: 'vehicles',    label: 'Vehicles',     icon: Car             },
-    commands:    { id: 'commands',    label: 'Commands',     icon: Terminal        },
-    actions:     { id: 'actions',     label: 'Actions',      icon: Zap             },
-    resources:   { id: 'resources',   label: 'Resources',    icon: Play            },
-    settings:    { id: 'settings',    label: 'Settings',     icon: Settings        },
-    livemap:     { id: 'livemap',     label: 'Live Map',     icon: Map             },
-    livescreens: { id: 'livescreens', label: 'Live Screens', icon: Monitor         },
-    devmode:     { id: 'devmode',     label: 'Dev Mode',     icon: Hammer          },
-    groups:      { id: 'groups',      label: 'Groups',       icon: Shield          },
-    permissions: { id: 'permissions', label: 'Permissions',  icon: Key             },
-    bans:        { id: 'bans',        label: 'Bans',         icon: Ban             },
-    other:       { id: 'other',       label: 'Other',        icon: Lock            },
+    dashboard:   { id: 'dashboard',   label: 'Dashboard',      icon: LayoutDashboard },
+    players:     { id: 'players',     label: 'Jogadores',      icon: Users           },
+    moderation:  { id: 'moderation',  label: 'Moderação',      icon: Gavel           },
+    bans:        { id: 'bans',        label: 'Banimentos',     icon: Ban             },
+    staffchat:   { id: 'staffchat',   label: 'Staff Chat',     icon: MessageSquare   },
+    items:       { id: 'items',       label: 'Itens',          icon: Package         },
+    vehicles:    { id: 'vehicles',    label: 'Veículos',       icon: Car             },
+    self:        { id: 'self',        label: 'Habilidades',    icon: Wand2           },
+    actions:     { id: 'actions',     label: 'Ações',          icon: Zap             },
+    commands:    { id: 'commands',    label: 'Comandos',       icon: Terminal        },
+    resources:   { id: 'resources',   label: 'Recursos',       icon: Play            },
+    settings:    { id: 'settings',    label: 'Configurações',  icon: Settings        },
+    livemap:     { id: 'livemap',     label: 'Mapa ao Vivo',   icon: Map             },
+    livescreens: { id: 'livescreens', label: 'Telas ao Vivo',  icon: Monitor         },
+    devmode:     { id: 'devmode',     label: 'Dev Mode',       icon: Hammer          },
+    groups:      { id: 'groups',      label: 'Grupos',         icon: Shield          },
+    permissions: { id: 'permissions', label: 'Permissões',     icon: Key             },
+    vip:         { id: 'vip',         label: 'VIP',            icon: Star            },
+    other:       { id: 'other',       label: 'Outros',         icon: Lock            },
 };
 
 // Default icon per category — used when a permission has no specific icon override.
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
     dashboard:   LayoutDashboard,
     players:     Users,
+    moderation:  Gavel,
+    bans:        Ban,
     staffchat:   MessageSquare,
     items:       Package,
     vehicles:    Car,
-    commands:    Terminal,
+    self:        Wand2,
     actions:     Zap,
+    commands:    Terminal,
     resources:   Play,
     settings:    Settings,
     livemap:     Map,
@@ -85,7 +96,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
     devmode:     Hammer,
     groups:      Shield,
     permissions: Key,
-    bans:        Ban,
+    vip:         Star,
     other:       Lock,
 };
 
@@ -111,15 +122,15 @@ const PERM_ICONS: Partial<Record<string, LucideIcon>> = {
     'qadmin.page.reports':     Info,
     'qadmin.page.terminal':    Terminal,
     'qadmin.page.staff_point': Clock,
+    'qadmin.page.vip':         Star,
     // Dashboard actions
     'qadmin.action.announcements':      Megaphone,
     'qadmin.action.clear_chat':         Trash2,
     'qadmin.action.info_admin':         Info,
     'qadmin.action.view_detailed_logs': MessageSquare,
+    // Actions manager
     'qadmin.action.manage_actions':     Settings,
-    'qadmin.action.manage_settings':    Server,
-    'qadmin.action.manage_wall':        Eye,
-    // Player actions
+    // Players
     'qadmin.action.view_player_identifiers': Fingerprint,
     'qadmin.action.track_player':       Crosshair,
     'qadmin.action.set_vital':          Heart,
@@ -127,17 +138,8 @@ const PERM_ICONS: Partial<Record<string, LucideIcon>> = {
     'qadmin.action.manage_reports':     Info,
     'qadmin.action.delete_report':      Trash2,
     'qadmin.action.staff_clothing':     Shirt,
-    // Actions
-    'qadmin.action.revive':             Zap,
-    'qadmin.action.revive_all':         Zap,
-    'qadmin.action.revive_self':        Heart,
-    'qadmin.action.kill_player':        Trash2,
-    'qadmin.action.kick_player':        Users,
-    'qadmin.action.warn_player':        Info,
-    'qadmin.action.verify_player':      Shield,
-    'qadmin.action.delete_character':   Trash2,
-    'qadmin.action.spectate_player':    Monitor,
-    'qadmin.action.freeze_player':      Lock,
+    'qadmin.action.revive':             Heart,
+    'qadmin.action.revive_all':         Heart,
     'qadmin.action.bring_player':       Hand,
     'qadmin.action.teleport_to_player': MoveUpRight,
     'qadmin.action.teleport_back':      MoveUpRight,
@@ -153,24 +155,28 @@ const PERM_ICONS: Partial<Record<string, LucideIcon>> = {
     'qadmin.action.give_money':         DollarSign,
     'qadmin.action.remove_money':       DollarSign,
     'qadmin.action.give_money_all':     DollarSign,
-    'qadmin.action.drunk_player':       Zap,
     'qadmin.action.remove_stress':      Activity,
-    'qadmin.action.mute_player':        VolumeX,
-    'qadmin.action.goto_waypoint':      Navigation,
-    'qadmin.action.blackout':           Ghost,
-    'qadmin.action.toggle_cuffs':       Lock,
     'qadmin.action.clothing_menu':      Shirt,
     'qadmin.action.set_ped':            Users,
-    'qadmin.action.god_mode':           Shield,
-    'qadmin.action.noclip':             Ghost,
-    'qadmin.action.invisible':          Ghost,
-    'qadmin.action.set_ammo':           Zap,
-    'qadmin.action.infinite_ammo':      Zap,
-    'qadmin.action.toggle_duty':        Shield,
-    'qadmin.action.toggle_laser':       Crosshair,
+    // Moderation
+    'qadmin.action.kill_player':        Trash2,
+    'qadmin.action.kick_player':        Users,
+    'qadmin.action.warn_player':        AlertTriangle,
+    'qadmin.action.verify_player':      Shield,
+    'qadmin.action.delete_character':   Trash2,
+    'qadmin.action.spectate_player':    Monitor,
+    'qadmin.action.freeze_player':      Lock,
+    'qadmin.action.mute_player':        VolumeX,
+    'qadmin.action.blackout':           Ghost,
+    'qadmin.action.toggle_cuffs':       Lock,
+    'qadmin.action.drunk_player':       Zap,
     'qadmin.action.play_sound':         Megaphone,
+    // Bans
     'qadmin.action.ban_player':         Ban,
     'qadmin.action.unban_player':       Unlock,
+    // Staff Chat
+    'qadmin.action.staff_chat_send':    MessageSquare,
+    // Items
     'qadmin.action.give_item':          Package,
     'qadmin.action.give_item_all':      Package,
     'qadmin.action.clear_inventory':    Trash2,
@@ -180,6 +186,8 @@ const PERM_ICONS: Partial<Record<string, LucideIcon>> = {
     'qadmin.action.modify_inventory':   Package,
     'qadmin.action.open_trunk':         Car,
     'qadmin.action.open_stash':         Archive,
+    'qadmin.action.copy_inventory':     Copy,
+    // Vehicles
     'qadmin.action.spawn_vehicle':      Car,
     'qadmin.action.delete_vehicle':     Trash2,
     'qadmin.action.admincar':           Car,
@@ -190,34 +198,45 @@ const PERM_ICONS: Partial<Record<string, LucideIcon>> = {
     'qadmin.action.fix_self_vehicle':   Wrench,
     'qadmin.action.refuel_vehicle':     Fuel,
     'qadmin.action.max_mods':           Wrench,
-    'qadmin.action.change_vehicle_state': Wrench,
-    'qadmin.action.update_vehicle_stock': RefreshCw,
-    'qadmin.action.change_weather':     Settings,
-    'qadmin.action.change_time':        Clock,
-    'qadmin.action.toggle_devmode':     Hammer,
-    'qadmin.action.vehicle_dev':        Hammer,
-    'qadmin.action.toggle_coords':      Hammer,
-    'qadmin.action.toggle_blips':       Hammer,
-    'qadmin.action.toggle_names':       Hammer,
-    'qadmin.action.enable_wall':        Monitor,
-    // Items
-    'qadmin.action.copy_inventory':     Copy,
-    // Vehicles
     'qadmin.action.manage_vehicles':    Wrench,
     'qadmin.action.change_vehicle_property': Wrench,
+    'qadmin.action.change_vehicle_state': Wrench,
+    'qadmin.action.update_vehicle_stock': RefreshCw,
+    // Self abilities
+    'qadmin.action.revive_self':        Heart,
+    'qadmin.action.god_mode':           Shield,
+    'qadmin.action.noclip':             Ghost,
+    'qadmin.action.invisible':          Ghost,
+    'qadmin.action.set_ammo':           Zap,
+    'qadmin.action.infinite_ammo':      Zap,
+    'qadmin.action.toggle_duty':        Shield,
+    'qadmin.action.toggle_laser':       Crosshair,
+    'qadmin.action.goto_waypoint':      Navigation,
     // Commands
     'qadmin.commands':                  Terminal,
     // Resources
     'qadmin.action.change_resource':    RefreshCw,
     // Settings
+    'qadmin.action.manage_settings':    Server,
+    'qadmin.action.change_weather':     Settings,
+    'qadmin.action.change_time':        Clock,
     'qadmin.action.server_time':        Clock,
+    // Dev Mode
+    'qadmin.action.toggle_devmode':     Hammer,
+    'qadmin.action.vehicle_dev':        Hammer,
+    'qadmin.action.toggle_coords':      Hammer,
+    'qadmin.action.toggle_blips':       Hammer,
+    'qadmin.action.toggle_names':       Hammer,
+    'qadmin.action.toggle_mock_mode':   Code,
     // Live Screens
     'qadmin.action.screen_capture':     Monitor,
-    // Staff / Other
+    'qadmin.action.enable_wall':        Monitor,
+    'qadmin.action.manage_wall':        Eye,
+    // VIP
+    'qadmin.action.manage_vip':         Star,
+    // Other
     'qadmin.action.staff_clock_in':     Clock,
     'qadmin.action.staff_clock_out':    Clock,
-    'qadmin.action.staff_chat_send':    MessageSquare,
-    'qadmin.action.toggle_mock_mode':   Code,
 };
 
 export function getPermIcon(id: string, category?: string): LucideIcon {
