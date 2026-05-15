@@ -412,7 +412,23 @@ local function SetupPlayerPrincipals(src, isReload)
     local fivemPrincipal = 'identifier.license:' .. cleanLicense
 
     -- On reload: clean stale cache/principals before re-adding
-    if isReload then CleanupPlayerPrincipals(src) end
+    if isReload then
+        if principalCache[src] then
+            CleanupPlayerPrincipals(src)
+        else
+            -- Cache lost (resource restart) — derive cleanup from DB
+            local prevGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {citizenid}) or {}
+            lib.removePrincipal(fivemPrincipal, 'char:' .. citizenid)
+            for _, g in ipairs(prevGroups) do
+                lib.removePrincipal('char:' .. citizenid, 'mri.group.' .. g.group_id)
+            end
+            for _, lpList in pairs(groupLinkedPrincipals) do
+                for _, lp in ipairs(lpList) do
+                    lib.removePrincipal('char:' .. citizenid, lp)
+                end
+            end
+        end
+    end
 
     lib.addPrincipal(fivemPrincipal, 'char:' .. citizenid)
     Debug(('[mri_Qadmin] Principal Mapping: %s -> char:%s'):format(fivemPrincipal, citizenid))
@@ -650,17 +666,15 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
         return false, "Erro ao salvar no banco de dados."
     end
 
-    -- Re-sync online players who belong to this group
-    local players = QBCore.Functions.GetPlayers()
-    for _, id in ipairs(players) do
-        local cache = principalCache[id]
-        if cache then
-            for _, gid in ipairs(cache.groups or {}) do
-                if gid == groupId then
-                    SetupPlayerPrincipals(id, true)
-                    break
-                end
-            end
+    -- Re-sync online players who belong to this group (query DB — cache may be nil after restart)
+    local memberRows = MySQL.query.await('SELECT citizenid FROM mri_qadmin_character_groups WHERE group_id = ?', {groupId}) or {}
+    local memberSet = {}
+    for _, row in ipairs(memberRows) do memberSet[row.citizenid] = true end
+
+    for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+        local p = QBCore.Functions.GetPlayer(id)
+        if p and memberSet[p.PlayerData.citizenid] then
+            SetupPlayerPrincipals(id, true)
         end
     end
 
@@ -1005,7 +1019,8 @@ lib.addCommand('mri_qadmin.inspectdb', {
     local groups = MySQL.query.await('SELECT * FROM mri_qadmin_groups') or {}
     print(('^5Groups Found: %d^7'):format(#groups))
     for _, g in ipairs(groups) do
-        print(('  - %s (%s)'):format(g.id, g.label))
+        local lp = g.linked_principals or 'NULL'
+        print(('  - %s (%s) | linked_principals: %s'):format(g.id, g.label, lp))
     end
 
     -- Check Group Permissions for Master
