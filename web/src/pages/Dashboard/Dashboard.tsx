@@ -51,6 +51,14 @@ const mockSummary = {
     onlinePlayers: 1
 }
 
+interface StatCardProps {
+    icon: React.ComponentType<{ className?: string }>
+    label: string
+    value: React.ReactNode
+    iconColor?: string
+    bgIcon?: string
+}
+
 const StatSkeleton = () => (
     <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
         <MriSkeleton className="w-12 h-12 rounded-lg shrink-0" />
@@ -139,12 +147,13 @@ export default function Dashboard() {
 
             const filteredMocks = currentSearch === ''
                 ? MOCK_PLAYERS
-                : MOCK_PLAYERS.filter((p: any) =>
-                    String(p.name || '').toLowerCase().includes(currentSearch.toLowerCase()) ||
-                    String(p.license || '').toLowerCase().includes(currentSearch.toLowerCase()) ||
-                    String(p.citizenid || '').toLowerCase().includes(currentSearch.toLowerCase()) ||
-                    String(p.id).includes(currentSearch)
-                )
+                : MOCK_PLAYERS.filter((p: any) => {
+                    const q = (currentSearch as string).toLowerCase()
+                    return String(p.name || '').toLowerCase().includes(q) ||
+                        String(p.license || '').toLowerCase().includes(q) ||
+                        String(p.citizenid || '').toLowerCase().includes(q) ||
+                        String(p.id).includes(currentSearch as string)
+                })
 
             const limit = 300
             const mock: { data: Player[], total: number, pages: number } = { data: filteredMocks.slice((startPage - 1) * limit, startPage * limit), total: filteredMocks.length, pages: Math.ceil(filteredMocks.length / limit) }

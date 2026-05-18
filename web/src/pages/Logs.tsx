@@ -1066,7 +1066,7 @@ export default function Logs() {
     return (
         <div className="h-full w-full flex flex-col bg-background">
             <MriPageHeader title={t('qadmin.page.logs')} icon={ScrollText} countLabel={t('logs.records')} count={total}>
-                <MriTabs items={logTabs} value={activeView} onChange={setActiveView} variant="premium" />
+                <MriTabs items={logTabs} value={activeView} onChange={(val) => setActiveView(val as typeof activeView)} variant="premium" />
 
                 {activeView === 'logs' && <>
                     {categoryOptions.length > 0 && (

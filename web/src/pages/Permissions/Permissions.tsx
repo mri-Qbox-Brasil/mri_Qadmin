@@ -65,7 +65,7 @@ export default function Permissions() {
                     <MriTabs
                         items={permissionTabs}
                         value={activeTab}
-                        onChange={setActiveTab}
+                        onChange={(val) => setActiveTab(val as typeof activeTab)}
                     />
 
                     <div className="flex items-center gap-2">
@@ -101,7 +101,6 @@ export default function Permissions() {
                             <div className="flex-1 overflow-hidden">
                                 <GroupManager
                                     searchQuery={search}
-                                    refreshTrigger={refreshTrigger}
                                     groups={groups}
                                     onCountChange={() => loadGroups()}
                                 />

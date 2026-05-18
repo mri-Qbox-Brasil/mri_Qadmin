@@ -70,7 +70,7 @@ export default function StaffChat() {
 
     // Initial load
     useEffect(() => {
-        sendNui<{ messages: ChatMessage[], myCitizenid: string | null }>('GetMessages', {}, MOCK_GAME_DATA.staffMessages)
+        sendNui<{ messages: ChatMessage[], myCitizenid: string | null }>('GetMessages', {}, { messages: MOCK_GAME_DATA.staffMessages as unknown as ChatMessage[], myCitizenid: null })
             .then(result => {
                 if (!result) return
                 const msgs = Array.isArray(result) ? result : result.messages

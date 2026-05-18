@@ -125,7 +125,6 @@ export default function Actions() {
                     <div className="w-px h-6 bg-border mx-2" /> {/* Divider */}
                     <MriTabs
                         items={categoryTabs}
-                        variant="pills"
                         value={selectedCategory}
                         onChange={(val) => setSelectedCategory(val as any)}
                     />

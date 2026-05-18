@@ -192,7 +192,7 @@ export default function Vehicles() {
                             data={filteredVehicles}
                             components={{
                                 Table: (props: any) => <table {...props} className="w-full text-left" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }} />,
-                                TableHeader: MriTableHeader,
+                                TableHead: MriTableHeader,
                                 TableBody: MriTableBody,
                                 TableRow: MriTableRow,
                             }}

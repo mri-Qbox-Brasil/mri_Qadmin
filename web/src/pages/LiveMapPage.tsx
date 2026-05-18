@@ -109,7 +109,7 @@ export default function LiveMapPage() {
                             const newFilters = { staff: false, players: false, dead: false }
                             val.forEach((id: any) => {
                                 if (id === 'staff' || id === 'players' || id === 'dead') {
-                                    newFilters[id] = true
+                                    newFilters[id as keyof typeof newFilters] = true
                                 }
                             })
                             setFilters(newFilters)
@@ -137,7 +137,7 @@ export default function LiveMapPage() {
                                     <MriTabs
                                         items={mapStyleTabs}
                                         value={mapType}
-                                        onChange={(val) => setMapType(val)}
+                                        onChange={(val) => setMapType(val as 'atlas' | 'grid' | 'satellite')}
                                         className="bg-black/40 border-white/5"
                                         itemClassName="flex-1 h-8 text-[10px]"
                                     />

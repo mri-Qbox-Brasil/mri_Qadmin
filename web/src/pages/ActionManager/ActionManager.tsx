@@ -136,6 +136,7 @@ const ActionManager = React.forwardRef<ActionManagerRef, ActionManagerProps>(({
         <div className="h-full w-full flex flex-col bg-background">
             {!isEmbedded && (
                 <MriPageHeader
+                    title={t('qadmin.action.manage_actions')}
                     count={actionsList.length}
                     icon={SettingsIcon}
                 >

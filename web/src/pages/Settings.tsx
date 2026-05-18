@@ -230,7 +230,7 @@ export default function Settings() {
                 <MriTabs
                     items={settingsTabs}
                     value={activeTab}
-                    onChange={setActiveTab}
+                    onChange={(val) => setActiveTab(val as typeof activeTab)}
                     variant="premium"
                 />
             </MriPageHeader>

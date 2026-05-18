@@ -162,7 +162,7 @@ export default function GroupManager({ searchQuery, onCountChange, groups }: { s
                     onClose={() => !saving && setGroupToDelete(null)}
                     onConfirm={handleDelete}
                     isConfirmDisabled={saving}
-                    confirmText={t('permissions.group_manager.delete_confirm_btn')}
+                    confirmLabel={t('permissions.group_manager.delete_confirm_btn')}
                 >
                     <div className="py-2">
                         <p className="text-sm text-foreground mb-2">
