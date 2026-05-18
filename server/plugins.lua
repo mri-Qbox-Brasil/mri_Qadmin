@@ -55,17 +55,19 @@ local function registerPlugin(manifest)
     -- Sanitize: garante shape minimo. So resources do server podem chamar o
     -- export, entao confiamos no caller.
     Plugins[manifest.id] = {
-        id = manifest.id,
-        label = manifest.label or manifest.id,
-        icon = manifest.icon or 'box',
-        resource = manifest.resource,
-        htmlPath = manifest.htmlPath, -- opcional; default no host (web/build/index.html)
+        id            = manifest.id,
+        label         = manifest.label or manifest.id,
+        icon          = manifest.icon or 'box',
+        resource      = manifest.resource,
+        htmlPath      = manifest.htmlPath,
         requiredPerms = manifest.requiredPerms or {},
-        description = manifest.description,
+        permDefs      = manifest.permDefs,
+        description   = manifest.description,
     }
 
     print(('[mri_Qadmin] Plugin registrado: %s (resource: %s)'):format(manifest.id, manifest.resource))
     broadcastPluginsUpdated()
+    RegisterPermissionsForPlugin(Plugins[manifest.id])
     return true
 end
 

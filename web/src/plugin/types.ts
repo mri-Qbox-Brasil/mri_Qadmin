@@ -23,6 +23,15 @@ export interface MriPluginManifest {
    * uma delas. Vazio = sempre visivel. Ex: ['mri_Qspawn.admin', 'command']
    * libera pra quem tem ace especifica OU pra console/god. */
   requiredPerms?: string[]
+  /** Metadados ricos para as permissoes listadas em requiredPerms.
+   *  Quando presente, o editor de grupos usa label/desc de cada entrada.
+   *  Plugins sem esse campo exibem o sufixo do perm id como label. */
+  permDefs?: Array<{
+    id: string
+    label?: string
+    desc?: string
+    category?: string
+  }>
   /** Descricao curta opcional (tooltip ou subtitle). */
   description?: string
 }

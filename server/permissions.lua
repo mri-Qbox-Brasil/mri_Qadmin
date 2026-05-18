@@ -177,6 +177,76 @@ function GetCategoryDefinitions()
     return result
 end
 
+-- FiveM built-ins that must never appear in the group editor.
+local PERM_BLOCKLIST = { command = true, ['builtin.everyone'] = true, ['builtin.everyone.2'] = true }
+
+--- Called by plugins.lua right after a plugin manifest is stored.
+--- Registers plugin-scoped perms in the group editor without duplicating builtins.
+function RegisterPermissionsForPlugin(manifest)
+    if type(manifest) ~= 'table' then return end
+
+    local catId    = manifest.id
+    local catLabel = manifest.label or manifest.id
+    local rawPerms = manifest.requiredPerms or {}
+
+    -- Index optional rich perm defs keyed by perm id
+    local permDefs = {}
+    if type(manifest.permDefs) == 'table' then
+        for _, d in ipairs(manifest.permDefs) do
+            if type(d) == 'table' and type(d.id) == 'string' then permDefs[d.id] = d end
+        end
+    end
+
+    -- Keep only plugin-specific perms (must contain a dot, must not be a built-in)
+    local toRegister = {}
+    for _, perm in ipairs(rawPerms) do
+        if type(perm) == 'string' and not PERM_BLOCKLIST[perm] and perm:find('%.') then
+            toRegister[#toRegister + 1] = perm
+        end
+    end
+    if #toRegister == 0 then return end
+
+    -- Ensure a category exists for this plugin
+    local catExists = false
+    for _, c in ipairs(CATEGORY_DEFINITIONS) do if c.id == catId then catExists = true; break end end
+    if not catExists then
+        for _, c in ipairs(_pluginCategories) do if c.id == catId then catExists = true; break end end
+    end
+    if not catExists then
+        _pluginCategories[#_pluginCategories + 1] = { id = catId, label = catLabel, order = 1000 + #_pluginCategories }
+    end
+
+    -- Deduplicate against everything already registered
+    local knownIds = {}
+    for _, p in ipairs(PERM_DEFINITIONS)  do knownIds[p.id] = true end
+    for _, p in ipairs(_pluginPerms)      do knownIds[p.id] = true end
+
+    local added = {}
+    for _, permId in ipairs(toRegister) do
+        if not knownIds[permId] then
+            local def = permDefs[permId]
+            _pluginPerms[#_pluginPerms + 1] = {
+                id       = permId,
+                label    = (def and def.label) or permId:match('%.(.+)$') or permId,
+                desc     = (def and def.desc) or '',
+                category = (def and def.category) or catId,
+            }
+            ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = permId
+            knownIds[permId] = true
+            added[#added + 1] = permId
+        end
+    end
+
+    if #added == 0 then return end
+
+    -- Seed god group dynamically (SeedGodGroup ran once at startup before plugins loaded)
+    for _, permId in ipairs(added) do
+        MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_group_permissions (group_id, permission) VALUES ("god", ?)', { permId })
+        lib.addAce('mri.group.god', permId, true)
+    end
+    Debug(('[mri_Qadmin] RegisterPermissionsForPlugin [%s]: %d perm(s) registrada(s)'):format(catId, #added))
+end
+
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- PERMISSION DEFINITIONS
 -----------------------------------------------------------------------------------------------------------------------------------------
