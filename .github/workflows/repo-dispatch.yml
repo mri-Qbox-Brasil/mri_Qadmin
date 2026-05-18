@@ -10,7 +10,7 @@ on:
 
 jobs:
   notify-docs:
-    uses: mri-Qbox-Brasil/template-fivem/.github/workflows/callable-repo-dispatch.yml@main
+    uses: mri-Qbox-Brasil/workflows/.github/workflows/callable-repo-dispatch.yml@main
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     with:

@@ -7,6 +7,6 @@ on:
 
 jobs:
   release:
-    uses: mri-Qbox-Brasil/template-fivem/.github/workflows/callable-release.yml@main
+    uses: mri-Qbox-Brasil/workflows/.github/workflows/callable-release.yml@main
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}

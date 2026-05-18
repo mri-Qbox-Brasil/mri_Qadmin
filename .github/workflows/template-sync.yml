@@ -7,6 +7,6 @@ on:
 
 jobs:
   sync:
-    uses: mri-Qbox-Brasil/template-fivem/.github/workflows/callable-template-sync.yml@main
+    uses: mri-Qbox-Brasil/workflows/.github/workflows/callable-template-sync.yml@main
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
