@@ -1,0 +1,18 @@
+name: Notify Docs Update
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - README.md
+      - MANUAL.md
+  workflow_dispatch:
+
+jobs:
+  notify-docs:
+    uses: mri-Qbox-Brasil/template-fivem/.github/workflows/callable-repo-dispatch.yml@main
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    with:
+      friendly-name: "MRI Qadmin"
+      doc-file: "MANUAL.md"
