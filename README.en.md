@@ -1,152 +1,176 @@
-# MRI QAdmin
+# mri_Qadmin
 
-Professional and modern Admin Panel for Qbox and QbCore servers.
+Modern and extensible admin panel for FiveM servers based on QBCore and Qbox, with full player management, vehicles, inventory, group-based permissions, live screen streaming via WebRTC, and a plugin architecture for external modules.
 
 [Leitura em Português](README.md)
 
-## 🌟 Main Features
+## Main Features
 
-- **Detailed Dashboard**: Overview of server status, online players, and metrics.
-- **Complete Player Management**:
-  - List of online/offline players.
-  - Quick Actions: Revive, Heal, Kill, Freeze, Spectate, Teleport.
-  - Punishments: Ban, Kick, Warn.
-  - Economy: Give/Remove Money (Cash, Bank, Crypto).
-  - Inventory: View and Clear local or offline inventory, Give Items.
-  - Vehicles: View player vehicles, Spawn, Delete (DV), Open Trunk, Fix, Refuel.
-  - Customization: Clothing Menu, Set Ped.
-- **Group Management**:
-  - Easily control Jobs and Gangs.
-- **Advanced Bans System**:
-  - Comprehensive ban list and intuitive management in the panel.
-- **Vehicle Management**:
-  - Admin vehicle spawner, max tuning, and garage management.
-- **Items Database**:
-  - Search items by base name and easily give them to any player.
-- **Developer and Tools**:
-  - Integrated chat for STAFF members.
-  - Vehicle Developer Menu.
-  - Entity information, routing buckets management.
-  - Copy Coordinates directly.
-  - **Dynamic Wall (ESP)**: Player visualization (Custom colors for dead, invisible, or based on ACE permissions).
-- **Advanced Live Visualization**:
-  - **Live Keyboard Visualizer**: See player key presses in real-time while spectating (Numpad and Mouse support).
-  - **Dynamic Map**: Smart view reset, advanced player filters, and live screen integration.
-- **Highly Customizable**:
-  - Light/Dark themes.
-  - Dynamic colors (Hex, RGB, HSL support for panel accent).
-  - **Smart Auto-Scaling**: The panel automatically adjusts for resolutions above 1920px (4K, Ultra-wide) and is optimized for smaller screens (1366x768).
-  - Native WebRTC or Cloudflare SFU for advanced live views.
-- **Hybrid and Dynamic Permission System**:
-  - Granular control by License, Character, Job, or Gang.
-  - Real-time synchronization of inheritances and permissions.
-  - **Permission Wizard (NEW)**: Guided assistant for creating complex permissions (Target -> Optional Inheritance -> ACEs -> Summary).
+- **Full Admin Panel** — Intuitive NUI interface for server, player, and resource management.
+- **Group-Based Permission System** — Create groups with granular permissions, FiveM ACE links, and real-time synchronization. Permission definitions are Lua-only (server side).
+- **Player & Vehicle Management** — Teleport, vitals, inventory, spawn, repair, vehicle modification, and key control.
+- **Staff Chat** — Dedicated chat with `@mention` support and notification alerts.
+- **Live Screen Streaming (WebRTC)** — Real-time screen viewing of players. Supports FiveM-native, WebSocket, and Cloudflare SFU backends.
+- **Plugin Architecture** — External scripts register admin pages and their own permissions via exports.
+- **Smart Auto-Scaling** — Panel automatically adapts for resolutions above 1920px (4K, ultrawide) and optimized for 1366×768.
 
-## 📦 Required Dependencies
+## Required Dependencies
 
-To ensure MRI QAdmin works perfectly, the following resources are required:
+| Resource | Purpose |
+| :--- | :--- |
+| `ox_lib` | Callbacks, commands, ACE management, utilities |
+| `oxmysql` | MySQL persistence |
+| `qb-core` or `qbx_core` | Player framework |
 
-- `ox_lib`
-- `oxmysql`
-- `qb-core` or `qbx_core` (Framework)
+> `server/server_secrets.json` is only required when `Config.SignalingProvider = "cloudflare-sfu"`.
 
-## 🛡️ Hybrid Permission System
+## Installation
 
-MRI QAdmin utilizes an advanced Access Control model (Hybrid ACL) allowing for flexible and powerful management:
+1. Copy the `mri_Qadmin` folder to your server's `resources` directory.
+2. Import `database.sql` into your database.
+3. Add `ensure mri_Qadmin` to your `server.cfg` (after `ox_lib` and `oxmysql`).
 
-- **Global (`license:xxxx`)**: Permissions linked to the player's account. Valid for all characters.
-- **Administrative (`group.xxxx`)**: Standardized ACE groups (e.g., `group.admin`, `group.mod`).
-- **Character (`char:citizenid`)**: Specific permissions for a single character.
-- **Job/Gang (`job.name` / `gang.name`)**: Automatic permissions based on the player's current role (e.g., `job.police`).
+## Permission System
 
-### Hierarchy and Precedence
+MRI QAdmin uses an ACE-based group system:
 
-The recommended logical hierarchy is `License > Group > Character > Job`. Permissions are cumulative and dynamically injected into the player's session upon login or role/character change, without requiring reconnection.
+- **Groups** — Admins are assigned to groups. Each group holds a set of ACE permissions stored in the DB and applied on every resource start.
+- **Linked Principals** — Groups can inherit from FiveM principals (`group.admin`, `job.police`, `gang.ballas`) for automatic permission based on the player's current role.
+- **Master Admin** — Special bypass status granted via console command. Ignores all permission checks.
+- **Plugin Permissions** — External scripts register their own permissions through `RegisterPlugin` or `RegisterPermissions`. These appear in the group editor automatically.
 
-## 💻 Console Commands and Permissions (Server Console)
+### Permission Hierarchy (recommended)
 
-You can manage fundamental permissions using the server terminal (console):
+```
+Master Admin (console bypass)
+  └── Group Permissions (stored in DB, applied as ACEs)
+        └── Linked Principals (inherited: job/gang/group)
+```
 
-### `mri_qadmin.setmaster [id/license]`
+### Console Commands
 
-Grants **Master Admin** access (Full Panel with total control) immediately and permanently.
-**Exemplos:**
+| Command | Description |
+| :--- | :--- |
+| `mri_qadmin.setmaster [id/license]` | Grant Master Admin access |
+| `mri_qadmin.removemaster [id/license]` | Revoke Master Admin access |
+| `mri_qadmin.purgemasters` | Clear all Master Admin bypasses from DB |
+| `mri_qadmin.debugperms [id]` | Show detailed permission debug for a player |
+| `mri_qadmin.inspectdb` | Inspect permission tables in the DB |
 
-- `mri_qadmin.setmaster 1` (Online ID)
-- `mri_qadmin.setmaster license:1234...` (License)
+## In-Game Commands
 
-### `mri_qadmin.addpermission [id/license/prefix] [permission_or_group]`
+| Command | Requires | Description |
+| :--- | :--- | :--- |
+| `/adm` | `qadmin.open` | Open the admin panel |
+| `/nc` | `qadmin.action.noclip` | Toggle noclip |
+| `/vector2`, `/vec2` | Admin | Copy coords as Vector2 |
+| `/vector3`, `/vec3` | Admin | Copy coords as Vector3 |
+| `/vector4`, `/vec4` | Admin | Copy coords as Vector4 (with heading) |
+| `/heading` | Admin | Copy current heading |
+| `/setammo` | `qadmin.action.set_ammo` | Set ammo for current weapon |
+| `wall` | `qadmin.action.enable_wall` | Toggle ESP/Wallhack |
 
-_(Advanced)_ Grants a permission or group permanently in the database.
-**Exemplos:**
+## API / Developer Exports
 
-- `mri_qadmin.addpermission license:abcd... group.admin` (Adds to Admin Group).
-- `mri_qadmin.addpermission char:ABC12345 group.mod` (Gives Mod to a specific character).
-- `mri_qadmin.addpermission job.police qadmin.action.revive` (Gives revive permission to ALL police).
-
-## 🚀 Installation
-
-1.  Download the latest version of MRI QAdmin.
-2.  Extract it into your server's `resources` folder.
-3.  Import the `database.sql` file into your database.
-4.  Add `ensure mri_Qadmin` to your `server.cfg`.
-5.  Ensure the resource has permissions to execute ACE commands (if required).
-
-## 🛠️ API / Developer Exports
-
-MRI QAdmin exposes several useful functions for integration with other systems.
-
-### Server-side Exports
+### Server-side
 
 #### `HasPerms(source, node)`
 
-Checks if a player has a specific ACE permission or belongs to a group.
+Checks if a player has a specific permission. Returns `boolean`.
 
 ```lua
-local hasAccess = exports.mri_Qadmin:HasPerms(source, 'qadmin.page.dashboard')
+local ok = exports.mri_Qadmin:HasPerms(source, 'qadmin.page.dashboard')
 ```
 
 #### `CheckPerms(source, node)`
 
-Checks permission and sends an error notification to the player if they don't have access.
+Checks permission and sends a denial notification to the player if they don't have access. Returns `boolean`.
 
 ```lua
 if exports.mri_Qadmin:CheckPerms(source, 'qadmin.action.revive') then
-    -- Execute revival
+    -- execute revival
 end
 ```
 
 #### `IsPlayerInPrincipal(source, principal)`
 
-Checks if the player belongs to a specific principal (group).
+Checks if a player belongs to a specific ACE principal.
 
 ```lua
 if exports.mri_Qadmin:IsPlayerInPrincipal(source, 'group.admin') then
-    print("The player is an administrator!")
+    print("Player is an administrator!")
 end
 ```
 
 #### `GeneratePlate()`
 
-Generates a random 8-character vehicle plate that does not exist in the database.
+Generates a random 8-character vehicle plate not already in the database.
 
 ```lua
-local newPlate = exports.mri_Qadmin:GeneratePlate()
+local plate = exports.mri_Qadmin:GeneratePlate()
 ```
 
-### Client-side Exports
+#### `AddLog(resource, category, level, message, data[, source])`
+
+Adds an entry to the log system (DB + Discord webhook).
+
+```lua
+exports.mri_Qadmin:AddLog('my_resource', 'players', 'info', 'Player did something', { playerId = source }, source)
+```
+
+#### `RegisterPlugin(manifest)`
+
+Registers an admin page in the sidebar. Automatically registers `requiredPerms` (excluding FiveM built-ins) in the group editor.
+
+```lua
+exports['mri_Qadmin']:RegisterPlugin({
+    id            = 'mri_Qspawn',
+    label         = 'Spawns',
+    icon          = 'car',
+    resource      = 'mri_Qspawn',
+    requiredPerms = { 'mri_Qspawn.admin', 'command' },
+    permDefs = {  -- optional: rich label/desc per permission
+        { id = 'mri_Qspawn.admin', label = 'Administrator', desc = 'Full access to spawn panel' },
+    },
+    description = 'Vehicle spawn manager',
+})
+```
+
+#### `UnregisterPlugin(id)`
+
+Removes a previously registered plugin.
+
+```lua
+exports['mri_Qadmin']:UnregisterPlugin('mri_Qspawn')
+```
+
+#### `RegisterPermissions(perms, categoryDef?)`
+
+Registers permissions from external scripts that don't need a sidebar page.
+
+```lua
+exports['mri_Qadmin']:RegisterPermissions(
+    {
+        { id = 'mri_Qshop.open',   label = 'Open Shop',   desc = 'Access the shop panel' },
+        { id = 'mri_Qshop.manage', label = 'Manage',      desc = 'Create and edit shops' },
+    },
+    { id = 'mri_Qshop', label = 'Shops' }
+)
+```
+
+### Client-side
 
 #### `ToggleUI(show)`
 
 Opens or closes the admin panel.
 
 ```lua
-exports.mri_Qadmin:ToggleUI(true) -- Open
+exports.mri_Qadmin:ToggleUI(true)
 ```
 
 #### `OpenUI()`
 
-Short-cut to open the panel.
+Opens the admin panel.
 
 ```lua
 exports.mri_Qadmin:OpenUI()
@@ -154,24 +178,23 @@ exports.mri_Qadmin:OpenUI()
 
 #### `IsMenuVisible()`
 
-Returns `true` if the panel is currently open on the screen.
+Returns `true` if the panel is currently open.
 
 ```lua
 local isOpen = exports.mri_Qadmin:IsMenuVisible()
 ```
 
-## 👏 Credits & Acknowledgements
+## Credits & Acknowledgements
 
 This project is a heavily modified, enhanced, and modernized version inspired by the excellent **ps-adminmenu**.
-We express our sincere gratitude to the [Project Sloth](https://github.com/Project-Sloth) team and contributors for the original work forming the foundation in the FiveM community.
+We express our sincere gratitude to the [Project Sloth](https://github.com/Project-Sloth) team and contributors.
 
-## 📄 License
+## License
 
-This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.
-You may share and adapt the material, under the following conditions:
+Licensed under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.
 
-- You must give appropriate credit.
-- You **CANNOT** use this material for commercial purposes (cannot be sold).
-- If you modify the material, you must distribute your contributions under the same license.
+- Credit must be given.
+- **Cannot** be used for commercial purposes.
+- Modifications must be distributed under the same license.
 
-Read the full [LICENSE](LICENSE) file for all legal details.
+See the full [LICENSE](LICENSE) file for details.

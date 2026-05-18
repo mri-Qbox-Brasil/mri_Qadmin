@@ -1,128 +1,230 @@
-# mri_Qadmin - Manual Funcional
+# mri_Qadmin — Manual Funcional
 
-Um painel de administração abrangente e extensível para servidores FiveM baseados em QBCore e Qbox. Ele oferece gerenciamento extensivo de jogadores, controle de servidor, ferramentas de veículos, integração com sistema VIP, transmissão de tela ao vivo via WebRTC, funcionalidades de ESP/wallhack, ferramentas de manipulação de mundo e uma arquitetura de plugins para módulos externos.
+Painel de administração abrangente e extensível para servidores FiveM baseados em QBCore e Qbox. Oferece gerenciamento completo de jogadores, veículos, inventário, sistema de permissões por grupos, Staff Chat, transmissão de tela ao vivo via WebRTC, ferramentas de desenvolvimento e arquitetura de plugins para módulos externos.
+
+---
 
 ## O que o recurso faz
 
-O `mri_Qadmin` fornece uma interface NUI completa para administradores, permitindo o controle total sobre o ambiente do servidor e a interação com os jogadores. Para os administradores, ele oferece sincronização de dados em tempo real (itens, veículos, comandos, recursos, empregos, gangues, peds, locais, ações, permissões e jogadores), um sistema de permissões robusto com gerenciamento de grupos, um chat dedicado para a equipe, e ferramentas para gerenciar jogadores (visualizar dados, teletransportar, alternar invisibilidade/god mode/noclip, matar, algemar, definir emprego/gangue, silenciar, remover estresse, definir saúde/munição, mudar modelo).
+O `mri_Qadmin` fornece uma interface NUI completa para administradores, com sincronização de dados em tempo real (itens, veículos, recursos, empregos, gangues, peds, locais, ações, permissões e jogadores). As permissões são definidas exclusivamente no servidor (Lua), e o frontend renderiza o que o servidor envia — sem duplicação de lógica.
 
-Para os jogadores, o recurso permite que administradores monitorem suas atividades, gerenciem seus inventários (abrindo, removendo, transferindo, copiando, limpando, dando e movendo itens), e controlem veículos (criando, reabastecendo, consertando, modificando, alterando placas e salvando propriedades). Além disso, o `mri_Qadmin` inclui um sistema de logs detalhado com atualizações em tempo real e integração com webhooks do Discord, gerenciamento dinâmico de ações personalizadas, ferramentas de desenvolvimento (modo dev, exibição de coordenadas, laser, scanner de proximidade), integração com sistemas VIP e a capacidade de transmitir a tela de jogadores via WebRTC para fins de monitoramento.
-
-## Funcionalidades principais
-
--   **Painel de Administração Completo**: Interface NUI abrangente para gerenciamento de servidor e jogadores.
--   **Sistema de Permissões Avançado**: Gerenciamento de grupos e permissões detalhadas, incluindo status de "Master Admin" e bypass.
--   **Gerenciamento de Jogadores**: Visualização de dados, teletransporte, modos especiais (invisibilidade, god mode, noclip), ações de moderação (matar, algemar, silenciar), alteração de trabalho/gangue e saúde/munição.
--   **Controle de Inventário**: Acesso e manipulação de inventários de jogadores, baús e veículos, com atualizações em tempo real.
--   **Ferramentas de Veículos**: Criação, reabastecimento, reparo, modificação e gerenciamento de placas de veículos.
--   **Monitoramento e Logs**: Sistema de logs detalhado com atualizações em tempo real e integração com Discord webhooks.
--   **Transmissão de Tela WebRTC**: Capacidade de transmitir a tela de jogadores para fins de monitoramento.
--   **Sistema de Plugins e Ações Dinâmicas**: Extensibilidade para adicionar novas funcionalidades e ações administrativas personalizadas.
--   **Ferramentas de Desenvolvimento**: Modos de desenvolvedor, exibição de coordenadas, scanner de entidades próximas e ESP/Wallhack.
+---
 
 ## Como funciona
 
-1.  Um administrador abre o painel de administração (geralmente via comando `/adm` ou uma tecla configurada).
-2.  O painel NUI carrega dados do servidor em tempo real, como jogadores, recursos, logs e configurações, utilizando callbacks e eventos.
-3.  O administrador seleciona uma funcionalidade (ex: gerenciar um jogador, um veículo ou um recurso).
-4.  As ações são executadas através de callbacks NUI ou comandos, com verificações de permissão robustas no lado do servidor.
-5.  O servidor processa a requisição, interage com o framework (QBCore), banco de dados (MySQL) e outros recursos, e envia atualizações de volta ao cliente NUI.
+1. Um administrador abre o painel via `/adm` ou tecla configurada.
+2. A NUI carrega dados do servidor em tempo real usando callbacks e eventos.
+3. O administrador seleciona uma funcionalidade (jogador, veículo, recurso, etc.).
+4. As ações são executadas via callbacks NUI com verificações de permissão no servidor.
+5. O servidor processa, interage com o framework (QBCore/Qbox), banco de dados (MySQL) e outros resources, e devolve atualizações para a NUI.
+
+---
+
+## Funcionalidades principais
+
+### Dashboard
+Visão geral do servidor: jogadores online, uptime, estatísticas financeiras (requer `qadmin.action.info_admin`), ações rápidas de anúncio e controle de chat.
+
+### Jogadores
+Lista de jogadores online e offline com busca, filtros e paginação. Ações disponíveis por permissão:
+- **Visualização**: identifiers, vitais, inventário, coordenadas, bucket
+- **Teleporte**: ir até o jogador, trazer, voltar, enviar para coordenadas ou local
+- **Moderação**: matar, expulsar, advertir, banir, desbanir, verificar identidade, algemar, congelar, silenciar, aplicar efeito de embriaguez
+- **Personagem**: set de emprego/gangue, dar/remover dinheiro, mudar model (ped), menu de roupas, inventário (abrir, ver, limpar, transferir, copiar)
+
+### Veículos
+Gerenciamento de estoque e spawning. Visualização em grid ou tabela com busca. Ações: spawnar temporário, dar permanente, deletar, consertar, abastecer, modificar, trocar placa, alterar estoque.
+
+### Itens
+Base de dados de itens com spawn direto para o inventário de qualquer jogador online.
+
+### Staff Chat
+Chat dedicado para administradores com suporte a menções `@[Nome]` e alertas de notificação quando o staff é marcado.
+
+### Permissões
+Editor de grupos com categorias dinâmicas vindas do servidor. Checkboxes por permissão, vinculação de principals (`group.admin`, `job.police`, etc.), e wizard guiado para criação de permissões complexas.
+
+### Mapa ao Vivo
+Mapa interativo com posição em tempo real de todos os jogadores, filtros avançados e integração com telas ao vivo.
+
+### Telas ao Vivo (WebRTC)
+Visualização da tela de jogadores em tempo real para monitoramento. Suporte a FiveM-native, WebSocket e Cloudflare SFU.
+
+### Logs
+Sistema de logs com persistência em banco de dados, buffer em memória, webhooks Discord por categoria e filtros por resource. Configurável via painel sem reiniciar o resource.
+
+### Recursos
+Listagem de todos os resources do servidor com controle de start/stop.
+
+### Configurações
+Editor visual de configurações sem precisar editar arquivos. Altera clima, hora, tema e integrações.
+
+### Dev Mode
+Ferramentas de desenvolvedor: exibição de coordenadas, blips de todos os jogadores, scanner de entidades próximas, laser, modo mock para testes no browser.
+
+### VIP
+Gerenciamento de VIPs integrado com o sistema de permissões.
+
+---
+
+## Sistema de Permissões
+
+As permissões são definidas exclusivamente em `server/permissions.lua` e enviadas para o frontend via `data_sync.lua`. O frontend apenas renderiza o que o servidor envia.
+
+### Grupos
+
+Cada grupo tem um conjunto de ACE permissions armazenadas no banco de dados e aplicadas via `lib.addAce` em cada reinício. Os grupos podem ser vinculados a principals do FiveM (`group.admin`, `job.police`, `gang.ballas`) para herança automática.
+
+### Master Admin
+
+Status especial concedido via console. Ignora todas as verificações de permissão do Qadmin.
+
+```
+mri_qadmin.setmaster 1         # por ID online
+mri_qadmin.setmaster license:abcd...  # por licença
+mri_qadmin.removemaster 1
+mri_qadmin.purgemasters        # limpa todos do DB
+```
+
+### Permissões de Plugins
+
+Quando um plugin registra `RegisterPlugin({ requiredPerms = {...} })`, as permissões válidas (que contêm ponto e não são built-ins do FiveM) são automaticamente adicionadas ao editor de grupos sob uma categoria nomeada com o `id` do plugin. O grupo `god` recebe essas permissões dinamicamente.
+
+Consulte [PERMISSIONS.md](PERMISSIONS.md) para a referência completa.
+
+---
 
 ## Configurações disponíveis
 
-As opções de configuração estão disponíveis para personalizar o comportamento do recurso:
+Arquivo: `shared/config.lua`
 
--   `Config.Actions`: Define ações administrativas personalizadas.
--   `Config.PlayerActions`: Ações específicas para gerenciamento de jogadores.
--   `Config.OtherActions`: Outras ações administrativas diversas.
--   `Config.VehicleImages`: Configurações para imagens de veículos.
--   `Config.WebRTCUrl`: URL do servidor WebRTC para transmissão de tela.
--   `Config.SignalingProvider`: Provedor de sinalização WebRTC.
--   `Config.Descriptions`: Descrições para elementos da interface.
--   `Config.Options`: Opções gerais do painel.
--   `Config.Inventory`: Define o sistema de inventário em uso (ex: 'ox_inventory').
--   `Config.SupportedLanguages`: Lista de idiomas suportados pelo painel.
--   `Config.AdminKey`: Tecla de atalho para abrir o painel de administração.
--   `Config.NoclipKey`: Tecla de atalho para alternar o modo noclip.
--   `Config.Keybindings`: Booleano para ativar ou desativar os atalhos de teclado.
--   `Config.Fuel`: Define o recurso de combustível em uso (ex: 'ox_fuel').
--   `Config.Dealership`: Define o sistema de concessionária em uso (ex: 'mri', 'ps-dealerships', 'none').
--   `Config.OpenPanelPerms`: Permissões necessárias para abrir o painel de administração.
+| Chave | Descrição |
+| :--- | :--- |
+| `Config.Fuel` | Resource de combustível (`"cdn-fuel"`, `"ps-fuel"`, `"LegacyFuel"`, `"ox_fuel"`) |
+| `Config.Dealership` | Sistema de concessionária (`"mri"`, `"ps-dealerships"`, `"none"`) |
+| `Config.Inventory` | Auto-detectado via `GetResourceState` (ox, ps, lj, qb) |
+| `Config.OpenPanelPerms` | ACEs para abrir o painel (padrão: `{'qadmin.open'}`) |
+| `Config.AdminKey` | Tecla para abrir o painel (padrão: `"0"`) |
+| `Config.NoclipKey` | Tecla para alternar noclip (padrão: `"9"`) |
+| `Config.Keybindings` | Habilitar atalhos de teclado |
+| `Config.Debug` | Habilitar prints de debug |
+| `Config.QBCoreAutoSync` | Promover automaticamente ranks `admin`/`god` do QBCore para o grupo `admin` |
+| `Config.RenewedPhone` | Suporte ao qb-phone do Renewed (multijob) |
+| `Config.DefaultGarage` | Garagem padrão para o Give Car |
+| `Config.VehicleImages` | URL base para imagens de veículos |
+| `Config.MapBaseUrl` | URL base para tiles do mapa ao vivo |
+| `Config.SignalingProvider` | Backend WebRTC: `"fivem-native"`, `"websocket"` ou `"cloudflare-sfu"` |
+| `Config.WebRTCUrl` | URL WebSocket para o modo `"websocket"` |
+| `Config.Logs` | Configuração de logs (webhooks Discord por categoria, DB, buffer, filtros por resource) |
+| `Config.Actions` | Ações administrativas customizadas |
+| `Config.PlayerActions` | Ações específicas para jogadores |
+| `Config.OtherActions` | Outras ações administrativas |
 
-### Permissões
+### Configuração de Logs
 
-O `mri_Qadmin` implementa um sistema de permissões robusto, integrado com grupos e ACEs do FiveM:
+```lua
+Config.Logs = {
+    Webhooks = {
+        players     = "",   -- bans, kicks, revives...
+        bans        = "",
+        inventory   = "",
+        vehicles    = "",
+        money       = "",
+        server      = "",   -- clima, hora, anúncios
+        permissions = "",
+        chat        = "",
+        system      = "",
+        Fallback    = "",   -- recebe categorias sem webhook específico
+    },
+    ForwardEvent  = "",     -- evento server-side disparado a cada log (deixe "" para desativar)
+    DBEnabled     = true,
+    MaxMemory     = 500,    -- buffer em memória (logs mais recentes)
+    ResourceMode  = 'blacklist', -- 'blacklist' ou 'whitelist'
+    ResourceEntries = {},
+}
+```
 
--   **Grupos**: Administradores podem criar, editar e excluir grupos, atribuindo permissões específicas a cada um. Os grupos podem ser vinculados a ACEs do FiveM para controle granular.
--   **Master Admin**: Um status especial que concede bypass total a todas as permissões do Qadmin. Pode ser concedido e revogado via console usando os comandos `mri_qadmin.setmaster` e `mri_qadmin.removemaster`.
--   **ACEs**: As permissões são gerenciadas através de ACEs do FiveM, permitindo integração com sistemas de permissão existentes.
--   **Permissões Registradas**: Scripts externos podem registrar suas próprias permissões e categorias no painel Qadmin, estendendo suas funcionalidades.
--   **Depuração**: Comandos de console como `mri_qadmin.debugperms` e `mri_qadmin.inspectdb` estão disponíveis para depurar permissões de jogadores e inspecionar o banco de dados em busca de configurações incorretas.
+---
 
 ## Comandos disponíveis
 
-| Comando | Descrição |
-|---------|-----------|
-| `/adm` | Abre o painel de administração. |
-| `/nc` | Alterna o modo noclip. |
-| `/vector2`, `/vec2` | Copia as coordenadas atuais como Vector2. |
-| `/vector3`, `/vec3` | Copia as coordenadas atuais como Vector3. |
-| `/vector4`, `/vec4` | Copia as coordenadas atuais como Vector4 (incluindo a direção). |
-| `/heading` | Copia a direção atual. |
-| `/setammo` | Define a munição para a arma atual. |
-| `mri_qadmin.setmaster [target]` | (Console Only) Concede status de "Master Admin" a um jogador (ID, Licença ou Licença2). |
-| `mri_qadmin.removemaster [target]` | (Console Only) Revoga status de "Master Admin" de um jogador. |
-| `mri_qadmin.debugperms [target]` | (Console Only) Exibe informações detalhadas de depuração de permissões para um jogador. |
-| `mri_qadmin.purgemasters` | (Console Only) Limpa todos os bypasses de "Master Admin" do banco de dados e da sessão atual. |
-| `mri_qadmin.inspectdb` | (Console Only) Inspeciona tabelas de permissão do Qadmin no banco de dados. |
-| `wall` | Alterna o recurso ESP Wallhack para o jogador (requer permissão `qadmin.action.enable_wall`). |
+| Comando | Requer | Descrição |
+| :--- | :--- | :--- |
+| `/adm` | `qadmin.open` | Abre o painel |
+| `/nc` | `qadmin.action.noclip` | Alterna noclip |
+| `/vector2`, `/vec2` | Admin | Copia coordenadas como Vector2 |
+| `/vector3`, `/vec3` | Admin | Copia coordenadas como Vector3 |
+| `/vector4`, `/vec4` | Admin | Copia coordenadas como Vector4 (com heading) |
+| `/heading` | Admin | Copia o heading atual |
+| `/setammo` | `qadmin.action.set_ammo` | Define munição da arma atual |
+| `wall` | `qadmin.action.enable_wall` | Alterna ESP/Wallhack |
+| `mri_qadmin.setmaster [alvo]` | Console | Concede Master Admin (ID, licença ou licença2) |
+| `mri_qadmin.removemaster [alvo]` | Console | Revoga Master Admin |
+| `mri_qadmin.purgemasters` | Console | Remove todos os Master Admins do DB |
+| `mri_qadmin.debugperms [alvo]` | Console | Exibe debug de permissões de um jogador |
+| `mri_qadmin.inspectdb` | Console | Inspeciona tabelas de permissão no DB |
 
-## Eventos
+---
 
-### Callbacks principais
+## Callbacks principais (NUI → Servidor)
 
-| Callback | Direção | Descrição |
-|----------|---------|-----------|
-| `GetMessages` | C→S | Recupera mensagens do chat da equipe. |
-| `SendMessage` | C→S | Envia uma mensagem para o chat da equipe. |
-| `GetStaffPlayers` | C→S | Recupera a lista de jogadores da equipe. |
-| `mri_Qadmin:callback:GetPlayerInventory` | C→S | Recupera o inventário de um jogador. |
-| `mri_Qadmin:callback:GetVehicleInventory` | C→S | Recupera o inventário de um veículo. |
-| `mri_Qadmin:server:RemoveInventoryItem` | C→S | Remove um item do inventário. |
-| `mri_Qadmin:server:TransferItemToSelf` | C→S | Transfere um item para o próprio inventário. |
-| `mri_Qadmin:server:CopyInventoryToSelf` | C→S | Copia o inventário para o próprio inventário. |
-| `mri_Qadmin:server:ClearPlayerInventory` | C→S | Limpa o inventário de um jogador. |
-| `mri_Qadmin:server:GiveInventoryItem` | C→S | Dá um item a um jogador. |
-| `mri_Qadmin:server:MoveInventoryItem` | C→S | Move um item entre inventários. |
-| `mri_Qadmin:server:StartWatchingInventory` | C→S | Inicia o monitoramento de um inventário. |
-| `mri_Qadmin:server:StopWatchingInventory` | C→S | Para o monitoramento de um inventário. |
-| `StartWatchingPlayer` | C→S | Inicia o monitoramento de um jogador. |
-| `StopWatchingPlayer` | C→S | Para o monitoramento de um jogador. |
-| `mri_Qadmin:callback:GetLogs` | C→S | Recupera os logs do servidor. |
-| `mri_Qadmin:callback:GetLogSettings` | C→S | Recupera as configurações de log. |
-| `mri_Qadmin:callback:SaveLogSettings` | C→S | Salva as configurações de log. |
-| `getServerInfo` | C→S | Recupera informações do servidor. |
-| `getTranslations` | C→S | Recupera as traduções. |
-| `mri_Qadmin:callback:GetBans` | C→S | Recupera a lista de banimentos. |
-| `sendNUI` | C→S | Envia dados para a NUI. |
-| `mri_Qadmin:server:SetGlobalAccentColor` | C→S | Define a cor de destaque global. |
-| `setClipboard` | C→S | Define o conteúdo da área de transferência. |
-| `hideUI` | C→S | Esconde a interface do usuário. |
-| `getData` | C→S | Recupera dados gerais. |
-| `clickButton` | C→S | Simula o clique de um botão. |
-| `update_vehicle_stock` | C→S | Atualiza o estoque de veículos. |
-| `setResourceState` | C→S | Define o estado de um recurso. |
-| `getPlayers` | C→S | Recupera a lista de jogadores. |
-| `getGroupsData` | C→S | Recupera dados de grupos. |
-| `GetPlayerCoords` | C→S | Recupera as coordenadas de um jogador. |
-| `GetAllPlayerCoords` | C→S | Recupera as coordenadas de todos os jogadores. |
-| `GetPlayerVitals` | C→S | Recupera os sinais vitais de um jogador. |
-| `SetPlayerVital` | C→S | Define um sinal vital de um jogador. |
-| `getSelfId` | C→S | Recupera o ID do próprio jogador. |
-| `executeCommand` | C→S | Executa um comando. |
-| `mri_Qadmin:callback:GetMyPermissions` | C→S | Recupera as permissões do jogador. |
-| `mri_Qadmin:callback:GetPrincipals` | C→S | Recupera os principais do FiveM. |
-| `mri_Qadmin:callback:GetAces` | C→S | Recupera os ACEs do FiveM. |
-| `seed_pages` | C→S | Semeia páginas. |
-| `mri_Qadmin:callback:GetGroups` | C→S | Recupera os grupos do Qadmin. |
-| `mri_Q
+| Callback | Descrição |
+| :--- | :--- |
+| `getData` | Carrega dados iniciais (jogadores, itens, veículos, permissões...) |
+| `getPlayers` | Lista paginada de jogadores online e offline |
+| `GetMessages` | Mensagens do Staff Chat |
+| `SendMessage` | Envia mensagem no Staff Chat |
+| `GetStaffPlayers` | Lista jogadores com acesso ao Staff Chat |
+| `mri_Qadmin:callback:GetGroups` | Grupos de permissão |
+| `mri_Qadmin:callback:GetMyPermissions` | Permissões do próprio jogador |
+| `mri_Qadmin:callback:GetPlayerInventory` | Inventário de um jogador |
+| `mri_Qadmin:callback:GetVehicleInventory` | Inventário de um veículo |
+| `mri_Qadmin:callback:GetLogs` | Logs do servidor |
+| `mri_Qadmin:server:getPlugins` | Plugins visíveis para o jogador (filtrado por ACE) |
+| `update_vehicle_stock` | Atualiza estoque de veículos |
+| `clickButton` | Executa uma ação configurável via config |
+| `setResourceState` | Inicia/para um resource |
+| `GetPlayerCoords` | Coordenadas de um jogador |
+| `GetAllPlayerCoords` | Coordenadas de todos (mapa ao vivo) |
+| `GetPlayerVitals` | Vitais (vida, armadura) de um jogador |
+
+---
+
+## Eventos emitidos pelo servidor
+
+| Evento | Direção | Descrição |
+| :--- | :--- | :--- |
+| `mri_Qadmin:client:pluginsUpdated` | S→C | Lista de plugins atualizada (filtrada por ACE do player) |
+| `mri_Qadmin:client:OpenUI` | S→C | Força abertura do painel no cliente |
+| `newMessage` (postMessage NUI) | S→NUI | Nova mensagem no Staff Chat |
+| `mentioned` (postMessage NUI) | S→NUI | O jogador foi mencionado no Staff Chat |
+
+---
+
+## Arquitetura de Plugins
+
+Scripts externos podem adicionar páginas ao sidebar e registrar permissões no editor de grupos:
+
+```lua
+-- Chamado no server-side do plugin (ex: mri_Qspawn/server/main.lua)
+exports['mri_Qadmin']:RegisterPlugin({
+    id            = 'mri_Qspawn',
+    label         = 'Spawns',
+    icon          = 'car',          -- nome de ícone lucide-react
+    resource      = 'mri_Qspawn',
+    htmlPath      = 'web/build/index.html',  -- opcional
+    requiredPerms = { 'mri_Qspawn.admin', 'command' },
+    permDefs = {   -- opcional: metadados por permissão
+        { id = 'mri_Qspawn.admin', label = 'Administrador', desc = 'Acesso total ao painel de spawns' },
+    },
+    description   = 'Gerenciador de spawns de veículos',
+})
+```
+
+O plugin aparece no sidebar para jogadores que têm qualquer uma das `requiredPerms`. A permissão `command` (built-in FiveM) é filtrada automaticamente e não aparece no editor de grupos — apenas permissões com ponto e fora do blocklist são registradas.
+
+Para remover o plugin quando o resource para, o Qadmin faz isso automaticamente via `onResourceStop`.
+
+---
+
+*Atualizado em: 18/05/2026*
