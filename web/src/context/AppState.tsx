@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import { Player, VehicleDevData, CoordsData, GameData, EntityInfoData, PaginationState, NearbyEntitiesData } from '@/types'
-import type { PermDef } from '@/utils/permissions'
+import type { PermDef, CategoryDef } from '@/utils/permissions'
 
 interface AppStateValue {
     players: Player[]
@@ -42,6 +42,8 @@ interface AppStateValue {
     setMyPermissions: (p: string[]) => void
     permissionDefinitions: PermDef[]
     setPermissionDefinitions: (defs: PermDef[]) => void
+    categoryDefinitions: CategoryDef[]
+    setCategoryDefinitions: (defs: CategoryDef[]) => void
     permissionRefreshTrigger: number
     setPermissionRefreshTrigger: React.Dispatch<React.SetStateAction<number>>
 
@@ -69,6 +71,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const [menuWide, setMenuWideState] = useState<boolean>(() => localStorage.getItem('mri_qadmin_menu_wide') === 'true')
     const [myPermissions, setMyPermissions] = useState<string[]>([])
     const [permissionDefinitions, setPermissionDefinitions] = useState<PermDef[]>([])
+    const [categoryDefinitions, setCategoryDefinitions] = useState<CategoryDef[]>([])
     const [permissionRefreshTrigger, setPermissionRefreshTrigger] = useState<number>(0)
 
     const [gameData, setGameData] = useState<GameData>({
@@ -125,6 +128,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             nearbyEntities, setNearbyEntities,
             myPermissions, setMyPermissions,
             permissionDefinitions, setPermissionDefinitions,
+            categoryDefinitions, setCategoryDefinitions,
             permissionRefreshTrigger, setPermissionRefreshTrigger,
             settings, setSettings,
             useMocks, setUseMocks

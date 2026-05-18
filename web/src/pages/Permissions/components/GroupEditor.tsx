@@ -5,7 +5,7 @@ import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 import { useI18n } from '@/hooks/useI18n'
 import { GroupData } from './GroupManager'
-import { CATEGORIES, getPermIcon, getFriendlyPermissionName } from '../utils/categorization'
+import { getCategoryIcon, getFriendlyPermissionName } from '../utils/categorization'
 import { cn } from '@/lib/utils'
 
 const ALLOWED_LINKED_PREFIXES = ['group.', 'job.', 'gang.']
@@ -16,7 +16,7 @@ function isValidLinkedPrincipal(p: string): boolean {
 export default function GroupEditor({ group, onBack }: { group: GroupData, onBack: () => void }) {
     const { sendNui } = useNui()
     const { t } = useI18n()
-    const { gameData, permissionDefinitions } = useAppState()
+    const { gameData, permissionDefinitions, categoryDefinitions } = useAppState()
     const [permissions, setPermissions] = useState<Set<string>>(new Set(group.permissions))
     const [linkedPrincipals, setLinkedPrincipals] = useState<string[]>(group.linkedPrincipals ?? [])
     const [lpInput, setLpInput] = useState('')
@@ -24,9 +24,14 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
     const lpInputRef = useRef<HTMLInputElement>(null)
     const [saving, setSaving] = useState(false)
 
+    const sortedCategories = useMemo(
+        () => [...categoryDefinitions].sort((a, b) => a.order - b.order),
+        [categoryDefinitions]
+    )
+
     const { categoriesWithPerms, dynamicPermInfo } = useMemo(() => {
         const result: Record<string, { pageNode?: string, actions: string[] }> = {}
-        Object.keys(CATEGORIES).forEach(c => result[c] = { actions: [] })
+        sortedCategories.forEach(c => result[c.id] = { actions: [] })
 
         permissionDefinitions.forEach(def => {
             const cat = def.category
@@ -69,7 +74,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
         })
 
         return { categoriesWithPerms: result, dynamicPermInfo: extra }
-    }, [gameData, permissionDefinitions])
+    }, [gameData, permissionDefinitions, sortedCategories])
 
     const addLinkedPrincipal = () => {
         const val = lpInput.trim().toLowerCase()
@@ -203,10 +208,12 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                     </div>
                 </div>
 
-                {Object.entries(CATEGORIES).map(([catId, cat]) => {
+                {sortedCategories.map(cat => {
+                    const catId = cat.id
                     const data = categoriesWithPerms[catId]
-                    if (!data.pageNode && data.actions.length === 0) return null
+                    if (!data || (!data.pageNode && data.actions.length === 0)) return null
 
+                    const CategoryIcon = getCategoryIcon(catId)
                     const allAssociated = [data.pageNode, ...data.actions].filter(Boolean) as string[]
                     const hasAll = allAssociated.every(p => permissions.has(p))
                     const hasSome = allAssociated.some(p => permissions.has(p))
@@ -220,7 +227,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                                        <cat.icon className="w-5 h-5" />
+                                        <CategoryIcon className="w-5 h-5" />
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-lg">{cat.label}</h3>
@@ -247,7 +254,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                         onClick={() => togglePermission(data.pageNode!)}
                                     >
                                         <div className={cn(
-                                            "w-5 h-5 rounded border flex items-center justify-center",
+                                            "w-5 h-5 rounded border flex items-center justify-center shrink-0",
                                             permissions.has(data.pageNode) ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"
                                         )}>
                                             {permissions.has(data.pageNode) && <ShieldCheck className="w-3 h-3" />}
@@ -259,12 +266,10 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                     </div>
                                 )}
                                 {data.actions.map(actionPerm => {
-                                    const def = permissionDefinitions.find(d => d.id === actionPerm)
                                     const dyn = dynamicPermInfo[actionPerm]
                                     const has = permissions.has(actionPerm)
                                     const label = getFriendlyPermissionName(actionPerm, permissionDefinitions, t) || dyn?.label || actionPerm
                                     const desc = t(`perm_descs.${actionPerm}`) !== `perm_descs.${actionPerm}` ? t(`perm_descs.${actionPerm}`) : (dyn?.desc ?? actionPerm)
-                                    const Icon = getPermIcon(actionPerm, def?.category)
                                     return (
                                         <div
                                             key={actionPerm}
@@ -279,7 +284,7 @@ export default function GroupEditor({ group, onBack }: { group: GroupData, onBac
                                                 "w-5 h-5 rounded border flex items-center justify-center shrink-0",
                                                 has ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"
                                             )}>
-                                                {has ? <ShieldCheck className="w-3 h-3" /> : <Icon className="w-3 h-3 text-muted-foreground" />}
+                                                {has && <ShieldCheck className="w-3 h-3" />}
                                             </div>
                                             <div className="flex flex-col overflow-hidden">
                                                 <span className="text-sm font-semibold truncate">{label}</span>

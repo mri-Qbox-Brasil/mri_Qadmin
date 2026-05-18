@@ -98,6 +98,89 @@ end
 -- FUNCTIONS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
+-----------------------------------------------------------------------------------------------------------------------------------------
+-- CATEGORY DEFINITIONS (source of truth for frontend categorization)
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+local CATEGORY_DEFINITIONS = {
+    { id = 'dashboard',   label = 'Dashboard',       order = 1  },
+    { id = 'players',     label = 'Jogadores',        order = 2  },
+    { id = 'moderation',  label = 'Moderação',        order = 3  },
+    { id = 'staffchat',   label = 'Staff Chat',       order = 4  },
+    { id = 'items',       label = 'Itens',            order = 5  },
+    { id = 'vehicles',    label = 'Veículos',         order = 6  },
+    { id = 'self',        label = 'Habilidades',      order = 7  },
+    { id = 'actions',     label = 'Ações',            order = 8  },
+    { id = 'commands',    label = 'Comandos',         order = 9  },
+    { id = 'resources',   label = 'Recursos',         order = 10 },
+    { id = 'settings',    label = 'Configurações',    order = 11 },
+    { id = 'livemap',     label = 'Mapa ao Vivo',     order = 12 },
+    { id = 'livescreens', label = 'Telas ao Vivo',    order = 13 },
+    { id = 'devmode',     label = 'Dev Mode',         order = 14 },
+    { id = 'groups',      label = 'Grupos',           order = 15 },
+    { id = 'permissions', label = 'Permissões',       order = 16 },
+    { id = 'vip',         label = 'VIP',              order = 17 },
+    { id = 'other',       label = 'Outros',           order = 18 },
+}
+
+-- Registries for external script permissions
+local _pluginPerms       = {}
+local _pluginCategories  = {}
+
+--- Registers permissions from an external script.
+--- @param perms table  List of { id, label, desc?, category? }
+--- @param categoryDef? table  Optional { id, label } for a new category
+exports('RegisterPermissions', function(perms, categoryDef)
+    if type(perms) ~= 'table' then return end
+
+    if categoryDef and type(categoryDef) == 'table' and type(categoryDef.id) == 'string' then
+        local exists = false
+        for _, c in ipairs(CATEGORY_DEFINITIONS) do
+            if c.id == categoryDef.id then exists = true; break end
+        end
+        if not exists then
+            for _, c in ipairs(_pluginCategories) do
+                if c.id == categoryDef.id then exists = true; break end
+            end
+        end
+        if not exists then
+            _pluginCategories[#_pluginCategories + 1] = {
+                id    = categoryDef.id,
+                label = categoryDef.label or categoryDef.id,
+                order = 1000 + #_pluginCategories,
+            }
+        end
+    end
+
+    local knownIds = {}
+    for _, p in ipairs(_pluginPerms) do knownIds[p.id] = true end
+
+    for _, p in ipairs(perms) do
+        if type(p) == 'table' and type(p.id) == 'string' and not knownIds[p.id] then
+            _pluginPerms[#_pluginPerms + 1] = {
+                id       = p.id,
+                label    = p.label or p.id,
+                desc     = p.desc or '',
+                category = p.category or (categoryDef and categoryDef.id) or 'other',
+            }
+            ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = p.id
+            knownIds[p.id] = true
+        end
+    end
+end)
+
+--- Returns category definitions (built-in + plugin).
+function GetCategoryDefinitions()
+    local result = {}
+    for _, c in ipairs(CATEGORY_DEFINITIONS) do result[#result + 1] = c end
+    for _, c in ipairs(_pluginCategories)    do result[#result + 1] = c end
+    return result
+end
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+-- PERMISSION DEFINITIONS
+-----------------------------------------------------------------------------------------------------------------------------------------
+
 -- Single source of truth for all known permissions.
 -- Each entry: { id, category }
 -- Labels and descriptions live in locales/*/perm_labels and perm_descs.
@@ -275,6 +358,7 @@ function GetPermissionDefinitions()
             if v.perms then defs[#defs + 1] = { id = v.perms, label = v.label or v.perms, desc = v.description or '', category = 'other' } end
         end
     end
+    for _, p in ipairs(_pluginPerms) do defs[#defs + 1] = p end
     return defs
 end
 

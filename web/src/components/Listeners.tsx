@@ -16,6 +16,7 @@ export default function Listeners() {
         setStaffMessages,
         setMyPermissions,
         setPermissionDefinitions,
+        setCategoryDefinitions,
         setPagination,
         setLastPlayersFetch
     } = useAppState()
@@ -35,6 +36,9 @@ export default function Listeners() {
             }
             if (data.permissionDefinitions) {
                 setPermissionDefinitions(Array.isArray(data.permissionDefinitions) ? data.permissionDefinitions : [])
+            }
+            if (data.categoryDefinitions) {
+                setCategoryDefinitions(Array.isArray(data.categoryDefinitions) ? data.categoryDefinitions : [])
             }
             if (data.supportedLanguages) {
                 setSupportedLanguages(data.supportedLanguages)
@@ -72,6 +76,10 @@ export default function Listeners() {
 
             if (data.permissionDefinitions && Array.isArray(data.permissionDefinitions) && data.permissionDefinitions.length > 0) {
                 setPermissionDefinitions(data.permissionDefinitions)
+            }
+
+            if (data.categoryDefinitions && Array.isArray(data.categoryDefinitions) && data.categoryDefinitions.length > 0) {
+                setCategoryDefinitions(data.categoryDefinitions)
             }
 
             if (data.players) {
@@ -167,7 +175,7 @@ export default function Listeners() {
             off('setMessages', setMessages)
         }
 
-    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setNearbyEntities, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages, setPermissionDefinitions])
+    }, [on, off, setPlayers, setVehicleDev, setShowCoords, setEntityInfo, setNearbyEntities, setGameData, sendNui, setLastPlayersFetch, setMyPermissions, setPagination, setStaffMessages, setSupportedLanguages, setPermissionDefinitions, setCategoryDefinitions])
 
     return null
 }

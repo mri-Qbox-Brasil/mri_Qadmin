@@ -28,6 +28,7 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         resources = HasPerms(src, 'qadmin.page.resources') and RefreshResources() or {},
         permissions = GetUserPermissions(src),
         permissionDefinitions = GetPermissionDefinitions(),
+        categoryDefinitions = GetCategoryDefinitions(),
         actions = GetAllDynamicActions(),
         groups = HasPerms(src, 'qadmin.page.groups') and GetGroupsData() or { jobs = {}, gangs = {} },
         items = HasPerms(src, 'qadmin.page.items') and GetItemsList() or {},

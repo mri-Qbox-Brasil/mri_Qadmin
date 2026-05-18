@@ -5,6 +5,12 @@ export interface PermDef {
     category: string
 }
 
+export interface CategoryDef {
+    id: string
+    label: string
+    order: number
+}
+
 /** Derives a route→permissionId map from server-provided definitions. */
 export function getPagePermissions(defs: PermDef[]): Record<string, string> {
     const map: Record<string, string> = {}
