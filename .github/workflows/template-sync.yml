@@ -1,0 +1,12 @@
+name: Template Sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1" # toda segunda-feira
+
+jobs:
+  sync:
+    uses: mri-Qbox-Brasil/template-fivem/.github/workflows/callable-template-sync.yml@main
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
