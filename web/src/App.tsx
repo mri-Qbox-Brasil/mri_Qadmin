@@ -48,7 +48,33 @@ export default function App() {
     const devParam = query ? query.get('devpanel') === '1' : false
     const devStorage = typeof window !== 'undefined' ? window.localStorage.getItem('ps:devOpen') === '1' : false
     const [visible, setVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
+    const [frameVisible, setFrameVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
+    const [panelPhase, setPanelPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(
+        (isDev || isEnvBrowser() || devParam || devStorage) ? 'open' : 'closed'
+    )
     const [autoScale, setAutoScale] = useState(1)
+
+    useEffect(() => {
+        let openTimer: ReturnType<typeof setTimeout> | undefined
+        let closeTimer: ReturnType<typeof setTimeout> | undefined
+
+        if (visible) {
+            setFrameVisible(true)
+            setPanelPhase(prev => prev === 'open' ? prev : 'opening')
+            openTimer = setTimeout(() => setPanelPhase('open'), 180)
+        } else if (frameVisible) {
+            setPanelPhase('closing')
+            closeTimer = setTimeout(() => {
+                setFrameVisible(false)
+                setPanelPhase('closed')
+            }, 120)
+        }
+
+        return () => {
+            if (openTimer) clearTimeout(openTimer)
+            if (closeTimer) clearTimeout(closeTimer)
+        }
+    }, [visible, frameVisible])
 
     useEffect(() => {
         const updateScale = () => {
@@ -254,14 +280,16 @@ export default function App() {
 
     return (
         <>
+            {frameVisible && (
             <MriTabletFrame
-                visible={visible}
+                visible={frameVisible}
                 scale={scale * autoScale}
                 size="lg"
             >
                 {/* Wrapper flex obrigatorio: MriTabletFrame forca display:block
                     via inline style, entao o layout sidebar+conteudo precisa
                     do flex container interno. */}
+                <div className={`admin-panel-shell ${panelPhase === 'opening' ? 'is-opening' : panelPhase === 'closing' ? 'is-closing' : panelPhase === 'open' ? 'is-open' : ''}`}>
                 <div className="flex w-full h-full">
                 {/* Overlays */}
                 {(() => {
@@ -315,7 +343,9 @@ export default function App() {
                                                                             null}
                 </div>
                 </div>
+                </div>
             </MriTabletFrame>
+            )}
             {/* Background elements and Overlays */}
             <Listeners />
 
