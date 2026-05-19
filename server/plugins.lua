@@ -101,6 +101,10 @@ AddEventHandler('onResourceStop', function(resourceName)
     if removed then broadcastPluginsUpdated() end
 end)
 
+-- Sinaliza que o sistema de plugins está pronto.
+-- Resources que precisam registrar plugins escutam este evento para auto-register.
+TriggerEvent('mri_Qadmin:server:pluginsReady')
+
 -- Callback usado pela NUI no boot pra hidratar a lista inicial. Filtra por
 -- ACE do source pra nao expor plugins que ele nao pode acessar.
 lib.callback.register('mri_Qadmin:server:getPlugins', function(source)
