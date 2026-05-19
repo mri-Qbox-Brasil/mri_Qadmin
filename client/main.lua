@@ -50,6 +50,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 vehicleImages = Config.VehicleImages,
                 permissions = perms,
                 permissionDefinitions = initialData and initialData.permissionDefinitions or {},
+                categoryDefinitions = initialData and initialData.categoryDefinitions or {},
                 supportedLanguages = Config.SupportedLanguages,
                 webrtcUrl = Config.WebRTCUrl,
                 signalingProvider = Config.SignalingProvider,
@@ -382,7 +383,7 @@ RegisterNetEvent('mri_Qadmin:client:UpdateResourceState', function(data)
     SendNUIMessage({ action = 'updateResourceState', data = data })
 end)
 
-RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
+RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function(permDefs, catDefs)
     local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
     isAdminPlayer = perms and #perms > 0 or false
     SendNUIMessage({
@@ -392,6 +393,15 @@ RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
     SendNUIMessage({
         action = "refreshPermissionsLists"
     })
+
+    -- Fresh definitions from BroadcastPermissionUpdate (plugin registered after initial load)
+    if permDefs then
+        SetDataCache({ permissionDefinitions = permDefs, categoryDefinitions = catDefs or {} })
+        SendNUIMessage({
+            action = "setupUI",
+            data = { permissionDefinitions = permDefs, categoryDefinitions = catDefs or {} }
+        })
+    end
 
     if isAdminPlayer and not HasInitialData() then
         TriggerServerEvent('mri_Qadmin:server:GetInitialData')

@@ -50,6 +50,11 @@ export type MriPluginHostMessage =
       type: 'mri-plugin/theme-changed'
       accentColor: string
     }
+  /** Runtime: lista de permissões do usuário mudou. */
+  | {
+      type: 'mri-plugin/perms-changed'
+      perms: string[]
+    }
   /** Host pediu pro plugin fechar/limpar (eg user navegou pra outro item). */
   | { type: 'mri-plugin/close' }
 

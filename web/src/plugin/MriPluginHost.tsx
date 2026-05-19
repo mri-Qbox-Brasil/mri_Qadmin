@@ -47,6 +47,12 @@ export function MriPluginHost({
     send({ type: 'mri-plugin/theme-changed', accentColor })
   }, [accentColor, ready, send])
 
+  // Re-emite perms quando myPermissions muda em runtime (ex: plugin registrou após o admin abrir o painel).
+  useEffect(() => {
+    if (!ready) return
+    send({ type: 'mri-plugin/perms-changed', perms })
+  }, [perms, ready, send])
+
   // Timeout de loading: se o plugin nao mandar `ready` em 10s, mostra erro.
   // Causas comuns: resource nao esta running, build quebrado, bridge code
   // ausente no plugin.
