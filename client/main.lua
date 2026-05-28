@@ -59,6 +59,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 inventory = Config.Inventory,
                 selfId = GetPlayerServerId(PlayerId()),
                 accentColor = GetConvar('mri:color', '#00E699'),
+                backgroundColor = Config.background_color or '',
                 qboxEnabled = initialData and initialData.qboxEnabled or false
             }
         })
@@ -130,9 +131,20 @@ RegisterNUICallback("mri_Qadmin:server:SetGlobalAccentColor", function(data, cb)
     cb('ok')
 end)
 
--- Broadcast: convar `mri:color` mudou, propaga pra NUI já aberta.
 RegisterNetEvent('mri_Qadmin:client:accentColorChanged', function(newColor)
     SendNUIMessage({ action = 'updateAccentColor', accentColor = newColor })
+end)
+
+-- Bridge da cor global de fundo entre NUI ↔ servidor.
+RegisterNUICallback("mri_Qadmin:server:SetGlobalBackgroundColor", function(data, cb)
+    if type(data) == 'table' and type(data.color) == 'string' then
+        TriggerServerEvent('mri_Qadmin:server:SetGlobalBackgroundColor', data.color)
+    end
+    cb('ok')
+end)
+
+RegisterNetEvent('mri_Qadmin:client:backgroundColorChanged', function(newColor)
+    SendNUIMessage({ action = 'updateBackgroundColor', backgroundColor = newColor or '' })
 end)
 
 RegisterNUICallback("setClipboard", function(data, cb)
