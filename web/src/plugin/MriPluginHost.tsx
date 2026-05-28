@@ -5,13 +5,10 @@ import { usePluginBridgeHost } from './usePluginBridge'
 
 interface MriPluginHostProps {
   manifest: MriPluginManifest
-  /** Cor de destaque atual da suite — repassada pro plugin no init e em runtime. */
   accentColor: string
-  /** Locale atual (eg 'pt-BR'). */
+  backgroundColor?: string
   locale: string
-  /** Perms do user logado — plugin decide o que liberar internamente. */
   perms: string[]
-  /** Callback quando o plugin pediu fechar (eg botao X interno). */
   onRequestClose?: () => void
 }
 
@@ -25,6 +22,7 @@ interface MriPluginHostProps {
 export function MriPluginHost({
   manifest,
   accentColor,
+  backgroundColor,
   locale,
   perms,
   onRequestClose,
@@ -36,16 +34,15 @@ export function MriPluginHost({
   const send = usePluginBridgeHost(iframeRef, {
     onReady: () => {
       setReady(true)
-      send({ type: 'mri-plugin/init', accentColor, locale, perms })
+      send({ type: 'mri-plugin/init', accentColor, backgroundColor, locale, perms })
     },
     onRequestClose,
   })
 
-  // Re-emite theme-changed quando accentColor muda em runtime.
   useEffect(() => {
     if (!ready) return
-    send({ type: 'mri-plugin/theme-changed', accentColor })
-  }, [accentColor, ready, send])
+    send({ type: 'mri-plugin/theme-changed', accentColor, backgroundColor })
+  }, [accentColor, backgroundColor, ready, send])
 
   // Re-emite perms quando myPermissions muda em runtime (ex: plugin registrou após o admin abrir o painel).
   useEffect(() => {

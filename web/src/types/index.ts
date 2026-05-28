@@ -189,12 +189,13 @@ export interface NuiContextValue {
 export interface ThemeContextType {
     theme: string
     setTheme: (t: string) => void
-    /** Cor atualmente aplicada nas CSS vars (pode ser preview local ainda não comitado). */
     accentColor: string
-    /** Última cor confirmada pelo servidor (via setupUI ou updateAccentColor). */
     serverAccentColor: string
-    /** Atualiza só o preview local — não dispara nada no servidor. */
     setAccentColor: (hex: string) => void
+    /** Cor de fundo customizada (hex ou '' para padrão CSS). Dark-mode only. */
+    backgroundColor: string
+    serverBackgroundColor: string
+    setBackgroundColor: (hex: string) => void
     scale: number
     setScale: (s: number) => void
 }

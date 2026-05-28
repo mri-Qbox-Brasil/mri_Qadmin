@@ -13,9 +13,6 @@ function isValidHex(value: string): boolean {
     return HEX_RE.test(value)
 }
 
-// Aplica `accentColor` (hex) nas CSS vars --primary, --ring e --primary-foreground.
-// Mesmo padrão do mri_Qmultichar/mri_Qspawn — convar `mri:color` é a fonte da
-// verdade, broadcast em runtime do servidor atualiza ao vivo.
 function applyAccentColor(hex: string) {
     if (!isValidHex(hex)) return
 
@@ -31,20 +28,42 @@ function applyAccentColor(hex: string) {
     root.style.setProperty('--primary-rgb', `${c.toRgb().r}, ${c.toRgb().g}, ${c.toRgb().b}`)
 }
 
+const BG_VARS = ['--background','--card','--popover','--secondary','--muted','--border','--input','--foreground','--card-foreground','--popover-foreground'] as const
+
+function applyBackgroundColor(hex: string) {
+    const root = document.documentElement
+    if (!isValidHex(hex)) {
+        BG_VARS.forEach(v => root.style.removeProperty(v))
+        return
+    }
+    const c = colord(hex)
+    const { h, s, l } = c.toHsl()
+    root.style.setProperty('--background', `${h} ${s}% ${l}%`)
+    root.style.setProperty('--card',       `${h} ${s}% ${Math.min(l + 2,  100)}%`)
+    root.style.setProperty('--popover',    `${h} ${s}% ${Math.min(l + 2,  100)}%`)
+    const surf = `${h} ${Math.max(s - 5, 0)}% ${Math.min(l + 11, 100)}%`
+    ;(['--secondary','--muted','--border','--input'] as const).forEach(v => root.style.setProperty(v, surf))
+    const fg = c.isDark() ? '0 0% 98%' : '240 10% 3.9%'
+    ;(['--foreground','--card-foreground','--popover-foreground'] as const).forEach(v => root.style.setProperty(v, fg))
+}
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [theme, setThemeState] = useState(() => localStorage.getItem('ps:theme') || 'dark')
     const [scale, setScaleState] = useState(() => Number(localStorage.getItem('ps:scale')) || 100)
-    // accentColor = preview ao vivo (pode estar editado localmente).
-    // serverAccentColor = última cor confirmada pelo servidor.
-    // Settings page compara os dois pra detectar draft pendente.
     const [accentColor, setAccentColorState] = useState<string>(DEFAULT_ACCENT)
     const [serverAccentColor, setServerAccentColorState] = useState<string>(DEFAULT_ACCENT)
+    const [backgroundColor, setBackgroundColorState] = useState<string>(
+        () => localStorage.getItem('ps:backgroundColor') ?? ''
+    )
+    const [serverBackgroundColor, setServerBackgroundColorState] = useState<string>('')
 
     // Theme dark/light/system — inalterado.
     useEffect(() => {
         const root = document.documentElement
+
+        const isDark = theme === 'dark' || (theme === 'system' && !window.matchMedia('(prefers-color-scheme: light)').matches)
 
         if (theme === 'light') {
             root.classList.add('light')
@@ -62,6 +81,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             }
         }
         localStorage.setItem('ps:theme', theme)
+
+        // Ao entrar em light mode limpa overrides de fundo; ao voltar para dark restaura.
+        if (!isDark) {
+            applyBackgroundColor('')
+        } else {
+            applyBackgroundColor(localStorage.getItem('ps:backgroundColor') ?? '')
+        }
     }, [theme])
 
     // Scale persiste em localStorage.
@@ -69,11 +95,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('ps:scale', String(scale))
     }, [scale])
 
-    // Aplica accent color sempre que muda. Vem do servidor (setupUI ou
-    // updateAccentColor broadcast).
+    useEffect(() => { applyAccentColor(accentColor) }, [accentColor])
+
     useEffect(() => {
-        applyAccentColor(accentColor)
-    }, [accentColor])
+        applyBackgroundColor(backgroundColor)
+        localStorage.setItem('ps:backgroundColor', backgroundColor)
+    }, [backgroundColor])
 
     // Listener de mensagens do Lua: setupUI (boot) + updateAccentColor (runtime).
     // Server é a fonte da verdade — sempre que chega broadcast, sobrepõe
@@ -88,10 +115,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                 setServerAccentColorState(upper)
             }
 
-            if (action === 'setupUI' && data && typeof data.accentColor === 'string' && isValidHex(data.accentColor)) {
-                apply(data.accentColor)
+            if (action === 'setupUI' && data) {
+                if (typeof data.accentColor === 'string' && isValidHex(data.accentColor)) apply(data.accentColor)
+                if (typeof data.backgroundColor === 'string') {
+                    const bg = data.backgroundColor.toUpperCase()
+                    setBackgroundColorState(bg)
+                    setServerBackgroundColorState(bg)
+                }
             } else if (action === 'updateAccentColor' && typeof msgAccent === 'string' && isValidHex(msgAccent)) {
                 apply(msgAccent)
+            } else if (action === 'updateBackgroundColor') {
+                const bg = (event.data.backgroundColor ?? '').toUpperCase()
+                setBackgroundColorState(bg)
+                setServerBackgroundColorState(bg)
             }
         }
 
@@ -107,8 +143,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         if (isValidHex(hex)) setAccentColorState(hex.toUpperCase())
     }
 
+    const setBackgroundColor = (hex: string) => {
+        const val = hex === '' ? '' : isValidHex(hex) ? hex.toUpperCase() : backgroundColor
+        setBackgroundColorState(val)
+    }
+
     return (
-        <ThemeContext.Provider value={{ theme, setTheme, accentColor, serverAccentColor, setAccentColor, scale, setScale }}>
+        <ThemeContext.Provider value={{
+            theme, setTheme,
+            accentColor, serverAccentColor, setAccentColor,
+            backgroundColor, serverBackgroundColor, setBackgroundColor,
+            scale, setScale,
+        }}>
             {children}
         </ThemeContext.Provider>
     )

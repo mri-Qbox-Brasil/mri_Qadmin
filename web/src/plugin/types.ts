@@ -42,13 +42,15 @@ export type MriPluginHostMessage =
   | {
       type: 'mri-plugin/init'
       accentColor: string
+      backgroundColor?: string
       locale: string
       perms: string[]
     }
-  /** Runtime: convar `mri:color` mudou. */
+  /** Runtime: tema mudou (accent e/ou background). */
   | {
       type: 'mri-plugin/theme-changed'
       accentColor: string
+      backgroundColor?: string
     }
   /** Runtime: lista de permissões do usuário mudou. */
   | {
