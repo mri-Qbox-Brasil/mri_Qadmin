@@ -1,6 +1,6 @@
 import React from 'react'
 import { MriButton, MriCard, MriPageHeader, MriSelect, MriInput, MriSearchInput, MriScrollArea } from '@mriqbox/ui-kit'
-import { Sun, Palette, Settings as SettingsIcon, Accessibility, RotateCcw, Eye, Ghost, User, Plus, Trash2, Search, Code, Server } from 'lucide-react'
+import { Sun, Palette, Settings as SettingsIcon, Accessibility, RotateCcw, Eye, Ghost, User, Plus, Trash2, Search, Code, Server, Link2 } from 'lucide-react'
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 
@@ -34,7 +34,7 @@ const rgbToHex = (rgb: string) => {
 
 export default function Settings() {
     const { t, locale, preferredLocale, setPreferredLocale, supportedLanguages } = useI18n()
-    const { accentColor, serverAccentColor, setAccentColor, scale, setScale } = useTheme()
+    const { accentColor, serverAccentColor, setAccentColor, backgroundColor, serverBackgroundColor, setBackgroundColor, scale, setScale } = useTheme()
     const { sendNui } = useNui()
     const { settings, setSettings, gameData, useMocks, setUseMocks, myPermissions } = useAppState()
     const canDo = (perm: string) => hasPermission(myPermissions, perm)
@@ -42,6 +42,48 @@ export default function Settings() {
 
     const hasAccentDraft = accentColor.toUpperCase() !== serverAccentColor.toUpperCase()
     const [confirmingAccent, setConfirmingAccent] = React.useState(false)
+
+    const hasBgDraft = backgroundColor.toUpperCase() !== serverBackgroundColor.toUpperCase()
+    const handleBgDraftChange = (hex: string) => { if (canEditAccent) setBackgroundColor(hex) }
+    const cancelBgDraft = () => setBackgroundColor(serverBackgroundColor)
+
+    const syncBgFromAccent = () => {
+        const m = accentColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i)
+        if (!m) return
+        const r = parseInt(m[1], 16) / 255
+        const g = parseInt(m[2], 16) / 255
+        const b = parseInt(m[3], 16) / 255
+        const max = Math.max(r, g, b), min = Math.min(r, g, b)
+        let h = 0
+        if (max !== min) {
+            const d = max - min
+            if (max === r) h = (g - b) / d + (g < b ? 6 : 0)
+            else if (max === g) h = (b - r) / d + 2
+            else h = (r - g) / d + 4
+            h *= 60
+        }
+        // HSL(hue, 10%, 4%) → hex
+        const hDeg = h / 360, s = 0.10, l = 0.04
+        const q = l * (1 + s)
+        const p = 2 * l - q
+        const hue2rgb = (t: number) => {
+            if (t < 0) t += 1; if (t > 1) t -= 1
+            if (t < 1/6) return p + (q - p) * 6 * t
+            if (t < 1/2) return q
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
+            return p
+        }
+        const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0')
+        const hex = `#${toHex(hue2rgb(hDeg + 1/3))}${toHex(hue2rgb(hDeg))}${toHex(hue2rgb(hDeg - 1/3))}`
+        setBackgroundColor(hex)
+    }
+    const resetBg = () => {
+        setBackgroundColor('')
+        sendNui('mri_Qadmin:server:SetGlobalBackgroundColor', { color: '' })
+    }
+    const applyGlobalBg = () => {
+        sendNui('mri_Qadmin:server:SetGlobalBackgroundColor', { color: backgroundColor.toUpperCase() })
+    }
 
     const handleAccentDraftChange = (hex: string) => {
         if (!canEditAccent) return
@@ -288,6 +330,58 @@ export default function Settings() {
                                                         {t('settings.accent_color_apply') || 'Aplicar para o servidor'}
                                                     </MriButton>
                                                 </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-3 pt-6 border-t border-border/50">
+                                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                            Cor de Fundo
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground leading-5">
+                                            Personaliza o fundo do painel no tema escuro. Aplicar muda para todos os jogadores online.
+                                        </p>
+                                        <div className="flex items-center gap-3">
+                                            <MriColorPicker
+                                                color={backgroundColor || '#0a0a14'}
+                                                onChange={handleBgDraftChange}
+                                                active={canEditAccent}
+                                                format="hex"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-mono text-sm font-semibold uppercase text-foreground">
+                                                    {backgroundColor || 'Padrão'}
+                                                </p>
+                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                    {!canEditAccent
+                                                        ? 'Apenas administradores podem alterar'
+                                                        : hasBgDraft
+                                                            ? 'Pré-visualização (não aplicada)'
+                                                            : 'Padrão global do servidor'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {canEditAccent && (
+                                            <div className="space-y-2 pt-2">
+                                                <div className="flex items-center gap-2">
+                                                    <MriButton variant="ghost" size="sm" onClick={resetBg}>
+                                                        Restaurar padrão
+                                                    </MriButton>
+                                                    <MriButton variant="ghost" size="sm" onClick={syncBgFromAccent} title="Derivar cor de fundo a partir do accent">
+                                                        <Link2 className="w-3.5 h-3.5 mr-1.5" />
+                                                        Sincronizar com accent
+                                                    </MriButton>
+                                                </div>
+                                                {hasBgDraft && (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <MriButton variant="ghost" size="sm" onClick={cancelBgDraft}>
+                                                            Cancelar
+                                                        </MriButton>
+                                                        <MriButton size="sm" onClick={applyGlobalBg}>
+                                                            Aplicar para o servidor
+                                                        </MriButton>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>

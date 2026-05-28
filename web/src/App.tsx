@@ -40,7 +40,7 @@ export default function App() {
     const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings, permissionDefinitions, setPermissionDefinitions } = useAppState()
     const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { on, off, sendNui } = useNui()
-    const { scale, accentColor } = useTheme()
+    const { scale, accentColor, backgroundColor } = useTheme()
     const { locale } = useI18n()
     const [plugins, setPlugins] = useState<Record<string, MriPluginManifest>>({})
     const isDev = (import.meta as any)?.env?.DEV === true
@@ -319,6 +319,7 @@ export default function App() {
                                 <MriPluginHost
                                     manifest={manifest}
                                     accentColor={accentColor}
+                                    backgroundColor={backgroundColor}
                                     locale={locale}
                                     perms={myPermissions}
                                     onRequestClose={() => sendNui('hideUI')}
