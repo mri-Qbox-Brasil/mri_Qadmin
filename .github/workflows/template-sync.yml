@@ -9,4 +9,4 @@ jobs:
   sync:
     uses: mri-Qbox-Brasil/workflows/.github/workflows/callable-template-sync.yml@main
     secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
