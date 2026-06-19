@@ -2,7 +2,7 @@ import { useI18n } from '@/hooks/useI18n'
 import { useAppState } from '@/context/AppState'
 import { MriSidebar, MriSidebarItem } from '@mriqbox/ui-kit'
 import * as LucideIcons from 'lucide-react'
-import { LayoutDashboard, Users, Box, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText, Crown } from 'lucide-react'
+import { LayoutDashboard, Users, Box, Car, Settings, Map as MapIcon, Sun, Monitor, MessageSquare, Wand2, Info, Briefcase, Shield, Container, Moon, SquareCode, ScrollText, Crown, ArrowUpCircle } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
 import pkg from '../../package.json'
@@ -32,6 +32,12 @@ export default function Sidebar({ onRoute, currentRoute, plugins = {} }: Sidebar
     const { t } = useI18n()
     const { menuWide, setMenuWide, myPermissions, permissionDefinitions, gameData } = useAppState()
     const qboxEnabled = !!gameData?.qboxEnabled
+    const updateInfo = gameData?.updateInfo
+    // Versao real do recurso vem do servidor (fxmanifest). O pkg.version do
+    // bundle pode estar defasado entre releases, entao so usamos como fallback
+    // (e ignoramos o placeholder __VERSION__ de builds locais nao-released).
+    const serverVersion = gameData?.resourceVersion
+    const displayVersion = (serverVersion && serverVersion !== '__VERSION__') ? serverVersion : pkg.version
     const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { theme, setTheme } = useTheme()
 
@@ -124,12 +130,21 @@ export default function Sidebar({ onRoute, currentRoute, plugins = {} }: Sidebar
                 </div>
 
                 <div className={cn(
-                    "flex px-1 items-center",
+                    "flex px-1 items-center gap-1.5",
                     !menuWide ? "justify-center" : "justify-start"
                 )}>
                     <span className="text-[9px] font-mono text-muted-foreground/60 select-none">
-                        v{pkg.version}
+                        v{displayVersion}
                     </span>
+                    {updateInfo?.updateAvailable && (
+                        <span
+                            className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-primary animate-pulse"
+                            title={(t('update.available_tooltip') || 'Nova versão v%s disponível').replace('%s', updateInfo.latest ?? '')}
+                        >
+                            <ArrowUpCircle className="w-2.5 h-2.5" />
+                            {menuWide && (t('update.new') || 'Nova')}
+                        </span>
+                    )}
                 </div>
             </div>
         </div>

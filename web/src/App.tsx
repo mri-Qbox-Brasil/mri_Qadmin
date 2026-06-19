@@ -8,6 +8,7 @@ import { MriPluginManifest } from '@/plugin/types'
 import { useI18n } from '@/hooks/useI18n'
 import { MriTabletFrame } from '@mriqbox/ui-kit'
 import Listeners from '@/components/Listeners'
+import UpdateBanner from '@/components/UpdateBanner'
 import VehicleDev from '@/components/overlays/VehicleDev'
 import ToggleCoords from '@/components/overlays/ToggleCoords'
 import EntityInformation from '@/components/overlays/EntityInformation'
@@ -40,7 +41,7 @@ export default function App() {
     const { players, setSelectedPlayer, setGameData, setPlayers, myPermissions, setMyPermissions, setSettings, permissionDefinitions, setPermissionDefinitions } = useAppState()
     const pagePermissions = useMemo(() => getPagePermissions(permissionDefinitions), [permissionDefinitions])
     const { on, off, sendNui } = useNui()
-    const { scale, accentColor } = useTheme()
+    const { scale, accentColor, backgroundColor } = useTheme()
     const { locale } = useI18n()
     const [plugins, setPlugins] = useState<Record<string, MriPluginManifest>>({})
     const isDev = (import.meta as any)?.env?.DEV === true
@@ -48,7 +49,33 @@ export default function App() {
     const devParam = query ? query.get('devpanel') === '1' : false
     const devStorage = typeof window !== 'undefined' ? window.localStorage.getItem('ps:devOpen') === '1' : false
     const [visible, setVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
+    const [frameVisible, setFrameVisible] = useState<boolean>(isDev || isEnvBrowser() || devParam || devStorage)
+    const [panelPhase, setPanelPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(
+        (isDev || isEnvBrowser() || devParam || devStorage) ? 'open' : 'closed'
+    )
     const [autoScale, setAutoScale] = useState(1)
+
+    useEffect(() => {
+        let openTimer: ReturnType<typeof setTimeout> | undefined
+        let closeTimer: ReturnType<typeof setTimeout> | undefined
+
+        if (visible) {
+            setFrameVisible(true)
+            setPanelPhase(prev => prev === 'open' ? prev : 'opening')
+            openTimer = setTimeout(() => setPanelPhase('open'), 180)
+        } else if (frameVisible) {
+            setPanelPhase('closing')
+            closeTimer = setTimeout(() => {
+                setFrameVisible(false)
+                setPanelPhase('closed')
+            }, 120)
+        }
+
+        return () => {
+            if (openTimer) clearTimeout(openTimer)
+            if (closeTimer) clearTimeout(closeTimer)
+        }
+    }, [visible, frameVisible])
 
     useEffect(() => {
         const updateScale = () => {
@@ -254,14 +281,16 @@ export default function App() {
 
     return (
         <>
+            {frameVisible && (
             <MriTabletFrame
-                visible={visible}
+                visible={frameVisible}
                 scale={scale * autoScale}
                 size="lg"
             >
                 {/* Wrapper flex obrigatorio: MriTabletFrame forca display:block
                     via inline style, entao o layout sidebar+conteudo precisa
                     do flex container interno. */}
+                <div className={`admin-panel-shell ${panelPhase === 'opening' ? 'is-opening' : panelPhase === 'closing' ? 'is-closing' : panelPhase === 'open' ? 'is-open' : ''}`}>
                 <div className="flex w-full h-full">
                 {/* Overlays */}
                 {(() => {
@@ -277,6 +306,7 @@ export default function App() {
                     return <Sidebar onRoute={handleRoute} currentRoute={effectiveRoute} plugins={plugins} />
                 })()}
                 <div className="flex-1 p-2 overflow-hidden flex flex-col min-h-0 min-w-0">
+                    <UpdateBanner />
                     {effectiveRoute === 'no_access' ? (
                         <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
                             <span className="text-4xl">🔒</span>
@@ -291,6 +321,7 @@ export default function App() {
                                 <MriPluginHost
                                     manifest={manifest}
                                     accentColor={accentColor}
+                                    backgroundColor={backgroundColor}
                                     locale={locale}
                                     perms={myPermissions}
                                     onRequestClose={() => sendNui('hideUI')}
@@ -315,7 +346,9 @@ export default function App() {
                                                                             null}
                 </div>
                 </div>
+                </div>
             </MriTabletFrame>
+            )}
             {/* Background elements and Overlays */}
             <Listeners />
 

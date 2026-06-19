@@ -117,6 +117,64 @@
     height: 100%;
 }
 
+.admin-panel-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    contain: layout paint;
+}
+
+.admin-panel-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.08), transparent 34%);
+    opacity: 0;
+    transition: opacity 140ms ease;
+}
+
+.admin-panel-shell.is-open::before,
+.admin-panel-shell.is-opening::before,
+.admin-panel-shell.is-closing::before {
+    opacity: 1;
+}
+
+.admin-panel-shell.is-opening {
+    animation: admin-panel-open 180ms ease-out forwards;
+}
+
+.admin-panel-shell.is-closing {
+    animation: admin-panel-close 120ms ease-in forwards;
+}
+
+@keyframes admin-panel-open {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0) scale(0.985);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes admin-panel-close {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate3d(0, 8px, 0) scale(0.99);
+    }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
@@ -152,4 +210,5 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+
 }

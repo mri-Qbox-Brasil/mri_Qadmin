@@ -1,5 +1,12 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+-- Forward declarations: populated further down, but declared here so every
+-- closure in this file (including exports defined before the assignments) captures
+-- them as upvalues rather than looking them up as globals (which would be nil).
+local PERM_DEFINITIONS
+local ALL_KNOWN_QADMIN_PERMS
+local BroadcastPermissionUpdate
+
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- MIGRATION
 -----------------------------------------------------------------------------------------------------------------------------------------
@@ -197,11 +204,20 @@ function RegisterPermissionsForPlugin(manifest)
         end
     end
 
-    -- Keep only plugin-specific perms (must contain a dot, must not be a built-in)
+    -- Collect all plugin-specific perms: requiredPerms union permDefs ids
+    -- (must contain a dot, must not be a built-in like 'command')
+    local toRegisterSet = {}
     local toRegister = {}
     for _, perm in ipairs(rawPerms) do
-        if type(perm) == 'string' and not PERM_BLOCKLIST[perm] and perm:find('%.') then
+        if type(perm) == 'string' and not PERM_BLOCKLIST[perm] and perm:find('%.') and not toRegisterSet[perm] then
+            toRegisterSet[perm] = true
             toRegister[#toRegister + 1] = perm
+        end
+    end
+    for permId, _ in pairs(permDefs) do
+        if not PERM_BLOCKLIST[permId] and permId:find('%.') and not toRegisterSet[permId] then
+            toRegisterSet[permId] = true
+            toRegister[#toRegister + 1] = permId
         end
     end
     if #toRegister == 0 then return end
@@ -237,14 +253,17 @@ function RegisterPermissionsForPlugin(manifest)
         end
     end
 
-    if #added == 0 then return end
-
-    -- Seed god group dynamically (SeedGodGroup ran once at startup before plugins loaded)
+    -- Seed god group for any newly registered perms
     for _, permId in ipairs(added) do
         MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_group_permissions (group_id, permission) VALUES ("god", ?)', { permId })
         lib.addAce('mri.group.god', permId, true)
     end
-    Debug(('[mri_Qadmin] RegisterPermissionsForPlugin [%s]: %d perm(s) registrada(s)'):format(catId, #added))
+    if #added > 0 then
+        Debug(('[mri_Qadmin] RegisterPermissionsForPlugin [%s]: %d perm(s) registrada(s)'):format(catId, #added))
+    end
+    -- Always broadcast so clients get fresh permissionDefinitions + categoryDefinitions,
+    -- even when perms were already known (re-registration after space_economy restart)
+    BroadcastPermissionUpdate()
 end
 
 -----------------------------------------------------------------------------------------------------------------------------------------
@@ -255,7 +274,7 @@ end
 -- Each entry: { id, category }
 -- Labels and descriptions live in locales/*/perm_labels and perm_descs.
 -- The flat ALL_KNOWN_QADMIN_PERMS list is derived below for internal ACE operations.
-local PERM_DEFINITIONS = {
+PERM_DEFINITIONS = {
     -- ── System ───────────────────────────────────────────────────────────────
     { id = 'qadmin.open',   category = 'other'  },
     { id = 'qadmin.master', category = 'other'  },
@@ -399,7 +418,7 @@ local PERM_DEFINITIONS = {
 }
 
 -- Flat ID list derived from PERM_DEFINITIONS for internal ACE operations.
-local ALL_KNOWN_QADMIN_PERMS = {}
+ALL_KNOWN_QADMIN_PERMS = {}
 do
     for _, p in ipairs(PERM_DEFINITIONS) do
         ALL_KNOWN_QADMIN_PERMS[#ALL_KNOWN_QADMIN_PERMS + 1] = p.id
@@ -651,9 +670,11 @@ AddEventHandler('playerDropped', function()
     CleanupPlayerPrincipals(source)
 end)
 
-local function BroadcastPermissionUpdate()
+BroadcastPermissionUpdate = function()
     Debug('[mri_Qadmin] Broadcasting Permission Update to ALL clients')
-    TriggerClientEvent('mri_Qadmin:client:ForceReloadPermissions', -1)
+    local permDefs = GetPermissionDefinitions()
+    local catDefs  = GetCategoryDefinitions()
+    TriggerClientEvent('mri_Qadmin:client:ForceReloadPermissions', -1, permDefs, catDefs)
 end
 
 -- Callbacks

@@ -50,6 +50,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 vehicleImages = Config.VehicleImages,
                 permissions = perms,
                 permissionDefinitions = initialData and initialData.permissionDefinitions or {},
+                categoryDefinitions = initialData and initialData.categoryDefinitions or {},
                 supportedLanguages = Config.SupportedLanguages,
                 webrtcUrl = Config.WebRTCUrl,
                 signalingProvider = Config.SignalingProvider,
@@ -58,7 +59,10 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 inventory = Config.Inventory,
                 selfId = GetPlayerServerId(PlayerId()),
                 accentColor = GetConvar('mri:color', '#00E699'),
-                qboxEnabled = initialData and initialData.qboxEnabled or false
+                backgroundColor = Config.background_color or '',
+                qboxEnabled = initialData and initialData.qboxEnabled or false,
+                resourceVersion = initialData and initialData.resourceVersion or nil,
+                updateInfo = initialData and initialData.updateInfo or nil
             }
         })
     else
@@ -129,9 +133,20 @@ RegisterNUICallback("mri_Qadmin:server:SetGlobalAccentColor", function(data, cb)
     cb('ok')
 end)
 
--- Broadcast: convar `mri:color` mudou, propaga pra NUI já aberta.
 RegisterNetEvent('mri_Qadmin:client:accentColorChanged', function(newColor)
     SendNUIMessage({ action = 'updateAccentColor', accentColor = newColor })
+end)
+
+-- Bridge da cor global de fundo entre NUI ↔ servidor.
+RegisterNUICallback("mri_Qadmin:server:SetGlobalBackgroundColor", function(data, cb)
+    if type(data) == 'table' and type(data.color) == 'string' then
+        TriggerServerEvent('mri_Qadmin:server:SetGlobalBackgroundColor', data.color)
+    end
+    cb('ok')
+end)
+
+RegisterNetEvent('mri_Qadmin:client:backgroundColorChanged', function(newColor)
+    SendNUIMessage({ action = 'updateBackgroundColor', backgroundColor = newColor or '' })
 end)
 
 RegisterNUICallback("setClipboard", function(data, cb)
@@ -382,7 +397,7 @@ RegisterNetEvent('mri_Qadmin:client:UpdateResourceState', function(data)
     SendNUIMessage({ action = 'updateResourceState', data = data })
 end)
 
-RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
+RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function(permDefs, catDefs)
     local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
     isAdminPlayer = perms and #perms > 0 or false
     SendNUIMessage({
@@ -392,6 +407,15 @@ RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function()
     SendNUIMessage({
         action = "refreshPermissionsLists"
     })
+
+    -- Fresh definitions from BroadcastPermissionUpdate (plugin registered after initial load)
+    if permDefs then
+        SetDataCache({ permissionDefinitions = permDefs, categoryDefinitions = catDefs or {} })
+        SendNUIMessage({
+            action = "setupUI",
+            data = { permissionDefinitions = permDefs, categoryDefinitions = catDefs or {} }
+        })
+    end
 
     if isAdminPlayer and not HasInitialData() then
         TriggerServerEvent('mri_Qadmin:server:GetInitialData')

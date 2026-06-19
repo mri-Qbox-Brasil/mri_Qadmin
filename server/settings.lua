@@ -111,9 +111,15 @@ AddEventHandler('mri_Qadmin:server:PlayerPermissionsReady', function(src)
     TriggerClientEvent('mri_Qadmin:client:UpdateSettings', src, GetPrimitiveSettings())
 end)
 
+local function applyBackgroundConvar()
+    local color = Config.background_color or ''
+    SetConvarReplicated('mri:backgroundColor', color)
+end
+
 RegisterNetEvent('mri_Qadmin:db:ready', function()
     LoadSettings()
     applyAccentConvar()
+    applyBackgroundConvar()
 end)
 
 -- Broadcast em runtime quando a convar `mri:color` muda (admin via UI ou
@@ -126,9 +132,37 @@ AddConvarChangeListener('mri:color', function(name)
     TriggerClientEvent('mri_Qadmin:client:accentColorChanged', -1, color)
 end)
 
--- Define a cor de destaque global da suite MRI. Persiste no DB e atualiza a
--- convar replicada `mri:color`, que o AddConvarChangeListener (em main.lua)
--- broadcast pra todos os clients (Qadmin, Qmultichar, Qspawn, ...).
+-- Define a cor de fundo global do painel. Persiste no DB e faz broadcast
+-- direto (sem convar — fundo é exclusivo do Qadmin UI).
+RegisterNetEvent('mri_Qadmin:server:SetGlobalBackgroundColor', function(color)
+    local src = source
+    if not HasPerms(src, 'qadmin.page.settings') then return end
+
+    color = tostring(color or ''):upper()
+
+    if color ~= '' and not isValidHex(color) then
+        QBCore.Functions.Notify(src, 'Cor inválida (esperado #RRGGBB).', 'error')
+        return
+    end
+
+    MySQL.insert.await([[
+        INSERT INTO mri_qadmin_settings (`name`, `value`, `type`)
+        VALUES (?, ?, 'string')
+        ON DUPLICATE KEY UPDATE `value` = ?, `type` = 'string'
+    ]], { 'background_color', color, color })
+
+    Config.background_color = color
+
+    SetConvarReplicated('mri:backgroundColor', color)
+    TriggerClientEvent('mri_Qadmin:client:backgroundColorChanged', -1, color)
+
+    QBCore.Functions.Notify(src, color == '' and 'Cor de fundo restaurada ao padrão.' or ('Cor de fundo global definida: %s'):format(color), 'success')
+    AddLog(src, 'mri_Qadmin', 'server', 'info',
+        ('Cor de fundo alterada para %s'):format(color == '' and 'padrão' or color),
+        { color = color })
+end)
+
+-- Define a cor de destaque global da suite MRI.
 RegisterNetEvent('mri_Qadmin:server:SetGlobalAccentColor', function(color)
     local src = source
     if not HasPerms(src, 'qadmin.page.settings') then return end

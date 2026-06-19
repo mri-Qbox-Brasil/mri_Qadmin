@@ -87,6 +87,13 @@ exports('UnregisterPlugin', function(id)
     return false
 end)
 
+-- Envia a lista de plugins assim que as permissões do player estiverem prontas.
+-- Sem isso, o cache do client começa vazio e depende do NUI fazer fetch sob demanda.
+AddEventHandler('mri_Qadmin:server:PlayerPermissionsReady', function(src)
+    if not src then return end
+    TriggerClientEvent('mri_Qadmin:client:pluginsUpdated', src, pluginsForSource(src))
+end)
+
 -- Limpa registry quando o resource do plugin para (evita iframe quebrado
 -- apontando pra resource morto).
 AddEventHandler('onResourceStop', function(resourceName)
@@ -100,6 +107,10 @@ AddEventHandler('onResourceStop', function(resourceName)
     end
     if removed then broadcastPluginsUpdated() end
 end)
+
+-- Sinaliza que o sistema de plugins está pronto.
+-- Resources que precisam registrar plugins escutam este evento para auto-register.
+TriggerEvent('mri_Qadmin:server:pluginsReady')
 
 -- Callback usado pela NUI no boot pra hidratar a lista inicial. Filtra por
 -- ACE do source pra nao expor plugins que ele nao pode acessar.

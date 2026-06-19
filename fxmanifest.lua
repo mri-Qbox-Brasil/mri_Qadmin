@@ -5,7 +5,7 @@ use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
 author "MRI Qbox Team"
-version "1.11.4"
+version "__VERSION__"
 
 ox_lib "locale"
 
@@ -46,6 +46,7 @@ server_scripts {
     "server/vip.lua",
     "server/key_manager.lua",
     "server/webrtc.lua",
+    "server/updates.lua",
     "server/data_sync.lua",
     "server/plugins.lua",
 }
