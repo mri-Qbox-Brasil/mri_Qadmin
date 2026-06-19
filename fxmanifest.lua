@@ -45,6 +45,7 @@ server_scripts {
     "server/vip.lua",
     "server/key_manager.lua",
     "server/webrtc.lua",
+    "server/updates.lua",
     "server/data_sync.lua",
     "server/plugins.lua",
 }

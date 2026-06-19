@@ -975,6 +975,15 @@
         "author": "Autor: %s",
         "no_description": "Sin descripción."
     },
+    "update": {
+        "new": "Nueva",
+        "available_tooltip": "Nueva versión v%s disponible",
+        "banner_title": "Actualización disponible",
+        "banner_body": "mri_Qadmin v%s ya está disponible (tienes la v%c).",
+        "copy_link": "Copiar enlace",
+        "copied": "¡Copiado!",
+        "dismiss": "Descartar"
+    },
     "vehicle": {
         "title": "Gestión de Vehículos",
         "update_stock": "Actualizar Stock: %s",

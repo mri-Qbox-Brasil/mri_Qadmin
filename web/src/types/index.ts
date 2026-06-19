@@ -112,6 +112,16 @@ export interface GameData {
     descriptions?: Record<string, string>
     settingOptions?: Record<string, { label: string, value: string }[]>
     qboxEnabled?: boolean
+    resourceVersion?: string
+    updateInfo?: UpdateInfo
+}
+
+export interface UpdateInfo {
+    current: string
+    latest?: string
+    updateAvailable: boolean
+    url: string
+    checkedAt?: number
 }
 
 export interface EntityInfoData {

@@ -8,6 +8,7 @@ import { MriPluginManifest } from '@/plugin/types'
 import { useI18n } from '@/hooks/useI18n'
 import { MriTabletFrame } from '@mriqbox/ui-kit'
 import Listeners from '@/components/Listeners'
+import UpdateBanner from '@/components/UpdateBanner'
 import VehicleDev from '@/components/overlays/VehicleDev'
 import ToggleCoords from '@/components/overlays/ToggleCoords'
 import EntityInformation from '@/components/overlays/EntityInformation'
@@ -305,6 +306,7 @@ export default function App() {
                     return <Sidebar onRoute={handleRoute} currentRoute={effectiveRoute} plugins={plugins} />
                 })()}
                 <div className="flex-1 p-2 overflow-hidden flex flex-col min-h-0 min-w-0">
+                    <UpdateBanner />
                     {effectiveRoute === 'no_access' ? (
                         <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
                             <span className="text-4xl">🔒</span>

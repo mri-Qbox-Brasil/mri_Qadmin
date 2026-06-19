@@ -60,7 +60,9 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 selfId = GetPlayerServerId(PlayerId()),
                 accentColor = GetConvar('mri:color', '#00E699'),
                 backgroundColor = Config.background_color or '',
-                qboxEnabled = initialData and initialData.qboxEnabled or false
+                qboxEnabled = initialData and initialData.qboxEnabled or false,
+                resourceVersion = initialData and initialData.resourceVersion or nil,
+                updateInfo = initialData and initialData.updateInfo or nil
             }
         })
     else

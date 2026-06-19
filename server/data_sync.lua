@@ -38,7 +38,13 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         locations = {},
         settings = HasPerms(src, 'qadmin.page.settings') and GetPrimitiveSettings() or {},
         players = playersPayload,
-        qboxEnabled = GetResourceState("mri_Qbox") == 'started'
+        qboxEnabled = GetResourceState("mri_Qbox") == 'started',
+        -- Versao real do recurso em execucao (fxmanifest, injetada no release).
+        -- Enviada a todos para a sidebar exibir a versao correta — o bundle web
+        -- tem uma versao propria que pode ficar defasada entre releases.
+        resourceVersion = GetUpdateInfo().current,
+        -- Aviso de atualizacao so para quem pode agir nele (gerenciar recursos).
+        updateInfo = HasPerms(src, 'qadmin.page.resources') and GetUpdateInfo() or nil
     }
 
     -- 200,000 bytes per second (approx 200KB/s) to be fast but safe
