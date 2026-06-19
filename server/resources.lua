@@ -797,8 +797,8 @@ local function deleteEntry(source, data)
         return { ok = false, message = 'Sem permissao para acessar resources.' }
     end
 
-    if not CheckPerms(source, 'qadmin.action.resource_delete') or not CheckPerms(source, 'qadmin.master') then
-        return { ok = false, message = 'Somente admin master pode excluir arquivos ou pastas.' }
+    if not CheckPerms(source, 'qadmin.action.resource_delete') then
+        return { ok = false, message = 'Sem permissao para excluir arquivos ou pastas.' }
     end
 
     local target = resolveTarget(data.resource, data.path)

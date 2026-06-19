@@ -1,8 +1,7 @@
 import React, { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppState } from '@/context/AppState'
 import { useNui } from '@/context/NuiContext'
-import { MriButton, MriPageHeader } from '@mriqbox/ui-kit'
-import { MriExpandableSearch } from '@/components/ui/MriExpandableSearch'
+import { MriButton, MriPageHeader, MriExpandableSearch } from '@mriqbox/ui-kit'
 import { cn } from '@/lib/utils'
 import { hasPermission } from '@/utils/permissions'
 import {
