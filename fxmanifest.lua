@@ -1,6 +1,6 @@
 fx_version 'cerulean'
 game 'gta5'
-lua54 "yes"
+lua54 'yes'
 use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
@@ -103,4 +103,5 @@ files {
 }
 
 ui_page "web/build/index.html"
+
 
