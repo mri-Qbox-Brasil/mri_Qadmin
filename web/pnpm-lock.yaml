@@ -12,8 +12,8 @@ importers:
         specifier: ^0.100.0
         version: 0.100.0
       '@mriqbox/ui-kit':
-        specifier: ^4.9.0
-        version: 4.9.0(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)
+        specifier: ^4.10.1
+        version: 4.10.1(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)
       '@radix-ui/react-accordion':
         specifier: ^1.0.4
         version: 1.2.12(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -635,8 +635,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mriqbox/ui-kit@4.9.0':
-    resolution: {integrity: sha512-WpvvXWyrm2qfmAowM6TuiFWN7yC3k6sW87b2KaVAIdjmJETmttg3ggiU7hptV3AcmXQMuv2SurLswS3PGKJRQg==}
+  '@mriqbox/ui-kit@4.10.1':
+    resolution: {integrity: sha512-WAQiM9L5P8wct1XOzmWvtn1VHlbrXHGeIGCY4GkoiPMPg0iqyyj/KAWdGMu234a9yrZdwqzJr+WdDu6bm9XQ7Q==}
     hasBin: true
 
   '@nodelib/fs.scandir@2.1.5':
@@ -3331,7 +3331,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mriqbox/ui-kit@4.9.0(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)':
+  '@mriqbox/ui-kit@4.10.1(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)':
     dependencies:
       '@radix-ui/react-accordion': 1.2.12(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-avatar': 1.1.11(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
