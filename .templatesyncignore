@@ -1,0 +1,5 @@
+config/*
+*.local.lua
+.env
+.env.*
+.github/workflows/template-sync.yml
