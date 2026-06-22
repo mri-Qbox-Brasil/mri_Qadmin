@@ -169,7 +169,7 @@ export default function Resources() {
 
     const canViewResources = hasPermission(myPermissions, 'qadmin.page.resources')
     const canChangeResource = hasPermission(myPermissions, 'qadmin.action.change_resource')
-    const canDeleteResourceEntry = hasPermission(myPermissions, 'qadmin.master') && hasPermission(myPermissions, 'qadmin.action.resource_delete')
+    const canDeleteResourceEntry = hasPermission(myPermissions, 'qadmin.action.resource_delete')
 
     const [resourceSearch, setResourceSearch] = useState('')
     const [entrySearch, setEntrySearch] = useState('')
