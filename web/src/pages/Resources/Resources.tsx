@@ -4,6 +4,7 @@ import { useNui } from '@/context/NuiContext'
 import { MriButton, MriPageHeader, MriExpandableSearch } from '@mriqbox/ui-kit'
 import { cn } from '@/lib/utils'
 import { hasPermission } from '@/utils/permissions'
+import { useI18n } from '@/hooks/useI18n'
 import {
     AlertCircle,
     CheckCircle2,
@@ -91,8 +92,10 @@ function formatBytes(bytes: number) {
     return `${value.toFixed(decimals)} ${units[unitIndex]}`
 }
 
-function formatDate(value?: string) {
-    if (!value) return 'Sem data'
+type TFn = (key: string, vars?: Record<string, any> | any[]) => string
+
+function formatDate(value: string | undefined, t: TFn) {
+    if (!value) return t('resources.no_date')
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
 
@@ -105,12 +108,13 @@ function formatDate(value?: string) {
     }).format(date)
 }
 
-function buildBreadcrumbs(directory: string) {
+function buildBreadcrumbs(directory: string, t: TFn) {
     const normalized = String(directory || '').trim()
-    if (!normalized) return [{ label: 'raiz', path: '' }]
+    const rootLabel = t('resources.breadcrumb_root')
+    if (!normalized) return [{ label: rootLabel, path: '' }]
 
     const segments = normalized.split('/').filter(Boolean)
-    const breadcrumbs = [{ label: 'raiz', path: '' }]
+    const breadcrumbs = [{ label: rootLabel, path: '' }]
     let current = ''
 
     for (const segment of segments) {
@@ -149,24 +153,26 @@ function getResourceTone(state?: string) {
     }
 }
 
-function getResourceStateLabel(state?: string, compact = false) {
-    if (state === 'started') return compact ? 'rodando' : 'Rodando'
-    if (state === 'starting') return compact ? 'iniciando' : 'Iniciando'
-    if (state === 'stopping') return compact ? 'parando' : 'Parando'
-    if (state === 'stopped') return compact ? 'parado' : 'Parado'
-    if (state === 'missing') return compact ? 'indisponivel' : 'Indisponivel'
+function getResourceStateLabel(state: string | undefined, compact: boolean, t: TFn) {
+    const suffix = compact ? '_compact' : ''
+    if (state === 'started') return t('resources.state_running' + suffix)
+    if (state === 'starting') return t('resources.state_starting' + suffix)
+    if (state === 'stopping') return t('resources.state_stopping' + suffix)
+    if (state === 'stopped') return t('resources.state_stopped' + suffix)
+    if (state === 'missing') return t('resources.state_missing' + suffix)
     return state ? state : 'N/A'
 }
 
-function buildActionLabel(action: ResourceAction) {
-    if (action === 'start') return 'Recurso iniciado.'
-    if (action === 'stop') return 'Recurso parado.'
-    return 'Recurso reiniciado.'
+function buildActionLabel(action: ResourceAction, t: TFn) {
+    if (action === 'start') return t('resources.toast_started')
+    if (action === 'stop') return t('resources.toast_stopped')
+    return t('resources.toast_restarted')
 }
 
 export default function Resources() {
     const { gameData, setGameData, myPermissions } = useAppState()
     const { sendNui, on, off } = useNui()
+    const { t } = useI18n()
 
     const canViewResources = hasPermission(myPermissions, 'qadmin.page.resources')
     const canChangeResource = hasPermission(myPermissions, 'qadmin.action.change_resource')
@@ -314,7 +320,7 @@ export default function Resources() {
 
     const withDiscardGuard = async (action: () => Promise<void> | void) => {
         if (isDirty) {
-            showMessage('error', 'Salve as alteracoes antes de trocar de arquivo ou pasta.')
+            showMessage('error', t('resources.msg_save_before_switch'))
             return
         }
 
@@ -343,7 +349,7 @@ export default function Resources() {
             setDirectoryData(response)
         } catch (error: any) {
             if (directoryRequestRef.current !== requestId) return
-            showMessage('error', error?.message || 'Falha ao listar arquivos.')
+            showMessage('error', error?.message || t('resources.msg_list_fail'))
         } finally {
             if (directoryRequestRef.current === requestId) {
                 setLoadingDirectory(false)
@@ -385,7 +391,7 @@ export default function Resources() {
             if (fileRequestRef.current !== requestId) return
             setFileData(null)
             setSelectedFile('')
-            showMessage('error', error?.message || 'Falha ao abrir arquivo.')
+            showMessage('error', error?.message || t('resources.msg_open_fail'))
         } finally {
             if (fileRequestRef.current === requestId) {
                 setLoadingFile(false)
@@ -465,7 +471,7 @@ export default function Resources() {
             || directoryData.entries.find((entry) => !entry.isDirectory && entry.name.toLowerCase() === '__resource.lua')
 
         if (!manifest) {
-            showMessage('info', 'Nenhum manifest encontrado na raiz desse recurso.')
+            showMessage('info', t('resources.msg_no_manifest'))
             return
         }
 
@@ -489,7 +495,7 @@ export default function Resources() {
                 await loadFile(selectedFile)
             }
         } catch (error: any) {
-            showMessage('error', error?.message || 'Falha ao atualizar recursos.')
+            showMessage('error', error?.message || t('resources.msg_refresh_fail'))
         } finally {
             setRefreshingResources(false)
         }
@@ -507,9 +513,9 @@ export default function Resources() {
                 setGameData((previous: any) => ({ ...previous, resources: response }))
             }
 
-            showMessage('success', buildActionLabel(action))
+            showMessage('success', buildActionLabel(action, t))
         } catch (error: any) {
-            showMessage('error', error?.message || 'Falha ao alterar o estado do recurso.')
+            showMessage('error', error?.message || t('resources.msg_action_fail'))
         } finally {
             setActingResource('')
             setResourceAction(null)
@@ -554,9 +560,9 @@ export default function Resources() {
                 await loadDirectory(directoryData.directory)
             }
 
-            showMessage('success', response?.message || 'Arquivo salvo com sucesso.')
+            showMessage('success', response?.message || t('resources.msg_save_ok'))
         } catch (error: any) {
-            showMessage('error', error?.message || 'Falha ao salvar arquivo.')
+            showMessage('error', error?.message || t('resources.msg_save_fail'))
         } finally {
             setSavingFile(false)
         }
@@ -594,7 +600,7 @@ export default function Resources() {
             setCreateName('')
             showMessage('success', response?.message || 'Entrada criada com sucesso.')
         } catch (error: any) {
-            showMessage('error', error?.message || 'Falha ao criar entrada.')
+            showMessage('error', error?.message || t('resources.msg_create_fail'))
         } finally {
             setCreatingEntry(false)
         }
@@ -612,7 +618,7 @@ export default function Resources() {
 
         const deletedSelectedFile = selectedFile === entry.path || selectedFile.startsWith(`${entry.path}/`)
         if (isDirty && deletedSelectedFile) {
-            showMessage('error', 'Salve ou descarte as alteracoes antes de excluir o arquivo aberto.')
+            showMessage('error', t('resources.msg_save_discard_before_delete'))
             return
         }
 
@@ -655,7 +661,7 @@ export default function Resources() {
 
             showMessage('success', response?.message || 'Entrada excluida com sucesso.')
         } catch (error: any) {
-            showMessage('error', error?.message || 'Falha ao excluir entrada.')
+            showMessage('error', error?.message || t('resources.msg_delete_fail'))
         } finally {
             setDeletingEntryPath('')
         }
@@ -667,7 +673,7 @@ export default function Resources() {
 
             return (
         <div className="flex h-full w-full flex-col overflow-hidden bg-background">
-            <MriPageHeader title="Recursos" icon={Container} countLabel="recursos" count={filteredResources.length}>
+            <MriPageHeader title={t('resources.page_title')} icon={Container} countLabel={t('resources.count_label')} count={filteredResources.length}>
                 <MriButton
                     size="icon"
                     variant="outline"
@@ -700,14 +706,14 @@ export default function Resources() {
                         <div className="border-b border-border px-4 py-4">
                             <div className="flex items-start justify-between gap-5">
                                 <div className="min-w-0 pr-2">
-                                    <p className="text-sm font-semibold text-foreground">Lista de Recursos</p>
-                                    <p className="text-xs text-muted-foreground">Selecione um recurso para abrir arquivos e controlar o script.</p>
+                                    <p className="text-sm font-semibold text-foreground">{t('resources.list_title')}</p>
+                                    <p className="text-xs text-muted-foreground">{t('resources.list_subtitle')}</p>
                                 </div>
                                 <div className="grid shrink-0 grid-cols-2 gap-2.5 text-center text-[11px]">
                                     <button
                                         type="button"
                                         aria-pressed={statusFilter === 'started'}
-                                        title={statusFilter === 'started' ? 'Remover filtro' : 'Mostrar so os que estao rodando'}
+                                        title={statusFilter === 'started' ? t('resources.remove_filter') : t('resources.filter_running_tip')}
                                         onClick={() => setStatusFilter((current) => current === 'started' ? 'all' : 'started')}
                                         className={cn(
                                             'flex min-h-[48px] w-[56px] flex-col items-center justify-center rounded-xl border px-2 text-emerald-200 transition-all',
@@ -717,12 +723,12 @@ export default function Resources() {
                                         )}
                                     >
                                         <div className="text-sm font-semibold">{startedResources}</div>
-                                        <div className="opacity-70">rodando</div>
+                                        <div className="opacity-70">{t('resources.filter_running')}</div>
                                     </button>
                                     <button
                                         type="button"
                                         aria-pressed={statusFilter === 'stopped'}
-                                        title={statusFilter === 'stopped' ? 'Remover filtro' : 'Mostrar so os parados'}
+                                        title={statusFilter === 'stopped' ? t('resources.remove_filter') : t('resources.filter_stopped_tip')}
                                         onClick={() => setStatusFilter((current) => current === 'stopped' ? 'all' : 'stopped')}
                                         className={cn(
                                             'flex min-h-[48px] w-[56px] flex-col items-center justify-center rounded-xl border px-2 text-rose-200 transition-all',
@@ -732,7 +738,7 @@ export default function Resources() {
                                         )}
                                     >
                                         <div className="text-sm font-semibold">{stoppedResources}</div>
-                                        <div className="opacity-70">parados</div>
+                                        <div className="opacity-70">{t('resources.filter_stopped')}</div>
                                     </button>
                                 </div>
                             </div>
@@ -742,7 +748,7 @@ export default function Resources() {
                                 <input
                                     value={resourceSearch}
                                     onChange={(event) => setResourceSearch(event.target.value)}
-                                    placeholder="Pesquisar recurso por nome..."
+                                    placeholder={t('resources.search_placeholder')}
                                     className="h-full min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
                                 />
                                 {resourceSearch && (
@@ -759,9 +765,7 @@ export default function Resources() {
 
                         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 pr-2 custom-scrollbar">
                             {!canViewResources ? (
-                                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                                    Sua permissao atual nao permite acessar esta pagina.
-                                </div>
+                                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">{t('resources.no_perms_page')}</div>
                             ) : (
                                 <div className="space-y-2 pb-10">
                                     {filteredResources.map((resource) => {
@@ -796,17 +800,17 @@ export default function Resources() {
                                                             <p className="truncate text-sm font-semibold text-foreground">{resource.name}</p>
                                                         </div>
                                                         <p className="mt-1 truncate text-[11px] text-muted-foreground">
-                                                            {resource.version ? `v${resource.version}` : 'Sem versao'}
+                                                            {resource.version ? `v${resource.version}` : t('resources.no_version')}
                                                             {resource.author ? ` | ${resource.author}` : ''}
                                                         </p>
                                                     </div>
                                                     <span className={cn('rounded-full px-2 py-1 text-[10px] uppercase tracking-wide', tone.badge)}>
-                                                        {getResourceStateLabel(resource.resourceState, true)}
+                                                        {getResourceStateLabel(resource.resourceState, true, t)}
                                                     </span>
                                                 </div>
 
                                                 <p className="mt-2 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
-                                                    {resource.description || 'Sem descricao no fxmanifest.'}
+                                                    {resource.description || t('resources.no_description')}
                                                 </p>
 
                                                 {canChangeResource && (
@@ -818,36 +822,30 @@ export default function Resources() {
                                                             <>
                                                                 <button
                                                                     type="button"
-                                                                    title="Reiniciar"
+                                                                    title={t('resources.action_restart')}
                                                                     disabled={acting}
                                                                     onClick={() => void handleResourceAction('restart', resource.name)}
                                                                     className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                                                                 >
-                                                                    <RotateCw className={cn('h-3.5 w-3.5', acting && 'animate-spin')} />
-                                                                    Reiniciar
-                                                                </button>
+                                                                    <RotateCw className={cn('h-3.5 w-3.5', acting && 'animate-spin')} />{t('resources.action_restart')}</button>
                                                                 <button
                                                                     type="button"
-                                                                    title="Parar"
+                                                                    title={t('resources.action_stop')}
                                                                     disabled={acting}
                                                                     onClick={() => void handleResourceAction('stop', resource.name)}
                                                                     className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-medium text-rose-300 transition-colors hover:bg-rose-500/20 disabled:opacity-50"
                                                                 >
-                                                                    <Square className="h-3.5 w-3.5" />
-                                                                    Parar
-                                                                </button>
+                                                                    <Square className="h-3.5 w-3.5" />{t('resources.action_stop')}</button>
                                                             </>
                                                         ) : (
                                                             <button
                                                                 type="button"
-                                                                title="Iniciar"
+                                                                title={t('resources.action_start')}
                                                                 disabled={acting}
                                                                 onClick={() => void handleResourceAction('start', resource.name)}
                                                                 className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
                                                             >
-                                                                <Play className={cn('h-3.5 w-3.5', acting && 'animate-spin')} />
-                                                                Iniciar
-                                                            </button>
+                                                                <Play className={cn('h-3.5 w-3.5', acting && 'animate-spin')} />{t('resources.action_start')}</button>
                                                         )}
                                                     </div>
                                                 )}
@@ -856,9 +854,7 @@ export default function Resources() {
                                     })}
 
                                     {filteredResources.length === 0 && (
-                                        <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                                            Nenhum recurso encontrado com esse filtro.
-                                        </div>
+                                        <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">{t('resources.none_found_filter')}</div>
                                     )}
                                 </div>
                             )}
@@ -869,9 +865,9 @@ export default function Resources() {
                         <div className="border-b border-border px-4 py-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm font-semibold text-foreground">{selectedResource || 'Nenhum recurso selecionado'}</p>
+                                    <p className="truncate text-sm font-semibold text-foreground">{selectedResource || t('resources.no_resource_selected')}</p>
                                     <p className="truncate text-xs text-muted-foreground">
-                                        {directoryData?.root || 'Selecione um recurso para ver os arquivos.'}
+                                        {directoryData?.root || t('resources.select_resource_files')}
                                     </p>
                                 </div>
                                 <MriButton
@@ -887,14 +883,14 @@ export default function Resources() {
 
                             <div className="mt-3">
                                 <MriExpandableSearch
-                                    placeholder="Filtrar arquivos..."
+                                    placeholder={t('resources.filter_files_placeholder')}
                                     value={entrySearch}
                                     onChange={setEntrySearch}
                                 />
                             </div>
 
                             <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                                {buildBreadcrumbs(directoryData?.directory || '').map((crumb, index) => (
+                                {buildBreadcrumbs(directoryData?.directory || '', t).map((crumb, index) => (
                                     <React.Fragment key={`${crumb.path}-${index}`}>
                                         {index > 0 && <ChevronRight className="h-3 w-3 opacity-40" />}
                                         <button
@@ -928,9 +924,7 @@ export default function Resources() {
                                                 onClick={() => setCreateKind('file')}
                                             >
                                                 <span className="inline-flex items-center gap-1">
-                                                    <FilePlus2 className="h-3.5 w-3.5" />
-                                                    arquivo
-                                                </span>
+                                                    <FilePlus2 className="h-3.5 w-3.5" />{t('resources.kind_file')}</span>
                                             </button>
                                             <button
                                                 className={cn(
@@ -940,16 +934,14 @@ export default function Resources() {
                                                 onClick={() => setCreateKind('folder')}
                                             >
                                                 <span className="inline-flex items-center gap-1">
-                                                    <FolderPlus className="h-3.5 w-3.5" />
-                                                    pasta
-                                                </span>
+                                                    <FolderPlus className="h-3.5 w-3.5" />{t('resources.kind_folder')}</span>
                                             </button>
                                         </div>
 
                                         <input
                                             value={createName}
                                             onChange={(event) => setCreateName(event.target.value)}
-                                            placeholder={createKind === 'file' ? 'novo_arquivo.lua' : 'nova_pasta'}
+                                            placeholder={createKind === 'file' ? t('resources.new_file_placeholder') : t('resources.new_folder_placeholder')}
                                             className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs text-foreground outline-none placeholder:text-muted-foreground/60"
                                         />
 
@@ -959,7 +951,7 @@ export default function Resources() {
                                             onClick={handleCreateEntry}
                                             disabled={creatingEntry || !selectedResource || !createName.trim()}
                                         >
-                                            {creatingEntry ? 'Criando...' : 'Criar'}
+                                            {creatingEntry ? t('resources.creating') : t('resources.create')}
                                         </MriButton>
                                     </div>
                                 </div>
@@ -968,27 +960,21 @@ export default function Resources() {
 
                         <div className="border-b border-border px-4 py-2 text-[11px] text-muted-foreground">
                             <div className="flex items-center justify-between gap-3">
-                                <span>{visibleEntries.length} entradas</span>
-                                <span>{formatBytes(totalEntryBytes)} em arquivos visiveis</span>
+                                <span>{visibleEntries.length} {t('resources.entries')}</span>
+                                <span>{formatBytes(totalEntryBytes)} {t('resources.in_visible_files')}</span>
                             </div>
                         </div>
 
                         <div className="min-h-0 flex-1 overflow-y-scroll px-3 py-3 pr-2 custom-scrollbar">
                             {!canChangeResource ? (
-                                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                                    Sua permissao atual nao permite explorar arquivos por este painel.
-                                </div>
+                                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">{t('resources.no_perms_explore')}</div>
                             ) : loadingDirectory && !directoryData ? (
                                 <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <RefreshCw className="h-4 w-4 animate-spin" />
-                                    Carregando arquivos...
-                                </div>
+                                    <RefreshCw className="h-4 w-4 animate-spin" />{t('resources.loading_files')}</div>
                             ) : (
                                 <div className="space-y-2 pb-10">
                                     {visibleEntries.length === 0 && (
-                                        <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                                            Nenhum arquivo encontrado nesta pasta.
-                                        </div>
+                                        <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">{t('resources.none_found_folder')}</div>
                                     )}
 
                                     {visibleEntries.map((entry) => {
@@ -1022,12 +1008,12 @@ export default function Resources() {
                                                         <div className="min-w-0">
                                                             <p className="truncate text-sm font-medium text-foreground">{entry.name}</p>
                                                             <p className="truncate text-[11px] text-muted-foreground">
-                                                                {entry.isDirectory ? 'Diretorio' : `${entry.extension || 'arquivo'} | ${formatBytes(entry.size)}`}
+                                                                {entry.isDirectory ? t('resources.directory') : `${entry.extension || t('resources.file_unit')} | ${formatBytes(entry.size)}`}
                                                             </p>
                                                         </div>
                                                     </div>
                                                     <div className="flex shrink-0 items-center gap-2">
-                                                        <span className="text-[10px] text-muted-foreground">{formatDate(entry.modified)}</span>
+                                                        <span className="text-[10px] text-muted-foreground">{formatDate(entry.modified, t)}</span>
                                                         {canDeleteResourceEntry && (
                                                             <button
                                                                 type="button"
@@ -1037,14 +1023,14 @@ export default function Resources() {
                                                                         ? 'border-rose-400/50 bg-rose-500/25'
                                                                         : 'border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/20'
                                                                 )}
-                                                                title={pendingDelete ? 'Clique novamente para confirmar' : `Excluir ${entry.isDirectory ? 'pasta' : 'arquivo'}`}
+                                                                title={pendingDelete ? t('resources.confirm_delete_tip') : (entry.isDirectory ? t('resources.delete_folder_tip') : t('resources.delete_file_tip'))}
                                                                 disabled={deleting}
                                                                 onClick={(event) => void handleDeleteEntry(entry, event)}
                                                             >
                                                                 {deleting ? (
                                                                     <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                                                                 ) : pendingDelete ? (
-                                                                    <span className="text-[10px] font-semibold uppercase tracking-wide">confirmar</span>
+                                                                    <span className="text-[10px] font-semibold uppercase tracking-wide">{t('resources.confirm')}</span>
                                                                 ) : (
                                                                     <Trash2 className="h-3.5 w-3.5" />
                                                                 )}
@@ -1064,11 +1050,11 @@ export default function Resources() {
                         <div className="border-b border-border px-4 py-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm font-semibold text-foreground">{selectedFile || 'Area do Recurso'}</p>
+                                    <p className="truncate text-sm font-semibold text-foreground">{selectedFile || t('resources.area_title')}</p>
                                     <p className="truncate text-xs text-muted-foreground">
                                         {selectedFile
-                                            ? (fileData ? `${formatBytes(fileData.size)} | ${fileData.extension || 'texto'}` : 'Carregando arquivo...')
-                                            : 'Controle o estado do recurso, abra arquivos e edite em tempo real.'}
+                                            ? (fileData ? `${formatBytes(fileData.size)} | ${fileData.extension || t('resources.text_unit')}` : t('resources.loading_file'))
+                                            : t('resources.panel_hint')}
                                     </p>
                                 </div>
 
@@ -1081,9 +1067,7 @@ export default function Resources() {
                                             onClick={handleCancelEdit}
                                             disabled={!isDirty || savingFile}
                                         >
-                                            <RotateCcw className="mr-2 h-4 w-4" />
-                                            Cancelar
-                                        </MriButton>
+                                            <RotateCcw className="mr-2 h-4 w-4" />{t('resources.cancel')}</MriButton>
                                         <MriButton
                                             size="sm"
                                             variant="outline"
@@ -1092,7 +1076,7 @@ export default function Resources() {
                                             disabled={!isDirty || savingFile}
                                         >
                                             <Save className="mr-2 h-4 w-4" />
-                                            {savingFile ? 'Salvando...' : 'Salvar'}
+                                            {savingFile ? t('resources.saving') : t('resources.save')}
                                         </MriButton>
                                         <MriButton
                                             size="sm"
@@ -1100,9 +1084,7 @@ export default function Resources() {
                                             onClick={() => void handleSave(true)}
                                             disabled={!isDirty || savingFile}
                                         >
-                                            <WandSparkles className="mr-2 h-4 w-4" />
-                                            Salvar + reiniciar
-                                        </MriButton>
+                                            <WandSparkles className="mr-2 h-4 w-4" />{t('resources.save_restart')}</MriButton>
                                     </div>
                                 )}
                             </div>
@@ -1113,19 +1095,19 @@ export default function Resources() {
                                 <div className="grid h-full min-h-0 grid-rows-[auto_auto_1fr]">
                                     <div className="grid gap-3 border-b border-border p-4 md:grid-cols-3">
                                         <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                                            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">estado</p>
+                                            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t('resources.label_state')}</p>
                                             <div className="mt-2 flex items-center gap-2">
                                                 <span className={cn('h-2.5 w-2.5 rounded-full', currentStateTone.dot)} />
-                                                <p className="text-lg font-semibold text-foreground">{getResourceStateLabel(currentResource?.resourceState)}</p>
+                                                <p className="text-lg font-semibold text-foreground">{getResourceStateLabel(currentResource?.resourceState, false, t)}</p>
                                             </div>
                                         </div>
                                         <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                                            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">versao</p>
-                                            <p className="mt-2 text-lg font-semibold text-foreground">{currentResource?.version || 'Sem versao'}</p>
+                                            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t('resources.label_version')}</p>
+                                            <p className="mt-2 text-lg font-semibold text-foreground">{currentResource?.version || t('resources.no_version')}</p>
                                         </div>
                                         <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                                            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">autor</p>
-                                            <p className="mt-2 text-lg font-semibold text-foreground">{currentResource?.author || 'Desconhecido'}</p>
+                                            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t('resources.label_author')}</p>
+                                            <p className="mt-2 text-lg font-semibold text-foreground">{currentResource?.author || t('resources.unknown_author')}</p>
                                         </div>
                                     </div>
 
@@ -1138,7 +1120,7 @@ export default function Resources() {
                                                 disabled={!selectedResource || !canChangeResource || resourceAction !== null || currentResource?.resourceState === 'started'}
                                             >
                                                 <Play className="mr-2 h-4 w-4" />
-                                                {resourceAction === 'start' ? 'Iniciando...' : 'Iniciar'}
+                                                {resourceAction === 'start' ? t('resources.starting') : t('resources.action_start')}
                                             </MriButton>
                                             <MriButton
                                                 size="sm"
@@ -1147,9 +1129,7 @@ export default function Resources() {
                                                 onClick={() => void handleResourceAction('restart')}
                                                 disabled={!selectedResource || !canChangeResource || resourceAction !== null}
                                             >
-                                                <RotateCw className={cn('mr-2 h-4 w-4', resourceAction === 'restart' && 'animate-spin')} />
-                                                Reiniciar
-                                            </MriButton>
+                                                <RotateCw className={cn('mr-2 h-4 w-4', resourceAction === 'restart' && 'animate-spin')} />{t('resources.action_restart')}</MriButton>
                                             <MriButton
                                                 size="sm"
                                                 variant="outline"
@@ -1158,7 +1138,7 @@ export default function Resources() {
                                                 disabled={!selectedResource || !canChangeResource || resourceAction !== null || currentResource?.resourceState !== 'started'}
                                             >
                                                 <Square className="mr-2 h-4 w-4" />
-                                                {resourceAction === 'stop' ? 'Parando...' : 'Parar'}
+                                                {resourceAction === 'stop' ? t('resources.stopping') : t('resources.action_stop')}
                                             </MriButton>
                                             <MriButton
                                                 size="sm"
@@ -1167,30 +1147,28 @@ export default function Resources() {
                                                 onClick={() => void handleOpenManifest()}
                                                 disabled={!selectedResource || !canChangeResource || loadingDirectory}
                                             >
-                                                <FileCode2 className="mr-2 h-4 w-4" />
-                                                Abrir manifest
-                                            </MriButton>
+                                                <FileCode2 className="mr-2 h-4 w-4" />{t('resources.open_manifest')}</MriButton>
                                         </div>
                                     </div>
 
                                     <div className="overflow-y-auto p-4">
                                         <div className="rounded-2xl border border-border bg-muted/10 p-4">
-                                            <p className="text-sm font-semibold text-foreground">Visao Geral</p>
+                                            <p className="text-sm font-semibold text-foreground">{t('resources.overview')}</p>
                                             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                                {currentResource?.description || 'Esse recurso nao possui descricao no manifest. Use o explorador para abrir fxmanifest.lua, config.lua e scripts desse recurso.'}
+                                                {currentResource?.description || t('resources.no_manifest_desc')}
                                             </p>
 
                                             <div className="mt-4 grid gap-3 md:grid-cols-2">
                                                 <div className="rounded-xl border border-dashed border-border/70 bg-background/40 p-4">
-                                                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">caminho</p>
-                                                    <p className="mt-2 break-all font-mono text-xs text-foreground/80">{directoryData?.root || 'Selecione um recurso'}</p>
+                                                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t('resources.label_path')}</p>
+                                                    <p className="mt-2 break-all font-mono text-xs text-foreground/80">{directoryData?.root || t('resources.select_resource')}</p>
                                                 </div>
                                                 <div className="rounded-xl border border-dashed border-border/70 bg-background/40 p-4">
-                                                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">status operacional</p>
+                                                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t('resources.label_status')}</p>
                                                     <p className="mt-2 text-sm text-foreground/80">
                                                         {currentResource?.resourceState === 'started'
-                                                            ? 'Rodando e pronto para reiniciar rapido apos salvar arquivos.'
-                                                            : 'Parado. Voce pode iniciar o script por aqui e depois editar normalmente.'}
+                                                            ? t('resources.status_running')
+                                                            : t('resources.status_stopped')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -1199,23 +1177,21 @@ export default function Resources() {
                                 </div>
                             ) : loadingFile && !fileData ? (
                                 <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <RefreshCw className="h-4 w-4 animate-spin" />
-                                    Carregando arquivo...
-                                </div>
+                                    <RefreshCw className="h-4 w-4 animate-spin" />{t('resources.loading_file')}</div>
                             ) : fileData?.binary ? (
                                 <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
                                     <AlertCircle className="h-8 w-8 text-amber-300" />
                                     <div>
-                                        <p className="text-sm font-semibold text-foreground">Arquivo binario</p>
-                                        <p className="mt-1 text-sm text-muted-foreground">Esse arquivo nao pode ser editado pelo painel.</p>
+                                        <p className="text-sm font-semibold text-foreground">{t('resources.binary_title')}</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">{t('resources.binary_desc')}</p>
                                     </div>
                                 </div>
                             ) : fileData?.tooLarge ? (
                                 <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
                                     <AlertCircle className="h-8 w-8 text-amber-300" />
                                     <div>
-                                        <p className="text-sm font-semibold text-foreground">Arquivo grande demais para o editor</p>
-                                        <p className="mt-1 text-sm text-muted-foreground">O limite atual e 1 MB para manter o painel responsivo.</p>
+                                        <p className="text-sm font-semibold text-foreground">{t('resources.too_large_title')}</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">{t('resources.too_large_desc')}</p>
                                     </div>
                                 </div>
                             ) : (
@@ -1226,11 +1202,11 @@ export default function Resources() {
                                                 'rounded-full px-2 py-1',
                                                 fileData?.editable ? 'bg-emerald-500/10 text-emerald-300' : 'bg-muted text-muted-foreground'
                                             )}>
-                                                {fileData?.editable ? 'editavel' : 'somente leitura'}
+                                                {fileData?.editable ? t('resources.editable') : t('resources.read_only')}
                                             </span>
-                                            {isDirty && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-amber-300">alteracoes nao salvas</span>}
+                                            {isDirty && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-amber-300">{t('resources.unsaved')}</span>}
                                         </div>
-                                        <div className="font-mono">{lineCount} linhas | {editorValue.length} chars</div>
+                                        <div className="font-mono">{lineCount} {t('resources.lines')} | {editorValue.length} chars</div>
                                     </div>
 
                                     <div className="min-h-0 overflow-hidden bg-[#0b1220]">
@@ -1240,7 +1216,7 @@ export default function Resources() {
                                             onChange={(event) => handleEditorChange(event.target.value)}
                                             readOnly={!fileData?.editable || !canChangeResource}
                                             className="h-full w-full resize-none border-0 bg-transparent px-4 py-4 font-mono text-[13px] leading-6 text-slate-100 outline-none placeholder:text-slate-500"
-                                            placeholder="Selecione um arquivo de texto para editar."
+                                            placeholder={t('resources.editor_placeholder')}
                                         />
                                     </div>
 
