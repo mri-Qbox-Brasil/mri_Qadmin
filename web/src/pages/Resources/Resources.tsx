@@ -185,6 +185,7 @@ export default function Resources() {
     const [savingFile, setSavingFile] = useState(false)
     const [refreshingResources, setRefreshingResources] = useState(false)
     const [resourceAction, setResourceAction] = useState<ResourceAction | null>(null)
+    const [actingResource, setActingResource] = useState('')
     const [message, setMessage] = useState<FlashMessage>(null)
     const [createKind, setCreateKind] = useState<'file' | 'folder'>('file')
     const [createName, setCreateName] = useState('')
@@ -481,13 +482,14 @@ export default function Resources() {
         }
     }
 
-    const handleResourceAction = async (action: ResourceAction) => {
-        if (!selectedResource || !canChangeResource) return
+    const handleResourceAction = async (action: ResourceAction, resourceName: string = selectedResource) => {
+        if (!resourceName || !canChangeResource || actingResource) return
 
-        setResourceAction(action)
+        setActingResource(resourceName)
+        if (resourceName === selectedResource) setResourceAction(action)
 
         try {
-            const response = await sendNui<ResourceItem[]>('setResourceState', { name: selectedResource, state: action })
+            const response = await sendNui<ResourceItem[]>('setResourceState', { name: resourceName, state: action })
             if (response) {
                 setGameData((previous: any) => ({ ...previous, resources: response }))
             }
@@ -496,6 +498,7 @@ export default function Resources() {
         } catch (error: any) {
             showMessage('error', error?.message || 'Falha ao alterar o estado do recurso.')
         } finally {
+            setActingResource('')
             setResourceAction(null)
         }
     }
@@ -729,17 +732,27 @@ export default function Resources() {
                                     {filteredResources.map((resource) => {
                                         const active = selectedResource === resource.name
                                         const tone = getResourceTone(resource.resourceState)
+                                        const acting = actingResource === resource.name
+                                        const isStarted = resource.resourceState === 'started'
 
                                         return (
-                                            <button
+                                            <div
                                                 key={resource.name}
+                                                role="button"
+                                                tabIndex={0}
                                                 className={cn(
-                                                    'w-full rounded-2xl border p-3 text-left transition-all',
+                                                    'w-full cursor-pointer rounded-2xl border p-3 text-left transition-all',
                                                     active
                                                         ? 'border-primary/50 bg-primary/10 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.15)]'
                                                         : 'border-border bg-muted/20 hover:border-border/80 hover:bg-muted/40'
                                                 )}
                                                 onClick={() => void handleResourceSelect(resource.name)}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter' || event.key === ' ') {
+                                                        event.preventDefault()
+                                                        void handleResourceSelect(resource.name)
+                                                    }
+                                                }}
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="min-w-0">
@@ -760,7 +773,50 @@ export default function Resources() {
                                                 <p className="mt-2 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
                                                     {resource.description || 'Sem descricao no fxmanifest.'}
                                                 </p>
-                                            </button>
+
+                                                {canChangeResource && (
+                                                    <div
+                                                        className="mt-2.5 flex items-center gap-1.5 border-t border-border/60 pt-2.5"
+                                                        onClick={(event) => event.stopPropagation()}
+                                                    >
+                                                        {isStarted ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Reiniciar"
+                                                                    disabled={acting}
+                                                                    onClick={() => void handleResourceAction('restart', resource.name)}
+                                                                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                                                                >
+                                                                    <RotateCw className={cn('h-3.5 w-3.5', acting && 'animate-spin')} />
+                                                                    Reiniciar
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Parar"
+                                                                    disabled={acting}
+                                                                    onClick={() => void handleResourceAction('stop', resource.name)}
+                                                                    className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-medium text-rose-300 transition-colors hover:bg-rose-500/20 disabled:opacity-50"
+                                                                >
+                                                                    <Square className="h-3.5 w-3.5" />
+                                                                    Parar
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                title="Iniciar"
+                                                                disabled={acting}
+                                                                onClick={() => void handleResourceAction('start', resource.name)}
+                                                                className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
+                                                            >
+                                                                <Play className={cn('h-3.5 w-3.5', acting && 'animate-spin')} />
+                                                                Iniciar
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         )
                                     })}
 
