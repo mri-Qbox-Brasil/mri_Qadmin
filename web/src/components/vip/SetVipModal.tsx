@@ -5,6 +5,7 @@ import { useI18n } from '@/hooks/useI18n'
 import { useNui } from '@/context/NuiContext'
 import { VipRank } from '@/types'
 import { MOCK_VIP_RANKS } from '@/utils/mockData'
+import { nowSeconds } from '@/utils/time'
 
 const DURATION_OPTIONS = [
     { label: '7 dias',  value: '604800'  },
@@ -44,6 +45,8 @@ export default function SetVipModal({ playerName, citizenid, onClose, onSubmit }
     }, [sendNui])
 
     useEffect(() => {
+        // Seleciona o primeiro rank por padrao quando a lista carrega.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (ranks.length && !rankId) setRankId(ranks[0].id)
     }, [ranks, rankId])
 
@@ -57,7 +60,7 @@ export default function SetVipModal({ playerName, citizenid, onClose, onSubmit }
             expiration = Math.floor(customDate.getTime() / 1000)
         } else {
             const secs = Number(duration)
-            expiration = secs === 0 ? 0 : Math.floor(Date.now() / 1000) + secs
+            expiration = secs === 0 ? 0 : nowSeconds() + secs
         }
         onSubmit({
             rankId,

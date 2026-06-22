@@ -416,6 +416,9 @@ export default function Resources() {
         setFileData(null)
         setEditorValue('')
         void loadDirectory('', requestResource)
+        // loadDirectory e recriado a cada render; incluir nas deps reexecutaria
+        // o efeito em loop. Disparar so na troca de resource/permissao e o certo.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedResource, canChangeResource])
 
     const handleEditorChange = (value: string) => {
