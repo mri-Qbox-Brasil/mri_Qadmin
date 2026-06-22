@@ -49,6 +49,10 @@ local function cmdQuote(value)
     return '"' .. tostring(value or ''):gsub('"', '') .. '"'
 end
 
+-- '\' como separador de path => Windows; '/' => Unix. Usado para escolher os
+-- comandos de mkdir/rmdir corretos no fallback de disco.
+local IS_WINDOWS = package.config:sub(1, 1) == '\\'
+
 local function pathExists(absolutePath)
     local ok = os.rename(absolutePath, absolutePath)
     return ok == true
@@ -733,19 +737,56 @@ local function ensureDirectoryExists(absolutePath)
         return true
     end
 
-    local ok, exitType, code = os.execute(('cmd /c mkdir %s >nul 2>nul'):format(cmdQuote(absolutePath)))
+    local command = IS_WINDOWS
+        and ('cmd /c mkdir %s >nul 2>nul'):format(cmdQuote(absolutePath))
+        or ('mkdir -p %s >/dev/null 2>&1'):format(cmdQuote(absolutePath))
+
+    local ok, exitType, code = os.execute(command)
     if commandSucceeded(ok, exitType, code) and pathExists(absolutePath) then
         return true
     end
 
-    return false, 'O Windows nao permitiu criar a pasta.'
+    return false, 'Nao foi possivel criar a pasta no disco.'
+end
+
+-- Exclui um arquivo (os.remove) ou pasta (rmdir/rm -rf) direto no disco, sem
+-- passar pelo FS bridge do Node — que e bloqueado pelo sandbox em artifacts novos.
+local function deletePhysicalEntry(absolutePath, isDirectory)
+    if isDirectory then
+        local command = IS_WINDOWS
+            and ('cmd /c rmdir /s /q %s >nul 2>nul'):format(cmdQuote(absolutePath))
+            or ('rm -rf %s >/dev/null 2>&1'):format(cmdQuote(absolutePath))
+
+        local ok, exitType, code = os.execute(command)
+        if commandSucceeded(ok, exitType, code) and not pathExists(absolutePath) then
+            return true
+        end
+
+        return false, 'Nao foi possivel excluir a pasta no disco.'
+    end
+
+    local removed = os.remove(absolutePath)
+    if removed then
+        return true
+    end
+
+    return false, 'Nao foi possivel excluir o arquivo no disco.'
 end
 
 local function writeDiskFile(target, content)
     local text = tostring(content or '')
-    local bridgeSaved, bridgeError = writeWithFsBridge(target, text)
-    if not bridgeSaved then
-        return false, bridgeError
+
+    -- io cru do Lua: nao passa pelo sandbox/Node permission model do FiveM (ao
+    -- contrario do FS bridge em Node, que da "--allow-fs-write" em artifacts
+    -- novos). Garante a pasta pai e escreve direto.
+    ensureDirectoryExists(target.absolute:match('^(.*)[\\/][^\\/]+$') or normalizeSlashes(target.root))
+    local saved, saveError = writePhysicalFile(target.absolute, text)
+    if not saved then
+        -- fallback pro FS bridge (artifacts antigos onde o io cru possa falhar).
+        local bridgeSaved, bridgeError = writeWithFsBridge(target, text)
+        if not bridgeSaved then
+            return false, saveError or bridgeError
+        end
     end
 
     recentWrites[targetKey(target)] = text
@@ -757,7 +798,18 @@ local function createDirectory(target)
         return true
     end
 
-    return createDirectoryWithFsBridge(target)
+    local created, createError = ensureDirectoryExists(target.absolute)
+    if created then
+        return true
+    end
+
+    -- fallback pro FS bridge (artifacts antigos).
+    local bridgeCreated, bridgeError = createDirectoryWithFsBridge(target)
+    if bridgeCreated then
+        return true
+    end
+
+    return false, createError or bridgeError
 end
 
 local function saveResourceEditorFile(source, data)
@@ -886,10 +938,15 @@ local function deleteEntry(source, data)
 
     local isDirectory = data.isDirectory == true
     local parent = parentPath(target.relative)
-    local deleted, deleteError = deleteWithFsBridge(target, isDirectory)
+
+    -- Exclusao via os do Lua (nao passa pelo sandbox); FS bridge como fallback.
+    local deleted, deleteError = deletePhysicalEntry(target.absolute, isDirectory)
     if not deleted then
-        print(('[mri_Qadmin] Falha ao excluir %s/%s: %s'):format(target.resource, target.relative, tostring(deleteError)))
-        return { ok = false, message = deleteError or 'Nao foi possivel excluir a entrada.' }
+        local bridgeDeleted, bridgeError = deleteWithFsBridge(target, isDirectory)
+        if not bridgeDeleted then
+            print(('[mri_Qadmin] Falha ao excluir %s/%s: %s'):format(target.resource, target.relative, tostring(deleteError or bridgeError)))
+            return { ok = false, message = deleteError or bridgeError or 'Nao foi possivel excluir a entrada.' }
+        end
     end
 
     removeIndexedEntry(target.resource, target.relative)
