@@ -28,6 +28,10 @@ local TEXT_EXTENSIONS = {
 local resourceIndex = nil
 local resourceNameLookup = nil
 local recentWrites = {}
+-- Vira true apos a geracao inicial do indice no boot. Antes disso, o storm de
+-- onResourceStart nao reescreve o indice a cada resource (a geracao unica cobre
+-- todos); depois, resources novos entram de forma incremental.
+local indexBootDone = false
 
 local function trim(value)
     return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '')
@@ -363,6 +367,74 @@ local function persistResourceIndex()
     end
 end
 
+-- Monta o indice (nome do resource -> caminho absoluto no disco) varrendo os
+-- resources carregados no servidor. O servidor onde o mri_Qadmin roda e o unico
+-- lugar que conhece os caminhos reais, entao o indice precisa ser gerado em
+-- runtime (nao da pra pre-gerar no build/CI). Preserva o cache de diretorios ja
+-- listado, quando existir, pra nao perder metadados entre regeracoes.
+local function generateResourceIndex()
+    local previous = (resourceIndex and type(resourceIndex.resources) == 'table') and resourceIndex.resources or {}
+    local resources = {}
+    local total = tonumber(GetNumResources() or 0) or 0
+    local serverRoot = nil
+
+    for i = 0, total - 1 do
+        local name = GetResourceByFindIndex(i)
+        if name and name ~= '' then
+            local root = normalizeSlashes(GetResourcePath(name) or '')
+            if root ~= '' then
+                local cached = previous[name]
+                resources[name] = {
+                    root = root,
+                    directories = (type(cached) == 'table' and type(cached.directories) == 'table') and cached.directories or {},
+                }
+                if not serverRoot then
+                    serverRoot = root:match('^(.*)[\\/][^\\/]+$') or nil
+                end
+            end
+        end
+    end
+
+    resourceIndex = {
+        generatedAt = os.time(),
+        resourcesRoot = serverRoot,
+        count = 0,
+        resources = resources,
+    }
+    resourceIndex.count = countIndexedResources()
+    buildNameLookup(resourceIndex)
+    persistResourceIndex()
+
+    print(('[mri_Qadmin] Resource index gerado em runtime: %s resources.'):format(resourceIndex.count))
+    return resourceIndex
+end
+
+-- Garante que um unico resource esteja no indice (ex.: iniciado apos o boot),
+-- sem refazer a varredura completa.
+local function indexResource(resourceName)
+    local name = trim(resourceName)
+    if name == '' then
+        return
+    end
+
+    local root = normalizeSlashes(GetResourcePath(name) or '')
+    if root == '' then
+        return
+    end
+
+    local index = loadResourceIndex(false)
+    index.resources = type(index.resources) == 'table' and index.resources or {}
+
+    local cached = index.resources[name]
+    index.resources[name] = {
+        root = root,
+        directories = (type(cached) == 'table' and type(cached.directories) == 'table') and cached.directories or {},
+    }
+    index.count = countIndexedResources()
+    buildNameLookup(index)
+    persistResourceIndex()
+end
+
 local function findIndexedResource(resourceName)
     local safeName = trim(resourceName)
     if safeName == '' then
@@ -370,6 +442,12 @@ local function findIndexedResource(resourceName)
     end
 
     local index = loadResourceIndex(false)
+    -- Auto-cura: se o indice estiver vazio (placeholder novo ou apos um reset),
+    -- gera em runtime antes de desistir.
+    if countIndexedResources() == 0 then
+        index = generateResourceIndex()
+    end
+
     local resources = index.resources or {}
     if resources[safeName] then
         return resources[safeName], safeName
@@ -927,9 +1005,23 @@ safeCallback('mri_Qadmin:callback:DeleteResourceEntry', function(source, data)
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
+    -- So indexa incrementalmente apos o boot; durante o boot a geracao unica
+    -- (thread abaixo) cobre todos os resources de uma vez.
+    if indexBootDone then
+        indexResource(resourceName)
+    end
     TriggerClientEvent('mri_Qadmin:client:UpdateResourceState', -1, getResourceData(resourceName))
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
     TriggerClientEvent('mri_Qadmin:client:UpdateResourceState', -1, getResourceData(resourceName))
+end)
+
+-- Gera o indice de resources no boot, dando um tempo pro restante do servidor
+-- subir. Resources que iniciarem depois sao cobertos pelo onResourceStart acima,
+-- e o findIndexedResource ainda regenera sob demanda se o indice estiver vazio.
+CreateThread(function()
+    Wait(2000)
+    generateResourceIndex()
+    indexBootDone = true
 end)
