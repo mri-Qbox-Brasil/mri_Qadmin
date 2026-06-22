@@ -109,27 +109,8 @@ local function targetKey(target)
     return tostring(target.resource or '') .. ':' .. tostring(target.relative or '')
 end
 
-local function writePhysicalFile(absolutePath, content)
-    local handle, err = io.open(absolutePath, 'wb')
-    if not handle then
-        return false, ('Falha ao abrir arquivo para escrita: %s'):format(tostring(err or 'sem detalhe'))
-    end
-
-    local ok, writeErr = handle:write(tostring(content or ''))
-    handle:close()
-    -- No Lua do FiveM, write/close podem retornar valores nao-padrao mesmo no
-    -- sucesso; so tratamos como falha quando o write retorna erro explicito. A
-    -- verdade final fica com a verificacao por leitura (writeDiskFile).
-    if ok == nil and writeErr ~= nil then
-        return false, ('Falha ao gravar arquivo: %s'):format(tostring(writeErr))
-    end
-
-    return true
-end
-
--- A escrita/criacao/exclusao em disco e feita por io/os crus do Lua (que nao
--- passam pelo sandbox do FiveM); o FS bridge em Node so e usado para LISTAR
--- (leitura), entao mantemos apenas o list aqui.
+-- A escrita usa a native SaveResourceFile (writeDiskFile). O FS bridge em Node
+-- so e usado para LISTAR (leitura), entao mantemos apenas o list aqui.
 local function listWithFsBridge(target)
     local ok, result = pcall(function()
         return exports[GetCurrentResourceName()]:QadminListPhysicalResourceDirectory(target.root, target.relative)
@@ -686,41 +667,30 @@ end
 
 local function writeDiskFile(target, content)
     local text = tostring(content or '')
+    -- best-effort: garante a pasta pai (no-op se ja existir).
     ensureDirectoryExists(target.absolute:match('^(.*)[\\/][^\\/]+$') or normalizeSlashes(target.root))
 
-    -- 1) io cru do Lua (nao passa pelo sandbox). Ignora o retorno de write/close
-    --    (o Lua do FiveM pode retornar nil mesmo no sucesso) — a verdade e a
-    --    verificacao por leitura.
-    local ioOk, ioErr = writePhysicalFile(target.absolute, text)
+    -- Usa a native SaveResourceFile (grava relativo ao resource). Importante: NAO
+    -- usar io.open('wb') no caminho cru — em artifacts com sandbox o write e
+    -- bloqueado, mas o 'wb' ja TRUNCOU o arquivo na abertura (perda de dados). A
+    -- native respeita o sandbox de forma limpa, sem tocar o arquivo quando barra.
+    -- Para o proprio mri_Qadmin sempre funciona; para outros resources depende de
+    -- add_filesystem_permission no server.cfg.
+    SaveResourceFile(target.resource, target.relative, text, #text)
     if writtenMatches(target, text) then
         recentWrites[targetKey(target)] = text
         return true
     end
 
-    -- 2) fallback: native SaveResourceFile (grava relativo ao resource). Sempre
-    --    funciona para os arquivos do proprio mri_Qadmin; para outros resources
-    --    depende do sandbox do FiveM (add_filesystem_permission).
-    local nativeOk = SaveResourceFile(target.resource, target.relative, text, #text)
-    if writtenMatches(target, text) then
-        recentWrites[targetKey(target)] = text
-        return true
-    end
-
-    -- Diagnostico no console pra distinguir sandbox cross-resource de io bloqueado.
-    print(('[mri_Qadmin] write falhou | resource=%s self=%s rel=%s | abs=%s | io.open(wb)=%s ioErr=%s | SaveResourceFile=%s')
-        :format(
-            tostring(target.resource),
-            tostring(target.resource == GetCurrentResourceName()),
-            tostring(target.relative),
-            tostring(target.absolute),
-            tostring(ioOk),
-            tostring(ioErr),
-            tostring(nativeOk)
-        ))
+    print(('[mri_Qadmin] write falhou | resource=%s self=%s rel=%s'):format(
+        tostring(target.resource),
+        tostring(target.resource == GetCurrentResourceName()),
+        tostring(target.relative)
+    ))
 
     local hint = (target.resource == GetCurrentResourceName())
-        and 'Falha ao gravar mesmo no proprio mri_Qadmin — io/SaveResourceFile bloqueados no servidor.'
-        or ('Sandbox do FiveM bloqueia escrita em "%s". Adicione no server.cfg: add_filesystem_permission mri_Qadmin write %s'):format(target.resource, target.resource)
+        and 'Falha ao gravar mesmo no proprio mri_Qadmin.'
+        or ('O sandbox do FiveM bloqueia escrita em "%s". Adicione no server.cfg: add_filesystem_permission mri_Qadmin write %s'):format(target.resource, target.resource)
 
     return false, ('Nao foi possivel gravar o arquivo. %s'):format(hint)
 end
