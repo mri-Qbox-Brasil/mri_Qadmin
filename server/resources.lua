@@ -32,6 +32,9 @@ local TEXT_EXTENSIONS = {
 local resourceIndex = nil
 local resourceNameLookup = nil
 local recentWrites = {}
+-- Cache de gravabilidade por resource (nome -> bool). Escrita cross-resource e
+-- bloqueada pelo sandbox do FiveM, exceto com add_filesystem_permission.
+local resourceWritable = {}
 
 local function trim(value)
     return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '')
@@ -501,6 +504,38 @@ local function removeIndexedEntry(resourceName, relativePath)
     end
 end
 
+-- Descobre se da pra gravar no resource (cacheado). O proprio mri_Qadmin sempre
+-- pode; nos demais, faz um probe nao-destrutivo escrevendo o marcador oculto
+-- .qadmin_keep (ja filtrado das listagens) e relendo. Se o sandbox bloquear, o
+-- arquivo nem chega a ser criado.
+local function isResourceWritable(target)
+    if target.resource == GetCurrentResourceName() then
+        return true
+    end
+
+    local cached = resourceWritable[target.resource]
+    if cached ~= nil then
+        return cached
+    end
+
+    local probeRel = '.qadmin_keep'
+    local token = ('mriqadmin-%s'):format(tostring(os.time()))
+    SaveResourceFile(target.resource, probeRel, token, #token)
+    local back = LoadResourceFile(target.resource, probeRel)
+    local writable = type(back) == 'string' and back == token
+
+    if writable then
+        -- limpa o probe (best-effort; se nao der, fica oculto nas listagens).
+        local probeAbs = target.root .. '\\' .. probeRel
+        if not os.remove(probeAbs) and pathExists(probeAbs) then
+            SaveResourceFile(target.resource, probeRel, '', 0)
+        end
+    end
+
+    resourceWritable[target.resource] = writable
+    return writable
+end
+
 local function listDirectory(resourceName, directory)
     local target, errorMessage = resolveTarget(resourceName, directory)
     if not target then
@@ -536,6 +571,7 @@ local function listDirectory(resourceName, directory)
         directory = target.relative,
         parent = parent,
         root = browserPath(target.root),
+        writable = isResourceWritable(target),
         entries = cloneDirectoryEntries(entries),
     }
 end
@@ -679,9 +715,11 @@ local function writeDiskFile(target, content)
     SaveResourceFile(target.resource, target.relative, text, #text)
     if writtenMatches(target, text) then
         recentWrites[targetKey(target)] = text
+        resourceWritable[target.resource] = true
         return true
     end
 
+    resourceWritable[target.resource] = false
     print(('[mri_Qadmin] write falhou | resource=%s self=%s rel=%s'):format(
         tostring(target.resource),
         tostring(target.resource == GetCurrentResourceName()),

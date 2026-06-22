@@ -1061,7 +1061,9 @@
         "msg_save_fail": "Error al guardar el archivo.",
         "msg_create_fail": "Error al crear la entrada.",
         "msg_save_discard_before_delete": "Guarda o descarta los cambios antes de eliminar el archivo abierto.",
-        "msg_delete_fail": "Error al eliminar la entrada."
+        "msg_delete_fail": "Error al eliminar la entrada.",
+        "read_only_sandbox": "Solo lectura — el sandbox de FiveM bloquea la escritura en este recurso.",
+        "read_only_hint": "Para permitirlo, agrega en server.cfg: add_filesystem_permission mri_Qadmin write %s (y reinicia)."
     },
     "update": {
         "new": "Nueva",

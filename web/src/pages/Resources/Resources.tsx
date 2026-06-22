@@ -51,6 +51,7 @@ type DirectoryPayload = {
     directory: string
     parent: string
     root: string
+    writable?: boolean
     entries: ResourceEntry[]
     message?: string
 }
@@ -246,6 +247,7 @@ export default function Resources() {
         return resources.find((resource) => resource.name === selectedResource) || null
     }, [resources, selectedResource])
 
+    const resourceReadOnly = !!directoryData && directoryData.writable === false
     const currentDraftKey = selectedResource && selectedFile ? `${selectedResource}:${selectedFile}` : ''
     const originalContent = fileData?.content || ''
     const currentDraftValue = currentDraftKey ? drafts[currentDraftKey] : undefined
@@ -912,6 +914,16 @@ export default function Resources() {
                                 ))}
                             </div>
 
+                            {canChangeResource && resourceReadOnly && (
+                                <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-200">
+                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="font-medium">{t('resources.read_only_sandbox')}</p>
+                                        <p className="mt-1 break-all font-mono text-[11px] text-amber-200/80">{t('resources.read_only_hint', [selectedResource])}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {canChangeResource && (
                                 <div className="mt-3 rounded-xl border border-border bg-muted/20 p-2.5">
                                     <div className="flex flex-wrap items-center gap-2">
@@ -942,14 +954,15 @@ export default function Resources() {
                                             value={createName}
                                             onChange={(event) => setCreateName(event.target.value)}
                                             placeholder={createKind === 'file' ? t('resources.new_file_placeholder') : t('resources.new_folder_placeholder')}
-                                            className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs text-foreground outline-none placeholder:text-muted-foreground/60"
+                                            disabled={resourceReadOnly}
+                                            className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs text-foreground outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
                                         />
 
                                         <MriButton
                                             size="sm"
                                             className="h-9"
                                             onClick={handleCreateEntry}
-                                            disabled={creatingEntry || !selectedResource || !createName.trim()}
+                                            disabled={creatingEntry || !selectedResource || !createName.trim() || resourceReadOnly}
                                         >
                                             {creatingEntry ? t('resources.creating') : t('resources.create')}
                                         </MriButton>
@@ -1024,7 +1037,7 @@ export default function Resources() {
                                                                         : 'border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/20'
                                                                 )}
                                                                 title={pendingDelete ? t('resources.confirm_delete_tip') : (entry.isDirectory ? t('resources.delete_folder_tip') : t('resources.delete_file_tip'))}
-                                                                disabled={deleting}
+                                                                disabled={deleting || resourceReadOnly}
                                                                 onClick={(event) => void handleDeleteEntry(entry, event)}
                                                             >
                                                                 {deleting ? (
@@ -1073,7 +1086,7 @@ export default function Resources() {
                                             variant="outline"
                                             className="h-9"
                                             onClick={() => void handleSave(false)}
-                                            disabled={!isDirty || savingFile}
+                                            disabled={!isDirty || savingFile || resourceReadOnly}
                                         >
                                             <Save className="mr-2 h-4 w-4" />
                                             {savingFile ? t('resources.saving') : t('resources.save')}
@@ -1082,7 +1095,7 @@ export default function Resources() {
                                             size="sm"
                                             className="h-9"
                                             onClick={() => void handleSave(true)}
-                                            disabled={!isDirty || savingFile}
+                                            disabled={!isDirty || savingFile || resourceReadOnly}
                                         >
                                             <WandSparkles className="mr-2 h-4 w-4" />{t('resources.save_restart')}</MriButton>
                                     </div>

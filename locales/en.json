@@ -1061,7 +1061,9 @@
         "msg_save_fail": "Failed to save file.",
         "msg_create_fail": "Failed to create entry.",
         "msg_save_discard_before_delete": "Save or discard changes before deleting the open file.",
-        "msg_delete_fail": "Failed to delete entry."
+        "msg_delete_fail": "Failed to delete entry.",
+        "read_only_sandbox": "Read-only — the FiveM sandbox blocks writes to this resource.",
+        "read_only_hint": "To allow it, add to server.cfg: add_filesystem_permission mri_Qadmin write %s (then restart)."
     },
     "update": {
         "new": "New",
