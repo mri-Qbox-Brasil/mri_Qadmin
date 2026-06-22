@@ -35,6 +35,10 @@ local recentWrites = {}
 -- Cache de gravabilidade por resource (nome -> bool). Escrita cross-resource e
 -- bloqueada pelo sandbox do FiveM, exceto com add_filesystem_permission.
 local resourceWritable = {}
+-- Definidas mais abaixo; forward-declaradas porque isResourceWritable (acima do
+-- ponto de definicao) precisa usar attemptWrite.
+local writtenMatches
+local attemptWrite
 
 local function trim(value)
     return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '')
@@ -518,17 +522,22 @@ local function isResourceWritable(target)
         return cached
     end
 
-    local probeRel = '.qadmin_keep'
+    -- Probe com o MESMO mecanismo do save real (native + fallback os.execute),
+    -- escrevendo o marcador oculto .qadmin_keep com um token e relendo.
+    local probeAbs = target.root .. '\\.qadmin_keep'
+    local probeTarget = {
+        resource = target.resource,
+        relative = '.qadmin_keep',
+        absolute = probeAbs,
+        root = target.root,
+    }
     local token = ('mriqadmin-%s'):format(tostring(os.time()))
-    SaveResourceFile(target.resource, probeRel, token, #token)
-    local back = LoadResourceFile(target.resource, probeRel)
-    local writable = type(back) == 'string' and back == token
+    local writable = attemptWrite(probeTarget, token)
 
     if writable then
         -- limpa o probe (best-effort; se nao der, fica oculto nas listagens).
-        local probeAbs = target.root .. '\\' .. probeRel
         if not os.remove(probeAbs) and pathExists(probeAbs) then
-            SaveResourceFile(target.resource, probeRel, '', 0)
+            SaveResourceFile(target.resource, '.qadmin_keep', '', 0)
         end
     end
 
@@ -691,7 +700,7 @@ end
 -- Confirma a gravacao relendo o conteudo do disco (io cru) ou via native
 -- (LoadResourceFile). A leitura e a fonte da verdade — o retorno de write/close
 -- do Lua do FiveM nao e confiavel.
-local function writtenMatches(target, text)
+writtenMatches = function(target, text)
     local disk = readPhysicalFile(target.absolute)
     if type(disk) == 'string' and sameTextContent(disk, text) then
         return true
@@ -701,19 +710,49 @@ local function writtenMatches(target, text)
     return type(native) == 'string' and sameTextContent(native, text)
 end
 
+-- Grava `text` no destino e confirma por releitura. Retorna true se gravou.
+--   1) native SaveResourceFile — limpa; bloqueada cross-resource pelo sandbox.
+--   2) fallback os.execute (copy/cp): escreve um temp DENTRO do mri_Qadmin (que
+--      e sempre gravavel) e copia via shell para o destino. O processo externo
+--      do shell NAO passa pela vfs do FiveM, contornando o sandbox.
+attemptWrite = function(target, text)
+    SaveResourceFile(target.resource, target.relative, text, #text)
+    if writtenMatches(target, text) then
+        return true
+    end
+
+    -- Caminhos com metacaracteres de shell nao vao pro os.execute.
+    if hasShellHazard(target.absolute) then
+        return false
+    end
+
+    local tmpRel = '.qadmin_write_tmp'
+    SaveResourceFile(GetCurrentResourceName(), tmpRel, text, #text)
+    local tmpAbs = normalizeSlashes(GetResourcePath(GetCurrentResourceName()) or '') .. '\\' .. tmpRel
+    if hasShellHazard(tmpAbs) then
+        os.remove(tmpAbs)
+        return false
+    end
+
+    local command = isWindows()
+        and ('cmd /c copy /y %s %s >nul 2>nul'):format(cmdQuote(tmpAbs), cmdQuote(target.absolute))
+        or ('cp -f %s %s >/dev/null 2>&1'):format(cmdQuote(tmpAbs), cmdQuote(target.absolute))
+    os.execute(command)
+    os.remove(tmpAbs)
+
+    return writtenMatches(target, text)
+end
+
 local function writeDiskFile(target, content)
     local text = tostring(content or '')
     -- best-effort: garante a pasta pai (no-op se ja existir).
     ensureDirectoryExists(target.absolute:match('^(.*)[\\/][^\\/]+$') or normalizeSlashes(target.root))
 
-    -- Usa a native SaveResourceFile (grava relativo ao resource). Importante: NAO
-    -- usar io.open('wb') no caminho cru — em artifacts com sandbox o write e
-    -- bloqueado, mas o 'wb' ja TRUNCOU o arquivo na abertura (perda de dados). A
-    -- native respeita o sandbox de forma limpa, sem tocar o arquivo quando barra.
-    -- Para o proprio mri_Qadmin sempre funciona; para outros resources depende de
-    -- add_filesystem_permission no server.cfg.
-    SaveResourceFile(target.resource, target.relative, text, #text)
-    if writtenMatches(target, text) then
+    -- attemptWrite: native SaveResourceFile e, se o sandbox barrar, fallback via
+    -- os.execute (copy do temp). Importante: NUNCA io.open('wb') no caminho cru —
+    -- com sandbox o write e bloqueado mas o 'wb' ja TRUNCOU o arquivo (perda de
+    -- dados).
+    if attemptWrite(target, text) then
         recentWrites[targetKey(target)] = text
         resourceWritable[target.resource] = true
         return true
