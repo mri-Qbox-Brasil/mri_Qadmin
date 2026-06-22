@@ -54,7 +54,17 @@ Visualização da tela de jogadores em tempo real para monitoramento. Suporte a 
 Sistema de logs com persistência em banco de dados, buffer em memória, webhooks Discord por categoria e filtros por resource. Configurável via painel sem reiniciar o resource.
 
 ### Recursos
-Listagem de todos os resources do servidor com controle de start/stop.
+Listagem de todos os resources do servidor com controle de **start/stop/restart**, ações rápidas por item, filtros por estado (rodando/parados) e um **navegador de arquivos**: explorar pastas, abrir e **editar arquivos de texto** em tempo real, além de criar e excluir arquivos/pastas.
+
+> **Importante — escrita e o sandbox do FiveM.** A partir dos artifacts > 25770, o FiveM bloqueia por padrão a escrita de um resource em arquivos de **outro** resource (proteção contra malware). A **leitura/navegação funciona em todos os resources**, mas **salvar/criar/excluir** só funciona:
+> - nos arquivos do **próprio `mri_Qadmin`**; ou
+> - em resources liberados explicitamente no `server.cfg`:
+>   ```
+>   add_filesystem_permission mri_Qadmin write <nome_do_resource>
+>   ```
+>   Uma linha **por resource** (o FiveM não suporta wildcard). Depois **reinicie o `mri_Qadmin`** para reavaliar.
+>
+> Quando o resource não é gravável, o painel exibe um aviso **"somente leitura"** com a linha exata do `add_filesystem_permission` e desabilita os controles de escrita. A exclusão exige as permissões `qadmin.action.change_resource` **e** `qadmin.action.resource_delete`.
 
 ### Configurações
 Editor visual de configurações sem precisar editar arquivos. Altera clima, hora, tema e integrações.

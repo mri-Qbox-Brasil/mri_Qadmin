@@ -57,6 +57,29 @@ Master Admin (console bypass)
 | `mri_qadmin.debugperms [id]` | Show detailed permission debug for a player |
 | `mri_qadmin.inspectdb` | Inspect permission tables in the DB |
 
+## Resource File Browser
+
+The **Resources** page includes a browser to explore, open and **edit text files** of any resource, plus create/delete files and folders — straight from the panel.
+
+### Writing and the FiveM sandbox (must read)
+
+Since artifacts **> 25770**, FiveM **blocks by default** a resource from writing to **another** resource's files (anti-malware protection). This affects the browser:
+
+- **Reading/browsing** works for **all** resources.
+- **Saving / creating / deleting** only works:
+  - on **`mri_Qadmin`'s own** files; or
+  - on resources **explicitly allowed** in `server.cfg`.
+
+To allow editing a resource, add this to `server.cfg` (then restart `mri_Qadmin`):
+
+```cfg
+add_filesystem_permission mri_Qadmin write resource_name
+```
+
+> One line **per resource** — FiveM does **not** support wildcards (`*`), and there is **no** convar to disable the sandbox globally. Reverting to artifacts ≤ 25770 unlocks it but is a security regression and is not recommended.
+
+When a resource isn't writable, the panel shows a **"read-only"** notice with the exact line to add and disables the write controls. Write actions require the `qadmin.action.change_resource` permission; deletion also requires `qadmin.action.resource_delete`.
+
 ## In-Game Commands
 
 | Command | Requires | Description |

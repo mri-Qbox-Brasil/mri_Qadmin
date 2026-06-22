@@ -710,36 +710,12 @@ writtenMatches = function(target, text)
     return type(native) == 'string' and sameTextContent(native, text)
 end
 
--- Grava `text` no destino e confirma por releitura. Retorna true se gravou.
---   1) native SaveResourceFile — limpa; bloqueada cross-resource pelo sandbox.
---   2) fallback os.execute (copy/cp): escreve um temp DENTRO do mri_Qadmin (que
---      e sempre gravavel) e copia via shell para o destino. O processo externo
---      do shell NAO passa pela vfs do FiveM, contornando o sandbox.
+-- Grava `text` no destino via native SaveResourceFile e confirma por releitura.
+-- Escrita cross-resource e bloqueada pelo sandbox do FiveM (io cru e os.execute
+-- tambem nao contornam) — so funciona no proprio mri_Qadmin ou com
+-- add_filesystem_permission no server.cfg.
 attemptWrite = function(target, text)
     SaveResourceFile(target.resource, target.relative, text, #text)
-    if writtenMatches(target, text) then
-        return true
-    end
-
-    -- Caminhos com metacaracteres de shell nao vao pro os.execute.
-    if hasShellHazard(target.absolute) then
-        return false
-    end
-
-    local tmpRel = '.qadmin_write_tmp'
-    SaveResourceFile(GetCurrentResourceName(), tmpRel, text, #text)
-    local tmpAbs = normalizeSlashes(GetResourcePath(GetCurrentResourceName()) or '') .. '\\' .. tmpRel
-    if hasShellHazard(tmpAbs) then
-        os.remove(tmpAbs)
-        return false
-    end
-
-    local command = isWindows()
-        and ('cmd /c copy /y %s %s >nul 2>nul'):format(cmdQuote(tmpAbs), cmdQuote(target.absolute))
-        or ('cp -f %s %s >/dev/null 2>&1'):format(cmdQuote(tmpAbs), cmdQuote(target.absolute))
-    os.execute(command)
-    os.remove(tmpAbs)
-
     return writtenMatches(target, text)
 end
 
