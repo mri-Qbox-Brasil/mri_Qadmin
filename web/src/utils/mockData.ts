@@ -464,37 +464,6 @@ export const MOCK_GAME_DATA = {
     peds: []
 };
 
-export const MOCK_CHANGELOG = [
-    {
-        repo: "mri_Qadmin",
-        author: "Project Sloth",
-        date: new Date().toLocaleString(),
-        message: "feat: implement togglable mock mode for developer settings",
-        url: "https://github.com/mri-Qbox-Brasil/mri_Qadmin"
-    },
-    {
-        repo: "qb-core",
-        author: "Qbox",
-        date: new Date(Date.now() - 86400000).toLocaleString(),
-        message: "fix: resolve issue with player character loading sequence",
-        url: "https://github.com/mri-Qbox-Brasil/qb-core"
-    },
-    {
-        repo: "ox_lib",
-        author: "Overextended",
-        date: new Date(Date.now() - 172800000).toLocaleString(),
-        message: "docs: update API documentation for version 3.0.0",
-        url: "https://github.com/mri-Qbox-Brasil/ox_lib"
-    },
-    {
-        repo: "mri_Qadmin",
-        author: "Project Sloth",
-        date: new Date(Date.now() - 259200000).toLocaleString(),
-        message: "refactor: optimize bans table alignment with fixed layout",
-        url: "https://github.com/mri-Qbox-Brasil/mri_Qadmin"
-    }
-];
-
 export const MOCK_INVENTORY = {
     items: [
         { name: "water", label: "Garrafa De Água", count: 2, slot: 1, weight: 200, metadata: { type: 'item' } },

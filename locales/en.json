@@ -121,12 +121,6 @@
         "title": "Credits",
         "developed_by": "Developed by",
         "thanks": "Special thanks to",
-        "changelog": "Changelog",
-        "changelog_error": "Error loading changelog.",
-        "server_changelog": "Changelog",
-        "no_changelog": "No changelog found.",
-        "loading_changelog": "Loading changelog...",
-        "changelog_error_server": "Error loading changelog.",
         "records": "Records"
     },
     "player": {

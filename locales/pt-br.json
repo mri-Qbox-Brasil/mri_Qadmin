@@ -121,12 +121,6 @@
         "title": "Créditos",
         "developed_by": "Desenvolvido por",
         "thanks": "Agradecimentos especiais a",
-        "changelog": "Changelog",
-        "changelog_error": "Erro ao carregar o changelog.",
-        "server_changelog": "Changelog",
-        "no_changelog": "Nenhum changelog encontrado.",
-        "loading_changelog": "Carregando changelog...",
-        "changelog_error_server": "Erro ao carregar o changelog.",
         "records": "Registros"
     },
     "player": {
