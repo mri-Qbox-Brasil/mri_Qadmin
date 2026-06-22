@@ -1,3 +1,28 @@
+# [1.15.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.14.3...v1.15.0) (2026-06-22)
+
+
+### Bug Fixes
+
+* bridges NUI do file browser, permissao de delete e versao na UI ([2237e4f](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/2237e4f7dbadc5a02d33d821070f45848d8711ff))
+* escreve/cria/exclui arquivos via io cru do Lua (contorna sandbox do FiveM) ([512dae2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/512dae279d6c77df734ac37095172f127f9756ec))
+* escrita via SaveResourceFile (sem truncar) + respeita sandbox ([e70c305](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/e70c3059b19957ca84f3ad362ac9d1dc79e07b4b))
+* gera o indice de resources em runtime (file browser) ([ea26157](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/ea26157c71ec76c5761df2d39cde7e70a89e95ac))
+* gravacao confiavel (read-back) + fallback SaveResourceFile ([8afbdcd](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/8afbdcd14acc5d8d7694ba6cbe2dedb4b00d647a))
+* nao acessa 'package' (indisponivel no Lua do FiveM) na deteccao de SO ([ee99f57](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/ee99f57d33360e0c135d880f80ef74ee815ab2fc))
+* **review:** [#7](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/7) loadFile nao deixa selectedFile dessincronizado ([be2b30d](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/be2b30df501b4f1249bba56746dd8effb84d91ce))
+* **review:** correcoes de seguranca/robustez no file browser (server) ([d0c7a95](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/d0c7a95ea8b770e16ab034dfa39da64788ca46d5)), closes [#1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/1) [#2](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/2) [#3](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/3) [#4](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/4) [#5](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/5) [#6](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/6) [#9](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/9)
+* usa MriExpandableSearch do ui-kit e ajusta permissao de exclusao ([4b8090e](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/4b8090e36ee2bcfe8df272ec282f6fd108027565))
+
+
+### Features
+
+* acoes rapidas de start/stop/restart na lista de resources ([4e0649a](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/4e0649af50c82193365c20ed3c67ec9c3458eb3d))
+* aviso "somente leitura (sandbox)" por resource no file browser ([19a9833](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/19a9833927b24621e57e765905f4d43b70861099))
+* botao Cancelar no editor de arquivos do resource ([8c35801](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/8c35801ad669e8803af4e903a377c4c0a4249416))
+* fallback de escrita via os.execute (copy do temp) p/ contornar sandbox ([5d65e34](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/5d65e347394b9b804eef1e8a83893ac5b9a3679f))
+* filtros toggle por estado e padroniza badge para "rodando" ([7e888aa](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/7e888aa5c2136333125df42bde00d4cf09b7a218))
+* **review:** [#8](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/8) reintroduz i18n na pagina de Resources (file browser) ([28c9650](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/28c96505792b2841dd0ff65b0a532c6abcfd438b))
+
 ## [1.11.4](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.11.3...v1.11.4) (2026-05-13)
 
 
