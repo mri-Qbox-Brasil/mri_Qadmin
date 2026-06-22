@@ -368,8 +368,17 @@ export default function Resources() {
                 throw new Error(response?.message || 'Nao foi possivel abrir o arquivo.')
             }
 
+            // Superada por uma requisicao mais nova (ou troca de resource): a
+            // dona mais recente cuida do estado.
             if (fileRequestRef.current !== requestId || selectedResourceRef.current !== resourceName) return
-            if (response.resource !== resourceName || response.path !== path) return
+
+            // Ainda e a requisicao atual, mas a resposta nao corresponde ao que
+            // foi pedido: limpa em vez de deixar selectedFile sem conteudo.
+            if (response.resource !== resourceName || response.path !== path) {
+                setFileData(null)
+                setSelectedFile('')
+                return
+            }
 
             setFileData(response)
         } catch (error: any) {
