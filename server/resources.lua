@@ -116,9 +116,12 @@ local function writePhysicalFile(absolutePath, content)
     end
 
     local ok, writeErr = handle:write(tostring(content or ''))
-    local closeOk, closeErr = handle:close()
-    if ok == nil or closeOk == nil then
-        return false, ('Falha ao gravar arquivo: %s'):format(tostring(writeErr or closeErr or 'sem detalhe'))
+    handle:close()
+    -- No Lua do FiveM, write/close podem retornar valores nao-padrao mesmo no
+    -- sucesso; so tratamos como falha quando o write retorna erro explicito. A
+    -- verdade final fica com a verificacao por leitura (writeDiskFile).
+    if ok == nil and writeErr ~= nil then
+        return false, ('Falha ao gravar arquivo: %s'):format(tostring(writeErr))
     end
 
     return true
@@ -668,27 +671,42 @@ local function deletePhysicalEntry(absolutePath, isDirectory)
     return false, 'Nao foi possivel excluir o arquivo no disco.'
 end
 
+-- Confirma a gravacao relendo o conteudo do disco (io cru) ou via native
+-- (LoadResourceFile). A leitura e a fonte da verdade — o retorno de write/close
+-- do Lua do FiveM nao e confiavel.
+local function writtenMatches(target, text)
+    local disk = readPhysicalFile(target.absolute)
+    if type(disk) == 'string' and sameTextContent(disk, text) then
+        return true
+    end
+
+    local native = LoadResourceFile(target.resource, target.relative)
+    return type(native) == 'string' and sameTextContent(native, text)
+end
+
 local function writeDiskFile(target, content)
     local text = tostring(content or '')
-
-    -- io cru do Lua: nao passa pelo sandbox/Node permission model do FiveM (ao
-    -- contrario do FS bridge em Node, que da "--allow-fs-write" em artifacts
-    -- novos). Garante a pasta pai e escreve direto.
     ensureDirectoryExists(target.absolute:match('^(.*)[\\/][^\\/]+$') or normalizeSlashes(target.root))
-    local saved, saveError = writePhysicalFile(target.absolute, text)
-    if not saved then
-        return false, saveError or 'Nao foi possivel salvar o arquivo.'
+
+    -- 1) io cru do Lua (nao passa pelo sandbox). Ignora o retorno de write/close
+    --    (o Lua do FiveM pode retornar nil mesmo no sucesso) — a verdade e a
+    --    verificacao por leitura.
+    writePhysicalFile(target.absolute, text)
+    if writtenMatches(target, text) then
+        recentWrites[targetKey(target)] = text
+        return true
     end
 
-    -- Verificacao pos-gravacao: re-le e compara, pra nao reportar sucesso em
-    -- gravacao parcial (disco cheio, AV truncando, etc.).
-    local written = readPhysicalFile(target.absolute)
-    if type(written) ~= 'string' or not sameTextContent(written, text) then
-        return false, 'Arquivo gravado, mas a verificacao pos-gravacao divergiu.'
+    -- 2) fallback: native SaveResourceFile (grava relativo ao resource). Sempre
+    --    funciona para os arquivos do proprio mri_Qadmin; para outros resources
+    --    depende do sandbox do FiveM (add_filesystem_permission).
+    SaveResourceFile(target.resource, target.relative, text, #text)
+    if writtenMatches(target, text) then
+        recentWrites[targetKey(target)] = text
+        return true
     end
 
-    recentWrites[targetKey(target)] = text
-    return true
+    return false, 'Nao foi possivel gravar o arquivo. O sandbox do FiveM pode estar bloqueando a escrita neste resource (add_filesystem_permission).'
 end
 
 local function createDirectory(target)
