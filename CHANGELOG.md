@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.15.1...v1.16.0) (2026-06-22)
+
+
+### Features
+
+* botao "Padrão" pra restaurar accent color [#00](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/00)E699 ([99440f7](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/99440f71fd41e65ecedd34b4ae246d9b46e73fc0)), closes [#00E699](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/00E699) [#00E699](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/00E699) [#00E699](https://github.com/mri-Qbox-Brasil/mri_Qadmin/issues/00E699)
+
 ## [1.15.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.15.0...v1.15.1) (2026-06-22)
 
 
