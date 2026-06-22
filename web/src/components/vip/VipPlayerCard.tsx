@@ -2,6 +2,7 @@ import { Crown, Car, Wallet, Package, Clock, Trash2, Settings } from 'lucide-rea
 import { MriButton } from '@mriqbox/ui-kit'
 import { useI18n } from '@/hooks/useI18n'
 import { cn } from '@/lib/utils'
+import { nowSeconds } from '@/utils/time'
 import { VipPlayer, VipRank } from '@/types'
 
 function formatExpiration(ts: number, t: any): { label: string; color: string } {
@@ -27,7 +28,7 @@ interface Props {
 export default function VipPlayerCard({ player, rank, selected, onClick, onRemove, onEdit }: Props) {
     const { t } = useI18n()
     const exp = formatExpiration(player.expiration, t)
-    const isExpired = player.expiration !== 0 && player.expiration < Math.floor(Date.now() / 1000)
+    const isExpired = player.expiration !== 0 && player.expiration < nowSeconds()
     const accentColor = rank?.color ?? '#fbbf24'
 
     return (

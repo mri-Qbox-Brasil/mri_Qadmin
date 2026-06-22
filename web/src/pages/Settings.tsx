@@ -4,7 +4,6 @@ import { Sun, Palette, Settings as SettingsIcon, Accessibility, RotateCcw, Eye, 
 import { useNui } from '@/context/NuiContext'
 import { useAppState } from '@/context/AppState'
 
-import { cn } from '@/lib/utils'
 import { useI18n } from '@/hooks/useI18n'
 import { useTheme } from '@/context/ThemeContext'
 import { MriColorPicker } from '@mriqbox/ui-kit'

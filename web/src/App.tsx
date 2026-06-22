@@ -59,6 +59,9 @@ export default function App() {
         let openTimer: ReturnType<typeof setTimeout> | undefined
         let closeTimer: ReturnType<typeof setTimeout> | undefined
 
+        // Maquina de estado de animacao orientada pela prop `visible`: precisa
+        // setar estado de forma sincrona ao montar/desmontar o frame.
+        /* eslint-disable react-hooks/set-state-in-effect */
         if (visible) {
             setFrameVisible(true)
             setPanelPhase(prev => prev === 'open' ? prev : 'opening')
@@ -70,6 +73,7 @@ export default function App() {
                 setPanelPhase('closed')
             }, 120)
         }
+        /* eslint-enable react-hooks/set-state-in-effect */
 
         return () => {
             if (openTimer) clearTimeout(openTimer)
@@ -129,6 +133,8 @@ export default function App() {
     }, [players, setSelectedPlayer, myPermissions, pagePermissions])
 
     useEffect(() => {
+        // Seed de dados mock apenas no navegador (dev), uma vez no mount.
+        /* eslint-disable react-hooks/set-state-in-effect */
         if (isEnvBrowser()) {
             setGameData(MOCK_GAME_DATA)
             setPlayers(MOCK_PLAYERS)
@@ -137,6 +143,7 @@ export default function App() {
             setPermissionDefinitions(MOCK_GAME_DATA.permissionDefinitions)
             setPlugins(MOCK_PLUGINS)
         }
+        /* eslint-enable react-hooks/set-state-in-effect */
     }, [setGameData, setPlayers, setMyPermissions, setSettings, setPermissionDefinitions])
 
     // Correct implementation:
