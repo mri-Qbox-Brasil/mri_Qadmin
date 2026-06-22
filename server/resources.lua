@@ -1,4 +1,3 @@
-local INDEX_PATH = 'server/resource_index.json'
 local MAX_EDITOR_FILE_SIZE = 1024 * 1024
 
 local TEXT_EXTENSIONS = {
@@ -25,13 +24,14 @@ local TEXT_EXTENSIONS = {
     editorconfig = true,
 }
 
+-- Indice (nome do resource -> caminho no disco) e um cache PURO EM MEMORIA: os
+-- caminhos sao especificos da sessao do servidor (mudam entre restarts), entao
+-- nao faz sentido persistir em disco — geramos sob demanda a partir de
+-- GetResourcePath. Sem persistencia: sem staleness no boot e sem storm de
+-- escrita pelos onResourceStart.
 local resourceIndex = nil
 local resourceNameLookup = nil
 local recentWrites = {}
--- Vira true apos a geracao inicial do indice no boot. Antes disso, o storm de
--- onResourceStart nao reescreve o indice a cada resource (a geracao unica cobre
--- todos); depois, resources novos entram de forma incremental.
-local indexBootDone = false
 
 local function trim(value)
     return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '')
@@ -147,15 +147,6 @@ local function listWithFsBridge(target)
     return nil, tostring(result.message or 'FS bridge nao conseguiu listar a pasta.')
 end
 
-local function currentResourceAbsolutePath(relativePath)
-    local root = normalizeSlashes(GetResourcePath(GetCurrentResourceName()) or '')
-    if root == '' then
-        return nil
-    end
-
-    return root .. '\\' .. tostring(relativePath or ''):gsub('/', '\\')
-end
-
 local function sanitizeRelativePath(path)
     local normalized = tostring(path or ''):gsub('\\', '/'):gsub('^/+', ''):gsub('/+$', '')
     if normalized == '' then
@@ -267,80 +258,8 @@ local function buildNameLookup(index)
     resourceNameLookup = lookup
 end
 
-local function readCurrentResourceFile(relativePath)
-    local raw = LoadResourceFile(GetCurrentResourceName(), relativePath)
-    if type(raw) == 'string' and raw ~= '' then
-        return raw
-    end
-
-    local absolutePath = currentResourceAbsolutePath(relativePath)
-    if not absolutePath then
-        return nil
-    end
-
-    local handle = io.open(absolutePath, 'rb')
-    if not handle then
-        return nil
-    end
-
-    raw = handle:read('*a')
-    handle:close()
-    return raw
-end
-
-local function loadResourceIndex(force)
-    if resourceIndex and not force then
-        return resourceIndex
-    end
-
-    local raw = readCurrentResourceFile(INDEX_PATH)
-    if type(raw) ~= 'string' or raw == '' then
-        resourceIndex = { generatedAt = nil, resourcesRoot = nil, count = 0, resources = {} }
-        resourceNameLookup = {}
-        print(('[mri_Qadmin] Resource index nao encontrado em %s.'):format(INDEX_PATH))
-        return resourceIndex
-    end
-
-    local ok, decoded = pcall(json.decode, raw)
-    if not ok or type(decoded) ~= 'table' then
-        resourceIndex = { generatedAt = nil, resourcesRoot = nil, count = 0, resources = {} }
-        resourceNameLookup = {}
-        print(('[mri_Qadmin] Falha ao decodificar %s: %s'):format(INDEX_PATH, tostring(decoded)))
-        return resourceIndex
-    end
-
-    decoded.resources = type(decoded.resources) == 'table' and decoded.resources or {}
-    resourceIndex = decoded
-    buildNameLookup(resourceIndex)
-
-    print(('[mri_Qadmin] Resource index carregado: %s resources.'):format(countIndexedResources()))
-    return resourceIndex
-end
-
-local function persistResourceIndex()
-    if not resourceIndex then
-        return
-    end
-
-    local ok, encoded = pcall(json.encode, resourceIndex)
-    if ok and type(encoded) == 'string' then
-        local absolutePath = currentResourceAbsolutePath(INDEX_PATH)
-        local handle, err = absolutePath and io.open(absolutePath, 'wb') or nil
-        if handle then
-            handle:write(encoded)
-            handle:close()
-            return
-        end
-
-        print(('[mri_Qadmin] Falha ao persistir indice fisico: %s'):format(tostring(err or 'caminho indisponivel')))
-        SaveResourceFile(GetCurrentResourceName(), INDEX_PATH, encoded, #encoded)
-    end
-end
-
 -- Monta o indice (nome do resource -> caminho absoluto no disco) varrendo os
--- resources carregados no servidor. O servidor onde o mri_Qadmin roda e o unico
--- lugar que conhece os caminhos reais, entao o indice precisa ser gerado em
--- runtime (nao da pra pre-gerar no build/CI). Preserva o cache de diretorios ja
+-- resources carregados no servidor, in-memory. Preserva o cache de diretorios ja
 -- listado, quando existir, pra nao perder metadados entre regeracoes.
 local function generateResourceIndex()
     local previous = (resourceIndex and type(resourceIndex.resources) == 'table') and resourceIndex.resources or {}
@@ -373,9 +292,16 @@ local function generateResourceIndex()
     }
     resourceIndex.count = countIndexedResources()
     buildNameLookup(resourceIndex)
-    persistResourceIndex()
 
     print(('[mri_Qadmin] Resource index gerado em runtime: %s resources.'):format(resourceIndex.count))
+    return resourceIndex
+end
+
+-- Garante o indice em memoria (gera na primeira vez / se estiver vazio).
+local function ensureResourceIndex()
+    if not resourceIndex or countIndexedResources() == 0 then
+        generateResourceIndex()
+    end
     return resourceIndex
 end
 
@@ -392,7 +318,7 @@ local function indexResource(resourceName)
         return
     end
 
-    local index = loadResourceIndex(false)
+    local index = ensureResourceIndex()
     index.resources = type(index.resources) == 'table' and index.resources or {}
 
     local cached = index.resources[name]
@@ -402,7 +328,6 @@ local function indexResource(resourceName)
     }
     index.count = countIndexedResources()
     buildNameLookup(index)
-    persistResourceIndex()
 end
 
 local function findIndexedResource(resourceName)
@@ -411,12 +336,8 @@ local function findIndexedResource(resourceName)
         return nil
     end
 
-    local index = loadResourceIndex(false)
-    -- Auto-cura: se o indice estiver vazio (placeholder novo ou apos um reset),
-    -- gera em runtime antes de desistir.
-    if countIndexedResources() == 0 then
-        index = generateResourceIndex()
-    end
+    -- Indice em memoria, gerado sob demanda (auto-cura se vazio).
+    local index = ensureResourceIndex()
 
     local resources = index.resources or {}
     if resources[safeName] then
@@ -874,7 +795,6 @@ local function createEntry(source, data)
         end
 
         upsertIndexedEntry(target.resource, target.relative, true, 0)
-        persistResourceIndex()
         return {
             ok = true,
             message = 'Pasta criada com sucesso.',
@@ -893,7 +813,6 @@ local function createEntry(source, data)
     end
 
     upsertIndexedEntry(target.resource, target.relative, false, #(tostring(data.content or '')))
-    persistResourceIndex()
 
     return {
         ok = true,
@@ -933,7 +852,6 @@ local function deleteEntry(source, data)
     end
 
     removeIndexedEntry(target.resource, target.relative)
-    persistResourceIndex()
 
     AddLog(source, 'mri_Qadmin', 'server', 'warn', ('Entrada excluida em %s: %s'):format(target.resource, target.relative), {
         resource = target.resource,
@@ -1045,11 +963,8 @@ safeCallback('mri_Qadmin:callback:DeleteResourceEntry', function(source, data)
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
-    -- So indexa incrementalmente apos o boot; durante o boot a geracao unica
-    -- (thread abaixo) cobre todos os resources de uma vez.
-    if indexBootDone then
-        indexResource(resourceName)
-    end
+    -- Mantem o indice em memoria em dia; barato (so GetResourcePath, sem disco).
+    indexResource(resourceName)
     TriggerClientEvent('mri_Qadmin:client:UpdateResourceState', -1, getResourceData(resourceName))
 end)
 
@@ -1057,11 +972,7 @@ AddEventHandler('onResourceStop', function(resourceName)
     TriggerClientEvent('mri_Qadmin:client:UpdateResourceState', -1, getResourceData(resourceName))
 end)
 
--- Gera o indice de resources no boot, dando um tempo pro restante do servidor
--- subir. Resources que iniciarem depois sao cobertos pelo onResourceStart acima,
--- e o findIndexedResource ainda regenera sob demanda se o indice estiver vazio.
-CreateThread(function()
-    Wait(2000)
-    generateResourceIndex()
-    indexBootDone = true
-end)
+-- Gera o indice em memoria no start (captura os resources ja iniciados). Os que
+-- iniciarem depois entram pelo onResourceStart acima, e o findIndexedResource
+-- regenera sob demanda se o indice estiver vazio.
+CreateThread(generateResourceIndex)
