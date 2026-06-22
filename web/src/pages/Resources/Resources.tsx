@@ -150,7 +150,7 @@ function getResourceTone(state?: string) {
 }
 
 function getResourceStateLabel(state?: string, compact = false) {
-    if (state === 'started') return compact ? 'ativo' : 'Rodando'
+    if (state === 'started') return compact ? 'rodando' : 'Rodando'
     if (state === 'starting') return compact ? 'iniciando' : 'Iniciando'
     if (state === 'stopping') return compact ? 'parando' : 'Parando'
     if (state === 'stopped') return compact ? 'parado' : 'Parado'
@@ -173,6 +173,7 @@ export default function Resources() {
     const canDeleteResourceEntry = hasPermission(myPermissions, 'qadmin.action.resource_delete')
 
     const [resourceSearch, setResourceSearch] = useState('')
+    const [statusFilter, setStatusFilter] = useState<'all' | 'started' | 'stopped'>('all')
     const [entrySearch, setEntrySearch] = useState('')
     const [selectedResource, setSelectedResource] = useState('')
     const [directoryData, setDirectoryData] = useState<DirectoryPayload | null>(null)
@@ -212,14 +213,17 @@ export default function Resources() {
 
     const filteredResources = useMemo(() => {
         const query = deferredResourceSearch.trim().toLowerCase()
-        if (!query) return resources
 
-        return resources.filter((resource) =>
-            resource.name.toLowerCase().includes(query)
-            || (resource.author || '').toLowerCase().includes(query)
-            || (resource.description || '').toLowerCase().includes(query)
-        )
-    }, [deferredResourceSearch, resources])
+        return resources.filter((resource) => {
+            if (statusFilter === 'started' && resource.resourceState !== 'started') return false
+            if (statusFilter === 'stopped' && resource.resourceState === 'started') return false
+
+            if (!query) return true
+            return resource.name.toLowerCase().includes(query)
+                || (resource.author || '').toLowerCase().includes(query)
+                || (resource.description || '').toLowerCase().includes(query)
+        })
+    }, [deferredResourceSearch, resources, statusFilter])
 
     const visibleEntries = useMemo(() => {
         const entries = directoryData?.entries || []
@@ -691,14 +695,36 @@ export default function Resources() {
                                     <p className="text-xs text-muted-foreground">Selecione um recurso para abrir arquivos e controlar o script.</p>
                                 </div>
                                 <div className="grid shrink-0 grid-cols-2 gap-2.5 text-center text-[11px]">
-                                    <div className="flex min-h-[48px] w-[56px] flex-col items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/10 px-2 text-emerald-200">
+                                    <button
+                                        type="button"
+                                        aria-pressed={statusFilter === 'started'}
+                                        title={statusFilter === 'started' ? 'Remover filtro' : 'Mostrar so os que estao rodando'}
+                                        onClick={() => setStatusFilter((current) => current === 'started' ? 'all' : 'started')}
+                                        className={cn(
+                                            'flex min-h-[48px] w-[56px] flex-col items-center justify-center rounded-xl border px-2 text-emerald-200 transition-all',
+                                            statusFilter === 'started'
+                                                ? 'border-emerald-400/60 bg-emerald-500/20 ring-1 ring-emerald-400/50'
+                                                : 'border-emerald-500/15 bg-emerald-500/10 hover:bg-emerald-500/20'
+                                        )}
+                                    >
                                         <div className="text-sm font-semibold">{startedResources}</div>
-                                        <div className="opacity-70">ativos</div>
-                                    </div>
-                                    <div className="flex min-h-[48px] w-[56px] flex-col items-center justify-center rounded-xl border border-rose-500/15 bg-rose-500/10 px-2 text-rose-200">
+                                        <div className="opacity-70">rodando</div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-pressed={statusFilter === 'stopped'}
+                                        title={statusFilter === 'stopped' ? 'Remover filtro' : 'Mostrar so os parados'}
+                                        onClick={() => setStatusFilter((current) => current === 'stopped' ? 'all' : 'stopped')}
+                                        className={cn(
+                                            'flex min-h-[48px] w-[56px] flex-col items-center justify-center rounded-xl border px-2 text-rose-200 transition-all',
+                                            statusFilter === 'stopped'
+                                                ? 'border-rose-400/60 bg-rose-500/20 ring-1 ring-rose-400/50'
+                                                : 'border-rose-500/15 bg-rose-500/10 hover:bg-rose-500/20'
+                                        )}
+                                    >
                                         <div className="text-sm font-semibold">{stoppedResources}</div>
                                         <div className="opacity-70">parados</div>
-                                    </div>
+                                    </button>
                                 </div>
                             </div>
 
