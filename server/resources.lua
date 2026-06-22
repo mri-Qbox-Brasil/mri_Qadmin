@@ -691,7 +691,7 @@ local function writeDiskFile(target, content)
     -- 1) io cru do Lua (nao passa pelo sandbox). Ignora o retorno de write/close
     --    (o Lua do FiveM pode retornar nil mesmo no sucesso) — a verdade e a
     --    verificacao por leitura.
-    writePhysicalFile(target.absolute, text)
+    local ioOk, ioErr = writePhysicalFile(target.absolute, text)
     if writtenMatches(target, text) then
         recentWrites[targetKey(target)] = text
         return true
@@ -700,13 +700,29 @@ local function writeDiskFile(target, content)
     -- 2) fallback: native SaveResourceFile (grava relativo ao resource). Sempre
     --    funciona para os arquivos do proprio mri_Qadmin; para outros resources
     --    depende do sandbox do FiveM (add_filesystem_permission).
-    SaveResourceFile(target.resource, target.relative, text, #text)
+    local nativeOk = SaveResourceFile(target.resource, target.relative, text, #text)
     if writtenMatches(target, text) then
         recentWrites[targetKey(target)] = text
         return true
     end
 
-    return false, 'Nao foi possivel gravar o arquivo. O sandbox do FiveM pode estar bloqueando a escrita neste resource (add_filesystem_permission).'
+    -- Diagnostico no console pra distinguir sandbox cross-resource de io bloqueado.
+    print(('[mri_Qadmin] write falhou | resource=%s self=%s rel=%s | abs=%s | io.open(wb)=%s ioErr=%s | SaveResourceFile=%s')
+        :format(
+            tostring(target.resource),
+            tostring(target.resource == GetCurrentResourceName()),
+            tostring(target.relative),
+            tostring(target.absolute),
+            tostring(ioOk),
+            tostring(ioErr),
+            tostring(nativeOk)
+        ))
+
+    local hint = (target.resource == GetCurrentResourceName())
+        and 'Falha ao gravar mesmo no proprio mri_Qadmin — io/SaveResourceFile bloqueados no servidor.'
+        or ('Sandbox do FiveM bloqueia escrita em "%s". Adicione no server.cfg: add_filesystem_permission mri_Qadmin write %s'):format(target.resource, target.resource)
+
+    return false, ('Nao foi possivel gravar o arquivo. %s'):format(hint)
 end
 
 local function createDirectory(target)
