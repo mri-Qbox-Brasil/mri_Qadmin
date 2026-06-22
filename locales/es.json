@@ -455,6 +455,8 @@
         "accent_color_cancel": "Cancelar",
         "accent_color_apply": "Aplicar al servidor",
         "accent_color_confirm": "¿Aplicar el color %s para todos los jugadores en línea de la suite MRI?",
+        "accent_color_reset": "Predeterminado",
+        "accent_color_reset_tooltip": "Restaurar predeterminado MRI (%s)",
         "accessibility": "Accesibilidad",
         "general": "General",
         "server": "Servidor",

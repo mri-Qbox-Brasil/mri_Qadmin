@@ -42,6 +42,15 @@ export default function Settings() {
     const hasAccentDraft = accentColor.toUpperCase() !== serverAccentColor.toUpperCase()
     const [confirmingAccent, setConfirmingAccent] = React.useState(false)
 
+    // Cor canonica da suite MRI (convar default `mri:color`). Botao "Restaurar
+    // padrao" so aparece quando o accent atual difere desse valor.
+    const MRI_DEFAULT_ACCENT = '#00E699'
+    const isAccentAtDefault = accentColor.toUpperCase() === MRI_DEFAULT_ACCENT
+    const resetAccentToDefault = () => {
+        if (!canEditAccent) return
+        setAccentColor(MRI_DEFAULT_ACCENT)
+    }
+
     const hasBgDraft = backgroundColor.toUpperCase() !== serverBackgroundColor.toUpperCase()
     const handleBgDraftChange = (hex: string) => { if (canEditAccent) setBackgroundColor(hex) }
     const cancelBgDraft = () => setBackgroundColor(serverBackgroundColor)
@@ -314,6 +323,18 @@ export default function Settings() {
                                                             : (t('settings.accent_color_global_hint') || 'Padrão global do servidor')}
                                                 </p>
                                             </div>
+                                            {canEditAccent && !isAccentAtDefault && (
+                                                <MriButton
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={resetAccentToDefault}
+                                                    title={(t('settings.accent_color_reset_tooltip') || 'Restaurar padrão MRI (%s)').replace('%s', MRI_DEFAULT_ACCENT)}
+                                                    className="shrink-0"
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                                                    {t('settings.accent_color_reset') || 'Padrão'}
+                                                </MriButton>
+                                            )}
                                         </div>
 
                                         {canEditAccent && hasAccentDraft && (
