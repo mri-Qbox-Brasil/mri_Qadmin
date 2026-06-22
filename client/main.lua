@@ -328,6 +328,32 @@ RegisterNUICallback("setResourceState", function(data, cb)
 	cb(resources)
 end)
 
+-- Resource file browser/editor bridges (NUI ↔ server callbacks em resources.lua)
+RegisterNUICallback("browseResourceFiles", function(data, cb)
+	local result = lib.callback.await('mri_Qadmin:callback:BrowseResourceFiles', false, data.resource, data.directory)
+	cb(result)
+end)
+
+RegisterNUICallback("getResourceFile", function(data, cb)
+	local result = lib.callback.await('mri_Qadmin:callback:GetResourceFile', false, data.resource, data.path)
+	cb(result)
+end)
+
+RegisterNUICallback("saveResourceFile", function(data, cb)
+	local result = lib.callback.await('mri_Qadmin:callback:SaveResourceFile', false, data)
+	cb(result)
+end)
+
+RegisterNUICallback("createResourceEntry", function(data, cb)
+	local result = lib.callback.await('mri_Qadmin:callback:CreateResourceEntry', false, data)
+	cb(result)
+end)
+
+RegisterNUICallback("deleteResourceEntry", function(data, cb)
+	local result = lib.callback.await('mri_Qadmin:callback:DeleteResourceEntry', false, data)
+	cb(result)
+end)
+
 -- Get players
 RegisterNUICallback("getPlayers", function(data, cb)
 	local players = lib.callback.await('mri_Qadmin:callback:GetPlayers', false, data.page, data.limit, data.search)

@@ -5,6 +5,7 @@ SECURITY_AUDIT.md
 server/server_secrets.json
 server/logs_queue.json
 server/logs_settings.json
+server/resource_index.json
 web/package-lock.json
 web/node_modules
 .release/node_modules

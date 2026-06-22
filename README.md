@@ -53,6 +53,29 @@ Arquivo principal: `shared/config.lua`
 | `Config.PlayerActions` | `{}` | Ações específicas para jogadores |
 | `Config.OtherActions` | `{}` | Outras ações administrativas |
 
+## Navegador de arquivos de recursos
+
+A página **Recursos** inclui um navegador que permite explorar, abrir e **editar arquivos de texto** de qualquer resource, além de criar/excluir arquivos e pastas — direto pelo painel.
+
+### Escrita e o sandbox do FiveM (obrigatório ler)
+
+A partir dos artifacts **> 25770**, o FiveM **bloqueia por padrão** que um resource escreva em arquivos de **outro** resource (proteção contra malware). Isso afeta o navegador:
+
+- **Ler/navegar** funciona em **todos** os resources.
+- **Salvar / criar / excluir** só funciona:
+  - nos arquivos do **próprio `mri_Qadmin`**; ou
+  - em resources **liberados explicitamente** no `server.cfg`.
+
+Para liberar a edição de um resource, adicione no `server.cfg` (e reinicie o `mri_Qadmin`):
+
+```cfg
+add_filesystem_permission mri_Qadmin write nome_do_resource
+```
+
+> Uma linha **por resource** — o FiveM **não** suporta wildcard (`*`), e **não há** convar para desabilitar o sandbox globalmente. Reverter para artifacts ≤ 25770 destrava, mas é uma regressão de segurança e não é recomendado.
+
+Quando um resource não é gravável, o painel mostra um aviso **"somente leitura"** com a linha exata a adicionar e desabilita os controles de escrita. As ações de escrita exigem a permissão `qadmin.action.change_resource`; a exclusão exige também `qadmin.action.resource_delete`.
+
 ## Comandos
 
 | Comando | Quem pode usar | Descrição |

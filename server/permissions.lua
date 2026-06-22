@@ -393,6 +393,7 @@ PERM_DEFINITIONS = {
     { id = 'qadmin.commands',                       category = 'commands'   },
     -- ── Resources ────────────────────────────────────────────────────────────
     { id = 'qadmin.action.change_resource',         category = 'resources'  },
+    { id = 'qadmin.action.resource_delete',         category = 'resources'  },
     -- ── Settings ─────────────────────────────────────────────────────────────
     { id = 'qadmin.action.manage_settings',         category = 'settings'   },
     { id = 'qadmin.action.change_weather',          category = 'settings'   },

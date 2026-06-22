@@ -35,6 +35,7 @@ server_scripts {
     "server/settings.lua",
     "server/actions.lua",
     "server/players.lua",
+    "server/resource_fs.js",
     "server/resources.lua",
     "server/server_data.lua",
     "server/spectate.lua",

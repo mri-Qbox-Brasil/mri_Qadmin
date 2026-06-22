@@ -74,12 +74,6 @@ function buildNew(source) {
     setNested(out, 'credits.title', source['credits_title']);
     setNested(out, 'credits.developed_by', source['credits_developed_by']);
     setNested(out, 'credits.thanks', source['credits_thanks']);
-    setNested(out, 'credits.changelog', source['changelog']);
-    setNested(out, 'credits.changelog_error', source['changelog_error']);
-    setNested(out, 'credits.server_changelog', source['server_changelog']);
-    setNested(out, 'credits.no_changelog', source['server_no_changelog']);
-    setNested(out, 'credits.loading_changelog', source['server_loading_changelog']);
-    setNested(out, 'credits.changelog_error_server', source['server_changelog_error']);
     setNested(out, 'credits.records', source['records']);
 
     // common.* additions (merge with existing)
