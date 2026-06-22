@@ -17,6 +17,7 @@ import {
     FolderPlus,
     Play,
     RefreshCw,
+    RotateCcw,
     RotateCw,
     Search,
     Save,
@@ -406,6 +407,17 @@ export default function Resources() {
             } else {
                 next[currentDraftKey] = value
             }
+            return next
+        })
+    }
+
+    const handleCancelEdit = () => {
+        if (!currentDraftKey) return
+
+        setEditorValue(originalContent)
+        setDrafts((previous) => {
+            const next = { ...previous }
+            delete next[currentDraftKey]
             return next
         })
     }
@@ -971,6 +983,16 @@ export default function Resources() {
 
                                 {selectedFile && fileData?.editable && canChangeResource && (
                                     <div className="flex items-center gap-2">
+                                        <MriButton
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-9"
+                                            onClick={handleCancelEdit}
+                                            disabled={!isDirty || savingFile}
+                                        >
+                                            <RotateCcw className="mr-2 h-4 w-4" />
+                                            Cancelar
+                                        </MriButton>
                                         <MriButton
                                             size="sm"
                                             variant="outline"
