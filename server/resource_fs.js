@@ -1,8 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const MAX_DELETE_DIRECTORY_ENTRIES = 2000;
-
 const TEXT_EXTENSIONS = new Set([
   'cfg',
   'css',
@@ -63,15 +61,6 @@ function resolveInside(root, relativePath, allowRoot = false) {
   }
 
   return { root: safeRoot, relative: safeRelative, absolute };
-}
-
-function sameText(left, right) {
-  const normalize = (value) => String(value ?? '')
-    .replace(/^\uFEFF/, '')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n');
-
-  return normalize(left) === normalize(right);
 }
 
 function fileExtension(fileName) {
@@ -136,126 +125,6 @@ function listResourceDirectory(root, relativePath) {
   }
 }
 
-function writeResourceFile(root, relativePath, content) {
-  const target = resolveInside(root, relativePath);
-  if (!target) {
-    return { ok: false, message: 'Arquivo invalido para gravacao.' };
-  }
-
-  const text = String(content ?? '');
-
-  try {
-    fs.mkdirSync(path.dirname(target.absolute), { recursive: true });
-    fs.writeFileSync(target.absolute, text, 'utf8');
-
-    const written = fs.readFileSync(target.absolute, 'utf8');
-    if (!sameText(written, text)) {
-      return {
-        ok: false,
-        message: `Arquivo gravado pelo FS bridge, mas verificacao divergiu. gravado=${written.length} esperado=${text.length}`,
-      };
-    }
-
-    return {
-      ok: true,
-      absolute: target.absolute,
-      size: Buffer.byteLength(text, 'utf8'),
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      message: `FS bridge nao conseguiu salvar: ${error.message}`,
-    };
-  }
-}
-
-function createResourceDirectory(root, relativePath) {
-  const target = resolveInside(root, relativePath);
-  if (!target) {
-    return { ok: false, message: 'Pasta invalida para criacao.' };
-  }
-
-  try {
-    fs.mkdirSync(target.absolute, { recursive: true });
-    return { ok: true, absolute: target.absolute };
-  } catch (error) {
-    return {
-      ok: false,
-      message: `FS bridge nao conseguiu criar pasta: ${error.message}`,
-    };
-  }
-}
-
-function countDirectoryEntries(directory, limit) {
-  let count = 0;
-  const stack = [directory];
-
-  while (stack.length > 0) {
-    const current = stack.pop();
-    const entries = fs.readdirSync(current, { withFileTypes: true });
-
-    for (const entry of entries) {
-      count += 1;
-      if (count > limit) return count;
-
-      if (entry.isDirectory()) {
-        stack.push(path.join(current, entry.name));
-      }
-    }
-  }
-
-  return count;
-}
-
-function deleteResourceEntry(root, relativePath, expectedKind) {
-  const target = resolveInside(root, relativePath);
-  if (!target) {
-    return { ok: false, message: 'Entrada invalida para exclusao.' };
-  }
-
-  try {
-    if (!fs.existsSync(target.absolute)) {
-      return { ok: false, message: 'Arquivo ou pasta nao existe mais no disco.' };
-    }
-
-    const stat = fs.statSync(target.absolute);
-    const wantsFolder = expectedKind === 'folder' || expectedKind === true;
-    const wantsFile = expectedKind === 'file' || expectedKind === false;
-
-    if (wantsFolder && !stat.isDirectory()) {
-      return { ok: false, message: 'A entrada selecionada nao e uma pasta.' };
-    }
-
-    if (wantsFile && !stat.isFile()) {
-      return { ok: false, message: 'A entrada selecionada nao e um arquivo.' };
-    }
-
-    if (stat.isDirectory()) {
-      const entryCount = countDirectoryEntries(target.absolute, MAX_DELETE_DIRECTORY_ENTRIES);
-      if (entryCount > MAX_DELETE_DIRECTORY_ENTRIES) {
-        return {
-          ok: false,
-          message: `Pasta muito grande para excluir pelo painel (${entryCount}+ entradas). Apague manualmente no Windows.`,
-        };
-      }
-
-      fs.rmSync(target.absolute, { recursive: true, force: true, maxRetries: 2, retryDelay: 100 });
-    } else {
-      fs.unlinkSync(target.absolute);
-    }
-
-    return { ok: true, absolute: target.absolute, isDirectory: stat.isDirectory() };
-  } catch (error) {
-    return {
-      ok: false,
-      message: `FS bridge nao conseguiu excluir: ${error.message}`,
-    };
-  }
-}
-
-exports('QadminWritePhysicalResourceFile', writeResourceFile);
-exports('QadminCreatePhysicalResourceDirectory', createResourceDirectory);
-exports('QadminDeletePhysicalResourceEntry', deleteResourceEntry);
 exports('QadminListPhysicalResourceDirectory', listResourceDirectory);
 
 console.log('[mri_Qadmin] Resource FS bridge carregado.');

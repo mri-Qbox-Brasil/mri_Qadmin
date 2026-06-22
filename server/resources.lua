@@ -49,11 +49,30 @@ local function cmdQuote(value)
     return '"' .. tostring(value or ''):gsub('"', '') .. '"'
 end
 
--- Usado para escolher os comandos de mkdir/rmdir corretos no disco. O Lua do
--- FiveM normalmente NAO expoe 'package', entao o acesso e curto-circuitado
--- (referenciar o global nil nao estoura; indexar sim) e o default e Windows —
--- so vira Unix se 'package.config' existir e indicar '/'.
-local IS_WINDOWS = not (package and package.config and package.config:sub(1, 1) == '/')
+-- Caracteres que sobrevivem ao aspeamento e sao interpretados pelo shell
+-- (cmd: %VAR%, !VAR!; sh: $, `). Caminhos/nomes que os contenham nunca vao para
+-- o os.execute — sao recusados antes, evitando expansao/injecao.
+local function hasShellHazard(value)
+    return tostring(value or ''):find('[%%%$`!]') ~= nil
+end
+
+-- Detecta o SO para escolher mkdir/rmdir corretos. O Lua do FiveM normalmente
+-- NAO expoe 'package' (acessar o global nil nao estoura; indexar sim — por isso
+-- o curto-circuito), entao caimos no separador do caminho do proprio resource
+-- (drive letter / '\' => Windows; '/' => Unix). Lazy + cacheado: so resolve no
+-- primeiro uso (runtime), quando as natives ja estao disponiveis.
+local cachedIsWindows = nil
+local function isWindows()
+    if cachedIsWindows == nil then
+        if package and package.config then
+            cachedIsWindows = package.config:sub(1, 1) == '\\'
+        else
+            local sample = tostring(GetResourcePath(GetCurrentResourceName()) or '')
+            cachedIsWindows = sample:find('^%a:') ~= nil or sample:find('\\') ~= nil
+        end
+    end
+    return cachedIsWindows
+end
 
 local function pathExists(absolutePath)
     local ok = os.rename(absolutePath, absolutePath)
@@ -105,70 +124,9 @@ local function writePhysicalFile(absolutePath, content)
     return true
 end
 
-local function writeWithFsBridge(target, content)
-    local ok, result = pcall(function()
-        return exports[GetCurrentResourceName()]:QadminWritePhysicalResourceFile(target.root, target.relative, tostring(content or ''))
-    end)
-
-    if not ok then
-        return false, ('FS bridge falhou ao executar: %s'):format(tostring(result))
-    end
-
-    if type(result) ~= 'table' then
-        return false, 'FS bridge nao retornou uma resposta valida.'
-    end
-
-    if result.ok == true then
-        return true
-    end
-
-    return false, tostring(result.message or 'FS bridge nao conseguiu salvar.')
-end
-
-local function createDirectoryWithFsBridge(target)
-    local ok, result = pcall(function()
-        return exports[GetCurrentResourceName()]:QadminCreatePhysicalResourceDirectory(target.root, target.relative)
-    end)
-
-    if not ok then
-        return false, ('FS bridge falhou ao executar: %s'):format(tostring(result))
-    end
-
-    if type(result) ~= 'table' then
-        return false, 'FS bridge nao retornou uma resposta valida.'
-    end
-
-    if result.ok == true then
-        return true
-    end
-
-    return false, tostring(result.message or 'FS bridge nao conseguiu criar a pasta.')
-end
-
-local function deleteWithFsBridge(target, isDirectory)
-    local ok, result = pcall(function()
-        return exports[GetCurrentResourceName()]:QadminDeletePhysicalResourceEntry(
-            target.root,
-            target.relative,
-            isDirectory and 'folder' or 'file'
-        )
-    end)
-
-    if not ok then
-        return false, ('FS bridge falhou ao executar: %s'):format(tostring(result))
-    end
-
-    if type(result) ~= 'table' then
-        return false, 'FS bridge nao retornou uma resposta valida.'
-    end
-
-    if result.ok == true then
-        return true
-    end
-
-    return false, tostring(result.message or 'FS bridge nao conseguiu excluir.')
-end
-
+-- A escrita/criacao/exclusao em disco e feita por io/os crus do Lua (que nao
+-- passam pelo sandbox do FiveM); o FS bridge em Node so e usado para LISTAR
+-- (leitura), entao mantemos apenas o list aqui.
 local function listWithFsBridge(target)
     local ok, result = pcall(function()
         return exports[GetCurrentResourceName()]:QadminListPhysicalResourceDirectory(target.root, target.relative)
@@ -225,6 +183,12 @@ local function sanitizeEntryName(name)
     end
 
     if cleaned:find('[\\/]') or cleaned:find('[<>:"|?*]') then
+        return nil
+    end
+
+    -- Metacaracteres de shell: nomes novos passam por mkdir/rmdir via os.execute,
+    -- entao recusamos os que o shell interpreta mesmo entre aspas.
+    if cleaned:find('[%%%$`!&;%(%)%^]') then
         return nil
     end
 
@@ -539,7 +503,7 @@ local function cloneDirectoryEntries(entries)
 
     for _, entry in ipairs(entries) do
         local path = sanitizeRelativePath(entry.path or '') or ''
-        local isKeepFile = path:match('(^|/)%.qadmin_keep$') ~= nil
+        local isKeepFile = baseName(path) == '.qadmin_keep'
         if not isKeepFile then
             cloned[#cloned + 1] = {
                 name = tostring(entry.name or baseName(path)),
@@ -739,7 +703,11 @@ local function ensureDirectoryExists(absolutePath)
         return true
     end
 
-    local command = IS_WINDOWS
+    if hasShellHazard(absolutePath) then
+        return false, 'Caminho com caractere nao suportado para criar pasta.'
+    end
+
+    local command = isWindows()
         and ('cmd /c mkdir %s >nul 2>nul'):format(cmdQuote(absolutePath))
         or ('mkdir -p %s >/dev/null 2>&1'):format(cmdQuote(absolutePath))
 
@@ -755,7 +723,11 @@ end
 -- passar pelo FS bridge do Node — que e bloqueado pelo sandbox em artifacts novos.
 local function deletePhysicalEntry(absolutePath, isDirectory)
     if isDirectory then
-        local command = IS_WINDOWS
+        if hasShellHazard(absolutePath) then
+            return false, 'Caminho com caractere nao suportado para excluir pasta.'
+        end
+
+        local command = isWindows()
             and ('cmd /c rmdir /s /q %s >nul 2>nul'):format(cmdQuote(absolutePath))
             or ('rm -rf %s >/dev/null 2>&1'):format(cmdQuote(absolutePath))
 
@@ -784,11 +756,14 @@ local function writeDiskFile(target, content)
     ensureDirectoryExists(target.absolute:match('^(.*)[\\/][^\\/]+$') or normalizeSlashes(target.root))
     local saved, saveError = writePhysicalFile(target.absolute, text)
     if not saved then
-        -- fallback pro FS bridge (artifacts antigos onde o io cru possa falhar).
-        local bridgeSaved, bridgeError = writeWithFsBridge(target, text)
-        if not bridgeSaved then
-            return false, saveError or bridgeError
-        end
+        return false, saveError or 'Nao foi possivel salvar o arquivo.'
+    end
+
+    -- Verificacao pos-gravacao: re-le e compara, pra nao reportar sucesso em
+    -- gravacao parcial (disco cheio, AV truncando, etc.).
+    local written = readPhysicalFile(target.absolute)
+    if type(written) ~= 'string' or not sameTextContent(written, text) then
+        return false, 'Arquivo gravado, mas a verificacao pos-gravacao divergiu.'
     end
 
     recentWrites[targetKey(target)] = text
@@ -805,13 +780,7 @@ local function createDirectory(target)
         return true
     end
 
-    -- fallback pro FS bridge (artifacts antigos).
-    local bridgeCreated, bridgeError = createDirectoryWithFsBridge(target)
-    if bridgeCreated then
-        return true
-    end
-
-    return false, createError or bridgeError
+    return false, createError or 'Nao foi possivel criar a pasta.'
 end
 
 local function saveResourceEditorFile(source, data)
@@ -836,21 +805,31 @@ local function saveResourceEditorFile(source, data)
 
     upsertIndexedEntry(target.resource, target.relative, false, #(tostring(data.content or '')))
 
-    if data.restartResource == true and GetResourceState(target.resource) == 'started' then
+    -- Nunca reiniciar o proprio mri_Qadmin daqui: StopResource no proprio resource
+    -- mata o callback em andamento (o save trava e o painel cai). Quem edita os
+    -- arquivos do painel deve reiniciar manualmente.
+    local restarted = false
+    if data.restartResource == true
+        and target.resource ~= GetCurrentResourceName()
+        and GetResourceState(target.resource) == 'started' then
         StopResource(target.resource)
         Wait(200)
         StartResource(target.resource)
+        restarted = true
     end
 
     AddLog(source, 'mri_Qadmin', 'server', 'info', ('Arquivo salvo em %s: %s'):format(target.resource, target.relative), {
         resource = target.resource,
         file = target.relative,
-        restarted = data.restartResource == true,
+        restarted = restarted,
     })
 
+    local selfEdit = data.restartResource == true and not restarted
     return {
         ok = true,
-        message = data.restartResource == true and 'Arquivo salvo e resource reiniciado.' or 'Arquivo salvo com sucesso.',
+        message = restarted and 'Arquivo salvo e resource reiniciado.'
+            or (selfEdit and 'Arquivo salvo. Reinicie o mri_Qadmin manualmente para aplicar.'
+            or 'Arquivo salvo com sucesso.'),
         file = readResourceFile(target.resource, target.relative),
         resources = refreshResources(),
     }
@@ -929,6 +908,12 @@ local function deleteEntry(source, data)
         return { ok = false, message = 'Sem permissao para acessar resources.' }
     end
 
+    -- Exige change_resource (como browse/get/save) alem de resource_delete, pra
+    -- nao deixar a exclusao com gate mais frouxo que a leitura/edicao.
+    if not CheckPerms(source, 'qadmin.action.change_resource') then
+        return { ok = false, message = 'Sem permissao para gerenciar arquivos do resource.' }
+    end
+
     if not CheckPerms(source, 'qadmin.action.resource_delete') then
         return { ok = false, message = 'Sem permissao para excluir arquivos ou pastas.' }
     end
@@ -941,14 +926,10 @@ local function deleteEntry(source, data)
     local isDirectory = data.isDirectory == true
     local parent = parentPath(target.relative)
 
-    -- Exclusao via os do Lua (nao passa pelo sandbox); FS bridge como fallback.
     local deleted, deleteError = deletePhysicalEntry(target.absolute, isDirectory)
     if not deleted then
-        local bridgeDeleted, bridgeError = deleteWithFsBridge(target, isDirectory)
-        if not bridgeDeleted then
-            print(('[mri_Qadmin] Falha ao excluir %s/%s: %s'):format(target.resource, target.relative, tostring(deleteError or bridgeError)))
-            return { ok = false, message = deleteError or bridgeError or 'Nao foi possivel excluir a entrada.' }
-        end
+        print(('[mri_Qadmin] Falha ao excluir %s/%s: %s'):format(target.resource, target.relative, tostring(deleteError)))
+        return { ok = false, message = deleteError or 'Nao foi possivel excluir a entrada.' }
     end
 
     removeIndexedEntry(target.resource, target.relative)
