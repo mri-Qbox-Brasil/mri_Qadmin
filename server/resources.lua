@@ -49,9 +49,11 @@ local function cmdQuote(value)
     return '"' .. tostring(value or ''):gsub('"', '') .. '"'
 end
 
--- '\' como separador de path => Windows; '/' => Unix. Usado para escolher os
--- comandos de mkdir/rmdir corretos no fallback de disco.
-local IS_WINDOWS = package.config:sub(1, 1) == '\\'
+-- Usado para escolher os comandos de mkdir/rmdir corretos no disco. O Lua do
+-- FiveM normalmente NAO expoe 'package', entao o acesso e curto-circuitado
+-- (referenciar o global nil nao estoura; indexar sim) e o default e Windows —
+-- so vira Unix se 'package.config' existir e indicar '/'.
+local IS_WINDOWS = not (package and package.config and package.config:sub(1, 1) == '/')
 
 local function pathExists(absolutePath)
     local ok = os.rename(absolutePath, absolutePath)
