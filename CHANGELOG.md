@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.15.0...v1.15.1) (2026-06-22)
+
+
+### Bug Fixes
+
+* **web:** resolve erros do eslint-plugin-react-hooks v7 (lint verde) ([dc02f6b](https://github.com/mri-Qbox-Brasil/mri_Qadmin/commit/dc02f6b095437b46966d3035ec06c04080c51ad1))
+
 # [1.15.0](https://github.com/mri-Qbox-Brasil/mri_Qadmin/compare/v1.14.3...v1.15.0) (2026-06-22)
 
 
