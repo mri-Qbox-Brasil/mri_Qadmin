@@ -25,3 +25,22 @@ RegisterNUICallback('getPlugins', function(_, cb)
     end
     cb(cachedPlugins)
 end)
+
+RegisterNetEvent('mri_Qadmin:client:forwardPluginMessage', function(pluginId, payload)
+    if type(pluginId) == 'table' then
+        payload = pluginId.payload
+        pluginId = pluginId.pluginId
+    end
+
+    if type(pluginId) ~= 'string' or pluginId == '' or type(payload) ~= 'table' then
+        return
+    end
+
+    SendNUIMessage({
+        action = 'forwardPluginMessage',
+        data = {
+            pluginId = pluginId,
+            payload = payload,
+        },
+    })
+end)

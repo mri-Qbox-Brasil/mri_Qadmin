@@ -59,6 +59,8 @@ export type MriPluginHostMessage =
     }
   /** Host pediu pro plugin fechar/limpar (eg user navegou pra outro item). */
   | { type: 'mri-plugin/close' }
+  /** Host encaminhou uma NUI message do client Lua para o plugin embedado. */
+  | { type: 'mri-plugin/nui-forward'; payload: unknown }
 
 /** Mensagens que o plugin guest envia pro host (Qadmin). */
 export type MriPluginGuestMessage =

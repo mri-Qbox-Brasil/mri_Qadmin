@@ -10,6 +10,10 @@ interface MriPluginHostProps {
   locale: string
   perms: string[]
   onRequestClose?: () => void
+  forwardMessage?: {
+    nonce: number
+    payload: unknown
+  } | null
 }
 
 /**
@@ -26,6 +30,7 @@ export function MriPluginHost({
   locale,
   perms,
   onRequestClose,
+  forwardMessage,
 }: MriPluginHostProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [ready, setReady] = useState(false)
@@ -49,6 +54,11 @@ export function MriPluginHost({
     if (!ready) return
     send({ type: 'mri-plugin/perms-changed', perms })
   }, [perms, ready, send])
+
+  useEffect(() => {
+    if (!ready || !forwardMessage) return
+    send({ type: 'mri-plugin/nui-forward', payload: forwardMessage.payload })
+  }, [forwardMessage, ready, send])
 
   // Timeout de loading: se o plugin nao mandar `ready` em 10s, mostra erro.
   // Causas comuns: resource nao esta running, build quebrado, bridge code

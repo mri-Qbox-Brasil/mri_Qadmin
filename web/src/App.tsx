@@ -44,6 +44,11 @@ export default function App() {
     const { scale, accentColor, backgroundColor } = useTheme()
     const { locale } = useI18n()
     const [plugins, setPlugins] = useState<Record<string, MriPluginManifest>>({})
+    const [pluginForwardMessage, setPluginForwardMessage] = useState<{
+        pluginId: string
+        nonce: number
+        payload: unknown
+    } | null>(null)
     const isDev = (import.meta as any)?.env?.DEV === true
     const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
     const devParam = query ? query.get('devpanel') === '1' : false
@@ -242,7 +247,24 @@ export default function App() {
         return () => off('setVisible', onVisible)
     }, [on, off, sendNui, setMyPermissions, setSettings])
 
+    useEffect(() => {
+        const onForwardPluginMessage = (data: any) => {
+            const pluginId = data?.pluginId
+            const payload = data?.payload
+            if (typeof pluginId !== 'string' || !pluginId || !payload) return
 
+            setRoute(`plugin:${pluginId}`)
+            setVisible(true)
+            setPluginForwardMessage({
+                pluginId,
+                payload,
+                nonce: Date.now(),
+            })
+        }
+
+        on('forwardPluginMessage', onForwardPluginMessage)
+        return () => off('forwardPluginMessage', onForwardPluginMessage)
+    }, [on, off])
 
     useEffect(() => {
         if (!isDev) return
@@ -332,6 +354,7 @@ export default function App() {
                                     locale={locale}
                                     perms={myPermissions}
                                     onRequestClose={() => sendNui('hideUI')}
+                                    forwardMessage={pluginForwardMessage?.pluginId === id ? pluginForwardMessage : null}
                                 />
                             )
                         })()
