@@ -58,6 +58,7 @@ export default function App() {
     const [panelPhase, setPanelPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(
         (isDev || isEnvBrowser() || devParam || devStorage) ? 'open' : 'closed'
     )
+    const [pluginWorldCapture, setPluginWorldCapture] = useState(false)
     const [autoScale, setAutoScale] = useState(1)
 
     useEffect(() => {
@@ -228,6 +229,7 @@ export default function App() {
         const onVisible = (data: any) => {
             const newVis = typeof data === 'object' && 'data' in data ? Boolean(data.data) : Boolean(data)
             setVisible(newVis)
+            if (!newVis) setPluginWorldCapture(false)
 
             if (newVis && !isEnvBrowser()) {
                 sendNui('mri_Qadmin:callback:GetMyPermissions').then((perms) => {
@@ -246,6 +248,21 @@ export default function App() {
         on('setVisible', onVisible)
         return () => off('setVisible', onVisible)
     }, [on, off, sendNui, setMyPermissions, setSettings])
+
+    useEffect(() => {
+        const onPluginWorldCapture = (data: any) => {
+            const active = typeof data === 'object' && data !== null && 'data' in data ? Boolean(data.data) : Boolean(data)
+            setPluginWorldCapture(active)
+            if (active) {
+                setVisible(true)
+                setFrameVisible(true)
+                setPanelPhase('open')
+            }
+        }
+
+        on('pluginWorldCapture', onPluginWorldCapture)
+        return () => off('pluginWorldCapture', onPluginWorldCapture)
+    }, [on, off])
 
     useEffect(() => {
         const onForwardPluginMessage = (data: any) => {
@@ -310,9 +327,10 @@ export default function App() {
 
     return (
         <>
-            {frameVisible && (
+            {(frameVisible || pluginWorldCapture) && (
+            <div className={pluginWorldCapture ? 'pointer-events-none opacity-0' : undefined}>
             <MriTabletFrame
-                visible={frameVisible}
+                visible={frameVisible || pluginWorldCapture}
                 scale={scale * autoScale}
                 size="lg"
             >
@@ -378,6 +396,7 @@ export default function App() {
                 </div>
                 </div>
             </MriTabletFrame>
+            </div>
             )}
             {/* Background elements and Overlays */}
             <Listeners />

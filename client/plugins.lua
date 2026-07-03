@@ -44,3 +44,16 @@ RegisterNetEvent('mri_Qadmin:client:forwardPluginMessage', function(pluginId, pa
         },
     })
 end)
+
+RegisterNetEvent('mri_Qadmin:client:SetPluginWorldCapture', function(active)
+    active = active == true
+
+    if MenuVisible then
+        SetNuiFocus(not active, not active)
+    end
+
+    SendNUIMessage({
+        action = 'pluginWorldCapture',
+        data = active,
+    })
+end)
