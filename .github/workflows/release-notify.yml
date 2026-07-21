@@ -1,0 +1,151 @@
+# ATENCAO: arquivo gerado/injetado automaticamente nos espelhos publicos
+# pelo callable-mirror-release. Roda NO REPO PUBLICO (que pode usar secrets
+# de org no plano Free) e notifica o Discord quando uma release e publicada.
+# Nao editar aqui: e sobrescrito a cada release pelo mirror.
+name: Release Notify
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepara notificador de release
+        run: |
+          mkdir -p .release
+          cat > .release/discord-release.js << 'EOF'
+          'use strict';
+
+          const webhook = process.env.DISCORD_RELEASE_WEBHOOK;
+          const apiToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+          const modelsToken = process.env.GH_MODELS_TOKEN || apiToken;
+          const model = (process.env.LLM_MODEL || '').trim() || 'openai/gpt-4o-mini';
+          // Aponta o embed ao repo publico quando fornecido; senao ao repo atual.
+          const repo = process.env.NOTIFY_REPO || process.env.GITHUB_REPOSITORY;
+          const author = process.env.GITHUB_ACTOR || '';
+          const env = (k) => (process.env[k] || '').trim();
+
+          const version = (process.argv[2] || '').replace(/^v/, '');
+
+          const notify = env('DISCORD_RELEASE_NOTIFY').toLowerCase();
+          if (['false', '0', 'off', 'no'].includes(notify)) { console.log('[discord] DISCORD_RELEASE_NOTIFY desligado, pulando.'); process.exit(0); }
+          if (!webhook) { console.log('[discord] sem DISCORD_RELEASE_WEBHOOK, pulando.'); process.exit(0); }
+          if (!repo || !version) { console.log('[discord] repo/versao ausentes, pulando.'); process.exit(0); }
+
+          const name = repo.split('/')[1];
+          const tag = `v${version}`;
+          const releaseUrl = `https://github.com/${repo}/releases/tag/${tag}`;
+          const FIELD_MAX = 1000;
+
+          async function ghJson(path) {
+            const res = await fetch(`https://api.github.com${path}`, {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                'User-Agent': 'mri-release-notifier',
+                ...(apiToken ? { Authorization: `Bearer ${apiToken}` } : {}),
+              },
+            });
+            if (!res.ok) throw new Error(`GitHub API ${path} -> ${res.status}`);
+            return res.json();
+          }
+
+          async function aiSummary(rawNotes) {
+            const fallback = (rawNotes || 'Nova versao publicada.').slice(0, FIELD_MAX);
+            if (!modelsToken || !rawNotes) return fallback;
+            try {
+              const res = await fetch('https://models.github.ai/inference/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${modelsToken}` },
+                body: JSON.stringify({
+                  model,
+                  temperature: 0.5,
+                  messages: [
+                    {
+                      role: 'system',
+                      content:
+                        'Voce e o redator de notas de versao do MRI QBOX, um conjunto de resources ' +
+                        'para servidores FiveM (framework QBox). Recebe um changelog tecnico gerado ' +
+                        'por conventional commits e o reescreve como um resumo curto, claro e amigavel ' +
+                        'em portugues do Brasil, voltado para donos de servidor e jogadores. Regras: ' +
+                        'use no maximo 5 bullets em markdown (use "- "); foque no que muda na pratica; ' +
+                        'nao invente recursos que nao estao no changelog; nao inclua links, hashes de ' +
+                        'commit nem nomes de autores; maximo ~800 caracteres; se nao houver mudancas ' +
+                        'relevantes para o usuario, escreva uma unica linha de melhorias internas.',
+                    },
+                    { role: 'user', content: `Changelog tecnico da ${tag}:\n\n${rawNotes}` },
+                  ],
+                }),
+              });
+              if (!res.ok) throw new Error(`GitHub Models ${res.status}`);
+              const data = await res.json();
+              const text = data.choices?.[0]?.message?.content?.trim();
+              if (!text) throw new Error('resposta vazia do modelo');
+              console.log('[discord] descricao gerada via IA.');
+              return text.slice(0, FIELD_MAX);
+            } catch (e) {
+              console.error('[discord] IA falhou, usando notas cruas:', e.message);
+              return fallback;
+            }
+          }
+
+          (async () => {
+            let rawNotes = '';
+            let description = '';
+            try {
+              const rel = await ghJson(`/repos/${repo}/releases/tags/${tag}`);
+              rawNotes = rel.body || '';
+            } catch (e) { console.error('[discord] nao obteve notas da release:', e.message); }
+            try {
+              const info = await ghJson(`/repos/${repo}`);
+              description = info.description || '';
+            } catch (e) { console.error('[discord] nao obteve descricao do repo:', e.message); }
+
+            const whatsNew = await aiSummary(rawNotes);
+
+            const fields = [{ name: 'O que ha de novo?', value: whatsNew }];
+            fields.push({
+              name: 'Veja todas as mudancas',
+              value: `[Veja aqui](https://github.com/${repo}/commits/${tag})`,
+            });
+            if (env('INVITE_DISCORD_URL'))
+              fields.push({ name: 'Precisa de ajuda?', value: `[Participe da comunidade](${env('INVITE_DISCORD_URL')})`, inline: true });
+            if (env('DOCS_MRIQBOX_URL'))
+              fields.push({ name: 'Documentacao', value: `[Acesse aqui](${env('DOCS_MRIQBOX_URL')})`, inline: true });
+
+            const embed = {
+              author: { name: 'MRI QBOX - Updates', ...(env('LOGO_MRIQBOX_URL') ? { icon_url: env('LOGO_MRIQBOX_URL') } : {}) },
+              title: `[${name}] Nova versao disponivel: ${tag}`.slice(0, 256),
+              url: releaseUrl,
+              description: description.slice(0, 4096),
+              fields,
+              color: 4243543,
+              footer: { text: `Realizado por: ${author}`.slice(0, 2048), ...(env('LOGO_MRIQBOX_URL') ? { icon_url: env('LOGO_MRIQBOX_URL') } : {}) },
+              timestamp: new Date().toISOString(),
+            };
+            if (env('RESOURCE_MRIQBOX_URL')) embed.image = { url: env('RESOURCE_MRIQBOX_URL') };
+
+            const res = await fetch(webhook, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ embeds: [embed] }),
+            });
+            console.log('[discord] status', res.status);
+            if (!res.ok) console.error('[discord] corpo:', (await res.text()).slice(0, 500));
+          })().catch((e) => { console.error('[discord] erro nao fatal:', e.message); process.exit(0); });
+          EOF
+
+      - name: Notifica Discord
+        run: node .release/discord-release.js "${{ github.event.release.tag_name }}"
+        env:
+          NOTIFY_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN || github.token }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          DISCORD_RELEASE_NOTIFY: ${{ vars.DISCORD_RELEASE_NOTIFY }}
+          DISCORD_RELEASE_WEBHOOK: ${{ secrets.UPDATE_DISCORD_WEBHOOK }}
+          LOGO_MRIQBOX_URL: ${{ secrets.LOGO_MRIQBOX_URL }}
+          RESOURCE_MRIQBOX_URL: ${{ secrets.RESOURCE_MRIQBOX_URL }}
+          INVITE_DISCORD_URL: ${{ secrets.INVITE_DISCORD_URL }}
+          DOCS_MRIQBOX_URL: ${{ secrets.DOCS_MRIQBOX_URL }}
