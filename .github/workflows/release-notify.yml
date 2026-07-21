@@ -16,6 +16,10 @@ on:
 jobs:
   discord:
     runs-on: ubuntu-latest
+    # Libera o GITHUB_TOKEN a usar o GitHub Models (resumo por IA), sem PAT.
+    permissions:
+      contents: read
+      models: read
     steps:
       - name: Prepara notificador de release
         run: |
