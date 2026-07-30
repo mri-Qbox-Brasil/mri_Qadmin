@@ -1,3 +1,5 @@
+-- Callbacks NUI da aba de logs. Ponte fina: valida nada aqui, o server decide.
+
 RegisterNUICallback('mri_Qadmin:callback:GetLogs', function(data, cb)
     local result = lib.callback.await('mri_Qadmin:callback:GetLogs', false, data)
     cb(result or { logs = {}, total = 0 })
