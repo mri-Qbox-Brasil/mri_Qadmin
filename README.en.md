@@ -135,7 +135,7 @@ local plate = exports.mri_Qadmin:GeneratePlate()
 
 #### `AddLog(resource, category, level, message, data[, source])`
 
-Adds an entry to the log system (DB + Discord webhook).
+Adds an entry to the log system. The in-memory buffer always receives it; database, Discord webhook, relay event and Fivemanage follow whatever `Config.Logs` defines for that category and resource.
 
 ```lua
 exports.mri_Qadmin:AddLog('my_resource', 'players', 'info', 'Player did something', { playerId = source }, source)

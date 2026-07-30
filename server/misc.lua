@@ -22,6 +22,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_cid', function(_, selectedData)
     -- Deleta qualquer ban que use license:xxx ou license2:xxx
     local affectedRows = MySQL.update.await('DELETE FROM bans WHERE license = ? OR license = ?', { license1, license2 })
     if affectedRows and affectedRows > 0 then
+        MarkDashboardDirty('unban')
         TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi desbanido."):format(citizenid), "success", 5000)
         AddLog(src, 'mri_Qadmin', 'bans', 'info', ('Desbanimento: CID %s desbanido'):format(citizenid), { cid = citizenid })
     else
@@ -82,6 +83,7 @@ RegisterNetEvent('mri_Qadmin:server:delete_cid', function(_, selectedData)
     end
 
     if deleted then
+        MarkDashboardDirty('delete_character')
         TriggerClientEvent('QBCore:Notify', src, ("✅ Jogador com CID %s foi deletado."):format(citizenid), "success", 5000)
         AddLog(src, 'mri_Qadmin', 'players', 'error', ('Deletar personagem: CID %s deletado (cascade)'):format(citizenid), { citizenid = citizenid })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
@@ -171,6 +173,7 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
         AddLog(source, 'mri_Qadmin', 'bans', 'warn', ('Banimento (offline): %s foi banido'):format(name), { reason = reason, duration = duration, name = name, license = licenseVal })
     end
 
+    MarkDashboardDirty('ban')
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', source)
 end)
 
@@ -200,6 +203,7 @@ RegisterNetEvent('mri_Qadmin:server:UnbanPlayer', function(data, selectedData)
 
     if result and #result > 0 then
         MySQL.update.await('DELETE FROM bans WHERE license = ?', { licenseVal })
+        MarkDashboardDirty('unban')
 
         if src > 0 then
             QBCore.Functions.Notify(src, 'Jogador desbanido com sucesso.', 'success', 7500)
@@ -706,6 +710,7 @@ RegisterNetEvent('mri_Qadmin:server:unban_rowid', function(_, selectedData)
 
     local affectedRows = MySQL.update.await('DELETE FROM bans WHERE id = ?', { banId })
     if affectedRows and affectedRows > 0 then
+        MarkDashboardDirty('unban')
         TriggerClientEvent('QBCore:Notify', src, ("✅ Banimento removido com sucesso (ID %s)."):format(banId), "success", 5000)
         TriggerClientEvent('mri_Qadmin:client:RefreshBans', -1)
         AddLog(src, 'mri_Qadmin', 'bans', 'info', ('Desbanimento: ban #%d removido'):format(banId), { banId = banId })

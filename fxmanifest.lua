@@ -5,7 +5,7 @@ use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
 author "MRI Qbox Team"
-version "1.20.3"
+version "1.21.0"
 
 ox_lib "locale"
 
@@ -21,6 +21,7 @@ server_scripts {
     "server/db.lua",
     "server/main.lua",
     "server/utils.lua",
+    "server/dashboard_cache.lua",
     "server/logs.lua",
     "server/chat.lua",
     "server/commands.lua",
@@ -43,7 +44,6 @@ server_scripts {
     "server/trolls.lua",
     "server/vehicle.lua",
     "server/wall.lua",
-    "server/vip.lua",
     "server/key_manager.lua",
     "server/webrtc.lua",
     "server/updates.lua",
@@ -70,7 +70,6 @@ client_scripts {
     "client/world.lua",
     "client/key_capture.lua",
     "client/nearby_scanner.lua",
-    "client/vip.lua",
     "client/logs.lua",
     "client/webrtc.lua",
     "client/plugins.lua",

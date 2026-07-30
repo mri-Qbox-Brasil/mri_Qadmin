@@ -22,6 +22,11 @@ Config.QBCoreAutoSync = true -- Auto-promote players with QBCore 'admin'/'god' t
 Config.QBNotify = true -- Use QBCore.Functions.Notify for notifications (if false, does not notify)
 Config.InternalNotify = true -- Use internal notification system (if false, does not notify)
 
+-- Eventos extras que invalidam o cache de agregados do dashboard (server/dashboard_cache.lua).
+-- Os nomes de save do qb-core/qbx_core já vêm registrados por padrão; use isto se
+-- o seu core (ou um fork) emitir outro nome ao persistir personagens no banco.
+Config.DashboardInvalidateEvents = {}
+
 -- Give Car
 Config.DefaultGarage = "Pillbox Garage Parking"
 Config.VehicleImages = "" -- Custom URL for vehicle images (e.g. "https://cdn.example.com/vehicles/")
@@ -54,6 +59,21 @@ Config.Logs = {
     -- Event fired on other resources when a log is added (leave "" to disable)
     -- e.g. "myResource:onAdminLog"  (must be a server-side event handler)
     ForwardEvent = "",
+    -- Fivemanage (https://fivemanage.com) — send logs out, and optionally read
+    -- history back from them instead of the local database.
+    Fivemanage = {
+        -- Logs token from the Fivemanage dashboard. A Media/Files token is
+        -- rejected with "invalid token type" on every log endpoint.
+        Token   = "",
+        -- Master switch for the 'fm' destination (AND'ed with per-category flags)
+        Enabled = false,
+        -- Mirror mode: the panel reads history from Fivemanage instead of MySQL.
+        -- Requires Enabled + Token. The live feed keeps coming from memory.
+        Mirror  = false,
+        -- Optional dataset name. Must already exist in the Fivemanage dashboard —
+        -- ingesting into an unknown dataset fails the whole batch. Leave "" for default.
+        Dataset = "",
+    },
     -- Persist logs to the database
     DBEnabled = true,
     -- Max in-memory buffer (most recent N logs kept for instant panel display)

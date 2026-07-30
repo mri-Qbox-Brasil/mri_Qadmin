@@ -11,12 +11,11 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
 
     Debug('debug', ('Iniciando envio latente de dados iniciais para %s (%s)'):format(GetPlayerName(src), src))
 
-    local serverInfo = GetServerData()
-    if not HasPerms(src, 'qadmin.action.info_admin') then
-        serverInfo.totalCash = nil
-        serverInfo.totalBank = nil
-        serverInfo.totalCrypto = nil
-    end
+    -- Sai do snapshot cacheado (server/dashboard_cache.lua), não do banco: este
+    -- handler dispara no login de TODO admin, e antes cada login pagava uma
+    -- varredura completa da tabela `players`.
+    local serverInfo = MaskFinancials(GetServerData(), src)
+    serverInfo.charts = GetDashboardChartData(src)
 
     -- PII gate: getPlayers retorna license/IP/discord/steam/fivem dos jogadores.
     -- Não enviar nada disso para quem só tem qadmin.open mas não qadmin.page.players.
@@ -42,9 +41,6 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         locations = {},
         settings = HasPerms(src, 'qadmin.page.settings') and GetPrimitiveSettings() or {},
         players = playersPayload,
-        -- true so se o mri_Qbox estiver rodando E expuser os exports de VIP;
-        -- caso contrario a NUI oculta a pagina/filtros de VIP (ver vip.lua).
-        qboxEnabled = IsVipAvailable(),
         -- Versao real do recurso em execucao (fxmanifest, injetada no release).
         -- Enviada a todos para a sidebar exibir a versao correta — o bundle web
         -- tem uma versao propria que pode ficar defasada entre releases.

@@ -3,13 +3,22 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 local QUEUE_FILE    = 'server/logs_queue.json'
+local FM_QUEUE_FILE = 'server/logs_fm_queue.json'
 local SETTINGS_FILE = 'server/logs_settings.json'
 local MAX_EMBEDS    = 10
 local MAX_CHARS     = 5800
 local MAX_BUFFER    = 500
 
-local logQueues = {}
-local logBuffer = {}
+-- Fivemanage
+local FM_ENDPOINT   = 'https://api.fivemanage.com/api/v3/logs'
+local FM_MAX_BATCH  = 50    -- log entries per POST (the API takes an array natively)
+local FM_MAX_QUEUE  = 5000  -- backstop: a misconfigured token must not eat all memory
+local FM_MAX_PAGE   = 100   -- hard limit of the query API
+local FM_SCAN_PAGES = 5     -- páginas varridas quando o Lua filtra categoria + busca
+local FM_CAT_PREFIX = 'qadmin_cat:'
+
+local logBuffer   = {}
+local fmLastError = nil
 
 -- ─── Settings persistence ─────────────────────────────────────────────────────
 
@@ -30,6 +39,14 @@ local function LoadLogSettings()
     if data.MaxMemory       then Config.Logs.MaxMemory       = data.MaxMemory       end
     if data.ResourceEntries then Config.Logs.ResourceEntries = data.ResourceEntries end
     if data.ResourceMode    then Config.Logs.ResourceMode    = data.ResourceMode    end
+    if data.Fivemanage then
+        Config.Logs.Fivemanage = Config.Logs.Fivemanage or {}
+        local fm = data.Fivemanage
+        if fm.Token   ~= nil then Config.Logs.Fivemanage.Token   = fm.Token   end
+        if fm.Enabled ~= nil then Config.Logs.Fivemanage.Enabled = fm.Enabled end
+        if fm.Mirror  ~= nil then Config.Logs.Fivemanage.Mirror  = fm.Mirror  end
+        if fm.Dataset ~= nil then Config.Logs.Fivemanage.Dataset = fm.Dataset end
+    end
 end
 
 SaveLogSettings = function()
@@ -41,6 +58,7 @@ SaveLogSettings = function()
         MaxMemory       = Config.Logs.MaxMemory,
         ResourceEntries = Config.Logs.ResourceEntries,
         ResourceMode    = Config.Logs.ResourceMode,
+        Fivemanage      = Config.Logs.Fivemanage,
     }, { indent = true }), -1)
 end
 
@@ -122,49 +140,128 @@ local function BuildPriority()
     return p
 end
 
--- ─── Queue persistence ───────────────────────────────────────────────────────
-
-local function SaveQueues()
-    local data = {}
-    for webhook, q in pairs(logQueues) do
-        data[webhook] = q.logs
-    end
-    SaveResourceFile(GetCurrentResourceName(), QUEUE_FILE, json.encode(data), -1)
-end
-
-local function LoadQueues()
-    local content = LoadResourceFile(GetCurrentResourceName(), QUEUE_FILE)
-    if not content then return {} end
-    local ok, data = pcall(json.decode, content)
-    if not ok or type(data) ~= 'table' then return {} end
-    return data
-end
-
--- ─── Discord queue processor ─────────────────────────────────────────────────
+-- ─── Delivery queues ─────────────────────────────────────────────────────────
+-- Discord e Fivemanage precisam da mesma máquina: entrega at-least-once, fila
+-- persistida entre restarts, envio em lote e backoff exponencial. O que muda é
+-- só (a) como um lote vira payload, (b) para onde ele vai e (c) como a resposta
+-- é classificada — e é isso, e só isso, que cada `spec` preenche.
+--
+-- Uma fila pode ter vários destinos ("targets"): o Discord tem um por webhook,
+-- o Fivemanage tem um só. Por isso o arquivo em disco é sempre um mapa
+-- `{ [target] = logs }`, o que também mantém o formato do logs_queue.json que
+-- já existe em servidores rodando.
 
 local function GetRetryDelay(errorCount)
     return math.min(5000 * (2 ^ (errorCount - 1)), 300000)
 end
 
-local function SendQueue(webhook)
-    local q = logQueues[webhook]
-    if not q or #q.logs == 0 then
-        if q then q.isSending = false; q.errorCount = 0 end
-        return
+local function CreateDeliveryQueue(spec)
+    local queue = { targets = {} }
+
+    local function target(key)
+        local t = queue.targets[key]
+        if not t then
+            t = { logs = {}, isSending = false, errorCount = 0 }
+            queue.targets[key] = t
+        end
+        return t
     end
 
-    q.isSending = true
+    function queue.save()
+        local data = {}
+        for key, t in pairs(queue.targets) do data[key] = t.logs end
+        SaveResourceFile(GetCurrentResourceName(), spec.file, json.encode(data), -1)
+    end
 
-    local priority = BuildPriority()
-    table.sort(q.logs, function(a, b)
-        return (priority[a.category] or 999) < (priority[b.category] or 999)
-    end)
+    function queue.send(key)
+        local t = target(key)
+        if spec.ready and not spec.ready() then
+            t.isSending = false
+            return
+        end
+        if #t.logs == 0 then
+            t.isSending = false
+            t.errorCount = 0
+            return
+        end
 
-    local payload = { username = 'mri_Qadmin Logs', embeds = {} }
-    local totalChars = 0
+        t.isSending = true
 
-    while #q.logs > 0 and #payload.embeds < MAX_EMBEDS do
-        local log   = q.logs[1]
+        local payload, consumed = spec.build(t.logs, key)
+        if not payload or not consumed or consumed <= 0 then
+            t.isSending = false
+            return
+        end
+
+        -- Os logs só saem da fila depois do 2xx: um crash entre o POST e a
+        -- resposta reenvia o lote em vez de perdê-lo.
+        queue.save()
+
+        local url, headers = spec.target(key)
+        PerformHttpRequest(url, function(statusCode, body, respHeaders)
+            local action, detail, delay = spec.classify(statusCode, body, respHeaders)
+
+            if action == 'ok' then
+                for _ = 1, consumed do table.remove(t.logs, 1) end
+                t.errorCount = 0
+                queue.save()
+                if spec.onSuccess then spec.onSuccess() end
+                SetTimeout(delay or 500, function() queue.send(key) end)
+
+            elseif action == 'permanent' then
+                -- Nada que a gente reenvie conserta token errado ou dataset
+                -- inexistente, e uma fila que só cresce é pior que log perdido.
+                local dropped = #t.logs
+                t.logs = {}
+                t.isSending = false
+                t.errorCount = 0
+                queue.save()
+                if spec.onPermanent then spec.onPermanent(detail, dropped) end
+
+            else
+                -- Um delay ditado pelo servidor (o retry-after do 429) não é
+                -- falha nossa, então não conta para o backoff.
+                if not delay then
+                    t.errorCount = t.errorCount + 1
+                    delay = GetRetryDelay(t.errorCount)
+                end
+                if spec.onRetry then spec.onRetry(detail, t.errorCount, #t.logs) end
+                SetTimeout(delay, function() queue.send(key) end)
+            end
+        end, 'POST', json.encode(payload), headers)
+    end
+
+    function queue.push(key, log)
+        local t = target(key)
+        t.logs[#t.logs + 1] = log
+        if spec.maxQueue and #t.logs > spec.maxQueue then
+            table.remove(t.logs, 1)
+            if spec.onOverflow then spec.onOverflow(spec.maxQueue) end
+        end
+        queue.save()
+        if not t.isSending then queue.send(key) end
+    end
+
+    -- Reenvia o que ficou pendente de antes do restart.
+    function queue.restore()
+        local content = LoadResourceFile(GetCurrentResourceName(), spec.file)
+        if not content then return end
+        local ok, data = pcall(json.decode, content)
+        if not ok or type(data) ~= 'table' then return end
+        for key, logs in pairs(data) do
+            if type(logs) == 'table' and #logs > 0 then
+                queue.targets[key] = { logs = logs, isSending = false, errorCount = 0 }
+                queue.send(key)
+            end
+        end
+    end
+
+    return queue
+end
+
+-- ─── Discord ─────────────────────────────────────────────────────────────────
+
+local function BuildDiscordEmbed(log)
         local emoji = CATEGORY_EMOJIS[log.category] or '📄'
         local adminInfo = log.admin or 'System'
         if log.admin_citizenid then
@@ -206,31 +303,49 @@ local function SendQueue(webhook)
             end
         end
 
-        local size = #embed.title
-        if totalChars + size > MAX_CHARS then break end
+    return embed
+end
 
-        table.insert(payload.embeds, embed)
-        totalChars = totalChars + size
-        table.remove(q.logs, 1)
-    end
+local discordQueue = CreateDeliveryQueue({
+    file = QUEUE_FILE,
 
-    SaveQueues()
+    build = function(logs)
+        -- A ordem de envio segue a prioridade das categorias (posição no array).
+        local priority = BuildPriority()
+        table.sort(logs, function(a, b)
+            return (priority[a.category] or 999) < (priority[b.category] or 999)
+        end)
 
-    PerformHttpRequest(webhook, function(statusCode, _, headers)
+        local payload = { username = 'mri_Qadmin Logs', embeds = {} }
+        local totalChars, consumed = 0, 0
+
+        for i = 1, #logs do
+            if #payload.embeds >= MAX_EMBEDS then break end
+            local embed = BuildDiscordEmbed(logs[i])
+            local size = #embed.title
+            if totalChars + size > MAX_CHARS then break end
+            payload.embeds[#payload.embeds + 1] = embed
+            totalChars = totalChars + size
+            consumed = consumed + 1
+        end
+
+        return payload, consumed
+    end,
+
+    target = function(webhook)
+        return webhook, { ['Content-Type'] = 'application/json' }
+    end,
+
+    classify = function(statusCode, _, headers)
         if statusCode == 429 then
             local retryAfter = (headers and headers['retry-after']) and
                 math.floor(tonumber(headers['retry-after']) * 1000) or 1000
-            SetTimeout(retryAfter, function() SendQueue(webhook) end)
-        elseif statusCode >= 200 and statusCode < 300 then
-            q.errorCount = 0
-            SaveQueues()
-            SetTimeout(500, function() SendQueue(webhook) end)
-        else
-            q.errorCount = (q.errorCount or 0) + 1
-            SetTimeout(GetRetryDelay(q.errorCount), function() SendQueue(webhook) end)
+            return 'retry', 'rate limit', retryAfter
         end
-    end, 'POST', json.encode(payload), { ['Content-Type'] = 'application/json' })
-end
+        if statusCode >= 200 and statusCode < 300 then return 'ok' end
+        return 'retry', ('HTTP %s'):format(tostring(statusCode))
+    end,
+})
 
 local function EnqueueDiscord(log)
     local cfg = Config.Logs
@@ -238,16 +353,293 @@ local function EnqueueDiscord(log)
     local webhook = cfg.Webhooks[log.category] or cfg.Webhooks.Fallback
     if not webhook or webhook == '' then return end
 
-    if not logQueues[webhook] then
-        logQueues[webhook] = { logs = {}, isSending = false, errorCount = 0 }
+    discordQueue.push(webhook, log)
+end
+
+-- ─── Fivemanage ──────────────────────────────────────────────────────────────
+
+local function FivemanageCfg()
+    return (Config.Logs and Config.Logs.Fivemanage) or {}
+end
+
+local function FivemanageReady()
+    local fm = FivemanageCfg()
+    return fm.Enabled == true and type(fm.Token) == 'string' and fm.Token ~= ''
+end
+
+-- Mirror mode is opt-in on top of an already-working ingestion: reading history
+-- from Fivemanage only makes sense if we are actually sending logs there.
+local function FivemanageMirror()
+    return FivemanageReady() and FivemanageCfg().Mirror == true
+end
+
+local function FivemanageHeaders()
+    local fm = FivemanageCfg()
+    local headers = {
+        ['Content-Type']  = 'application/json',
+        ['Authorization'] = fm.Token,
+    }
+    if type(fm.Dataset) == 'string' and fm.Dataset ~= '' then
+        headers['X-Fivemanage-Dataset'] = fm.Dataset
+    end
+    return headers
+end
+
+-- The category is not a first-class field in the Fivemanage API, so it travels
+-- as a metadata value behind a sentinel prefix. Filtering then uses `q`, which
+-- is a plain substring match — a bare category name like "bans" would also hit
+-- any log whose message merely mentions it, hence the prefix.
+local function BuildFivemanagePayload(log)
+    local metadata = {}
+    for k, v in pairs(log.data or {}) do
+        if v ~= nil then metadata[k] = v end
+    end
+    metadata.qadmin_cat = FM_CAT_PREFIX .. (log.category or 'system')
+    metadata.admin      = log.admin or 'System'
+    if log.admin_citizenid then metadata.admin_citizenid = log.admin_citizenid end
+
+    return {
+        level    = log.level or 'info',
+        message  = log.message or '',
+        resource = log.resource or GetCurrentResourceName(),
+        metadata = metadata,
+    }
+end
+
+local fivemanageQueue = CreateDeliveryQueue({
+    file     = FM_QUEUE_FILE,
+    maxQueue = FM_MAX_QUEUE,
+    ready    = FivemanageReady,
+
+    build = function(logs)
+        local batch = {}
+        for i = 1, math.min(FM_MAX_BATCH, #logs) do
+            batch[i] = BuildFivemanagePayload(logs[i])
+        end
+        return batch, #batch
+    end,
+
+    target = function()
+        return FM_ENDPOINT, FivemanageHeaders()
+    end,
+
+    classify = function(statusCode, body)
+        if statusCode >= 200 and statusCode < 300 then return 'ok' end
+        if statusCode == 401 or statusCode == 403 then
+            return 'permanent', ('HTTP %d — token invalido ou de tipo errado (use um token de Logs, nao de Media)'):format(statusCode)
+        end
+        if statusCode == 400 then
+            return 'permanent', ('HTTP 400 — %s'):format(tostring(body):sub(1, 200))
+        end
+        -- Dataset inexistente chega aqui como 500, então o corpo da resposta
+        -- vai junto: só "HTTP 500" manda o admin procurar no escuro.
+        return 'retry', ('HTTP %s — %s'):format(tostring(statusCode), tostring(body):sub(1, 200))
+    end,
+
+    onSuccess = function()
+        fmLastError = nil
+    end,
+
+    onPermanent = function(detail, dropped)
+        fmLastError = detail
+        print(('[mri_Qadmin] ERRO Fivemanage: %s — %d log(s) descartado(s). Corrija o token/dataset nas configuracoes de logs.'):format(detail, dropped))
+    end,
+
+    onRetry = function(detail, errorCount, pending)
+        fmLastError = detail
+        if errorCount == 1 or errorCount % 10 == 0 then
+            print(('[mri_Qadmin] WARN Fivemanage: %s (tentativa %d, %d na fila)'):format(detail, errorCount, pending))
+        end
+    end,
+
+    onOverflow = function(maxQueue)
+        fmLastError = ('fila cheia (%d) — logs mais antigos descartados'):format(maxQueue)
+    end,
+})
+
+local function EnqueueFivemanage(log)
+    if not FivemanageReady() then return end
+    fivemanageQueue.push('fivemanage', log)
+end
+
+-- ─── Fivemanage: leitura (modo espelho) ──────────────────────────────────────
+
+local function UrlEncode(value)
+    return (tostring(value):gsub('[^%w%-%._~]', function(char)
+        return ('%%%02X'):format(string.byte(char))
+    end))
+end
+
+local function FivemanageGet(params)
+    local parts = {}
+    for key, value in pairs(params) do
+        if value ~= nil and value ~= '' then
+            parts[#parts + 1] = key .. '=' .. UrlEncode(value)
+        end
+    end
+    local url = FM_ENDPOINT .. (#parts > 0 and ('?' .. table.concat(parts, '&')) or '')
+
+    local p = promise.new()
+    PerformHttpRequest(url, function(statusCode, body)
+        p:resolve({ status = statusCode, body = body })
+    end, 'GET', '', FivemanageHeaders())
+
+    local res = Citizen.Await(p)
+    if res.status ~= 200 then
+        return nil, ('HTTP %s — %s'):format(tostring(res.status), tostring(res.body):sub(1, 200))
     end
 
-    table.insert(logQueues[webhook].logs, log)
-    SaveQueues()
-
-    if not logQueues[webhook].isSending then
-        SendQueue(webhook)
+    local ok, decoded = pcall(json.decode, res.body)
+    if not ok or type(decoded) ~= 'table' then
+        return nil, 'resposta invalida da Fivemanage'
     end
+    return decoded
+end
+
+-- Metadata volta sempre como string: um valor aninhado foi serializado na
+-- ingestão e precisa ser desfeito para o painel montar o bloco Data como antes.
+local function DecodeMaybeJson(value)
+    if type(value) ~= 'string' then return value end
+    local first = value:sub(1, 1)
+    if first ~= '{' and first ~= '[' then return value end
+    local ok, decoded = pcall(json.decode, value)
+    if ok and decoded ~= nil then return decoded end
+    return value
+end
+
+-- "2026-07-28T18:09:07.311+02:00" → epoch. O painel já entende epoch (é o que o
+-- feed em tempo real manda), então converter aqui evita mexer no formato de lá.
+local function ParseRfc3339(ts)
+    if type(ts) ~= 'string' then return os.time() end
+    local y, mo, d, h, mi, s = ts:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)')
+    if not y then return os.time() end
+
+    local stamp = os.time({
+        year = tonumber(y), month = tonumber(mo), day  = tonumber(d),
+        hour = tonumber(h), min   = tonumber(mi), sec  = tonumber(s),
+        isdst = false,
+    })
+    -- os.time() lê a tabela como hora LOCAL do servidor; desfazemos isso para
+    -- chegar em UTC e só então aplicamos o offset que veio no timestamp.
+    local now = os.time()
+    local localOffset = os.difftime(now, os.time(os.date('!*t', now)))
+    local epoch = stamp + localOffset
+
+    local sign, oh, om = ts:match('([%+%-])(%d%d):(%d%d)$')
+    if sign then
+        local offset = (tonumber(oh) * 3600) + (tonumber(om) * 60)
+        epoch = epoch - (sign == '-' and -offset or offset)
+    end
+    return epoch
+end
+
+local function FivemanageToLog(entry)
+    local metadata = entry.metadata or {}
+    local data, category, admin, adminCid = {}, 'system', 'System', nil
+
+    for key, value in pairs(metadata) do
+        if key == 'qadmin_cat' then
+            local id = tostring(value):sub(#FM_CAT_PREFIX + 1)
+            if id ~= '' then category = id end
+        elseif key == 'admin' then
+            admin = tostring(value)
+        elseif key == 'admin_citizenid' then
+            adminCid = tostring(value)
+        else
+            data[key] = DecodeMaybeJson(value)
+        end
+    end
+
+    return {
+        id              = entry.traceId,
+        resource        = entry.resource or 'unknown',
+        category        = category,
+        level           = entry.level or 'info',
+        message         = entry.body or '',
+        data            = data,
+        admin           = admin,
+        admin_citizenid = adminCid,
+        created_at      = ParseRfc3339(entry.timestamp),
+    }
+end
+
+local function FetchFivemanageLogs(filters, page, limit)
+    filters = filters or {}
+
+    local levels = ''
+    if type(filters.levels) == 'table' and #filters.levels > 0 then
+        levels = table.concat(filters.levels, ',')
+    end
+
+    local search = tostring(filters.search or ''):sub(1, 128)
+    -- O filtro de resource aqui é EXATO: a API não faz busca parcial, diferente
+    -- do LIKE do modo banco.
+    local resource = tostring(filters.resource or ''):sub(1, 64)
+
+    local category
+    if type(filters.categories) == 'table' and filters.categories[1] then
+        category = tostring(filters.categories[1])
+    end
+
+    local offset = (page - 1) * limit
+
+    -- Caso simples: `q` está livre para um dos dois filtros, então a API resolve
+    -- tudo e a paginação/total saem exatos.
+    if not category or search == '' then
+        local query = {
+            level    = levels,
+            resource = resource,
+            q        = category and (FM_CAT_PREFIX .. category) or search,
+            limit    = limit,
+            offset   = offset,
+            order    = 'desc',
+        }
+        local res, err = FivemanageGet(query)
+        if not res then return nil, err end
+
+        local logs = {}
+        for _, entry in ipairs(res.data or {}) do
+            logs[#logs + 1] = FivemanageToLog(entry)
+        end
+        return { logs = logs, total = (res.pagination and res.pagination.total) or #logs }
+    end
+
+    -- Categoria E busca ao mesmo tempo: `q` é um só, e um substring que casasse
+    -- os dois não existe. A busca vai para a API (é o filtro mais restritivo na
+    -- prática) e a categoria é aplicada aqui, varrendo páginas até acabar ou
+    -- bater o teto — que é reportado, nunca silencioso.
+    local collected = {}
+    local apiOffset, pagesScanned, hasMore = 0, 0, true
+
+    while hasMore and pagesScanned < FM_SCAN_PAGES do
+        local res, err = FivemanageGet({
+            level    = levels,
+            resource = resource,
+            q        = search,
+            limit    = FM_MAX_PAGE,
+            offset   = apiOffset,
+            order    = 'desc',
+        })
+        if not res then return nil, err end
+
+        for _, entry in ipairs(res.data or {}) do
+            local log = FivemanageToLog(entry)
+            if log.category == category then
+                collected[#collected + 1] = log
+            end
+        end
+
+        hasMore      = (res.pagination and res.pagination.hasMore) == true
+        apiOffset    = apiOffset + FM_MAX_PAGE
+        pagesScanned = pagesScanned + 1
+    end
+
+    local logs = {}
+    for i = offset + 1, math.min(offset + limit, #collected) do
+        logs[#logs + 1] = collected[i]
+    end
+
+    return { logs = logs, total = #collected, approx = hasMore }
 end
 
 -- ─── Broadcast to admins only ────────────────────────────────────────────────
@@ -322,14 +714,17 @@ function AddLog(src, resource, category, level, message, data)
     local catDb      = catCfg == nil or catCfg.db ~= false
     local catDiscord = catCfg ~= nil and catCfg.discord == true
     local catRelay   = catCfg ~= nil and catCfg.relay == true
+    local catFm      = catCfg == nil or catCfg.fm ~= false
 
     local resDb      = resCfg == nil or resCfg.db ~= false
     local resDiscord = resCfg == nil or resCfg.discord ~= false
     local resRelay   = resCfg == nil or resCfg.relay ~= false
+    local resFm      = resCfg == nil or resCfg.fm ~= false
 
     local saveDb      = (cfg and cfg.DBEnabled ~= false) and catDb and resDb
     local sendDiscord = catDiscord and resDiscord
     local doRelay     = catRelay and resRelay
+    local sendFm      = catFm and resFm
 
     -- DB (non-blocking) → push to panel after insert confirms ID
     if saveDb then
@@ -348,6 +743,11 @@ function AddLog(src, resource, category, level, message, data)
     -- Discord queue (only if both category and resource entry allow it)
     if sendDiscord then
         EnqueueDiscord(log)
+    end
+
+    -- Fivemanage queue (only if both category and resource entry allow it)
+    if sendFm then
+        EnqueueFivemanage(log)
     end
 
     -- Forward relay event (only if both category and resource entry allow it)
@@ -447,6 +847,27 @@ lib.callback.register('mri_Qadmin:callback:GetLogs', function(src, filters)
     local limit  = math.floor(tonumber(filters and filters.limit) or 100)
     if page < 1 then page = 1 end
     if limit < 1 then limit = 1 elseif limit > 500 then limit = 500 end
+
+    -- Modo espelho: o histórico vem da Fivemanage, não do banco.
+    if FivemanageMirror() then
+        -- O teto da API de query é 100 por página.
+        local fmLimit = math.min(limit, FM_MAX_PAGE)
+        local ok, result, err = pcall(FetchFivemanageLogs, filters, page, fmLimit)
+        if not ok then
+            return { logs = {}, total = 0, source = 'fivemanage', error = tostring(result):sub(1, 200) }
+        end
+        if not result then
+            -- Devolver lista vazia aqui faria a falha passar por "sem logs".
+            return { logs = {}, total = 0, source = 'fivemanage', error = err }
+        end
+        return {
+            logs   = result.logs,
+            total  = result.total,
+            approx = result.approx == true,
+            source = 'fivemanage',
+        }
+    end
+
     local offset = (page - 1) * limit
 
     local conds, params = {}, {}
@@ -507,21 +928,17 @@ lib.callback.register('mri_Qadmin:callback:GetLogs', function(src, filters)
     return { logs = logs or {}, total = total or 0 }
 end)
 
--- ─── Startup: restore undelivered queue ──────────────────────────────────────
+-- ─── Startup: restore undelivered queues ─────────────────────────────────────
 
 CreateThread(function()
-    local loaded = LoadQueues()
-    for webhook, logs in pairs(loaded) do
-        if #logs > 0 then
-            logQueues[webhook] = { logs = logs, isSending = false, errorCount = 0 }
-            SendQueue(webhook)
-        end
-    end
+    discordQueue.restore()
+    fivemanageQueue.restore()
 end)
 
 AddEventHandler('onResourceStop', function(resource)
     if resource == GetCurrentResourceName() then
-        SaveQueues()
+        discordQueue.save()
+        fivemanageQueue.save()
         SaveLogSettings()
     end
 end)
@@ -540,6 +957,7 @@ lib.callback.register('mri_Qadmin:callback:GetLogSettings', function(source)
             db       = cat.db ~= false,
             discord  = cat.discord == true,
             relay    = cat.relay == true,
+            fm       = cat.fm ~= false,
             disabled = cat.disabled == true,
         }
     end
@@ -551,9 +969,11 @@ lib.callback.register('mri_Qadmin:callback:GetLogSettings', function(source)
             db      = re.db ~= false,
             discord = re.discord ~= false,
             relay   = re.relay ~= false,
+            fm      = re.fm ~= false,
         }
     end
     if #entries == 0 then entries = json.array end
+    local fm = FivemanageCfg()
     return {
         categories      = result,
         fallbackWebhook = Config.Logs.Webhooks.Fallback or '',
@@ -562,6 +982,15 @@ lib.callback.register('mri_Qadmin:callback:GetLogSettings', function(source)
         forwardEvent    = Config.Logs.ForwardEvent or '',
         resourceEntries = entries,
         resourceMode    = Config.Logs.ResourceMode or 'blacklist',
+        fivemanage      = {
+            token   = fm.Token or '',
+            enabled = fm.Enabled == true,
+            mirror  = fm.Mirror == true,
+            dataset = fm.Dataset or '',
+            -- Última falha de entrega, para o painel não ficar mudo quando os
+            -- logs param de chegar na Fivemanage.
+            lastError = fmLastError or '',
+        },
     }
 end)
 
@@ -578,6 +1007,7 @@ lib.callback.register('mri_Qadmin:callback:SaveLogSettings', function(source, da
                 db       = cat.db ~= false,
                 discord  = cat.discord == true,
                 relay    = cat.relay == true,
+                fm       = cat.fm ~= false,
                 disabled = cat.disabled == true,
             }
             Config.Logs.Webhooks[cat.id] = (cat.webhook and cat.webhook ~= '') and cat.webhook or nil
@@ -600,12 +1030,22 @@ lib.callback.register('mri_Qadmin:callback:SaveLogSettings', function(source, da
                 db      = re.db ~= false,
                 discord = re.discord ~= false,
                 relay   = re.relay ~= false,
+                fm      = re.fm ~= false,
             }
         end
     end
     Config.Logs.ResourceEntries = newEntries
     if data.resourceMode == 'whitelist' or data.resourceMode == 'blacklist' then
         Config.Logs.ResourceMode = data.resourceMode
+    end
+
+    if data.fivemanage then
+        Config.Logs.Fivemanage = Config.Logs.Fivemanage or {}
+        local fm = data.fivemanage
+        if type(fm.token)   == 'string'  then Config.Logs.Fivemanage.Token   = fm.token   end
+        if type(fm.dataset) == 'string'  then Config.Logs.Fivemanage.Dataset = fm.dataset end
+        Config.Logs.Fivemanage.Enabled = fm.enabled == true
+        Config.Logs.Fivemanage.Mirror  = fm.mirror  == true
     end
 
     SaveLogSettings()

@@ -82,6 +82,7 @@
         "started_resource": "Resource started",
         "stopped_resource": "Resource stopped",
         "state_changed": "You changed the vehicle state.",
+        "stock_unavailable": "Stock unavailable: the vehicles_data table does not exist in this database.",
         "take_money": "Removed %s from %s",
         "take_money_crypto": "Removed %s Crypto from %s",
         "target_same_bucket": "Tried to put %s in the same bucket",
@@ -195,7 +196,6 @@
         },
         "actions": {
             "revive": "Revive",
-            "set_vip": "Set VIP",
             "kill": "Kill",
             "spectate": "Spectate",
             "warn": "Warn",
@@ -282,7 +282,6 @@
         "online": "Online",
         "offline": "Offline",
         "banned": "Banned",
-        "vip": "VIP",
         "placeholder": "Search by Name, ID or License..."
     },
     "actions": {
@@ -454,6 +453,9 @@
         "accent_color_locked": "Only admins can change this",
         "accent_color_draft": "Preview (not applied)",
         "accent_color_server_hint": "Server: %s",
+        "accent_color_override_hint": "Overridden by the Interface (UI) panel: %s. Applying here removes the override.",
+        "accent_color_managed_hint": "Edited in the Interface (UI) panel. The color applies to the whole MRI suite.",
+        "accent_color_managed_locked": "Change it in the Interface (UI) panel",
         "accent_color_cancel": "Cancel",
         "accent_color_apply": "Apply to server",
         "accent_color_confirm": "Apply color %s to every online player of the MRI suite?",
@@ -799,7 +801,9 @@
             "priority": "Priority",
             "enabled": "Active",
             "db_short": "DB",
-            "relay_short": "Relay"
+            "relay_short": "Relay",
+            "fm_short": "FM",
+            "fm": "Fivemanage"
         },
         "category": {
             "id_placeholder": "id",
@@ -834,7 +838,17 @@
                 "max_memory_desc": "Most recent logs kept in memory (without DB).",
                 "db_global_warning": "When enabled, ALL categories are forced to save to the database, overriding individual toggles.",
                 "memory_hint": "Higher values give more live-view history but use more RAM.",
-                "memory_unit": "logs in memory"
+                "memory_unit": "logs in memory",
+                "fivemanage": "Fivemanage",
+                "fivemanage_desc": "Sends logs to Fivemanage, alongside the other destinations.",
+                "fivemanage_token_placeholder": "Fivemanage Logs token",
+                "fivemanage_token_hint": "Must be a Logs token. A Media/Files token is rejected by every log endpoint.",
+                "fivemanage_dataset_placeholder": "Dataset (optional)",
+                "fivemanage_dataset_hint": "The dataset must already exist in the Fivemanage dashboard — an unknown name fails the whole batch. Leave empty for the default.",
+                "fivemanage_mirror": "Read history from Fivemanage",
+                "fivemanage_mirror_desc": "The panel queries Fivemanage instead of the database. The live feed still comes from memory.",
+                "fivemanage_mirror_warning": "With mirroring on, history depends on your Fivemanage plan retention and the filter takes one category at a time. Only categories with the FM destination enabled show up.",
+                "fivemanage_last_error": "Last delivery failure"
             },
             "nav": {
                 "categories": "Categories",
@@ -904,6 +918,10 @@
                 },
                 "webhook_desc": "Webhook URL for the \"%s\" category. Leave empty to use the Fallback webhook."
             }
+        },
+        "mirror": {
+            "fetch_error": "Failed to query Fivemanage",
+            "approx_total": "Scan cap reached: there are at least %s record(s). Narrow the search for an exact total."
         }
     },
     "livemap": {
@@ -1204,7 +1222,6 @@
             "permissions": "Perms",
             "resources": "Resources",
             "logs": "Logs",
-            "vip": "VIP",
             "settings": "Settings",
             "devmode": "Dev Mode",
             "commands": "Commands",
@@ -1598,76 +1615,6 @@
                 "toggle_mock_mode": "Enable mock data for testing"
             },
             "commands": "Access the server commands list"
-        }
-    },
-    "vip": {
-        "title": "VIP",
-        "none_found": "No VIP players found.",
-        "add_first": "Add First VIP",
-        "permanent": "Permanent",
-        "expired": "Expired",
-        "expires_in_days": "Expires in %s days",
-        "expires_in_hours": "Expires in %s hours",
-        "online": "Online",
-        "add_title": "Add VIP Player",
-        "add_confirm": "Add VIP",
-        "edit_title": "Edit VIP",
-        "edit_vip": "Edit VIP",
-        "remove_vip": "Remove VIP",
-        "editing_player": "Editing",
-        "set_vip_title": "Set VIP",
-        "expiration": "Expiration",
-        "salary": "Salary",
-        "salary_type": "Currency",
-        "inventory_limit": "Inventory Limit",
-        "tab": {
-            "ranks": "Ranks",
-            "players": "Players"
-        },
-        "rank": {
-            "label_select": "VIP Rank",
-            "no_rank": "No Rank",
-            "none_found": "No VIP ranks found.",
-            "create_first": "Create First Rank",
-            "create_title": "Create VIP Rank",
-            "edit_title": "Edit VIP Rank",
-            "create_confirm": "Create Rank",
-            "id": "ID (Key)",
-            "label": "Name",
-            "color": "Color",
-            "preview": "Preview",
-            "delete_title": "Delete VIP Rank",
-            "delete_confirm": "Are you sure you want to delete the rank \"%s\"?",
-            "delete_players_assigned": "%s player(s) with this rank will be affected.",
-            "delete_no_players": "No players have this rank assigned.",
-            "delete_btn": "Delete Rank"
-        },
-        "method": {
-            "label": "Add Method",
-            "citizenid": "Citizen ID",
-            "source": "Source ID"
-        },
-        "labels": {
-            "name": "Name",
-            "citizenid": "Citizen ID",
-            "expiration": "Expiration",
-            "salary": "Salary",
-            "inventory_limit": "Inv. Limit",
-            "vehicles": "Vehicles",
-            "rank": "Rank"
-        },
-        "vehicle": {
-            "title": "VIP Vehicles",
-            "add": "Add Vehicle",
-            "add_title": "Add VIP Vehicle",
-            "add_confirm": "Add Vehicle",
-            "none": "No vehicles registered.",
-            "count": "%s vehicles",
-            "model": "Vehicle Model",
-            "plate": "Plate",
-            "plate_hint": "Leave empty for auto-generated plate",
-            "expiration": "Expiration Date",
-            "expiration_hint": "Leave empty for no expiration"
         }
     }
 }

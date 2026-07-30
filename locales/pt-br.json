@@ -82,6 +82,7 @@
         "started_resource": "Resource iniciado",
         "stopped_resource": "Resource parado",
         "state_changed": "Você alterou o estado do veículo.",
+        "stock_unavailable": "Estoque indisponível: a tabela vehicles_data não existe neste banco.",
         "take_money": "Removeu %s de %s",
         "take_money_crypto": "Removeu %s Cripto de %s",
         "target_same_bucket": "Tentou colocar %s no mesmo bucket",
@@ -195,7 +196,6 @@
         },
         "actions": {
             "revive": "Reviver",
-            "set_vip": "Definir VIP",
             "kill": "Matar",
             "spectate": "Espectar",
             "warn": "Advertência",
@@ -282,7 +282,6 @@
         "online": "Online",
         "offline": "Offline",
         "banned": "Banidos",
-        "vip": "VIP",
         "placeholder": "Pesquisar por Nome, ID ou Licença..."
     },
     "actions": {
@@ -455,6 +454,9 @@
         "accent_color_locked": "Apenas administradores podem alterar",
         "accent_color_draft": "Pré-visualização (não aplicada)",
         "accent_color_server_hint": "Servidor: %s",
+        "accent_color_override_hint": "Sobreposto pelo painel Interface (UI): %s. Aplicar aqui remove a sobreposição.",
+        "accent_color_managed_hint": "Editado no painel Interface (UI). A cor vale para toda a suíte MRI.",
+        "accent_color_managed_locked": "Alterar no painel Interface (UI)",
         "accent_color_cancel": "Cancelar",
         "accent_color_apply": "Aplicar para o servidor",
         "accent_color_confirm": "Aplicar a cor %s para todos os jogadores online da suite MRI?",
@@ -832,7 +834,9 @@
             "priority": "Prioridade",
             "enabled": "Ativo",
             "db_short": "DB",
-            "relay_short": "Relay"
+            "relay_short": "Relay",
+            "fm_short": "FM",
+            "fm": "Fivemanage"
         },
         "category": {
             "id_placeholder": "id",
@@ -867,7 +871,17 @@
                 "max_memory_desc": "Logs mais recentes mantidos em memória (sem DB).",
                 "db_global_warning": "Quando ativo, TODAS as categorias são forçadas a salvar no banco, sobrescrevendo os toggles individuais.",
                 "memory_hint": "Valores maiores exibem mais histórico no feed ao vivo, mas consomem mais RAM.",
-                "memory_unit": "logs em memória"
+                "memory_unit": "logs em memória",
+                "fivemanage": "Fivemanage",
+                "fivemanage_desc": "Envia os logs para a Fivemanage, em paralelo aos outros destinos.",
+                "fivemanage_token_placeholder": "Token de Logs da Fivemanage",
+                "fivemanage_token_hint": "Precisa ser um token de Logs. Token de Media/Files é recusado em todos os endpoints de log.",
+                "fivemanage_dataset_placeholder": "Dataset (opcional)",
+                "fivemanage_dataset_hint": "O dataset precisa já existir no painel da Fivemanage — um nome inexistente derruba o lote inteiro. Deixe vazio para usar o padrão.",
+                "fivemanage_mirror": "Ler histórico da Fivemanage",
+                "fivemanage_mirror_desc": "O painel consulta a Fivemanage em vez do banco. O feed em tempo real continua vindo da memória.",
+                "fivemanage_mirror_warning": "Com o espelho ligado, o histórico passa a depender da retenção do seu plano na Fivemanage e o filtro aceita uma categoria por vez. Só aparece o que tem o destino FM ligado.",
+                "fivemanage_last_error": "Última falha de entrega"
             },
             "nav": {
                 "categories": "Categorias",
@@ -937,6 +951,10 @@
                 },
                 "webhook_desc": "URL do webhook para a categoria \"%s\". Deixe vazio para usar o webhook Fallback."
             }
+        },
+        "mirror": {
+            "fetch_error": "Falha ao consultar a Fivemanage",
+            "approx_total": "Teto de varredura atingido: há pelo menos %s registro(s). Refine a busca para um total exato."
         }
     },
     "livemap": {
@@ -1237,7 +1255,6 @@
             "permissions": "Perms",
             "resources": "Resources",
             "logs": "Logs",
-            "vip": "VIP",
             "settings": "Configurações",
             "devmode": "Dev Mode",
             "commands": "Comandos",
@@ -1631,76 +1648,6 @@
                 "toggle_mock_mode": "Habilitar dados fictícios para testes"
             },
             "commands": "Acessar a lista de comandos do servidor"
-        }
-    },
-    "vip": {
-        "title": "VIP",
-        "none_found": "Nenhum jogador VIP encontrado.",
-        "add_first": "Adicionar Primeiro VIP",
-        "permanent": "Permanente",
-        "expired": "Expirado",
-        "expires_in_days": "Expira em %s dias",
-        "expires_in_hours": "Expira em %s horas",
-        "online": "Online",
-        "add_title": "Adicionar Jogador VIP",
-        "add_confirm": "Adicionar VIP",
-        "edit_title": "Editar VIP",
-        "edit_vip": "Editar VIP",
-        "remove_vip": "Remover VIP",
-        "editing_player": "Editando",
-        "set_vip_title": "Definir VIP",
-        "expiration": "Expiração",
-        "salary": "Salário",
-        "salary_type": "Moeda",
-        "inventory_limit": "Limite de Inventário",
-        "tab": {
-            "ranks": "Cargos",
-            "players": "Jogadores"
-        },
-        "rank": {
-            "label_select": "Cargo VIP",
-            "no_rank": "Sem Cargo",
-            "none_found": "Nenhum cargo VIP encontrado.",
-            "create_first": "Criar Primeiro Cargo",
-            "create_title": "Criar Cargo VIP",
-            "edit_title": "Editar Cargo VIP",
-            "create_confirm": "Criar Cargo",
-            "id": "ID (Chave)",
-            "label": "Nome",
-            "color": "Cor",
-            "preview": "Pré-visualização",
-            "delete_title": "Excluir Cargo VIP",
-            "delete_confirm": "Tem certeza que deseja excluir o cargo \"%s\"?",
-            "delete_players_assigned": "%s jogador(es) com este cargo serão afetados.",
-            "delete_no_players": "Nenhum jogador possui este cargo atribuído.",
-            "delete_btn": "Excluir Cargo"
-        },
-        "method": {
-            "label": "Método de Adição",
-            "citizenid": "Citizen ID",
-            "source": "Source ID"
-        },
-        "labels": {
-            "name": "Nome",
-            "citizenid": "Citizen ID",
-            "expiration": "Expiração",
-            "salary": "Salário",
-            "inventory_limit": "Limite Inv.",
-            "vehicles": "Veículos",
-            "rank": "Cargo"
-        },
-        "vehicle": {
-            "title": "Veículos VIP",
-            "add": "Adicionar Veículo",
-            "add_title": "Adicionar Veículo VIP",
-            "add_confirm": "Adicionar",
-            "none": "Nenhum veículo cadastrado.",
-            "count": "%s veículos",
-            "model": "Modelo do Veículo",
-            "plate": "Placa",
-            "plate_hint": "Deixe vazio para gerar automaticamente",
-            "expiration": "Data de Expiração",
-            "expiration_hint": "Deixe vazio para sem expiração"
         }
     },
     "plugins": {

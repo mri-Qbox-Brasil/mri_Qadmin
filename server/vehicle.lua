@@ -1,22 +1,87 @@
-local function GetVehiclesList()
+-- A tabela `vehicles_data` é do vehicleshop, não do Qadmin: o database.sql daqui não
+-- a cria. Se o dono removeu o script (ou nunca instalou) e deixou Config.Dealership
+-- = "mri", a query estoura e derruba a LISTA INTEIRA de veículos — a página fica
+-- vazia por causa de uma coluna opcional. Por isso o estoque é sempre best-effort:
+-- checa a tabela antes, e qualquer falha só desliga o estoque, nunca a lista.
+local STOCK_TABLE = 'vehicles_data'
+local STOCK_RECHECK_SECONDS = 300
+
+local stockTable = { checkedAt = nil, exists = false, warned = false }
+
+--- A tabela de estoque existe e é utilizável agora?
+--- Positivo é cacheado pra sempre (tabela não some sozinha em produção); negativo é
+--- re-verificado a cada STOCK_RECHECK_SECONDS, porque instalar o vehicleshop depois
+--- não deveria exigir restart do Qadmin.
+--- @return boolean
+local function HasStockTable()
+    if Config.Dealership ~= 'mri' then return false end
+
+    local now = os.time()
+    if stockTable.checkedAt and (stockTable.exists or (now - stockTable.checkedAt) < STOCK_RECHECK_SECONDS) then
+        return stockTable.exists
+    end
+    stockTable.checkedAt = now
+
+    local ok, result = pcall(MySQL.scalar.await, [[
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1
+    ]], { STOCK_TABLE })
+
+    stockTable.exists = ok and result ~= nil
+
+    if stockTable.exists then
+        stockTable.warned = false
+    elseif not stockTable.warned then
+        -- Uma vez por transição, não a cada abertura do painel.
+        stockTable.warned = true
+        print(('^3[mri_Qadmin] Config.Dealership = "mri" mas a tabela `%s` não existe neste banco. ' ..
+            'A lista de veículos continua funcionando sem estoque. ' ..
+            'Instale o vehicleshop ou troque Config.Dealership para "none".^7'):format(STOCK_TABLE))
+        if not ok then
+            Debug('error', ('[vehicles] falha ao verificar a tabela %s: %s'):format(STOCK_TABLE, tostring(result)))
+        end
+    end
+
+    return stockTable.exists
+end
+
+--- @return table<string, number>|nil estoque por model, ou nil quando indisponível
+local function GetStockByModel()
+    if not HasStockTable() then return nil end
+
+    local ok, rows = pcall(MySQL.query.await, ('SELECT model, stock FROM %s'):format(STOCK_TABLE))
+    if not ok then
+        -- A tabela existia na checagem mas a query falhou (coluna renomeada, permissão
+        -- negada, banco caiu). Invalida o cache pra re-checar na próxima chamada.
+        stockTable.checkedAt = nil
+        Debug('error', ('[vehicles] falha ao ler o estoque de %s: %s'):format(STOCK_TABLE, tostring(rows)))
+        return nil
+    end
+
+    local stocks = {}
+    for _, v in pairs(rows or {}) do
+        if v.model then stocks[v.model] = tonumber(v.stock) or 0 end
+    end
+    return stocks
+end
+
+function GetVehiclesList()
     local vehicles = {}
     local baseVehicles
 
     if GetResourceState('qbx_core') == 'started' then
-        baseVehicles = exports.qbx_core:GetVehiclesByName()
+        local ok, result = pcall(function() return exports.qbx_core:GetVehiclesByName() end)
+        baseVehicles = ok and result or nil
     else
         baseVehicles = QBCore.Shared.Vehicles
     end
 
-    local dbStocks = {}
-    if Config.Dealership == 'mri' then
-        local dbResult = MySQL.query.await('SELECT model, stock FROM vehicles_data')
-        if dbResult then
-            for _, v in pairs(dbResult) do
-                dbStocks[v.model] = v.stock
-            end
-        end
+    if type(baseVehicles) ~= 'table' then
+        Debug('error', '[vehicles] nenhuma fonte de veículos disponível (qbx_core/QBCore.Shared.Vehicles)')
+        return vehicles
     end
+
+    local dbStocks = GetStockByModel()
 
     for model, data in pairs(baseVehicles) do
         local m = data.model or model
@@ -29,7 +94,7 @@ local function GetVehiclesList()
             price = data.price
         }
 
-        if Config.Dealership == 'mri' then
+        if dbStocks then
             vehicle.stock = dbStocks[m] or 0
         end
 
@@ -39,7 +104,6 @@ local function GetVehiclesList()
     table.sort(vehicles, function(a, b) return (a.name or "") < (b.name or "") end)
     return vehicles
 end
-_G.GetVehiclesList = GetVehiclesList
 
 lib.callback.register('mri_Qadmin:callback:GetVehicles', function(source)
     if not CheckPerms(source, 'qadmin.page.vehicles') then return {} end
@@ -94,6 +158,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
                 plate,
                 0
             })
+        MarkDashboardDirty('vehicle_added')
         TriggerClientEvent('QBCore:Notify', src, locale("veh_owner"), 'success', 5000)
         AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Admin Car: veículo %s salvo com placa %s'):format(trustedEntry.model or trustedEntry._sharedKey, plate), { model = trustedEntry.model, plate = plate })
     else
@@ -162,6 +227,7 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
             garage,
             1
         })
+    MarkDashboardDirty('vehicle_added')
 
     local targetName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
     QBCore.Functions.Notify(src,
@@ -353,6 +419,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedD
 
     -- Apagar dados relacionados
     MySQL.query.await('DELETE FROM player_vehicles WHERE plate = ?', { plate })
+    MarkDashboardDirty('vehicle_deleted')
 
     QBCore.Functions.Notify(src, locale("veh_deleted", plate), "success", 5000)
     AddLog(src, 'mri_Qadmin', 'vehicles', 'warn', ('Deletar veículo: placa %s removida do banco'):format(plate), { plate = plate })
@@ -367,29 +434,49 @@ lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, acti
         return false
     end
 
+    -- Mesma armadilha do GetVehiclesList: sem a tabela, o INSERT abaixo estouraria
+    -- dentro do callback e o painel só veria um timeout, sem explicação nenhuma.
+    if not HasStockTable() then
+        QBCore.Functions.Notify(src, locale("notifications.stock_unavailable"), "error")
+        return false
+    end
+
     local modelField = selectedData and selectedData["model"]
     local stockField = selectedData and selectedData["stock"]
     if not modelField or not stockField then return false end
     local model = modelField.value
     local stock = tonumber(stockField.value)
+    if type(model) ~= 'string' or model == '' or not stock then return false end
 
     local vehInfo = QBCore.Shared.Vehicles[model]
+    local ok, err
     if vehInfo then
-        MySQL.query.await('INSERT INTO vehicles_data (model, stock, name, brand, category, price, hash) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE stock = VALUES(stock)',
+        ok, err = pcall(MySQL.query.await, 'INSERT INTO vehicles_data (model, stock, name, brand, category, price, hash) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE stock = VALUES(stock)',
         {
             model, stock, vehInfo.name or model, vehInfo.brand or "", vehInfo.category or "", vehInfo.price or 0, vehInfo.hash or 0
         })
-        QBCore.Functions.Notify(src, "Stock updated for " .. model, "success")
-        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estoque do veículo %s alterado para %d'):format(model, stock), { model = model, stock = stock })
-        return true
+        if ok then
+            QBCore.Functions.Notify(src, "Stock updated for " .. model, "success")
+            AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estoque do veículo %s alterado para %d'):format(model, stock), { model = model, stock = stock })
+            return true
+        end
     else
         -- Fallback if not in shared vehicles, just try to update existing record
-        local affected = MySQL.update.await('UPDATE vehicles_data SET stock = ? WHERE model = ?', { stock, model })
-        if affected and affected >= 0 then
+        local affected
+        ok, affected = pcall(MySQL.update.await, 'UPDATE vehicles_data SET stock = ? WHERE model = ?', { stock, model })
+        err = not ok and affected or nil
+        if ok and affected and affected >= 0 then
              QBCore.Functions.Notify(src, "Stock updated for " .. model, "success")
              AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estoque do veículo %s alterado para %d (fallback)'):format(model, stock), { model = model, stock = stock })
              return true
         end
+    end
+
+    if not ok then
+        -- A tabela sumiu/mudou entre a checagem e a escrita: invalida o cache e avisa.
+        stockTable.checkedAt = nil
+        Debug('error', ('[vehicles] falha ao gravar estoque de %s: %s'):format(model, tostring(err)))
+        QBCore.Functions.Notify(src, locale("notifications.stock_unavailable"), "error")
     end
 
     return false

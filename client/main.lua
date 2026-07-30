@@ -12,6 +12,20 @@ local function setupMenu()
     TriggerServerEvent('mri_Qadmin:server:GetInitialData')
 end
 
+-- Lê o config visual do painel do ox_lib (/uiconfig) e encaminha pra NUI.
+-- Accent/background seguem controlados pelo Qadmin — o applyUiConfig do lado NUI
+-- ignora esses campos; aqui só empurramos o config bruto (radius, fonte, cores
+-- de status, dims, etc.). Protegido contra ox_lib ausente/parado.
+local function pushOxLibUiConfig()
+    if GetResourceState('ox_lib') ~= 'started' then return end
+    local ok, cfg = pcall(function()
+        return lib.callback.await('ox_lib:getUiConfig', false)
+    end)
+    if ok and type(cfg) == 'table' then
+        SendNUIMessage({ action = 'updateUiConfig', data = cfg })
+    end
+end
+
 RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
     if initialData then
         -- Update Config with settings from DB
@@ -60,11 +74,13 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 selfId = GetPlayerServerId(PlayerId()),
                 accentColor = GetConvar('mri:color', '#00E699'),
                 backgroundColor = Config.background_color or '',
-                qboxEnabled = initialData and initialData.qboxEnabled or false,
                 resourceVersion = initialData and initialData.resourceVersion or nil,
                 updateInfo = initialData and initialData.updateInfo or nil
             }
         })
+
+        -- Herda o estilo visual configurado no painel do ox_lib (/uiconfig).
+        pushOxLibUiConfig()
     else
         Debug('error', 'Failed to fetch initial data from server!')
     end
@@ -147,6 +163,14 @@ end)
 
 RegisterNetEvent('mri_Qadmin:client:backgroundColorChanged', function(newColor)
     SendNUIMessage({ action = 'updateBackgroundColor', backgroundColor = newColor or '' })
+end)
+
+-- Config visual do ox_lib mudou (admin salvou no painel /uiconfig) — reaplica em
+-- runtime. Accent/background do Qadmin não são afetados (applyUiConfig os ignora).
+RegisterNetEvent('ox_lib:uiConfigChanged', function(cfg)
+    if type(cfg) == 'table' then
+        SendNUIMessage({ action = 'updateUiConfig', data = cfg })
+    end
 end)
 
 RegisterNUICallback("setClipboard", function(data, cb)

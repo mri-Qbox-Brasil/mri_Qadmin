@@ -230,7 +230,6 @@ local CATEGORY_DEFINITIONS = {
     { id = 'devmode',     label = 'Dev Mode',         order = 14 },
     { id = 'groups',      label = 'Grupos',           order = 15 },
     { id = 'permissions', label = 'Permissões',       order = 16 },
-    { id = 'vip',         label = 'VIP',              order = 17 },
     { id = 'other',       label = 'Outros',           order = 18 },
 }
 
@@ -413,7 +412,6 @@ PERM_DEFINITIONS = {
     { id = 'qadmin.page.reports',      category = 'players'     },
     { id = 'qadmin.page.terminal',     category = 'commands'    },
     { id = 'qadmin.page.staff_point',  category = 'other'       },
-    { id = 'qadmin.page.vip',          category = 'vip'         },
     -- ── Dashboard ────────────────────────────────────────────────────────────
     { id = 'qadmin.action.announcements',      category = 'dashboard'   },
     { id = 'qadmin.action.clear_chat',         category = 'dashboard'   },
@@ -524,8 +522,6 @@ PERM_DEFINITIONS = {
     { id = 'qadmin.action.screen_capture',          category = 'livescreens' },
     { id = 'qadmin.action.enable_wall',             category = 'livescreens' },
     { id = 'qadmin.action.manage_wall',             category = 'livescreens' },
-    -- ── VIP ──────────────────────────────────────────────────────────────────
-    { id = 'qadmin.action.manage_vip',              category = 'vip'         },
     -- ── Staff / Other ─────────────────────────────────────────────────────────
     { id = 'qadmin.action.staff_clock_in',          category = 'other'       },
     { id = 'qadmin.action.staff_clock_out',         category = 'other'       },

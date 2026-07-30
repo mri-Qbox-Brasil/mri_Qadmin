@@ -48,7 +48,6 @@ Plugins registram suas próprias permissões via export — veja a seção [Plug
 | `qadmin.page.livemap` | Mapa ao Vivo | livemap | ✅ Ativo |
 | `qadmin.page.livescreens` | Telas ao Vivo | livescreens | ✅ Ativo |
 | `qadmin.page.devmode` | Dev Mode | devmode | ✅ Ativo |
-| `qadmin.page.vip` | VIP | vip | ✅ Ativo |
 | `qadmin.page.logs` | Logs | dashboard | ⏳ Planejado |
 | `qadmin.page.statistics` | Estatísticas | dashboard | ⏳ Planejado |
 | `qadmin.page.reports` | Reports | players | ⏳ Planejado |
@@ -203,11 +202,6 @@ Plugins registram suas próprias permissões via export — veja a seção [Plug
 | `qadmin.action.enable_wall` | Ativar wall de telas ao vivo |
 | `qadmin.action.manage_wall` | Gerenciar layout do wall |
 
-### VIP
-| Permissão | Descrição |
-| :--- | :--- |
-| `qadmin.action.manage_vip` | Gerenciar VIPs do servidor |
-
 ### Outros
 | Permissão | Descrição |
 | :--- | :--- |
@@ -302,7 +296,6 @@ Plugins podem apontar suas perms para uma categoria nativa em vez de criar uma p
 | `devmode` | Dev Mode |
 | `groups` | Grupos |
 | `permissions` | Permissões |
-| `vip` | VIP |
 | `other` | Outros |
 
 ---

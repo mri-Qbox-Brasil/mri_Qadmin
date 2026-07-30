@@ -59,7 +59,7 @@ Painel de administração para servidores QBCore/Qbox: jogadores, veículos, ite
    add_filesystem_permission mri_Qadmin write <nome_do_resource>
    ```
    Veja [Navegador de recursos](#navegador-de-recursos).
-6. **Patch do ox_lib** (opcional) — para que logs de outros recursos feitos com `lib.logger` apareçam no painel, aplique o patch descrito em [OX_LIB_PATCH.md](OX_LIB_PATCH.md).
+6. **Patch do ox_lib** (opcional) — para que logs de outros recursos feitos com `lib.logger` apareçam no painel, veja [ox_lib (logger)](#ox_lib-logger).
 
 ---
 
@@ -168,7 +168,6 @@ Cada aba é gated por sua própria permissão `qadmin.page.*` e cada ação dent
 | Mapa ao Vivo | `qadmin.page.livemap` | Posição de todos os jogadores em tempo real, com filtros |
 | Telas ao Vivo | `qadmin.page.livescreens` | Transmissão da tela dos jogadores via WebRTC |
 | Dev Mode | `qadmin.page.devmode` | Coordenadas na tela, blips de jogadores, scanner de entidades próximas, laser, modo mock |
-| VIP | `qadmin.page.vip` | Gerenciamento de VIPs |
 
 ---
 
@@ -201,7 +200,7 @@ Use para o primeiro acesso e para recuperação — não como cargo do dia a dia
 
 ## Logs
 
-O painel centraliza os logs do servidor. Cada log tem `resource`, `category`, `level`, `message` e um `data` opcional, e pode ir para três destinos ao mesmo tempo: buffer em memória (exibição instantânea), banco (`mri_qadmin_logs`) e webhook do Discord.
+O painel centraliza os logs do servidor. Cada log tem `resource`, `category`, `level`, `message` e um `data` opcional. O buffer em memória (exibição instantânea) recebe todo log, sempre; a partir dele, cada log pode seguir para até quatro destinos independentes: banco (`mri_qadmin_logs`), webhook do Discord, evento de relay e Fivemanage.
 
 ```lua
 Config.Logs = {
@@ -218,10 +217,16 @@ Config.Logs = {
         Fallback    = "",   -- recebe as categorias sem webhook próprio
     },
     ForwardEvent    = "",           -- evento de servidor disparado a cada log ("" desativa)
+    Fivemanage = {
+        Token   = "",               -- token de LOGS da Fivemanage
+        Enabled = false,            -- liga o envio
+        Mirror  = false,            -- painel lê o histórico da Fivemanage em vez do banco
+        Dataset = "",               -- opcional; precisa já existir no painel deles
+    },
     DBEnabled       = true,
     MaxMemory       = 500,          -- quantidade de logs mantidos em memória
     ResourceMode    = 'blacklist',  -- 'blacklist' | 'whitelist'
-    ResourceEntries = {},           -- { name = 'meu_resource', db = true, discord = false, relay = true }
+    ResourceEntries = {},           -- { name = 'meu_resource', db = true, discord = false, relay = true, fm = true }
     Categories      = { … },        -- id + label das categorias exibidas no painel
 }
 ```
@@ -231,15 +236,56 @@ Config.Logs = {
 | `Webhooks.<categoria>` | URL do webhook do Discord da categoria. Vazio desativa o envio daquela categoria |
 | `Webhooks.Fallback` | Recebe as categorias que não têm webhook próprio |
 | `ForwardEvent` | Nome de um evento de servidor disparado a cada log — permite que outro recurso consuma o fluxo |
+| `Fivemanage` | Envio para a Fivemanage e, opcionalmente, leitura do histórico de lá — ver abaixo |
 | `DBEnabled` | Persiste os logs em `mri_qadmin_logs` |
 | `MaxMemory` | Tamanho do buffer em memória (os N logs mais recentes) |
 | `ResourceMode` | `blacklist`: recursos não listados passam. `whitelist`: só os listados são processados |
-| `ResourceEntries` | Override por recurso — permite decidir, por recurso, se vai para o banco, para o Discord e para o `ForwardEvent` |
+| `ResourceEntries` | Override por recurso — permite decidir, por recurso, se vai para o banco, para o Discord, para o `ForwardEvent` e para a Fivemanage |
 | `Categories` | `id` (precisa bater com a categoria usada no `AddLog`) e `label` exibido no painel |
+
+Cada categoria e cada entrada de `ResourceEntries` tem uma flag por destino. Para um destino ser usado, **categoria e recurso precisam permitir** — a lógica é E, não OU:
+
+| Flag | Padrão | Destino |
+|---|---|---|
+| `db` | `true` | Banco (`mri_qadmin_logs`) |
+| `discord` | `false` | Webhook da categoria (ou o `Fallback`) |
+| `relay` | `false` | `ForwardEvent` |
+| `fm` | `true` | Fivemanage (sem efeito se `Fivemanage.Enabled = false`) |
+
+Uma categoria com `disabled = true` não vai para destino nenhum, mas **continua aparecendo no painel em tempo real** — o buffer em memória é anterior a qualquer filtro.
 
 As categorias e destinos também são editáveis em runtime pela aba de configurações de logs; o que for salvo lá tem precedência sobre o `Config` (arquivo `logs_settings.json`).
 
-Para receber logs de recursos que usam `lib.logger` do `ox_lib`, aplique o patch de [OX_LIB_PATCH.md](OX_LIB_PATCH.md). Detalhes do formato em [LOGS.md](LOGS.md).
+**Discord.** Os envios são agrupados: até 10 embeds ou ~5800 caracteres por requisição, na ordem de prioridade das categorias (a posição no array `Categories`). A fila fica em `server/logs_queue.json` e sobrevive a restart; o retry respeita o header `retry-after` do HTTP 429.
+
+**qb-log.** O evento `qb-log:server:CreateLog` é interceptado automaticamente: a categoria é inferida pelo conteúdo da mensagem e o log entra no fluxo normal. Recursos legados não precisam de adaptação.
+
+Para receber logs de recursos que usam `lib.logger` do `ox_lib`, veja [ox_lib (logger)](#ox_lib-logger).
+
+### Fivemanage
+
+Serve para não guardar log em duas bases. São duas coisas, e a segunda depende da primeira:
+
+- **Envio** (`Enabled`): os logs vão também para a Fivemanage, em paralelo aos outros destinos.
+- **Modo espelho** (`Mirror`): o painel passa a ler o **histórico** de lá em vez do banco. O feed em tempo real não muda — ele sempre veio do buffer em memória.
+
+O token precisa ser de **Logs**. Um token de Media/Files é recusado em todos os endpoints de log, tanto no envio quanto na leitura. `Dataset` é opcional e, se preenchido, precisa já existir no dashboard da Fivemanage: um nome desconhecido derruba o lote inteiro.
+
+Ligar o espelho muda três comportamentos do painel — o filtro de recurso vira exato (em vez de busca parcial), o de categoria aceita uma por vez, e a retenção do histórico passa a ser a do seu plano na Fivemanage. Um meio-termo comum é manter `db = true` só nas categorias sensíveis (`bans`, `permissions`) e mandar o resto só para a Fivemanage; a lógica por categoria já permite isso sem código novo.
+
+O envio usa fila própria (`server/logs_fm_queue.json`), em lotes de até 50, e trata as respostas assim:
+
+| Resposta | Ação |
+|---|---|
+| 2xx | Lote sai da fila |
+| 401 / 403 / 400 | **Permanente** — a fila é descartada e o erro aparece no console e no painel |
+| Demais | Retry com backoff exponencial, mantendo a fila |
+
+Descartar em 401/400 é proposital: reenviar não conserta token errado, e uma fila que só cresce é pior que log perdido. A fila também tem teto de 5000 entradas.
+
+Categoria e busca de texto disputam o mesmo parâmetro na API deles. Quando os dois estão ativos, a busca vai para a API e a categoria é filtrada no servidor, varrendo até 5 páginas de 100 — se o teto for atingido, o painel avisa que o total é um piso, nunca mostra número aproximado como se fosse exato. Falha de consulta também vira erro visível, não lista vazia.
+
+> Só aparece no espelho o que tem o destino `fm` ligado. Categoria com `fm = false` e `Mirror = true` fica invisível no histórico.
 
 ---
 
@@ -354,7 +400,60 @@ Servidor de sinalização das telas ao vivo quando `Config.SignalingProvider = "
 
 ### ox_lib (logger)
 
-Com o patch de [OX_LIB_PATCH.md](OX_LIB_PATCH.md), qualquer recurso que use `lib.logger` com o serviço `qadmin` passa a mandar seus logs para o painel, sem precisar chamar `AddLog` diretamente.
+Qualquer recurso que use `lib.logger` pode mandar seus logs para o painel sem chamar `AddLog` diretamente. São dois passos, e o primeiro **você provavelmente já tem**.
+
+**Passo 1 — o patch (só para ox_lib vanilla).** Na ox_lib da MRI ele já está aplicado no fonte. Confira antes de editar qualquer coisa:
+
+```bash
+grep -n "mri_Qadmin" ox_lib/imports/logger/server.lua
+```
+
+Se aparecer o bloco `if service == 'mri_Qadmin'`, pule para o passo 2. Se não aparecer, o arquivo é `ox_lib/imports/logger/server.lua` — repare que é `imports/`, não `modules/`. Ele termina com um dispatcher que carrega um provider HTTP pelo nome; o bloco do Qadmin entra **antes** dessa checagem, logo depois da linha `local KNOWN = { ... }`, porque o Qadmin não é um provider HTTP: ele recebe o log por evento, dentro do próprio servidor.
+
+```lua
+if service == 'mri_Qadmin' or service == 'fivemerr' then
+    function lib.logger(source, event, message, ...)
+        TriggerEvent('mri_Qadmin:server:AddLog',
+            cache.resource,
+            event,
+            'info',
+            message,
+            {
+                tags = formatTags(source, ... and string.strjoin(',', string.tostringall(...)) or nil)
+            },
+            source
+        )
+    end
+
+    return lib.logger
+end
+```
+
+`fivemerr` continua aceito de propósito: o upstream removeu esse provider, e o alias evita que um servidor que já tinha `set ox:logger "fivemerr"` fique sem logger nenhum ao atualizar.
+
+**Passo 2 — o convar**, no `server.cfg` (ou `ox.cfg`):
+
+```
+set ox:logger "mri_Qadmin"
+```
+
+Remova ou comente qualquer `set ox:logger` anterior (`datadog`, `loki`, `fivemanage`, `fivemerr`).
+
+**O modo de falha aqui é silencioso**, então vale conhecer antes de precisar:
+
+| Sintoma | Causa |
+|---|---|
+| Nada chega ao painel, nada reclama no console | Convar não definido — o default é `datadog`, um serviço válido: a ox_lib manda os logs por HTTP para fora |
+| Idem | Valor fora de `mri_Qadmin` / `fivemerr` / `datadog` / `fivemanage` / `loki` — cai em `if not KNOWN[service] then return lib.logger end` e o `lib.logger` vira no-op |
+| Idem, mesmo com tudo certo | ox_lib não reiniciada depois de mexer no cfg — o `service` é lido uma vez, na carga do arquivo |
+
+> Versões antigas desta documentação diziam `set ox:logger "qadmin"`. Está **errado** e cai no segundo caso da tabela acima — falha em silêncio. O valor é `mri_Qadmin`.
+
+O campo `event` da ox_lib vira a **categoria** do log no painel. Só é preciso reaplicar o patch se você atualizar a ox_lib a partir do upstream vanilla substituindo aquele arquivo; num merge sobre o fork da MRI o bloco costuma sobreviver.
+
+### Fivemanage
+
+Destino opcional dos logs e, com o modo espelho, também a fonte do histórico exibido no painel. Configurável por `Config.Logs.Fivemanage` ou pela aba de configurações de logs. Ver [Logs](#logs).
 
 ---
 
@@ -382,7 +481,7 @@ exports['mri_Qadmin']:RegisterPermissions({
 
 ### `AddLog` — servidor
 
-Envia um log para o painel (memória, banco e Discord, conforme o `Config.Logs`).
+Envia um log para o painel. O buffer em memória sempre recebe; banco, Discord, relay e Fivemanage seguem o que estiver configurado em `Config.Logs` para aquela categoria e aquele recurso.
 
 ```lua
 exports['mri_Qadmin']:AddLog(
@@ -400,6 +499,16 @@ Equivalente por evento, para quem não quer depender do export:
 ```lua
 TriggerEvent('mri_Qadmin:server:AddLog', resource, category, level, message, data, source)
 ```
+
+Três chaves de `data` têm tratamento especial — elas identificam o **alvo** da ação, aparecem em campo próprio no embed do Discord e ficam fora do bloco de dados extras:
+
+| Chave | Efeito |
+|---|---|
+| `target_src` | Se informado sozinho, o nome e o citizenid do alvo são resolvidos automaticamente pelo QBCore |
+| `target_name` | Exibido no campo **Alvo** |
+| `target_citizenid` | Exibido no campo **Alvo** |
+
+Os níveis aceitos são `info`, `success`, `warn` e `error`.
 
 ### `HasPerms` / `CheckPerms` — servidor
 
@@ -490,7 +599,6 @@ mri_Qadmin/
 │   ├── world.lua             — clima e hora
 │   ├── key_capture.lua       — captura de tecla para as configurações
 │   ├── nearby_scanner.lua    — scanner de entidades próximas (dev mode)
-│   ├── vip.lua               — VIP
 │   ├── logs.lua              — logs no cliente
 │   ├── webrtc.lua            — captura e envio da tela (telas ao vivo)
 │   └── plugins.lua           — recebe a lista de plugins visíveis
@@ -501,7 +609,7 @@ mri_Qadmin/
 │   ├── permissions.lua       — definições de permissão, ACE, Master Admin, RegisterPermissions
 │   ├── groups.lua            — CRUD de grupos e vínculos
 │   ├── data_sync.lua         — envia definições e dados para a NUI
-│   ├── logs.lua              — buffer, banco, webhooks, AddLog
+│   ├── logs.lua              — buffer, banco, webhooks, Fivemanage, AddLog
 │   ├── chat.lua              — staff chat e menções
 │   ├── commands.lua          — comandos do painel
 │   ├── players.lua           — moderação, teleporte, dinheiro, job/gangue
@@ -520,7 +628,6 @@ mri_Qadmin/
 │   ├── teleport.lua          — teleporte
 │   ├── trolls.lua            — trolls
 │   ├── wall.lua              — cores do ESP por principal
-│   ├── vip.lua               — VIP
 │   ├── key_manager.lua       — keybinds
 │   ├── webrtc.lua            — sinalização das telas ao vivo
 │   ├── updates.lua           — verificação de atualização
@@ -539,7 +646,5 @@ mri_Qadmin/
 ├── web/build/                — UI compilada (ui_page) + tiles do mapa
 ├── database.sql              — todas as tabelas do recurso
 ├── PERMISSIONS.md            — referência completa de permissões
-├── LOGS.md                   — formato e categorias de log
-├── OX_LIB_PATCH.md           — patch do lib.logger para integrar logs de terceiros
 └── fxmanifest.lua
 ```

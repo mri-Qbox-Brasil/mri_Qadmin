@@ -1,4 +1,40 @@
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Memo do COUNT da paginação.
+--
+-- A UI pagina a lista de jogadores em sequência (página 1, 2, 3...) para montar
+-- a tabela completa. Cada página refazia o mesmo COUNT(*) sobre `players` — num
+-- servidor com 10k personagens, dezenas de full scans idênticos em poucos
+-- segundos, só para recalcular um total que não mudou.
+--
+-- TTL curto de propósito: cobre a duração de uma varredura de paginação e nada
+-- além disso. A chave inclui a quantidade de jogadores online porque ela muda o
+-- WHERE (os online são excluídos do COUNT do banco e contados à parte).
+-- ─────────────────────────────────────────────────────────────────────────────
+local COUNT_CACHE_TTL = 10000
+local countCache = {}
+
+local function getCachedDbCount(cacheKey, runQuery)
+    local now = GetGameTimer()
+    local hit = countCache[cacheKey]
+    if hit and (now - hit.at) < COUNT_CACHE_TTL then
+        return hit.value
+    end
+
+    local value = runQuery()
+    countCache[cacheKey] = { value = value, at = now }
+
+    -- Buscas distintas criam chaves distintas; limpa as vencidas para a tabela
+    -- não crescer sem limite com termos de busca digitados pelos admins.
+    for key, entry in pairs(countCache) do
+        if (now - entry.at) >= COUNT_CACHE_TTL then
+            countCache[key] = nil
+        end
+    end
+
+    return value
+end
+
 local function getPlayers(page, pageSize, search)
     page = math.max(1, tonumber(page) or 1)
     pageSize = math.max(1, tonumber(pageSize) or 20)
@@ -142,7 +178,9 @@ local function getPlayers(page, pageSize, search)
         queryParams = { onlineCids }
     end
 
-    local dbCount = MySQL.scalar.await(countQuery .. whereClause, queryParams)
+    local dbCount = getCachedDbCount(('%s|%d'):format(cleanSearch, #onlineCids), function()
+        return MySQL.scalar.await(countQuery .. whereClause, queryParams)
+    end)
     totalRecords = totalOnline + (dbCount or 0)
 
     -- 2. Fetch DB Page results if needed
