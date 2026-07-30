@@ -1,7 +1,10 @@
 # ATENCAO: arquivo gerado/injetado automaticamente nos espelhos publicos
-# pelo callable-mirror-release. Roda NO REPO PUBLICO (que pode usar secrets
-# de org no plano Free) e notifica o Discord quando uma release e publicada.
-# Nao editar aqui: e sobrescrito a cada release pelo mirror.
+# pelo callable-mirror-release. Nao editar aqui: e sobrescrito a cada release.
+#
+# Wrapper fino — toda a logica esta no callable-release-notify.yml do repo
+# mri-Qbox-Brasil/workflows, como todo o resto da CI da org. Roda NO REPO
+# PUBLICO porque e ele que enxerga a release publicada e pode usar secrets de
+# org no plano Free.
 name: Release Notify
 
 on:
@@ -14,47 +17,23 @@ on:
         required: true
 
 jobs:
-  discord:
-    runs-on: ubuntu-latest
-    # Libera o GITHUB_TOKEN a usar o GitHub Models (resumo por IA), sem PAT.
+  notify:
+    # ATENCAO: declarar `permissions` SUBSTITUI as permissoes padrao, nao soma.
+    # Todo escopo omitido vira `none`, e o callable pede mais do que isso — o
+    # run morre em startup_failure, sem job e sem log. Este bloco tem que
+    # espelhar o `permissions` do callable-release-notify.
     permissions:
       contents: read
-      models: read
-    steps:
-      # O notificador e FONTE UNICA em mri-Qbox-Brasil/workflows
-      # (.release/discord-release.js). Aqui ele e baixado em vez de instalado
-      # via npm porque este job roda no espelho publico, que nao tem token do
-      # registry privado da org — e o repo `workflows` e publico, entao o raw
-      # responde sem autenticacao nenhuma.
-      #
-      # Segue `main` de proposito: correcao no notificador vale para todos os
-      # espelhos sem precisar re-liberar cada um. Se o download falhar, o job
-      # apenas nao notifica — a release ja esta publicada de qualquer forma.
-      - name: Baixa o notificador de release
-        id: fetch
-        run: |
-          mkdir -p .release
-          if curl -fsSL --retry 3 --retry-delay 2 \
-            https://raw.githubusercontent.com/mri-Qbox-Brasil/workflows/main/.release/discord-release.js \
-            -o .release/discord-release.js; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::nao baixou o notificador; pulando a notificacao."
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Notifica Discord
-        if: steps.fetch.outputs.ok == 'true'
-        run: node .release/discord-release.js "${{ github.event.inputs.version || github.event.release.tag_name }}"
-        env:
-          NOTIFY_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ github.token }}
-          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN || github.token }}
-          LLM_MODEL: ${{ vars.LLM_MODEL }}
-          # Chave atual (CI_RELEASE_NOTIFY_DISCORD) ou a var legada.
-          DISCORD_RELEASE_NOTIFY: ${{ vars.CI_RELEASE_NOTIFY_DISCORD || vars.DISCORD_RELEASE_NOTIFY }}
-          DISCORD_RELEASE_WEBHOOK: ${{ secrets.UPDATE_DISCORD_WEBHOOK }}
-          LOGO_MRIQBOX_URL: ${{ secrets.LOGO_MRIQBOX_URL }}
-          RESOURCE_MRIQBOX_URL: ${{ secrets.RESOURCE_MRIQBOX_URL }}
-          INVITE_DISCORD_URL: ${{ secrets.INVITE_DISCORD_URL }}
-          DOCS_MRIQBOX_URL: ${{ secrets.DOCS_MRIQBOX_URL }}
+      models: read # GitHub Models (resumo por IA)
+      id-token: write # OIDC do Infisical
+    uses: mri-Qbox-Brasil/workflows/.github/workflows/callable-release-notify.yml@main
+    with:
+      version: ${{ github.event.inputs.version || github.event.release.tag_name }}
+    secrets:
+      UPDATE_DISCORD_WEBHOOK: ${{ secrets.UPDATE_DISCORD_WEBHOOK }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY }}
+      GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
+      LOGO_MRIQBOX_URL: ${{ secrets.LOGO_MRIQBOX_URL }}
+      RESOURCE_MRIQBOX_URL: ${{ secrets.RESOURCE_MRIQBOX_URL }}
+      INVITE_DISCORD_URL: ${{ secrets.INVITE_DISCORD_URL }}
+      DOCS_MRIQBOX_URL: ${{ secrets.DOCS_MRIQBOX_URL }}
