@@ -82,7 +82,10 @@ local function CopyCoords(dataType)
 end
 
 RegisterNetEvent('mri_Qadmin:client:CopyCoords', function(type)
-    if not CheckPerms("qadmin.action." .. type) then return end
+    -- Nó fixo: o dinâmico "qadmin.action." .. type montava nós que não existem em lugar
+    -- nenhum (qadmin.action.vector3, .heading...), então a checagem sempre falhava. É o
+    -- mesmo nó que os comandos /vector* exigem no servidor (server/commands.lua).
+    if not CheckPerms("qadmin.action.toggle_coords") then return end
     CopyCoords(type)
 end)
 

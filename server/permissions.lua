@@ -517,6 +517,7 @@ PERM_DEFINITIONS = {
     { id = 'qadmin.action.toggle_devmode',          category = 'devmode'    },
     { id = 'qadmin.action.vehicle_dev',             category = 'devmode'    },
     { id = 'qadmin.action.toggle_coords',           category = 'devmode'    },
+    { id = 'qadmin.action.copy_coords',             category = 'devmode'    },
     { id = 'qadmin.action.toggle_blips',            category = 'devmode'    },
     { id = 'qadmin.action.toggle_names',            category = 'devmode'    },
     { id = 'qadmin.action.toggle_mock_mode',        category = 'devmode'    },
@@ -568,9 +569,32 @@ function GetPermissionDefinitions()
     return defs
 end
 
+--- Sincroniza a whitelist com as definições dinâmicas e devolve a lista plana de TODOS
+--- os nós conhecidos agora.
+---
+--- Nenhuma das duas fontes basta sozinha:
+--- * `ALL_KNOWN_QADMIN_PERMS` é montada no parse deste arquivo, e `server/actions.lua`
+---   (que popula `Config.Actions` a partir do `data/default_actions.lua` + overrides do
+---   banco) só carrega DEPOIS — então a lista plana nasce sem nenhum nó que exista
+---   apenas numa ação, incluindo as ações criadas pelo próprio painel;
+--- * `GetPermissionDefinitions()` é dinâmica, mas não enxerga nó de plugin restaurado do
+---   banco por `LoadKnownPluginPerms` enquanto o plugin não voltar a se registrar.
+---
+--- Registrar os nós dinâmicos na whitelist conserta de uma vez três caminhos que hoje
+--- ignoram as perms de ação: o `ClearGroupAces` (deixava ACE órfã no restart), o
+--- `SeedAces` e a validação de escrita do `UpdateGroupPermissions` — que REJEITA como
+--- desconhecido um nó de ação nunca salvo antes, mesmo tendo sido oferecido pela UI.
+---@return string[]
+local function AllKnownPermNodes()
+    for _, def in ipairs(GetPermissionDefinitions()) do
+        if def.id and not IsForbiddenPermNode(def.id) then RegisterKnownPerm(def.id) end
+    end
+    return ALL_KNOWN_QADMIN_PERMS
+end
+
 local function ClearGroupAces(groupId)
     local principal = 'mri.group.' .. groupId
-    for _, perm in ipairs(ALL_KNOWN_QADMIN_PERMS) do
+    for _, perm in ipairs(AllKnownPermNodes()) do
         lib.removeAce(principal, perm, true)
     end
 end
@@ -606,6 +630,11 @@ local function LoadPermissions()
     -- plugin ainda não se registrou (ou está parado).
     dbReady = true
     LoadKnownPluginPerms()
+
+    -- Puxa para a whitelist os nós que só existem em ações. É chamado de novo em
+    -- ClearGroupAces/SeedAces (é idempotente), mas aqui pega o caso de um servidor sem
+    -- nenhum grupo cadastrado, em que o ClearGroupAces nunca roda.
+    AllKnownPermNodes()
 
     SeedGodGroup()
 
@@ -816,6 +845,29 @@ BroadcastPermissionUpdate = function()
     TriggerClientEvent('mri_Qadmin:client:ForceReloadPermissions', -1, permDefs, catDefs)
 end
 
+--- Adia a propagação da mudança de permissão até a fila de comandos do console drenar.
+---
+--- `lib.addAce`/`lib.addPrincipal` do ox_lib são `ExecuteCommand` — a fila só é drenada no
+--- FIM do frame do servidor. Broadcastar no MESMO tick faz o cliente re-ler
+--- `GetMyPermissions` ANTES de a ACE/principal existir e ver o estado ANTIGO: é por isso
+--- que criar grupo, salvar permissões ou setar o grupo de um personagem parecia só "pegar"
+--- depois de um `restart` (no boot o `LoadPermissions` já dá um `Wait` antes de checar).
+---
+--- `resyncFn` (opcional) re-mapeia os principals dos players afetados ENTRE as duas
+--- esperas: a primeira deixa aplicar o que o callback enfileirou; a segunda, os
+--- `add_principal` do próprio re-sync, antes do broadcast que dispara a re-leitura.
+---@param resyncFn? fun()
+local function DeferAcePropagation(resyncFn)
+    CreateThread(function()
+        Wait(250)
+        if resyncFn then
+            resyncFn()
+            Wait(150)
+        end
+        BroadcastPermissionUpdate()
+    end)
+end
+
 -- Callbacks
 lib.callback.register('mri_Qadmin:callback:GetGroups', function(source)
     if not HasPerms(source, 'qadmin.page.permissions') then return {} end
@@ -879,7 +931,7 @@ lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label,
     end
 
     AddLog(source, 'mri_Qadmin', 'permissions', 'info', ('Grupo: grupo "%s" criado/atualizado'):format(cleanId), { group = cleanId, label = label })
-    BroadcastPermissionUpdate()
+    DeferAcePropagation()
     return true
 end)
 
@@ -924,14 +976,15 @@ lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
         return false, "Erro ao deletar grupo do banco de dados."
     end
 
-    -- Re-sync affected players so linked principals are also revoked
-    for _, pid in ipairs(affectedSources) do
-        SetupPlayerPrincipals(pid, true)
-    end
-
     TriggerClientEvent('QBCore:Notify', source, 'Grupo removido', 'success')
     AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupo: grupo "%s" removido'):format(id), { group = id })
-    BroadcastPermissionUpdate()
+    -- Re-sync affected players so linked principals are also revoked (depois de a fila de
+    -- removeAce/removePrincipal drenar), e só então broadcast.
+    DeferAcePropagation(function()
+        for _, pid in ipairs(affectedSources) do
+            SetupPlayerPrincipals(pid, true)
+        end
+    end)
     return true
 end)
 
@@ -1040,18 +1093,20 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
     local memberSet = {}
     for _, row in ipairs(memberRows) do memberSet[row.citizenid] = true end
 
-    for _, id in ipairs(QBCore.Functions.GetPlayers()) do
-        local p = QBCore.Functions.GetPlayer(id)
-        if p and memberSet[p.PlayerData.citizenid] then
-            SetupPlayerPrincipals(id, true)
-        end
-    end
-
     TriggerClientEvent('QBCore:Notify', source, 'Permissões do grupo atualizadas.', 'success')
     AddLog(source, 'mri_Qadmin', 'permissions', 'warn',
         ('Permissões: grupo "%s" atualizado (%d perms, %d linked principals)'):format(groupId, #permissionsArray, #cleanLinked),
         { group = groupId, count = #permissionsArray, linkedPrincipals = cleanLinked })
-    BroadcastPermissionUpdate()
+    -- Adia o re-sync/broadcast até os add_ace/remove_ace deste save aplicarem, senão o
+    -- cliente re-lê GetMyPermissions antes e continua vendo as permissões antigas.
+    DeferAcePropagation(function()
+        for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+            local p = QBCore.Functions.GetPlayer(id)
+            if p and memberSet[p.PlayerData.citizenid] then
+                SetupPlayerPrincipals(id, true)
+            end
+        end
+    end)
     return true
 end)
 
@@ -1082,19 +1137,20 @@ lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source
         return false, "Erro ao salvar no banco de dados."
     end
 
-    local players = QBCore.Functions.GetPlayers()
-    for _, id in ipairs(players) do
-        local p = QBCore.Functions.GetPlayer(id)
-        if p and p.PlayerData.citizenid == citizenid then
-            SetupPlayerPrincipals(id, true)
-            Debug('debug', ('[mri_Qadmin] Principals recarregados para source %d (%s) após mudança de grupos'):format(id, citizenid))
-            break
-        end
-    end
-
     TriggerClientEvent('QBCore:Notify', source, 'Grupos do jogador atualizados.', 'success')
     AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupos: personagem %s teve grupos atualizados: %s'):format(citizenid, table.concat(groupsArray, ', ')), { citizenid = citizenid, groups = groupsArray })
-    BroadcastPermissionUpdate()
+    -- Adia o re-sync/broadcast até os add_principal/remove_principal aplicarem, senão o
+    -- cliente re-lê GetMyPermissions antes e continua vendo os grupos antigos.
+    DeferAcePropagation(function()
+        for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+            local p = QBCore.Functions.GetPlayer(id)
+            if p and p.PlayerData.citizenid == citizenid then
+                SetupPlayerPrincipals(id, true)
+                Debug('debug', ('[mri_Qadmin] Principals recarregados para source %d (%s) após mudança de grupos'):format(id, citizenid))
+                break
+            end
+        end
+    end)
     return true
 end)
 
@@ -1429,15 +1485,18 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
         end
     end
 
-    -- Seed everything from ALL_KNOWN_QADMIN_PERMS (already includes Config.Actions entries)
-    for _, perm in ipairs(ALL_KNOWN_QADMIN_PERMS) do addSafe(perm) end
+    -- Seed a partir de AllKnownPermNodes(): a lista plana crua nasce ANTES de
+    -- server/actions.lua popular Config.Actions, então sozinha ela não contém as perms que
+    -- só existem numa ação — era isso que deixava o botão "Seed" entregando um grupo admin
+    -- incompleto.
+    for _, perm in ipairs(AllKnownPermNodes()) do addSafe(perm) end
 
     if type(Config.OpenPanelPerms) == "string" then addSafe(Config.OpenPanelPerms) end
 
     if count > 0 then
         TriggerClientEvent('QBCore:Notify', src, ('Seeded %d permissions for \'admin\' group'):format(count), 'success')
         AddLog(src, 'mri_Qadmin', 'permissions', 'warn', ('SeedAces: %d permissões adicionadas ao grupo "admin"'):format(count), { count = count })
-        BroadcastPermissionUpdate()
+        DeferAcePropagation()
     else
         TriggerClientEvent('QBCore:Notify', src, 'All permissions already exist', 'primary')
     end
