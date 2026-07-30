@@ -1,0 +1,40 @@
+# ATENCAO: arquivo gerado/injetado automaticamente nos espelhos publicos
+# pelo callable-mirror-release. Roda NO REPO PUBLICO, unico lugar onde o PR da
+# comunidade existe. Nao editar aqui: e sobrescrito a cada release pelo mirror.
+#
+# Porta o PR para o repo de fonte privado preservando o autor original, abre o
+# PR la e fecha este com um agradecimento.
+name: Portar PR para source
+
+on:
+  # pull_request_target: PR de fork no evento `pull_request` roda com token
+  # read-only e sem secrets. Seguro aqui porque o callable nunca executa o
+  # codigo do PR — so aplica o diff como texto.
+  pull_request_target:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: "Numero do PR publico a portar manualmente"
+        required: true
+
+permissions:
+  pull-requests: write
+  contents: read
+  id-token: write # OIDC do Infisical
+
+jobs:
+  port:
+    uses: mri-Qbox-Brasil/workflows/.github/workflows/callable-port-pr.yml@main
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    with:
+      # Vazio => "<este-repo>-source", que e a convencao dos espelhos.
+      private-repo: ${{ vars.SOURCE_REPO }}
+      # Vazio no gatilho automatico: o numero vem do evento.
+      pr-number: ${{ inputs.pr-number }}
+      # O espelho e built-only: o output do build nao existe na fonte, entao um
+      # PR que o toca nunca aplica la. O default cobre os dois layouts em uso
+      # (web/build e html); repos fora do padrao ajustam por CI_PORT_PR_EXCLUDE.
+      apply-exclude: ${{ vars.CI_PORT_PR_EXCLUDE || 'web/build/* html/*' }}
+      pr-team: ${{ vars.PR_TEAM }}
