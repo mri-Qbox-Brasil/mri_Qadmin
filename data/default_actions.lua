@@ -139,7 +139,7 @@ return {
 
         ["copy_coords"] = {
             label = "Copiar Coordenadas",
-            perms = "apprentice",
+            perms = "qadmin.action.copy_coords",
             dropdown = {
                 {
                     label = "Copy Coords",
@@ -157,8 +157,8 @@ return {
 
         ["delete_vehicle"] = {
             label = "Deletar Veículo",
-            type = "command",
-            event = "dv",
+            type = "client",
+            event = "mri_Qadmin:client:DeleteVehicle",
             perms = "qadmin.action.delete_vehicle",
         },
 
@@ -243,7 +243,7 @@ return {
         ["toggle_duty"] = {
             label = "Ativar/Desativar Serviço",
             type = "server",
-            event = "QBCore:ToggleDuty",
+            event = "mri_Qadmin:server:ToggleDuty",
             perms = "qadmin.action.toggle_duty",
         },
 
@@ -520,8 +520,8 @@ return {
 
         ["fix_vehicle"] = {
             label = "Consertar Veículo",
-            type = "command",
-            event = "fix",
+            type = "client",
+            event = "mri_Qadmin:client:FixVehicle",
             perms = "qadmin.action.fix_vehicle",
         },
 
@@ -572,8 +572,8 @@ return {
 
         ["teleport_to_marker"] = {
             label = "Teleportar para Marcador",
-            type = "command",
-            event = "tpm",
+            type = "client",
+            event = "mri_Qadmin:client:TeleportToMarker",
             perms = "qadmin.action.teleport_to_marker",
         },
 

@@ -486,7 +486,10 @@ end)
 
 -- Give Money to all
 RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(_, selectedData)
-    if not CheckPerms(source, 'qadmin.action.give_money') then return end
+    -- Dar dinheiro ao servidor inteiro é a ação, e ela tem nó próprio
+    -- (qadmin.action.give_money_all, já em PERM_DEFINITIONS e usado no default_actions):
+    -- checar give_money deixava quem só pode pagar UM jogador pagar TODOS.
+    if not CheckPerms(source, 'qadmin.action.give_money_all') then return end
     if not RateLimit(source, 'give_money_all', 5000) then
         return QBCore.Functions.Notify(source, 'Aguarde antes de repetir essa ação.', 'error', 3000)
     end
@@ -572,6 +575,26 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(_, selectedData)
         money = formatPlayerMoney(Player)
     })
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
+end)
+
+-- Toggle Duty. A ação apontava direto para o evento `QBCore:ToggleDuty`, que o
+-- eventIsAllowed() do client/main.lua barra (só passa mri_Qadmin:/mri_wall: e os 3 eventos
+-- de revive) — o botão não fazia nada. Aqui o evento é do próprio painel e a permissão
+-- checada é a `qadmin.action.toggle_duty`.
+RegisterNetEvent('mri_Qadmin:server:ToggleDuty', function(_)
+    local src = source
+    if not CheckPerms(src, 'qadmin.action.toggle_duty') then return end
+
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+
+    local onDuty = not Player.PlayerData.job.onduty
+    Player.Functions.SetJobDuty(onDuty)
+    TriggerClientEvent('QBCore:Client:SetDuty', src, onDuty)
+
+    AddLog(src, 'mri_Qadmin', 'players', 'info',
+        ('Serviço: %s (job %s)'):format(onDuty and 'entrou em serviço' or 'saiu de serviço', Player.PlayerData.job.name),
+        { job = Player.PlayerData.job.name, onDuty = onDuty })
 end)
 
 -- Blackout

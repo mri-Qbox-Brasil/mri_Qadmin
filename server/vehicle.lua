@@ -377,7 +377,10 @@ end)
 
 -- Fix Vehicle for player
 RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(_, selectedData)
-    if not CheckPerms(source, 'qadmin.action.fix_vehicle') then return end
+    -- Consertar o veículo DE OUTRO jogador tem nó próprio (qadmin.action.fix_vehicle_for,
+    -- já em PERM_DEFINITIONS e usado no default_actions); checar fix_vehicle deixava quem
+    -- só pode consertar o próprio carro mexer no carro dos outros.
+    if not CheckPerms(source, 'qadmin.action.fix_vehicle_for') then return end
     local src = source
     local playerField = selectedData and selectedData['Player']
     if not playerField then return end

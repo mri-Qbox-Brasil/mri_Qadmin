@@ -72,9 +72,27 @@ end)
 
 -- Open Stash [ox side]
 RegisterNetEvent('mri_Qadmin:server:OpenStash', function(data)
-    if not CheckPerms(source, 'qadmin.action.open_stash') then return end
-    exports.ox_inventory:forceOpenInventory(source, 'stash', data)
-    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Stash: admin abriu stash "%s"'):format(tostring(data)), { stash = tostring(data) })
+    local src = source
+    if not CheckPerms(src, 'qadmin.action.open_stash') then return end
+
+    local stashId = data and tostring(data) or ''
+    if stashId == '' or stashId == 'nil' then
+        return QBCore.Functions.Notify(src, locale("notifications.stash_name_required"), 'error', 5000)
+    end
+
+    -- O ox_inventory não abre uma stash que nunca foi registrada: o openInventory faz
+    -- Inventory(data) e sai com nil, então o painel abria "nada" e nenhum baú era criado.
+    -- Registrar aqui (idempotente) faz a primeira abertura CRIAR o baú.
+    -- owner = nil → baú compartilhado: qualquer admin que abrir o mesmo nome vê o mesmo
+    -- conteúdo, que é o comportamento esperado de um baú de administração.
+    exports.ox_inventory:RegisterStash(stashId, ('Baú Admin: %s'):format(stashId), 50, 100000)
+
+    local opened = exports.ox_inventory:forceOpenInventory(src, 'stash', stashId)
+    if not opened then
+        return QBCore.Functions.Notify(src, locale("notifications.stash_open_failed"), 'error', 5000)
+    end
+
+    AddLog(src, 'mri_Qadmin', 'inventory', 'info', ('Stash: admin abriu/criou stash "%s"'):format(stashId), { stash = stashId })
 end)
 
 -- Open Trunk [ox side]

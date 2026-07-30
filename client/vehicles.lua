@@ -66,6 +66,71 @@ RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
     TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', ('Veículo: admin spawnando %s temporário'):format(selectedVehicle), {})
 end)
 
+-- Delete Vehicle: o que o admin está dirigindo ou, a pé, o que ele está mirando (até 10m).
+-- Era `type = "command"` apontando para o /dv, que exige a ACE `command.dv` — um admin
+-- não-master do painel não tem essa ACE e o clique morria em silêncio.
+RegisterNetEvent('mri_Qadmin:client:DeleteVehicle', function(data)
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
+
+    local veh = cache.vehicle
+    if not veh or veh == 0 then
+        local ped = cache.ped
+        local from = GetEntityCoords(ped)
+        local to = from + GetEntityForwardVector(ped) * 10.0
+        local ray = StartExpensiveSynchronousShapeTestLosProbe(from.x, from.y, from.z, to.x, to.y, to.z, 10, ped, 0)
+        local _, hit, _, _, entityHit = GetShapeTestResult(ray)
+        if hit == 1 and entityHit and entityHit ~= 0 and IsEntityAVehicle(entityHit) then
+            veh = entityHit
+        end
+    end
+
+    if not veh or veh == 0 or not DoesEntityExist(veh) then
+        return QBCore.Functions.Notify(locale("notifications.no_vehicle_found"), 'error')
+    end
+
+    -- Toma posse na rede antes de deletar: sem controle da entidade o motor recusa o
+    -- delete e o veículo volta a aparecer para os outros jogadores.
+    SetEntityAsMissionEntity(veh, true, true)
+    NetworkRequestControlOfEntity(veh)
+    local timeout = 0
+    while not NetworkHasControlOfEntity(veh) and timeout < 500 do
+        NetworkRequestControlOfEntity(veh)
+        Wait(0)
+        timeout = timeout + 1
+    end
+
+    DeleteVehicle(veh)
+    if DoesEntityExist(veh) then DeleteEntity(veh) end
+
+    QBCore.Functions.Notify(locale("notifications.vehicle_deleted"), 'success')
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin deletou um veículo', {})
+end)
+
+-- Fix Vehicle (o próprio veículo do admin). Era `type = "command"` apontando para o /fix,
+-- mesma história da ACE `command.fix`.
+RegisterNetEvent('mri_Qadmin:client:FixVehicle', function(data)
+    local actionData = CheckDataFromKey(data)
+    if not actionData or not CheckPerms(actionData.perms) then return end
+
+    local veh = cache.vehicle
+    if not veh or veh == 0 then
+        return QBCore.Functions.Notify(locale("notifications.not_in_vehicle"), 'error')
+    end
+
+    SetVehicleFixed(veh)
+    SetVehicleDeformationFixed(veh)
+    SetVehicleUndriveable(veh, false)
+    SetVehicleEngineOn(veh, true, true, false)
+    SetVehicleEngineHealth(veh, 1000.0)
+    SetVehicleBodyHealth(veh, 1000.0)
+    SetVehiclePetrolTankHealth(veh, 1000.0)
+    SetVehicleDirtLevel(veh, 0.0)
+
+    QBCore.Functions.Notify(locale("notifications.vehicle_repaired"), 'success')
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin consertou o próprio veículo', {})
+end)
+
 -- Refuel Vehicle
 RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function(data)
     local actionData = CheckDataFromKey(data)
