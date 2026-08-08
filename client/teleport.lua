@@ -1,5 +1,8 @@
 local lastCoords
 
+-- Nota: teleportar estando de noclip NÃO tira você do modo. O loop do noclip
+-- (client/noclip.lua) detecta que o ped enterrado foi movido e leva a câmera
+-- pro destino, re-enterrando o ped ali. Você teleporta e continua voando.
 local function teleport(x, y, z)
     if cache.vehicle then
         return SetPedCoordsKeepVehicle(cache.ped, x, y, z)
@@ -68,8 +71,8 @@ RegisterNetEvent('mri_Qadmin:client:TeleportToMarker', function(data)
 
     local coord = GetBlipInfoIdCoord(blip)
     local x, y = coord.x + 0.0, coord.y + 0.0
-    local ped = cache.ped
 
+    local ped = cache.ped
     lastCoords = GetEntityCoords(ped)
 
     FreezeEntityPosition(ped, true)

@@ -293,7 +293,11 @@ Citizen.CreateThread(function()
         if wall then
             sleep = 250 -- Lógica de atualização (4x por segundo)
             local activePlayers = GetActivePlayers()
-            local cam = GetGameplayCamCoord()
+            -- Ponto de vista: se o admin está de noclip, é a câmera scriptada; senão
+            -- a gameplay cam. Sem isso a distância seria medida do ped enterrado a -180.
+            local ncCam = GetNoclipCamCoord and GetNoclipCamCoord() or nil
+            local cam = ncCam or GetGameplayCamCoord()
+            local myId = PlayerId()
 
             for _, id in ipairs(activePlayers) do
                 if NetworkIsPlayerActive(id) then
@@ -301,7 +305,12 @@ Citizen.CreateThread(function()
                     local srcStr = tostring(src)
                     local ped = GetPlayerPed(id)
 
-                    if ped ~= 0 and wall_users[srcStr] then
+                    -- Durante o noclip, pula a PRÓPRIA entrada do admin: o ped está
+                    -- enterrado a -180, então o box apareceria no centro da tela,
+                    -- "debaixo da terra". As entradas dos outros players seguem normais.
+                    if ncCam and id == myId then
+                        playersData[src] = nil
+                    elseif ped ~= 0 and wall_users[srcStr] then
                         local coords = GetEntityCoords(ped, true)
                         local dist = #(coords - cam)
 
@@ -396,7 +405,10 @@ Citizen.CreateThread(function()
         local sleep = 1000
         if wall then
             sleep = 0
-            local myCoords = GetEntityCoords(PlayerPedId(), true)
+            -- Durante o noclip o ped está enterrado a -180: a origem dos tracers
+            -- tem que ser a câmera scriptada, não o ped (senão o tracer some no chão).
+            local ncCam = GetNoclipCamCoord and GetNoclipCamCoord() or nil
+            local myCoords = ncCam or GetEntityCoords(PlayerPedId(), true)
 
             for src, data in pairs(playersData) do
                 if data.visible then
@@ -421,7 +433,9 @@ Citizen.CreateThread(function()
 
                     local c = data.color
                     local startCoords
-                    if localWallSettings.tracer == "center" then
+                    if ncCam then
+                        startCoords = ncCam -- de NC: o tracer sai de onde a câmera olha
+                    elseif localWallSettings.tracer == "center" then
                         startCoords = GetGameplayCamCoord()
                     elseif localWallSettings.tracer == "top" then
                         startCoords = vector3(myCoords.x, myCoords.y, myCoords.z + 2.0)

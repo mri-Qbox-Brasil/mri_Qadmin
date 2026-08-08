@@ -6,8 +6,8 @@ local CAMERA_ROTATION_SPEED_Y = 5.0
 local MAX_SPEED = 16.0
 local MIN_SPEED = 0.5
 -- Profundidade em que o ped/veículo fica escondido durante o noclip. Bem abaixo
--- de qualquer geometria do mapa, então wallhack/ESP não pega o admin onde ele
--- está olhando — vê ele parado aqui embaixo, no ponto de entrada.
+-- de qualquer geometria do mapa. O ped acompanha o x/y da câmera aqui embaixo,
+-- então o wallhack/ESP vê o admin enterrado (e invisível), sem poder atingi-lo.
 local STASH_Z = -180.0
 
 -- Variables
@@ -97,14 +97,19 @@ local function HideEntity()
 
     -- Enterra a entidade no mesmo x/y, bem abaixo do mapa.
     SetEntityCoordsNoOffset(entity, savedCoords.x, savedCoords.y, STASH_Z, false, false, false)
+
+    -- Foco de streaming já na superfície (onde a câmera nasce), NÃO no ped a -180.
+    SetFocusPosAndVel(savedCoords.x, savedCoords.y, savedCoords.z, 0.0, 0.0, 0.0)
 end
 
 -- Restaura a entidade no ponto onde a câmera parou (fly-and-land), com o chão.
 local function RestoreEntity(destCoords)
-    ClearFocus()
-
+    -- Acha o chão AINDA com o foco ativo (colisão carregada em volta da câmera),
+    -- senão o raycast falha e o admin cai embaixo da terra. Só depois libera o foco.
     local found, groundZ = GetGroundSafe(destCoords.x, destCoords.y, destCoords.z)
     local landZ = found and (groundZ + 1.0) or destCoords.z
+
+    ClearFocus()
 
     SetEntityCoordsNoOffset(entity, destCoords.x, destCoords.y, landZ, false, false, false)
     if savedHeading then SetEntityHeading(entity, savedHeading) end
@@ -203,8 +208,36 @@ local function UpdateMovement()
 
     SetCamCoord(cam, nextX, nextY, nextZ)
 
-    -- Streaming segue a câmera (o ped continua enterrado, mas o mundo carrega aqui).
+    -- Foco de streaming FIXO na câmera (superfície). Sem isso o mundo carregava
+    -- em volta do ped enterrado a -180: textura/colisão não vinham na superfície
+    -- (jogo "pixelado") e, ao sair, o raycast do GetGroundSafe não achava chão e
+    -- o admin caía embaixo da terra. O ped fica a -180 só pra anti-wallhack; quem
+    -- guia o streaming é a câmera. (Não quebra o /tpm: a detecção de teleporte no
+    -- loop realoca a câmera — e o foco junto — pro destino.)
     SetFocusPosAndVel(nextX, nextY, nextZ, 0.0, 0.0, 0.0)
+    SetEntityCoordsNoOffset(entity, nextX, nextY, STASH_Z, false, false, false)
+end
+
+-- Um teleporte EXTERNO (/tpm do qbx, /tp, actions do painel) joga o ped enterrado
+-- pra superfície. Não dá pra realocar a câmera de imediato: o /tpm faz um scan de
+-- colisão testando várias alturas (200, 300, ... 1000) e a câmera seria arrastada
+-- por elas. Aqui a gente NÃO briga: fixa o foco no x/y do destino pra streamar a
+-- colisão e faz um raycast até achar o chão real — devolve (x, y, chão). O x/y do
+-- destino é constante durante o scan; só o z do ped oscila, e o raycast ignora isso.
+local function SettleAfterExternalTP()
+    for _ = 1, 100 do            -- teto ~ alguns segundos, evita ficar preso
+        Wait(0)
+        if not noclip then return nil end
+        DisabledControls()       -- segura os inputs do admin durante o "carregando"
+        local c = GetEntityCoords(entity)
+        SetFocusPosAndVel(c.x, c.y, c.z, 0.0, 0.0, 0.0)
+        local found, gz = GetGroundSafe(c.x, c.y, c.z)
+        if found and gz and gz > -100.0 then
+            return vector3(c.x, c.y, gz)
+        end
+    end
+    local c = GetEntityCoords(entity)
+    return vector3(c.x, c.y, c.z)
 end
 
 -- Toggle Noclip
@@ -217,8 +250,6 @@ local function ToggleNoclip()
         SetupCam()
         HideEntity()
         EnableCameraVoice()
-        local start = GetCamCoord(cam)
-        SetFocusPosAndVel(start.x, start.y, start.z, 0.0, 0.0, 0.0)
 
         QBCore.Functions.Notify("Noclip Ativado", "success")
         TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Noclip: ativado', {})
@@ -226,7 +257,21 @@ local function ToggleNoclip()
         CreateThread(function()
             while noclip do
                 Wait(0)
-                if not IsPauseMenuActive() then
+                -- Teleporte externo (ex: /tpm do qbx, /tp, ou as actions de teleporte
+                -- do painel) mexe no ped ENTERRADO, tirando ele do -180. Em vez de
+                -- brigar (o loop puxaria de volta pra baixo e desfaria o teleporte),
+                -- esperamos o chão do destino carregar, realocamos a câmera pra lá
+                -- UMA vez e re-enterramos o ped: você teleporta e CONTINUA de noclip.
+                local ec = entity and GetEntityCoords(entity)
+                if ec and ec.z > (STASH_Z + 80.0) then
+                    local dst = SettleAfterExternalTP()
+                    if dst and cam then
+                        SetCamCoord(cam, dst.x, dst.y, dst.z + 3.0)
+                        SetFocusPosAndVel(dst.x, dst.y, dst.z + 3.0, 0.0, 0.0, 0.0)
+                        SetEntityCoordsNoOffset(entity, dst.x, dst.y, STASH_Z, false, false, false)
+                        FreezeEntityPosition(entity, true)
+                    end
+                elseif not IsPauseMenuActive() then
                     DisabledControls()
                     UpdateCameraRotation()
                     UpdateSpeed()
@@ -246,7 +291,27 @@ local function ToggleNoclip()
     end
 end
 
+-- Global: ponto de vista REAL durante o noclip — a câmera scriptada. O /wall usa
+-- isso pra medir distância e desenhar tracers a partir de onde o admin realmente
+-- olha, e não do ped enterrado a -180 (nem da gameplay cam, que segue o ped).
+-- Retorna nil quando não está de noclip (aí o /wall usa a gameplay cam normal).
+function GetNoclipCamCoord()
+    if noclip and cam then
+        return GetCamCoord(cam)
+    end
+    return nil
+end
+
 RegisterNetEvent('mri_Qadmin:client:ToggleNoClip', function()
     if not CheckPerms("qadmin.action.noclip") then return end
     ToggleNoclip()
+end)
+
+-- Segurança contra estado preso: se o resource reiniciar no meio de um noclip
+-- (ou de uma versão antiga que usava SetFocusPosAndVel), o foco de streaming
+-- podia ficar travado e quebrar o /tpm e o /wall. Limpa no start.
+AddEventHandler('onResourceStart', function(res)
+    if res == GetCurrentResourceName() then
+        ClearFocus()
+    end
 end)
