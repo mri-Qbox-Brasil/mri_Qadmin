@@ -5,7 +5,7 @@ use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
 author "MRI Qbox Team"
-version "1.21.2"
+version "1.22.0"
 
 ox_lib "locale"
 
@@ -90,6 +90,15 @@ exports {
     "ToggleUI",      -- client
     "OpenUI",        -- client
     "IsMenuVisible", -- client
+    "RegisterPlugin",        -- server
+    "UnregisterPlugin",      -- server
+    "OpenPluginForPlayer",   -- server: exports['mri_Qadmin']:OpenPluginForPlayer(src, 'spawns')
+    "ClosePluginForPlayer",  -- server
+    "TogglePluginForPlayer", -- server
+    "OpenPlugin",            -- client: exports['mri_Qadmin']:OpenPlugin('spawns')
+    "ClosePlugin",           -- client
+    "TogglePlugin",          -- client
+    "IsPluginOpen",          -- client
 }
 
 

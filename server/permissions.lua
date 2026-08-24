@@ -979,6 +979,9 @@ lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
     DeferAcePropagation(function()
         for _, pid in ipairs(affectedSources) do
             SetupPlayerPrincipals(pid, true)
+            -- Mesmo par que OnPlayerLoaded/Reload usam: sem o evento, a lista de
+            -- plugins do client (filtrada por ACE) estagna ate o proximo relog.
+            TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', pid)
         end
     end)
     return true
@@ -1100,6 +1103,7 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
             local p = QBCore.Functions.GetPlayer(id)
             if p and memberSet[p.PlayerData.citizenid] then
                 SetupPlayerPrincipals(id, true)
+                TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', id)
             end
         end
     end)
@@ -1142,6 +1146,7 @@ lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source
             local p = QBCore.Functions.GetPlayer(id)
             if p and p.PlayerData.citizenid == citizenid then
                 SetupPlayerPrincipals(id, true)
+                TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', id)
                 Debug('debug', ('[mri_Qadmin] Principals recarregados para source %d (%s) após mudança de grupos'):format(id, citizenid))
                 break
             end

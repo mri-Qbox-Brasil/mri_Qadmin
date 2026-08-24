@@ -98,7 +98,8 @@ end)
 
 local translationCache = {}
 
-local function GetTranslations(locale)
+-- Global: client/plugins.lua reusa isto no OpenPlugin.
+function GetTranslations(locale)
     locale = locale or GetConvar('ox_locale', 'pt-br')
     if translationCache[locale] then return translationCache[locale], locale end
 

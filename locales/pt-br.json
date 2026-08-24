@@ -1663,6 +1663,11 @@
                 "registered": "Plugin registrado com sucesso: %s",
                 "removed": "Plugin removido do registro: %s"
             },
+            "open": {
+                "unknown": "Plugin não registrado (ou sem permissão) ao tentar abrir: %s",
+                "opened": "Painel aberto no plugin %s (rota: %s)",
+                "closed": "Painel fechado a pedido do plugin: %s"
+            },
             "ready": "Sistema de plugins pronto."
         }
     }

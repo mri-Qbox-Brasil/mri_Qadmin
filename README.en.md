@@ -156,6 +156,9 @@ exports['mri_Qadmin']:RegisterPlugin({
         { id = 'mri_Qspawn.admin', label = 'Administrator', desc = 'Full access to spawn panel' },
     },
     description = 'Vehicle spawn manager',
+    defaultRoute    = 'plugin:mri_Qspawn',  -- optional: panel page (defaults to `plugin:<id>`)
+    defaultPage     = 'list',               -- optional: page INSIDE the plugin
+    defaultCategory = 'vehicles',           -- optional: initial category/tab
 })
 ```
 
@@ -165,6 +168,16 @@ Removes a previously registered plugin.
 
 ```lua
 exports['mri_Qadmin']:UnregisterPlugin('mri_Qspawn')
+```
+
+#### `OpenPluginForPlayer` / `TogglePluginForPlayer` / `ClosePluginForPlayer`
+
+Server-driven open/close of the panel on the plugin's own page. The permission gate runs here, with `HasPerms`, before anything reaches the client. Closing is not privileged.
+
+```lua
+local ok, reason = exports['mri_Qadmin']:OpenPluginForPlayer(source, 'mri_Qspawn')
+exports['mri_Qadmin']:TogglePluginForPlayer(source, 'mri_Qspawn')
+exports['mri_Qadmin']:ClosePluginForPlayer(source, 'mri_Qspawn')
 ```
 
 #### `RegisterPermissions(perms, categoryDef?)`
@@ -206,6 +219,71 @@ Returns `true` if the panel is currently open.
 ```lua
 local isOpen = exports.mri_Qadmin:IsMenuVisible()
 ```
+
+#### `OpenPlugin` / `TogglePlugin` / `ClosePlugin` / `IsPluginOpen`
+
+Open and close the panel straight on the plugin's page. The target comes from the plugin's own manifest (`defaultRoute` / `defaultPage`), falling back to `plugin:<id>`; `opts` overrides it per call.
+
+```lua
+local ok, reason = exports['mri_Qadmin']:OpenPlugin('mri_Qspawn')
+-- reason: see the table below
+
+exports['mri_Qadmin']:TogglePlugin('mri_Qspawn')
+exports['mri_Qadmin']:ClosePlugin('mri_Qspawn')  -- only closes if that page is the active one
+exports['mri_Qadmin']:ClosePlugin()              -- closes regardless
+local isOpen = exports['mri_Qadmin']:IsPluginOpen('mri_Qspawn')
+
+exports['mri_Qadmin']:OpenPlugin('mri_Qspawn', {
+    route    = 'plugin:mri_Qspawn',  -- panel page
+    page     = 'editor',             -- page inside the plugin
+    category = 'vehicles',           -- category/tab within the page
+    focus    = 'plate-field',        -- component marked with data-nav-id (see below)
+})
+```
+
+| Reason | When | Returned by |
+| :--- | :--- | :--- |
+| `invalid_id` | a `pluginId` was passed and it is not a non-empty string | all of them |
+| `not_registered` | the plugin does not exist **or** the player cannot see it | `Open` · `Toggle` · `Close(id)` |
+| `no_permission` | missing `qadmin.open` — or, on the server exports, the plugin's `requiredPerms` | `Open` · `Toggle` |
+| `already_closed` | the panel was already closed | `Close` |
+| `not_active` | the panel is open, but on another page | `Close(id)` |
+| `invalid_source` | invalid `source` | `*ForPlayer` exports only |
+
+`not_registered` covering two cases is deliberate: the panel never tells a plugin whether the admin *could* see some other plugin. `IsPluginOpen` is the exception to the contract — it returns a plain boolean, with no reason.
+
+| Field | What it does | Manifest counterpart |
+| :--- | :--- | :--- |
+| `route` | Panel page (`plugin:<id>` or a built-in page) | `defaultRoute` |
+| `page` | Page inside the plugin | `defaultPage` |
+| `category` | Category/tab within the page | `defaultCategory` |
+| `focus` | Component focused, scrolled to and highlighted for ~2s — **requires prior marking** | — (per call only) |
+
+All four are independent. The `default*` fields also apply when the admin opens the tab by hand; `focus` has no manifest counterpart on purpose, otherwise the highlight would flash on every open.
+
+On **built-in pages**, `category` selects the tab (`settings`: `general`/`server`/`wall` · `permissions`: `groups`/`players` · `actions`: `all`/`favorites`/`manager` plus the `All`/`Actions`/`PlayerActions`/`OtherActions` groups).
+
+> **`focus` has no targets on built-in pages yet.** It looks up `[data-nav-id="<focus>"]`, then `#<focus>` and `[name="<focus>"]` — and today **no built-in panel component carries any of the three**. In practice it retries for 2s and gives up silently. Marking the components is the missing step; until then use `focus` only on plugin pages, where the guest implements it. To make a component reachable, add `data-nav-id="<id>"` to it.
+
+On **plugin pages** the panel never touches the iframe DOM: `page`, `category` and `focus` reach the plugin through the `mri-plugin/navigate` postMessage (and in `mri-plugin/init`, when it opens straight into them). Navigating internally is up to the plugin.
+
+#### What survives a close
+
+Closing the panel **hides it, it does not unmount it**. Reopening — through `OpenPlugin`, `/adm` or the key — brings the screen back exactly as it was:
+
+| Survives | Does not survive |
+| :--- | :--- |
+| Typed fields, selected tab, scroll, selection | Switching tabs in the sidebar (the route remounts the page) |
+| The plugin iframe, without a reload | Restarting the resource (`ensure mri_Qadmin`) |
+
+Two consequences for plugin authors:
+
+- **The panel tells the plugin when it leaves the screen.** Since the iframe no longer unmounts, the guest gets `mri-plugin/visibility` with `visible: false` on close and `true` on reopen — that is where the plugin pauses its own polling and streams. Not to be confused with `mri-plugin/close`: closing **preserves** state, it does not ask the plugin to clear it.
+
+- **The plugin gets no fresh boot on reopen.** The iframe stays alive, so `mri-plugin/init` does not run again — to react to every open, listen to `mri-plugin/navigate`, which arrives on every `OpenPlugin` with `page`/`category`/`focus`.
+- **Switching sidebar tabs remounts the iframe** — that is how the plugin picks up a fresh build after an `ensure` on its own resource.
+
+While hidden the panel does not keep working for nothing: live map, map modal and screen stream polling pauses and resumes on reopen.
 
 ## Credits & Acknowledgements
 

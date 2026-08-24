@@ -1621,5 +1621,21 @@
             },
             "commands": "Acceder a la lista de comandos del servidor"
         }
+    },
+    "plugins": {
+        "logs": {
+            "register": {
+                "received": "Plugin recibido para registro: %s",
+                "registering": "Registrando plugin: %s",
+                "registered": "Plugin registrado con éxito: %s",
+                "removed": "Plugin eliminado del registro: %s"
+            },
+            "open": {
+                "unknown": "Plugin no registrado (o sin permiso) al intentar abrir: %s",
+                "opened": "Panel abierto en el plugin %s (ruta: %s)",
+                "closed": "Panel cerrado a petición del plugin: %s"
+            },
+            "ready": "Sistema de plugins listo."
+        }
     }
 }

@@ -1621,5 +1621,21 @@
             },
             "commands": "Access the server commands list"
         }
+    },
+    "plugins": {
+        "logs": {
+            "register": {
+                "received": "Plugin received for registration: %s",
+                "registering": "Registering plugin: %s",
+                "registered": "Plugin registered successfully: %s",
+                "removed": "Plugin removed from registry: %s"
+            },
+            "open": {
+                "unknown": "Plugin not registered (or not permitted) when trying to open: %s",
+                "opened": "Panel opened on plugin %s (route: %s)",
+                "closed": "Panel closed on plugin request: %s"
+            },
+            "ready": "Plugin system ready."
+        }
     }
 }

@@ -343,6 +343,9 @@ exports['mri_Qadmin']:RegisterPlugin({
         { id = 'mri_Qspawn.admin', label = 'Administrador', desc = 'Acesso total ao painel de spawns' },
     },
     description   = 'Gerenciador de spawns',
+    defaultRoute    = 'plugin:spawns',         -- opcional: página do painel (default `plugin:<id>`)
+    defaultPage     = 'lista',                 -- opcional: página INTERNA do plugin
+    defaultCategory = 'veiculos',              -- opcional: categoria/aba inicial
 })
 ```
 
@@ -351,6 +354,100 @@ exports['mri_Qadmin']:RegisterPlugin({
 - A checagem usa `HasPerms`, então honra o Master Admin e os principals estendidos (`char:`, `job.`, `gang.`).
 - Permissões válidas das `requiredPerms` (as que têm ponto e não são built-ins do FiveM, como `command`) entram automaticamente no editor de grupos, em uma categoria com o nome do plugin.
 - Quando o recurso do plugin para, o Qadmin o remove do registry automaticamente.
+
+### Abrir e fechar o painel na página do plugin
+
+Registrado o plugin, ele mesmo abre e fecha o painel já na sua página — o admin não precisa procurar a aba no sidebar. O destino sai do próprio manifest (`defaultRoute` / `defaultPage`); sem esses campos, cai na convenção `plugin:<id>`.
+
+No **cliente** do plugin (retorno síncrono, dá pra reagir ao erro):
+
+```lua
+local ok, reason = exports['mri_Qadmin']:OpenPlugin('spawns')
+if not ok then print('nao abriu:', reason) end        -- razoes na tabela abaixo
+
+exports['mri_Qadmin']:TogglePlugin('spawns')          -- abre; fecha se já estiver na página dele
+exports['mri_Qadmin']:ClosePlugin('spawns')           -- só fecha se a página ativa for a do plugin
+exports['mri_Qadmin']:ClosePlugin()                   -- fecha o painel de qualquer jeito
+local aberto = exports['mri_Qadmin']:IsPluginOpen('spawns')
+```
+
+No **servidor** do plugin, quando a decisão nasce lá (comando, webhook, evento de negócio):
+
+```lua
+local ok, reason = exports['mri_Qadmin']:OpenPluginForPlayer(source, 'spawns')
+exports['mri_Qadmin']:TogglePluginForPlayer(source, 'spawns')
+exports['mri_Qadmin']:ClosePluginForPlayer(source, 'spawns')
+```
+
+| Razão | Quando acontece | Quem devolve |
+| :--- | :--- | :--- |
+| `invalid_id` | veio um `pluginId` que não é string não-vazia | todos |
+| `not_registered` | o plugin não existe **ou** o jogador não pode vê-lo | `Open` · `Toggle` · `Close(id)` |
+| `no_permission` | falta `qadmin.open` — ou, nos exports de servidor, as `requiredPerms` do plugin | `Open` · `Toggle` |
+| `already_closed` | o painel já estava fechado | `Close` |
+| `not_active` | o painel está aberto, mas em outra página | `Close(id)` |
+| `invalid_source` | `source` inválido | só os exports `*ForPlayer` |
+
+`not_registered` cobrir dois casos é de propósito: o Qadmin não conta a um plugin se o admin *poderia* enxergar outro. `IsPluginOpen` é a exceção do contrato — devolve só um booleano, sem razão.
+
+Sobrescrevendo o destino por chamada — e apontando para o lugar exato da tela:
+
+```lua
+exports['mri_Qadmin']:OpenPlugin('spawns', {
+    route    = 'plugin:spawns',  -- página do painel
+    page     = 'editor',         -- página interna do plugin
+    category = 'veiculos',       -- categoria/aba dentro da página
+    focus    = 'campo-placa',    -- componente que a tela deve focar
+})
+```
+
+| Campo | O que faz | Manifest |
+| :--- | :--- | :--- |
+| `route` | Página do painel (`plugin:<id>` ou uma página nativa) | `defaultRoute` |
+| `page` | Página interna do plugin | `defaultPage` |
+| `category` | Categoria/aba dentro da página | `defaultCategory` |
+| `focus` | Componente que recebe foco, scroll e realce — **exige marcação prévia** | — (só por chamada) |
+
+`route`, `page`, `category` e `focus` são independentes: dá pra pedir só a categoria, só o foco, ou os quatro. Os campos `default*` valem também na abertura manual pelo sidebar — `focus` não tem equivalente no manifest de propósito, senão o realce piscaria toda vez que o admin abrisse a aba.
+
+**Nas páginas nativas do painel**, `category` seleciona a aba e `focus` leva a tela até o componente:
+
+| Rota | `category` aceitos |
+| :--- | :--- |
+| `settings` | `general`, `server`, `wall` |
+| `permissions` | `groups`, `players` |
+| `actions` | `all`, `favorites`, `manager`, `All`, `Actions`, `PlayerActions`, `OtherActions` |
+
+O `focus` procura, nesta ordem, `[data-nav-id="<focus>"]`, `#<focus>` e `[name="<focus>"]`; achando, faz scroll até o elemento, dá foco nele e aplica um realce de ~2s.
+
+> **Hoje nenhum componente nativo do painel carrega qualquer um dos três marcadores**, então `focus` em página nativa tenta por 2s (20 × 100ms) e desiste em silêncio — sem erro e sem efeito. O mecanismo está pronto, o catálogo de alvos é que ainda não existe: marcar os componentes é trabalho pendente, não configuração do integrador. Até lá, `focus` só entrega valor em página de plugin, onde o guest implementa a navegação. Para tornar um componente alcançável, adicione `data-nav-id="<id>"` a ele.
+
+**Nas páginas de plugin**, o Qadmin não mexe no DOM do iframe: os três campos chegam ao plugin pelo postMessage `mri-plugin/navigate` (e no `mri-plugin/init`, quando o plugin abre direto neles). Navegar internamente é responsabilidade do plugin:
+
+```ts
+// no guest (plugin)
+window.addEventListener('message', (event) => {
+  const msg = event.data
+  if (msg?.type !== 'mri-plugin/navigate') return
+  if (msg.page) setPage(msg.page)
+  if (msg.category) setCategory(msg.category)
+  if (msg.focus) document.querySelector(`[data-nav-id="${msg.focus}"]`)?.scrollIntoView({ block: 'center' })
+})
+```
+
+- O gate para **abrir** é o mesmo do `/adm`: `qadmin.open` **mais** as `requiredPerms` do plugin (o plugin só chega ao cliente se já passou pelo filtro por ACE do servidor). Nos exports de servidor a checagem roda lá, com `HasPerms`, antes de qualquer coisa chegar ao cliente. **Fechar não é privilégio** — `ClosePlugin`/`ClosePluginForPlayer` não exigem permissão.
+- **O painel avisa quando some da tela.** Como o iframe não desmonta mais, o guest recebe `mri-plugin/visibility` com `visible: false` ao fechar e `true` ao reabrir — é por ali que o plugin pausa o polling e os streams dele. Não confunda com `mri-plugin/close`: fechar **preserva** o estado, não manda limpar.
+
+```ts
+window.addEventListener('message', (event) => {
+  if (event.data?.type !== 'mri-plugin/visibility') return
+  event.data.visible ? retomarPolling() : pausarPolling()
+})
+```
+
+- **Fechar não descarta o que estava preenchido.** O painel é escondido, não desmontado: reabrir pelo `OpenPlugin` devolve a tela exatamente como ficou — campos digitados, aba selecionada, scroll, e o iframe do plugin sem recarregar (ou seja, o plugin **não** recebe um novo boot: se ele precisa reagir à reabertura, escute `mri-plugin/navigate`, que agora chega em **toda** chamada de `OpenPlugin`, com ou sem `page`/`category`/`focus`). Trocar de aba no sidebar, essa sim, remonta a página — e é também o que faz o iframe do plugin pegar um build novo.
+- Enquanto está escondido o painel não fica trabalhando à toa: o polling do mapa ao vivo, do modal de mapa e do stream de tela pausa e volta sozinho na reabertura.
+- `ClosePlugin`/`ClosePluginForPlayer` com `pluginId` só fecham se a página ativa for a do plugin — um plugin em background não derruba o painel que o admin abriu em outra aba.
 
 Para registrar apenas permissões, sem aba no painel, use `RegisterPermissions` (ver [Entrypoints](#entrypoints-para-outros-recursos)).
 
@@ -468,6 +565,22 @@ exports['mri_Qadmin']:RegisterPlugin({ id = 'spawns', label = 'Spawns', resource
 exports['mri_Qadmin']:UnregisterPlugin('spawns')
 ```
 
+### `OpenPlugin` / `ClosePlugin` / `TogglePlugin` / `IsPluginOpen` — cliente
+
+Abrem e fecham o painel na página do plugin. Ver [Plugins](#plugins).
+
+```lua
+local ok, reason = exports['mri_Qadmin']:OpenPlugin('spawns')
+```
+
+### `OpenPluginForPlayer` / `ClosePluginForPlayer` / `TogglePluginForPlayer` — servidor
+
+Mesma coisa, dirigido pelo servidor, com o gate de permissão rodando lá. Ver [Plugins](#plugins).
+
+```lua
+local ok, reason = exports['mri_Qadmin']:OpenPluginForPlayer(source, 'spawns')
+```
+
 ### `RegisterPermissions` — servidor
 
 Adiciona permissões ao editor de grupos sem registrar uma aba. A categoria é opcional; se não existir, é criada.
@@ -555,6 +668,9 @@ local aberto = exports['mri_Qadmin']:IsMenuVisible()
 |---|---|
 | `mri_Qadmin:client:OpenUI` | Força a abertura do painel no cliente |
 | `mri_Qadmin:client:pluginsUpdated` | Lista de plugins visíveis para aquele jogador (já filtrada por permissão) |
+| `mri_Qadmin:client:OpenPlugin` | Abre o painel na página do plugin (usado por `OpenPluginForPlayer`) |
+| `mri_Qadmin:client:ClosePlugin` | Fecha o painel (usado por `ClosePluginForPlayer`) |
+| `mri_Qadmin:client:TogglePlugin` | Alterna o painel na página do plugin (usado por `TogglePluginForPlayer`) |
 
 ---
 

@@ -61,14 +61,17 @@ local function registerPlugin(manifest)
     -- cfx-nui-<resource>). NÃO confundir com `id` (slug lógico do plugin) —
     -- quase sempre são diferentes (ex: id='spawns', resource='mri_Qspawn').
     PluginsToRegister[#PluginsToRegister + 1] = {
-        id            = manifest.id,
-        label         = manifest.label or manifest.id,
-        icon          = manifest.icon or 'box',
-        resource      = manifest.resource or manifest.id,
-        htmlPath      = manifest.htmlPath,
-        requiredPerms = manifest.requiredPerms or {},
-        permDefs      = manifest.permDefs,
-        description   = manifest.description,
+        id              = manifest.id,
+        label           = manifest.label or manifest.id,
+        icon            = manifest.icon or 'box',
+        resource        = manifest.resource or manifest.id,
+        htmlPath        = manifest.htmlPath,
+        defaultRoute    = manifest.defaultRoute,
+        defaultPage     = manifest.defaultPage,
+        defaultCategory = manifest.defaultCategory,
+        requiredPerms   = manifest.requiredPerms or {},
+        permDefs        = manifest.permDefs,
+        description     = manifest.description,
     }
 
     Debug('info', locale('plugins.logs.register.received', manifest.id))
@@ -89,6 +92,47 @@ exports('UnregisterPlugin', function(id)
         return true
     end
     return false
+end)
+
+-- Caminho server-driven dos exports client-side (Open/Close/TogglePlugin): o
+-- gate de permissao roda aqui, com HasPerms, antes de tocar no client.
+
+--- @return boolean ok, string|nil reason
+local function canDrivePanel(source, pluginId)
+    source = tonumber(source)
+    if not source or source <= 0 then return false, 'invalid_source' end
+    if type(pluginId) ~= 'string' or pluginId == '' then return false, 'invalid_id' end
+    if not Plugins[pluginId] then return false, 'not_registered' end
+    if not pluginsForSource(source)[pluginId] then return false, 'no_permission' end
+    if not HasPerms(source, 'qadmin.open') then return false, 'no_permission' end
+    return true
+end
+
+--- @param source number
+--- @param pluginId string
+--- @param opts table|nil { route?: string, page?: string, category?: string, focus?: string }
+--- @return boolean success, string|nil reason
+exports('OpenPluginForPlayer', function(source, pluginId, opts)
+    local ok, reason = canDrivePanel(source, pluginId)
+    if not ok then return false, reason end
+    TriggerClientEvent('mri_Qadmin:client:OpenPlugin', tonumber(source), pluginId, opts)
+    return true
+end)
+
+exports('TogglePluginForPlayer', function(source, pluginId, opts)
+    local ok, reason = canDrivePanel(source, pluginId)
+    if not ok then return false, reason end
+    TriggerClientEvent('mri_Qadmin:client:TogglePlugin', tonumber(source), pluginId, opts)
+    return true
+end)
+
+--- @param pluginId string|nil so fecha se a pagina ativa for a dele
+exports('ClosePluginForPlayer', function(source, pluginId)
+    source = tonumber(source)
+    if not source or source <= 0 then return false, 'invalid_source' end
+    if pluginId ~= nil and (type(pluginId) ~= 'string' or pluginId == '') then return false, 'invalid_id' end
+    TriggerClientEvent('mri_Qadmin:client:ClosePlugin', source, pluginId)
+    return true
 end)
 
 CreateThread(function()
