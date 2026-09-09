@@ -328,10 +328,12 @@
         "label": "Cancelar"
     },
     "common": {
+        "default": "predeterminado",
         "no_player_selected": "Ningún jugador seleccionado.",
         "no_player_online": "No se encontraron jugadores en línea.",
         "no_player_offline": "No se encontraron jugadores desconectados.",
         "no_available_players": "Ningún jugador disponible",
+        "no_description": "Sin descripción",
         "none_found": "No se encontraron resultados.",
         "updating": "Actualizando...",
         "loading_more": "Cargando más...",
@@ -390,7 +392,7 @@
         "other_actions": "Otros"
     },
     "nav": {
-        "credits": "Créditos",
+        "documentation": "Documentación",
         "settings": "Configuración",
         "action_manager": "Gestionar Acciones",
         "dashboard": "Dashboard",
@@ -466,6 +468,17 @@
         "accent_color_confirm": "¿Aplicar el color %s para todos los jugadores en línea de la suite MRI?",
         "accent_color_reset": "Predeterminado",
         "accent_color_reset_tooltip": "Restaurar predeterminado MRI (%s)",
+        "background_color": "Color de Fondo",
+        "background_color_description": "Este es el color de fondo de la suite MRI (mri_Qmultichar, mri_Qspawn, ...). Aplicarlo lo cambia para todos los jugadores en línea.",
+        "background_color_global_hint": "Predeterminado global del servidor",
+        "background_color_locked": "Solo los administradores pueden cambiarlo",
+        "background_color_draft": "Vista previa (no aplicada)",
+        "background_color_server_hint": "Servidor: %s",
+        "background_color_cancel": "Cancelar",
+        "background_color_apply": "Aplicar al servidor",
+        "background_color_confirm": "¿Aplicar el color %s a todos los jugadores en línea de la suite MRI?",
+        "background_color_reset": "Predeterminado",
+        "background_color_reset_tooltip": "Restaurar el predeterminado de MRI (%s)",
         "accessibility": "Accesibilidad",
         "general": "General",
         "server": "Servidor",
@@ -549,16 +562,37 @@
             "SignalingProvider": "Backend de WebRTC. fivem-native (sin servidor externo), websocket (requiere mri_Qsignaling en Node.js) o cloudflare-sfu.",
             "WebRTCUrl": "Endpoint obligatorio cuando SignalingProvider es websocket. Normalmente wss://tu-ip:puerto.",
             "Keybindings": "Permite o bloquea que las teclas configuradas abran el panel. Si es false, solo funcionará el comando /adm.",
-            "QBCoreAutoSync": "Si es true, los jugadores con permiso 'admin' o 'god' en QBCore se añaden automáticamente al grupo 'admin' del panel. Desactívalo para control manual total."
+            "QBCoreAutoSync": "Si es true, los jugadores con permiso 'admin' o 'god' en QBCore se añaden automáticamente al grupo 'admin' del panel. Desactívalo para control manual total.",
+            "PrintLevel": "Define el nivel de detalle de los registros (prints) en la consola F8 y en la ventana de TxAdmin/servidor. 0 = Ninguno, 1 = Errores, 2 = Advertencias, 3 = Información, 4 = Depuración, 5 = Todos.",
+            "QBNotify": "Si es true, el panel usa el sistema de notificaciones de qb-notify. Si es false, usa el sistema predeterminado del panel.",
+            "InternalNotify": "Si es true, el panel usa su sistema de notificaciones interno (predeterminado). Si es false, usa el de qb-notify."
         },
         "option": {
             "none_disabled": "Ninguno (Desactivado)",
             "fivem_native": "FiveM Native (Más Simple)",
             "websocket": "Websocket (Externo compatible con HTTPS)",
-            "cloudflare_sfu": "Cloudflare SFU (BETA)"
+            "cloudflare_sfu": "Cloudflare SFU (BETA)",
+            "error": "Error",
+            "warn": "Advertencia",
+            "info": "Información",
+            "debug": "Depuración",
+            "verbose": "Detallado"
+        },
+        "logs": {
+            "initializing": "Iniciando el sincronizador de configuraciones con la BD...",
+            "loaded": "Configuraciones cargadas de la BD: %s.",
+            "seeded": "Sembrando (seed) la config predeterminada en la BD: %s = %s",
+            "synced": "Sincronización de config completada. Total sembrado: %s",
+            "color_changed": "%s cambiada a %s",
+            "updated": "Config %s actualizada de '%s' a '%s', por: %s"
         },
         "errors": {
             "invalid_color": "Color inválido. Use HEX (#RRGGBB).",
+            "invalid_url": "URL inválida. Debe empezar con http:// o https://",
+            "invalid_keybinding": "Atajo de teclado inválido. Usa una tecla válida (ej: F1, 0, INSERT).",
+            "invalid_boolean": "Valor inválido. Usa true o false.",
+            "invalid_number": "Valor inválido. Usa un número válido.",
+            "invalid_option": "Opción inválida. Elige una de las opciones disponibles.",
             "invalid_key": "Configuración \"%s\" inválida o no permitida. No se guardó nada.",
             "invalid_type": "Valor inválido para \"%s\": se esperaba %s, se recibió %s. No se guardó nada."
         }

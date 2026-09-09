@@ -333,6 +333,7 @@
         "no_player_online": "Nenhum jogador online encontrado.",
         "no_player_offline": "Nenhum jogador offline encontrado.",
         "no_available_players": "Nenhum jogador disponível",
+        "no_description": "Sem descrição",
         "none_found": "Nenhum resultado encontrado.",
         "updating": "Atualizando...",
         "loading_more": "Carregando...",
@@ -391,7 +392,7 @@
         "other_actions": "Outros"
     },
     "nav": {
-        "credits": "Créditos",
+        "documentation": "Documentação",
         "settings": "Configurações",
         "action_manager": "Gerenciar Actions",
         "dashboard": "Dashboard",
