@@ -776,21 +776,6 @@ local function SetupPlayerPrincipals(src, isReload)
         activeGroups[#activeGroups + 1] = g.group_id
     end
 
-    -- Reverse Permission Sync (QBCore -> mri_Qadmin)
-    -- Only fires on first load (not reload) and only when the player has no group yet.
-    -- Any QBCore 'god' or 'admin' maps to mri_Qadmin 'god' (already seeded with all perms).
-    -- Sub-tiers (mod/staff) devem ser criados manualmente via UI pelo dono do servidor.
-    if not isReload and Config.QBCoreAutoSync ~= false and #activeGroups == 0 then
-        local hasQBCorePriv = QBCore.Functions.HasPermission(src, 'god') or QBCore.Functions.HasPermission(src, 'admin')
-
-        if hasQBCorePriv then
-            Debug('debug', ('[mri_Qadmin] Auto-Sync: Jogador %s possui permissão admin/god do QBCore. Sincronizando com grupo "god" do painel...'):format(GetPlayerName(src)))
-            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', {citizenid, 'god'})
-            lib.addPrincipal('char:' .. citizenid, 'mri.group.god')
-            activeGroups[#activeGroups + 1] = 'god'
-        end
-    end
-
     -- Apply linked principals from each group (deduplicated via set)
     local linkedSet = {}
     for _, gid in ipairs(activeGroups) do
@@ -806,6 +791,34 @@ local function SetupPlayerPrincipals(src, isReload)
     for lp, _ in pairs(linkedSet) do linkedList[#linkedList + 1] = lp end
 
     principalCache[src] = { fivemPrincipal = fivemPrincipal, citizenid = citizenid, groups = activeGroups, linkedPrincipals = linkedList }
+end
+
+-- Primeiro dono: enquanto o painel não tem master nem ninguém em grupo, o
+-- primeiro jogador com ACE admin/god que abrir o painel vira master. A partir
+-- daí quem dá acesso é ele, pelos grupos do painel.
+local panelConfigured = false
+local claimingMaster = false
+
+---@return boolean claimed
+function ClaimFirstMaster(src)
+    if panelConfigured or claimingMaster or Config.QBCoreAutoSync == false then return false end
+    if not (IsPlayerAceAllowed(src, 'god') or IsPlayerAceAllowed(src, 'admin')) then return false end
+
+    claimingMaster = true
+    panelConfigured = (MySQL.scalar.await('SELECT COUNT(*) FROM mri_qadmin_masters') or 0) > 0
+        or (MySQL.scalar.await('SELECT COUNT(*) FROM mri_qadmin_character_groups') or 0) > 0
+
+    local license = not panelConfigured and QBCore.Functions.GetIdentifier(src, 'license')
+    if license then
+        MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_masters (license) VALUES (?)', {license})
+        lib.addAce('identifier.' .. license, 'qadmin.master', true)
+        lib.addAce('identifier.' .. license, 'qadmin.open', true)
+        panelConfigured = true
+        AddLog(src, 'mri_Qadmin', 'permissions', 'error', ('Master Admin CONCEDIDO ao primeiro admin a abrir o painel: %s (%s)'):format(GetPlayerName(src), license), { license = license, actor = 'first-open' })
+    end
+
+    claimingMaster = false
+    return license and true or false
 end
 
 RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()

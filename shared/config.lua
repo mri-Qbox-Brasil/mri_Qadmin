@@ -18,7 +18,7 @@ Config.NoclipKey = "9"
 
 -- General
 Config.PrintLevel = "none" -- "none" | "error" | "warn" | "info" | "verbose" | "debug"
-Config.QBCoreAutoSync = true -- Auto-promote players with QBCore 'admin'/'god' to mri_Qadmin 'admin' group
+Config.QBCoreAutoSync = true -- Painel sem master nem grupos: o primeiro com ACE 'admin'/'god' que abrir vira master
 Config.QBNotify = true -- Use QBCore.Functions.Notify for notifications (if false, does not notify)
 Config.InternalNotify = true -- Use internal notification system (if false, does not notify)
 

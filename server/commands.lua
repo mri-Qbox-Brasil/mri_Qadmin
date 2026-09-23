@@ -50,6 +50,11 @@ end)
 lib.addCommand({ 'adm', 'admin' }, {
     help = 'Open the admin menu',
 }, function(source)
+    if not HasPerms(source, 'qadmin.open') and ClaimFirstMaster(source) then
+        Wait(250) -- add_ace só aplica no fim do frame (ExecuteCommand)
+        QBCore.Functions.Notify(source, 'Você é o Master Admin do painel.', 'success', 8000)
+    end
+
     if not CheckPerms(source, 'qadmin.open') then return end
     TriggerClientEvent('mri_Qadmin:client:OpenUI', source)
 end)

@@ -330,6 +330,9 @@ RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
         return
     end
 
+    -- Virou admin com o jogo rodando (/staff, txAdmin): o login não carregou nada.
+    if not isAdminPlayer then ReloadPermissions() end
+
     local tbl, locale = GetTranslations()
     if tbl then
         print('^2[mri_Qadmin] Traduções carregadas: ' .. locale .. '^7')
@@ -457,6 +460,10 @@ RegisterNetEvent('mri_Qadmin:client:UpdateResourceState', function(data)
 end)
 
 RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function(permDefs, catDefs)
+    ReloadPermissions(permDefs, catDefs)
+end)
+
+function ReloadPermissions(permDefs, catDefs)
     local perms = lib.callback.await('mri_Qadmin:callback:GetMyPermissions')
     isAdminPlayer = perms and #perms > 0 or false
     SendNUIMessage({
@@ -479,7 +486,7 @@ RegisterNetEvent('mri_Qadmin:client:ForceReloadPermissions', function(permDefs, 
     if isAdminPlayer and not HasInitialData() then
         TriggerServerEvent('mri_Qadmin:server:GetInitialData')
     end
-end)
+end
 
 RegisterNetEvent('mri_Qadmin:client:UpdateSettings', function(newSettings)
     if type(newSettings) == 'table' then

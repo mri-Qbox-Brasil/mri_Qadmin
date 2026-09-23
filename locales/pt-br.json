@@ -567,7 +567,7 @@
             "SignalingProvider": "Backend do webrtc. fivem-native (sem servidor externo), websocket (requer mri_Qsignaling rodando) ou cloudflare-sfu.",
             "WebRTCUrl": "Endpoint obrigatório caso o SignalingProvider esteja como websocket. Geralmente é wss://seu-ip:porta.",
             "Keybindings": "Permitir ou proibir que as teclas configuradas abram o painel. Se false, só abrirá via comandos (/adm).",
-            "QBCoreAutoSync": "Se true, jogadores com permissão 'admin' ou 'god' no QBCore são automaticamente adicionados ao grupo 'admin' do painel. Desative para controle manual total.",
+            "QBCoreAutoSync": "Se true, enquanto o painel não tem master nem ninguém em grupo, o primeiro jogador com permissão 'admin' ou 'god' que abrir o painel vira master. Depois disso o acesso é dado só pelos grupos do painel.",
             "PrintLevel": "Define o nível de logs detalhados (Prints) no console F8 e na janela TxAdmin/Servidor. 0 = Nenhum, 1 = Erros, 2 = Avisos, 3 = Informações, 4 = Depuração, 5 = Todos.",
             "QBNotify": "Se true, o painel usará o sistema de notificações do qb-notify. Se false, usará o sistema padrão do painel.",
             "InternalNotify": "Se true, o painel usará o sistema de notificações interno (padrão). Se false, usará o sistema do qb-notify."
