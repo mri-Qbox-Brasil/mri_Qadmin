@@ -46,18 +46,68 @@ end)
 -- ADMIN COMMANDS
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-lib.addCommand('adm', {
+-- /admin e /noclip: nomes do qbx_adminmenu, mantidos como apelidos.
+lib.addCommand({ 'adm', 'admin' }, {
     help = 'Open the admin menu',
 }, function(source)
     if not CheckPerms(source, 'qadmin.open') then return end
     TriggerClientEvent('mri_Qadmin:client:OpenUI', source)
 end)
 
-lib.addCommand('nc', {
+lib.addCommand({ 'nc', 'noclip' }, {
     help = 'Toggle noclip',
 }, function(source)
     if not CheckPerms(source, 'qadmin.action.noclip') then return end
     TriggerClientEvent("mri_Qadmin:client:ToggleNoClip", source)
+end)
+
+-- Atalhos das ações do painel. Mesmos eventos e permissões da ação.
+lib.addCommand('names', {
+    help = 'Toggle player names',
+}, function(source)
+    if not CheckPerms(source, 'qadmin.action.toggle_names') then return end
+    TriggerClientEvent('mri_Qadmin:client:toggleNames', source, 'toggle_names')
+end)
+
+lib.addCommand('blips', {
+    help = 'Toggle player blips',
+}, function(source)
+    if not CheckPerms(source, 'qadmin.action.toggle_blips') then return end
+    TriggerClientEvent('mri_Qadmin:client:toggleBlips', source, 'toggle_blips')
+end)
+
+lib.addCommand('admincar', {
+    help = 'Save the current vehicle to your garage',
+}, function(source)
+    if not CheckPerms(source, 'qadmin.action.admincar') then return end
+    TriggerClientEvent('mri_Qadmin:client:Admincar', source)
+end)
+
+-- Aceita qualquer modelo de ped, não só os da lista do painel. Quem valida é o
+-- client de quem digitou, pra poder avisar o admin se o modelo não existir.
+lib.addCommand({ 'setped', 'setmodel' }, {
+    help = 'Set the ped model of yourself or another player',
+    params = {
+        { name = 'model', help = 'Ped model', type = 'string' },
+        { name = 'id', help = 'Player ID (optional)', type = 'playerId', optional = true },
+    },
+}, function(source, args)
+    if not CheckPerms(source, 'qadmin.action.set_ped') then return end
+
+    local target = args.id or source
+    if not CheckTargetable(source, target) then return end
+
+    local Player = QBCore.Functions.GetPlayer(target)
+    if not Player then
+        return QBCore.Functions.Notify(source, locale("notifications.not_online"), "error", 5000)
+    end
+
+    if not lib.callback.await('mri_Qadmin:client:isValidPed', source, args.model) then
+        return QBCore.Functions.Notify(source, locale("notifications.invalid_ped", args.model), "error", 5000)
+    end
+
+    TriggerClientEvent("mri_Qadmin:client:setPed", target, args.model)
+    AddLog(source, 'mri_Qadmin', 'players', 'info', ('Ped: modelo %s aplicado em %s %s'):format(args.model, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = target, ped = args.model })
 end)
 
 lib.addCommand("vector2", {

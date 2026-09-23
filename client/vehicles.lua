@@ -246,7 +246,7 @@ local function UpgradePerformance(vehicle)
         SetVehicleMod(vehicle, modType, maxMod, false)
     end
 
-    QBCore.Functions.Notify(locale("vehicle_max_modded"), 'success', 7500)
+    QBCore.Functions.Notify(locale("notifications.vehicle_max_modded"), 'success', 7500)
 end
 
 
@@ -258,7 +258,7 @@ RegisterNetEvent('mri_Qadmin:client:maxmodVehicle', function(data)
         UpgradePerformance(cache.vehicle)
         TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin aplicou max mods no próprio veículo', {})
     else
-        QBCore.Functions.Notify(locale("vehicle_not_driver"), 'error', 7500)
+        QBCore.Functions.Notify(locale("notifications.vehicle_not_driver"), 'error', 7500)
     end
 end)
 

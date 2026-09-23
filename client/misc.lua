@@ -278,6 +278,10 @@ else
 end
 
 -- Set Ped
+lib.callback.register('mri_Qadmin:client:isValidPed', function(model)
+    return type(model) == 'string' and IsModelInCdimage(model) and IsModelAPed(model) or false
+end)
+
 RegisterNetEvent("mri_Qadmin:client:setPed", function(pedModels)
     lib.requestModel(pedModels, 1500)
     SetPlayerModel(cache.playerId, pedModels)

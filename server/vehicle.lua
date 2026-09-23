@@ -159,7 +159,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
                 0
             })
         MarkDashboardDirty('vehicle_added')
-        TriggerClientEvent('QBCore:Notify', src, locale("veh_owner"), 'success', 5000)
+        TriggerClientEvent('QBCore:Notify', src, locale("notifications.veh_owner"), 'success', 5000)
         AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Admin Car: veículo %s salvo com placa %s'):format(trustedEntry.model or trustedEntry._sharedKey, plate), { model = trustedEntry.model, plate = plate })
     else
         TriggerClientEvent('QBCore:Notify', src, locale("notifications.u_veh_owner"), 'error', 3000)
@@ -332,7 +332,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(_, selectedData)
     end
 
     if not CheckAlreadyPlate(plate) then
-        QBCore.Functions.Notify(src, locale("plate_doesnt_exist"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.plate_doesnt_exist", plate), "error", 5000)
         return
     end
 
@@ -416,7 +416,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedD
     end
 
     if not CheckAlreadyPlate(plate) then
-        QBCore.Functions.Notify(src, locale("plate_doesnt_exist", plate), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.plate_doesnt_exist", plate), "error", 5000)
         return
     end
 
@@ -424,7 +424,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedD
     MySQL.query.await('DELETE FROM player_vehicles WHERE plate = ?', { plate })
     MarkDashboardDirty('vehicle_deleted')
 
-    QBCore.Functions.Notify(src, locale("veh_deleted", plate), "success", 5000)
+    QBCore.Functions.Notify(src, locale("notifications.veh_deleted", plate), "success", 5000)
     AddLog(src, 'mri_Qadmin', 'vehicles', 'warn', ('Deletar veículo: placa %s removida do banco'):format(plate), { plate = plate })
 end)
 

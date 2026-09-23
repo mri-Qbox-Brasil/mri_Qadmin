@@ -130,7 +130,7 @@ local function setColor(src, key, color)
     local oldColor = Config[key]
     applyColor(key, color)
 
-    local message = locale('settings.color_changed', locale(("settings.%s"):format(key)), color == '' and locale('common.default') or color)
+    local message = locale('settings.logs.color_changed', locale(("settings.%s"):format(key)), color == '' and locale('common.default') or color)
 
     Debug("debug", message)
     Notify(src, message, 'success')

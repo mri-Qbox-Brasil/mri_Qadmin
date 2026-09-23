@@ -99,13 +99,13 @@ end)
 RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(actionData, vehiclePlate)
     if not CheckPerms(source, 'qadmin.action.open_trunk') then return end
     if not vehiclePlate then
-        return QBCore.Functions.Notify(source, locale("no_plate"), 'error', 7500)
+        return QBCore.Functions.Notify(source, locale("notifications.no_plate"), 'error', 7500)
     end
     local plate = tostring(vehiclePlate)
 
     local success = exports.ox_inventory:forceOpenInventory(source, 'trunk', tostring('trunk'..plate))
     if not success then
-        return QBCore.Functions.Notify(source, locale("trunk_not_found"), 'error', 7500)
+        return QBCore.Functions.Notify(source, locale("vehicle.messages.trunk_not_found"), 'error', 7500)
     end
     AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Porta-malas: admin abriu porta-malas do veículo %s'):format(plate), { plate = plate })
 end)
