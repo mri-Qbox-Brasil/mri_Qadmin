@@ -468,8 +468,6 @@
         "accent_color_draft": "Pré-visualização (não aplicada)",
         "accent_color_server_hint": "Servidor: %s",
         "accent_color_override_hint": "Sobreposto pelo painel Interface (UI): %s. Aplicar aqui remove a sobreposição.",
-        "accent_color_managed_hint": "Editado no painel Interface (UI). A cor vale para toda a suíte MRI.",
-        "accent_color_managed_locked": "Alterar no painel Interface (UI)",
         "accent_color_cancel": "Cancelar",
         "accent_color_apply": "Aplicar para o servidor",
         "accent_color_confirm": "Aplicar a cor %s para todos os jogadores online da suite MRI?",

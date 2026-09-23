@@ -468,8 +468,6 @@
         "accent_color_draft": "Preview (not applied)",
         "accent_color_server_hint": "Server: %s",
         "accent_color_override_hint": "Overridden by the Interface (UI) panel: %s. Applying here removes the override.",
-        "accent_color_managed_hint": "Edited in the Interface (UI) panel. The color applies to the whole MRI suite.",
-        "accent_color_managed_locked": "Change it in the Interface (UI) panel",
         "accent_color_cancel": "Cancel",
         "accent_color_apply": "Apply to server",
         "accent_color_confirm": "Apply color %s to every online player of the MRI suite?",

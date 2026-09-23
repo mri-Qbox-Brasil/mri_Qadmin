@@ -207,8 +207,35 @@ AddEventHandler('mri_Qadmin:server:PlayerPermissionsReady', function(src)
     TriggerClientEvent('mri_Qadmin:client:UpdateSettings', src, GetPrimitiveSettings())
 end)
 
+-- Cor salva no /uiconfig do ox_lib enquanto o Qadmin estava parado (ou antes de
+-- ser instalado). Sem adotar aqui, o Qadmin impunha a cor do banco e o ox_lib
+-- seguia com a dele: duas cores na suíte.
+local function oxLibColor(field)
+    local raw = LoadResourceFile('ox_lib', 'mri/data/config.json')
+    if not raw then return end
+    local ok, cfg = pcall(json.decode, raw)
+    if not ok or type(cfg) ~= 'table' then return end
+    local color = type(cfg[field]) == 'string' and cfg[field]:upper() or ''
+    if isValidHex(color) then return color end
+end
+
+-- Banco sem a cor (instalação nova): adota a convar do server.cfg em vez de
+-- sobrescrever com o padrão.
+local function convarColor(convar)
+    local color = GetConvar(convar, ''):upper()
+    if isValidHex(color) then return color end
+end
+
 AddEventHandler('mri_Qadmin:db:ready', function()
     LoadSettings()
+
+    -- applyColor grava no banco e limpa a cor do ox_lib, então isto só age uma vez.
+    local accent = oxLibColor('accentColor') or (Config.accent_color == nil and convarColor('mri:color'))
+    if accent and accent ~= Config.accent_color then applyColor('accent_color', accent) end
+
+    local background = oxLibColor('backgroundColor') or (Config.background_color == nil and convarColor('mri:backgroundColor'))
+    if background and background ~= Config.background_color then applyColor('background_color', background) end
+
     SetConvarReplicated('mri:color', isValidHex(Config.accent_color) and Config.accent_color or DEFAULT_ACCENT)
     SetConvarReplicated('mri:backgroundColor', isValidHex(Config.background_color) and Config.background_color or '')
 end)
