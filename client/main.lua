@@ -1,5 +1,10 @@
 QBCore = exports['qb-core']:GetCoreObject()
 PlayerData = {}
+
+-- GetCoreObject e uma copia: acompanha os veiculos cadastrados/editados em runtime no qbx_core
+RegisterNetEvent('qbx_core:client:onVehicleUpdate', function(model, vehicle)
+    QBCore.Shared.Vehicles[model] = vehicle
+end)
 local isAdminPlayer = false
 
 -- Functions
@@ -313,8 +318,18 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
 	cb({ status = "ok" })
 end)
 
+-- A lista de veículos chega no login, mas muda depois: veículos cadastrados/editados em
+-- runtime (mri_Qvehicles) e o estoque. Recarrega o cache e manda pra NUI (setupUI mescla).
+local function RefreshVehicles()
+    local vehicles = lib.callback.await('mri_Qadmin:callback:GetVehicles', false)
+    if type(vehicles) ~= 'table' then return end
+    SetDataCache({ vehicles = vehicles })
+    SendNUIMessage({ action = 'setupUI', data = { vehicles = vehicles } })
+end
+
 RegisterNUICallback("update_vehicle_stock", function(data, cb)
     local success = lib.callback.await("mri_Qadmin:server:UpdateVehicleStock", "update_vehicle_stock", data.selectedData)
+    if success then RefreshVehicles() end
     cb({ status = success and "ok" or "error" })
 end)
 
@@ -343,6 +358,9 @@ RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
 
     print('^2[mri_Qadmin] Chamando ToggleUI(true)...^7')
     ToggleUI(true)
+
+    -- Sem travar a abertura: a lista atualizada chega logo depois.
+    CreateThread(RefreshVehicles)
 
     -- resend translations shortly after opening UI
     if tbl then

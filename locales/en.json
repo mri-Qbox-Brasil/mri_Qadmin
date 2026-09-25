@@ -94,7 +94,7 @@
         "started_resource": "Resource started",
         "stopped_resource": "Resource stopped",
         "state_changed": "You changed the vehicle state.",
-        "stock_unavailable": "Stock unavailable: the vehicles_data table does not exist in this database.",
+        "stock_unavailable": "Stock unavailable: mri_Qvehicles is not running.",
         "take_money": "Removed %s from %s",
         "take_money_crypto": "Removed %s Crypto from %s",
         "target_same_bucket": "Tried to put %s in the same bucket",

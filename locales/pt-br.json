@@ -94,7 +94,7 @@
         "started_resource": "Resource iniciado",
         "stopped_resource": "Resource parado",
         "state_changed": "Você alterou o estado do veículo.",
-        "stock_unavailable": "Estoque indisponível: a tabela vehicles_data não existe neste banco.",
+        "stock_unavailable": "Estoque indisponível: o mri_Qvehicles não está rodando.",
         "take_money": "Removeu %s de %s",
         "take_money_crypto": "Removeu %s Cripto de %s",
         "target_same_bucket": "Tentou colocar %s no mesmo bucket",
