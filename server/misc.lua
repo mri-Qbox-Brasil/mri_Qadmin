@@ -818,7 +818,7 @@ lib.callback.register('mri_Qadmin:callback:GetAllPlayerCoords', function(src)
                 vehicleType = Entity(ped).state.vehicleType or 'car'
             end
 
-            local isStaff = IsPlayerAceAllowed(playerSrc, 'qadmin.master')
+            local isStaff = HasPerms(playerSrc, 'qadmin.master')
             local staffColor = nil
             if isStaff then
                 local rgb, _ = GetPlayerESPColor(playerSrc)

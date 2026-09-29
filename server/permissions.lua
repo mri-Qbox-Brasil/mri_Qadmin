@@ -801,7 +801,7 @@ local claimingMaster = false
 
 ---@return boolean claimed
 function ClaimFirstMaster(src)
-    if panelConfigured or claimingMaster or Config.QBCoreAutoSync == false then return false end
+    if panelConfigured or claimingMaster or not Config.FirstMasterClaim then return false end
     if not (IsPlayerAceAllowed(src, 'god') or IsPlayerAceAllowed(src, 'admin')) then return false end
 
     claimingMaster = true

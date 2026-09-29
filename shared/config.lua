@@ -18,7 +18,8 @@ Config.NoclipKey = "9"
 
 -- General
 Config.PrintLevel = "none" -- "none" | "error" | "warn" | "info" | "verbose" | "debug"
-Config.QBCoreAutoSync = true -- Painel sem master nem grupos: o primeiro com ACE 'admin'/'god' que abrir vira master
+Config.AceMaster = true -- Quem tem ACE 'admin' ou 'god' é master do painel
+Config.FirstMasterClaim = false -- Painel sem master nem grupos: o primeiro com ACE 'admin'/'god' que abrir vira master (salvo no banco)
 Config.QBNotify = true -- Use QBCore.Functions.Notify for notifications (if false, does not notify)
 Config.InternalNotify = true -- Use internal notification system (if false, does not notify)
 
@@ -106,7 +107,8 @@ Config.Descriptions = {
     AdminKey          = "settings.desc.AdminKey",
     NoclipKey         = "settings.desc.NoclipKey",
     Debug             = "settings.desc.Debug",
-    QBCoreAutoSync    = "settings.desc.QBCoreAutoSync",
+    AceMaster         = "settings.desc.AceMaster",
+    FirstMasterClaim  = "settings.desc.FirstMasterClaim",
     DefaultGarage     = "settings.desc.DefaultGarage",
     VehicleImages     = "settings.desc.VehicleImages",
     MapBaseUrl        = "settings.desc.MapBaseUrl",

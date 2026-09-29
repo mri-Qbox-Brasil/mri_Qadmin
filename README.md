@@ -97,7 +97,8 @@ Arquivo: `shared/config.lua`.
 | `Config.AdminKey` | string | Não | Tecla que abre o painel. Padrão: `0` |
 | `Config.NoclipKey` | string | Não | Tecla que alterna o noclip. Padrão: `9` |
 | `Config.PrintLevel` | string | Não | Verbosidade do console: `none`, `error`, `warn`, `info`, `verbose` ou `debug` |
-| `Config.QBCoreAutoSync` | bool | Não | Promove automaticamente quem tem rank `admin`/`god` no QBCore para o grupo `admin` do painel |
+| `Config.AceMaster` | bool | Não | Quem tem ACE `admin` ou `god` é master do painel (padrão `true`) |
+| `Config.FirstMasterClaim` | bool | Não | Painel sem master nem grupos: o primeiro com ACE `admin`/`god` que abrir vira master (padrão `false`) |
 | `Config.QBNotify` | bool | Não | Usa `QBCore.Functions.Notify` nas notificações |
 | `Config.InternalNotify` | bool | Não | Usa o sistema de notificação interno do painel |
 | `Config.DefaultGarage` | string | Não | Garagem usada ao dar um veículo permanente. Padrão: `Pillbox Garage Parking` |
@@ -181,11 +182,15 @@ Um grupo pode ser alcançado de três formas:
 
 - **Principal do FiveM** — vinculando o grupo a `group.admin`, `job.police`, `gang.ballas` etc.
 - **Personagem** — vinculando um `citizenid` diretamente (`mri_qadmin_character_groups`).
-- **QBCoreAutoSync** — com `Config.QBCoreAutoSync = true`, quem tem rank `admin` ou `god` no QBCore entra automaticamente no grupo `admin` do painel.
-
 ### Master Admin
 
-Status especial, concedido **só pelo console**, que ignora toda checagem de permissão. Fica gravado em `mri_qadmin_masters` (por license) e é reaplicado como ACE a cada start.
+Status especial que ignora toda checagem de permissão. Três formas de ser master:
+
+- **ACE do servidor** (`Config.AceMaster = true`, padrão): quem tem a ACE `admin` ou `god` (ex.: está no `group.admin` do `permissions.cfg`) é master, sempre. Não grava nada no banco.
+- **Console**: `mri_qadmin.setmaster`, gravado em `mri_qadmin_masters` (por license) e reaplicado como ACE a cada start.
+- **Primeiro a abrir** (`Config.FirstMasterClaim = true`, desligado por padrão): enquanto o painel não tem master nem ninguém em grupo, o primeiro com ACE `admin`/`god` que abrir o painel vira master e fica gravado no banco.
+
+O antigo `QBCoreAutoSync` era esse "primeiro a abrir" e foi substituído pelo `FirstMasterClaim`; o valor dele que ficou salvo no banco não tem mais efeito.
 
 ```
 mri_qadmin.setmaster 1                  # por ID online
@@ -477,7 +482,7 @@ Tabelas criadas automaticamente no start:
 
 ### qb-core / qbx_core
 
-Framework base. Jogadores online e offline, jobs, gangues, dinheiro, metadata e notificações. Com `Config.QBCoreAutoSync = true`, ranks `admin`/`god` do QBCore viram membros do grupo `admin` do painel automaticamente.
+Framework base. Jogadores online e offline, jobs, gangues, dinheiro, metadata e notificações.
 
 ### Inventário
 

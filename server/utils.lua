@@ -94,6 +94,10 @@ function HasPerms(source, perms)
         return true
     end
 
+    if Config.AceMaster ~= false and (IsPlayerAceAllowed(source, 'god') or IsPlayerAceAllowed(source, 'admin')) then
+        return true
+    end
+
     -- Automatic Open Panel Permission: membership of ANY managed group grants
     -- qadmin.open. This is resolved natively through the principal chain
     -- (identifier -> char:<citizenid> -> mri.group.<id>, which holds the

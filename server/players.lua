@@ -503,8 +503,7 @@ end)
 -- Set Perms
 -- SECURITY: ranks que escalam para god/admin do QBCore só podem ser atribuídos
 -- por quem tem qadmin.master, senão um admin de tier médio promoveria players
--- ao god QBCore (que vira master no painel via QBCoreAutoSync enquanto o
--- painel não tem dono).
+-- ao god QBCore (que vira master no painel via Config.AceMaster).
 local ELEVATED_QBCORE_RANKS = { god = true, admin = true, superadmin = true }
 RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
     if not CheckPerms(source, 'qadmin.page.permissions') then return end
