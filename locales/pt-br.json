@@ -94,7 +94,7 @@
         "started_resource": "Resource iniciado",
         "stopped_resource": "Resource parado",
         "state_changed": "Você alterou o estado do veículo.",
-        "stock_unavailable": "Estoque indisponível: o mri_Qvehicles não está rodando.",
+        "stock_unavailable": "Estoque indisponível: o mri_Qbox não está rodando.",
         "take_money": "Removeu %s de %s",
         "take_money_crypto": "Removeu %s Cripto de %s",
         "target_same_bucket": "Tentou colocar %s no mesmo bucket",
@@ -1166,7 +1166,8 @@
             "engine": "Motor",
             "body": "Lataria",
             "garage": "Garagem",
-            "driver": "Motorista"
+            "driver": "Motorista",
+            "price": "Preço"
         },
         "actions": {
             "spawn": "Spawnar",
@@ -1230,7 +1231,8 @@
             "stock_out": "Sem estoque",
             "clear": "Limpar filtros",
             "showing": "%s de %s"
-        }
+        },
+        "stock_current": "Estoque atual: %s"
     },
     "item": {
         "title": "Itens",
@@ -1242,7 +1244,8 @@
             "stock": "Estoque",
             "category": "Categoria: %s",
             "no_description": "Sem descrição disponível",
-            "no_name": "Sem Nome"
+            "no_name": "Sem Nome",
+            "weight": "Peso"
         },
         "actions": {
             "give": "Dar Item",
@@ -1254,6 +1257,13 @@
         },
         "placeholders": {
             "search": "Pesquisar..."
+        },
+        "kinds": {
+            "all": "Todos",
+            "item": "Itens",
+            "weapon": "Armas",
+            "ammo": "Munição",
+            "component": "Acessórios"
         }
     },
     "qadmin": {

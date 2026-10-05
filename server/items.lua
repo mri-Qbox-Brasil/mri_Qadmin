@@ -1,3 +1,11 @@
+-- ox flags each entry (weapon/ammo/component/tint); QBCore only marks weapons.
+local function itemKind(data)
+    if data.weapon or data.type == 'weapon' then return 'weapon' end
+    if data.ammo then return 'ammo' end
+    if data.component or data.tint then return 'component' end
+    return 'item'
+end
+
 local function GetItemsList()
     local Items = {}
     local rawItems = {}
@@ -22,7 +30,9 @@ local function GetItemsList()
             item = itemName,
             name = itemLabel,
             description = data.description or "",
-            weight = data.weight or 0
+            weight = data.weight or 0,
+            kind = itemKind(data),
+            image = type(data.image) == 'string' and data.image or nil
         }
     end
 

@@ -25,6 +25,18 @@ function GetCoreData()
     }
 end
 
+-- ox resolves item images on the client (client.image, inventory:imagepath); the server list has neither.
+function WithItemImages(items)
+    if type(items) ~= 'table' or GetResourceState('ox_inventory') ~= 'started' then return items end
+    local oxItems = exports.ox_inventory:Items() or {}
+    local imagePath = GetConvar('inventory:imagepath', 'nui://ox_inventory/web/images')
+    for _, item in ipairs(items) do
+        local data = oxItems[item.item]
+        item.image = data and data.client and data.client.image or ('%s/%s.png'):format(imagePath, item.item)
+    end
+    return items
+end
+
 function SetDataCache(data)
     for k, v in pairs(data) do
         Cache[k] = v

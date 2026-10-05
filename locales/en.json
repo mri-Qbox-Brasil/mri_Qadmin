@@ -94,7 +94,7 @@
         "started_resource": "Resource started",
         "stopped_resource": "Resource stopped",
         "state_changed": "You changed the vehicle state.",
-        "stock_unavailable": "Stock unavailable: mri_Qvehicles is not running.",
+        "stock_unavailable": "Stock unavailable: mri_Qbox is not running.",
         "take_money": "Removed %s from %s",
         "take_money_crypto": "Removed %s Crypto from %s",
         "target_same_bucket": "Tried to put %s in the same bucket",
@@ -1166,7 +1166,8 @@
             "engine": "Engine",
             "body": "Body",
             "garage": "Garage",
-            "driver": "Driver"
+            "driver": "Driver",
+            "price": "Price"
         },
         "actions": {
             "spawn": "Spawn",
@@ -1230,7 +1231,8 @@
             "stock_out": "Out of stock",
             "clear": "Clear filters",
             "showing": "%s of %s"
-        }
+        },
+        "stock_current": "Current stock: %s"
     },
     "item": {
         "title": "Items",
@@ -1242,7 +1244,8 @@
             "stock": "Stock",
             "category": "Category: %s",
             "no_description": "No description available",
-            "no_name": "No Name"
+            "no_name": "No Name",
+            "weight": "Weight"
         },
         "actions": {
             "give": "Give Item",
@@ -1254,6 +1257,13 @@
         },
         "placeholders": {
             "search": "Search..."
+        },
+        "kinds": {
+            "all": "All",
+            "item": "Items",
+            "weapon": "Weapons",
+            "ammo": "Ammo",
+            "component": "Attachments"
         }
     },
     "qadmin": {

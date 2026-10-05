@@ -1,7 +1,5 @@
--- O estoque é do mri_Qvehicles (tabela vehicles_data): o Qadmin só lê e grava pelos
--- exports dele. Sem o mri_Qvehicles rodando o estoque fica indisponível, mas a
--- LISTA de veículos continua funcionando.
-local STOCK_RESOURCE = 'mri_Qvehicles'
+-- Stock belongs to mri_Qbox's vehicles module: read and written only through its exports.
+local STOCK_RESOURCE = 'mri_Qbox'
 
 --- O estoque está disponível agora?
 --- @return boolean
@@ -13,7 +11,7 @@ end
 local function GetStockByModel()
     if not HasStock() then return nil end
 
-    local ok, stocks = pcall(function() return exports[STOCK_RESOURCE]:GetStocks() end)
+    local ok, stocks = pcall(function() return exports[STOCK_RESOURCE]:GetVehicleStocks() end)
     if not ok then
         Debug('error', ('[vehicles] falha ao ler o estoque do %s: %s'):format(STOCK_RESOURCE, tostring(stocks)))
         return nil
@@ -387,7 +385,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedD
 end)
 
 -- Update Vehicle Stock
-lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, actionKey, selectedData)
+lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, selectedData)
     if not CheckPerms(src, 'qadmin.action.update_vehicle_stock') then return false end
 
     if not HasStock() then
@@ -402,7 +400,7 @@ lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, acti
     local stock = tonumber(stockField.value)
     if type(model) ~= 'string' or model == '' or not stock then return false end
 
-    local ok, err = pcall(function() exports[STOCK_RESOURCE]:SetStock(model, stock) end)
+    local ok, err = pcall(function() exports[STOCK_RESOURCE]:SetVehicleStock(model, stock) end)
     if not ok then
         Debug('error', ('[vehicles] falha ao gravar estoque de %s: %s'):format(model, tostring(err)))
         QBCore.Functions.Notify(src, locale("notifications.stock_unavailable"), "error")

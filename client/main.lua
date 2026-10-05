@@ -48,6 +48,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
         end
 
         -- Update local cache in client/data.lua
+        initialData.items = WithItemImages(initialData.items)
         SetDataCache(initialData)
         Debug('debug', 'Initial data received via Latent Event and cached.')
 
@@ -319,7 +320,7 @@ RegisterNUICallback("clickButton", function(nuiData, cb)
 end)
 
 -- A lista de veículos chega no login, mas muda depois: veículos cadastrados/editados em
--- runtime (mri_Qvehicles) e o estoque. Recarrega o cache e manda pra NUI (setupUI mescla).
+-- runtime (mri_Qbox) e o estoque. Recarrega o cache e manda pra NUI (setupUI mescla).
 local function RefreshVehicles()
     local vehicles = lib.callback.await('mri_Qadmin:callback:GetVehicles', false)
     if type(vehicles) ~= 'table' then return end
@@ -327,8 +328,27 @@ local function RefreshVehicles()
     SendNUIMessage({ action = 'setupUI', data = { vehicles = vehicles } })
 end
 
+local function RefreshItems()
+    local items = lib.callback.await('mri_Qadmin:callback:GetItems', false)
+    if type(items) ~= 'table' then return end
+    items = WithItemImages(items)
+    SetDataCache({ items = items })
+    SendNUIMessage({ action = 'setupUI', data = { items = items } })
+end
+
+-- The pages' refresh buttons: getData only replays the client cache.
+RegisterNUICallback("refreshVehicles", function(_, cb)
+    RefreshVehicles()
+    cb({ status = "ok" })
+end)
+
+RegisterNUICallback("refreshItems", function(_, cb)
+    RefreshItems()
+    cb({ status = "ok" })
+end)
+
 RegisterNUICallback("update_vehicle_stock", function(data, cb)
-    local success = lib.callback.await("mri_Qadmin:server:UpdateVehicleStock", "update_vehicle_stock", data.selectedData)
+    local success = lib.callback.await("mri_Qadmin:server:UpdateVehicleStock", false, data.selectedData)
     if success then RefreshVehicles() end
     cb({ status = success and "ok" or "error" })
 end)

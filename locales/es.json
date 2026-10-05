@@ -94,7 +94,7 @@
         "started_resource": "Recurso iniciado",
         "stopped_resource": "Recurso detenido",
         "state_changed": "Cambiaste el estado del vehículo.",
-        "stock_unavailable": "Stock no disponible: mri_Qvehicles no está en ejecución.",
+        "stock_unavailable": "Stock no disponible: mri_Qbox no está en ejecución.",
         "take_money": "Retiraste %s de %s",
         "take_money_crypto": "Retiraste %s Cripto de %s",
         "target_same_bucket": "Intentaste poner a %s en el mismo bucket",
@@ -1166,7 +1166,8 @@
             "engine": "Motor",
             "body": "Carrocería",
             "garage": "Garaje",
-            "driver": "Conductor"
+            "driver": "Conductor",
+            "price": "Precio"
         },
         "actions": {
             "spawn": "Spawnear",
@@ -1230,7 +1231,8 @@
             "stock_out": "Sin stock",
             "clear": "Limpiar filtros",
             "showing": "%s de %s"
-        }
+        },
+        "stock_current": "Stock actual: %s"
     },
     "item": {
         "title": "Ítems",
@@ -1242,7 +1244,8 @@
             "stock": "Stock",
             "category": "Categoría: %s",
             "no_description": "Sin descripción disponible",
-            "no_name": "Sin Nombre"
+            "no_name": "Sin Nombre",
+            "weight": "Peso"
         },
         "actions": {
             "give": "Dar Ítem",
@@ -1254,6 +1257,13 @@
         },
         "placeholders": {
             "search": "Buscar..."
+        },
+        "kinds": {
+            "all": "Todos",
+            "item": "Objetos",
+            "weapon": "Armas",
+            "ammo": "Munición",
+            "component": "Accesorios"
         }
     },
     "qadmin": {
