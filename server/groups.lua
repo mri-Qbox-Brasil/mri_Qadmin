@@ -1,163 +1,243 @@
-local function getGroups()
+-- `players` can hold tens of thousands of rows: never load it whole, count in SQL and page members.
+
+local MEMBERS_PAGE_SIZE = 50
+local SEARCH_LIMIT = 100
+
+local GROUP_FIELDS = { job = 'job', gang = 'gang' }
+
+-- CAST keeps the GROUP BY temp table in memory: the raw JSON value is LONGTEXT and spills to disk.
+local COUNTS_SQL = [[
+    SELECT
+        CAST(JSON_UNQUOTE(JSON_EXTRACT(job, '$.name')) AS CHAR(64)) AS job_name,
+        CAST(JSON_UNQUOTE(JSON_EXTRACT(gang, '$.name')) AS CHAR(64)) AS gang_name,
+        COUNT(*) AS total
+    FROM players%s
+    GROUP BY job_name, gang_name
+]]
+
+local MEMBERS_SQL = [[
+    SELECT citizenid, charinfo, %s AS group_info
+    FROM players
+    WHERE JSON_UNQUOTE(JSON_EXTRACT(%s, '$.name')) = ?%s
+    ORDER BY citizenid
+    LIMIT ? OFFSET ?
+]]
+
+local SEARCH_SQL = [[
+    SELECT citizenid, charinfo, job, gang
+    FROM players
+    WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ?)%s
+    ORDER BY citizenid
+    LIMIT ?
+]]
+
+local function getDefinitions()
+    if GetResourceState('qbx_core') == 'started' then
+        return exports.qbx_core:GetJobs() or {}, exports.qbx_core:GetGangs() or {}
+    end
+    return QBCore.Shared.Jobs or {}, QBCore.Shared.Gangs or {}
+end
+
+local function fullName(charinfo)
+    charinfo = charinfo or {}
+    return (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or "")
+end
+
+local function decode(value)
+    if type(value) ~= 'string' or value == '' then return {} end
+    local ok, result = pcall(json.decode, value)
+    return ok and type(result) == 'table' and result or {}
+end
+
+-- Online characters plus their citizenids, which the DB queries exclude.
+local function getOnline()
+    local players, cids = {}, {}
+    for _, player in pairs(QBCore.Functions.GetQBPlayers()) do
+        local playerData = player.PlayerData
+        if playerData and playerData.citizenid then
+            players[#players + 1] = playerData
+            cids[#cids + 1] = playerData.citizenid
+        end
+    end
+    return players, cids
+end
+
+local function matchesSearch(playerData, lowerSearch)
+    return string.find(string.lower(fullName(playerData.charinfo)), lowerSearch, 1, true) ~= nil
+        or string.find(string.lower(playerData.citizenid or ''), lowerSearch, 1, true) ~= nil
+end
+
+local function sortedList(groups)
+    local list = {}
+    for _, group in pairs(groups) do list[#list + 1] = group end
+    table.sort(list, function(a, b) return (a.label or "") < (b.label or "") end)
+    return list
+end
+
+local function buildGroups()
+    local allJobs, allGangs = getDefinitions()
     local jobs, gangs = {}, {}
 
-    local allJobs
-    if GetResourceState('qbx_core') == 'started' then allJobs = exports.qbx_core:GetJobs() else allJobs = QBCore.Shared.Jobs end
-
-    local allGangs
-    if GetResourceState('qbx_core') == 'started' then allGangs = exports.qbx_core:GetGangs() else allGangs = QBCore.Shared.Gangs end
-
-    local function addMember(groupTable, groupData, playerData, online)
-        local member = {
-            id = playerData.source or playerData.citizenid or "N/A",
-            name = (playerData.charinfo and playerData.charinfo.firstname or "N/A") .. ' ' .. (playerData.charinfo and playerData.charinfo.lastname or ""),
-            cid = playerData.citizenid or "N/A",
-            job = groupData.name,
-            grade = groupData.grade,
-            online = online
-        }
-        table.insert(groupTable, member)
+    for name, job in pairs(allJobs) do
+        jobs[name] = { name = name, label = job.label, type = 'job', grades = job.grades or {} }
+    end
+    for name, gang in pairs(allGangs) do
+        gangs[name] = { name = name, label = gang.label, type = 'gang', grades = gang.grades or {} }
     end
 
-    for k, v in pairs(allJobs) do
-        jobs[k] = { name = k, label = v.label, type = 'job', grades = v.grades or {}, members = {} }
-    end
-
-    for k, v in pairs(allGangs) do
-        gangs[k] = { name = k, label = v.label, type = 'gang', grades = v.grades or {}, members = {} }
-    end
-
-    local onlinePlayers = QBCore.Functions.GetQBPlayers()
-    for _, player in pairs(onlinePlayers) do
-        local playerData = player.PlayerData
-        if jobs[playerData.job.name] then
-            addMember(jobs[playerData.job.name].members, playerData.job, playerData, true)
-        end
-        if gangs[playerData.gang.name] then
-            addMember(gangs[playerData.gang.name].members, playerData.gang, playerData, true)
-        end
-    end
-
-    -- Optimized SQL: Only fetch required columns
-    local result = MySQL.query.await("SELECT charinfo, citizenid, job, gang FROM players")
-    if result then
-        for _, player in ipairs(result) do
-            local citizenid = player.citizenid
-            -- Skip if already online
-            local isOnline = false
-            for _, onlinePlayer in pairs(onlinePlayers) do
-                if onlinePlayer.PlayerData.citizenid == citizenid then
-                    isOnline = true
-                    break
-                end
-            end
-
-            if not isOnline then
-                local charinfo = json.decode(player.charinfo) or {}
-                local jobinfo = json.decode(player.job) or {}
-                local ganginfo = json.decode(player.gang) or {}
-
-                if jobinfo.name and jobs[jobinfo.name] then
-                    addMember(jobs[jobinfo.name].members, jobinfo, { charinfo = charinfo, citizenid = citizenid }, false)
-                end
-                if ganginfo.name and gangs[ganginfo.name] then
-                    addMember(gangs[ganginfo.name].members, ganginfo, { charinfo = charinfo, citizenid = citizenid }, false)
-                end
-            end
-        end
-    end
-
-    local jobsList, gangsList = {}, {}
-    for _, job in pairs(jobs) do table.insert(jobsList, job) end
-    for _, gang in pairs(gangs) do table.insert(gangsList, gang) end
-
-    local function sortMembers(group)
-        table.sort(group.members, function(a, b)
-            if a.online == b.online then return (a.name or "") < (b.name or "") end
-            return a.online and not b.online
-        end)
-    end
-
-    for _, job in ipairs(jobsList) do sortMembers(job) end
-    for _, gang in ipairs(gangsList) do sortMembers(gang) end
-
-    table.sort(jobsList, function(a, b) return (a.label or "") < (b.label or "") end)
-    table.sort(gangsList, function(a, b) return (a.label or "") < (b.label or "") end)
-
-    return { jobs = jobsList, gangs = gangsList }
+    return jobs, gangs
 end
-_G.GetGroupsData = getGroups
+
+function GetGroupsCatalog()
+    local jobs, gangs = buildGroups()
+    return { jobs = sortedList(jobs), gangs = sortedList(gangs) }
+end
+
+-- Online members count from memory: their job may have changed since the last save.
+function GetGroupsData()
+    local jobs, gangs = buildGroups()
+    for _, group in pairs(jobs) do group.memberCount, group.onlineCount = 0, 0 end
+    for _, group in pairs(gangs) do group.memberCount, group.onlineCount = 0, 0 end
+
+    local online, onlineCids = getOnline()
+    for _, playerData in ipairs(online) do
+        local job = playerData.job and jobs[playerData.job.name]
+        if job then
+            job.memberCount = job.memberCount + 1
+            job.onlineCount = job.onlineCount + 1
+        end
+        local gang = playerData.gang and gangs[playerData.gang.name]
+        if gang then
+            gang.memberCount = gang.memberCount + 1
+            gang.onlineCount = gang.onlineCount + 1
+        end
+    end
+
+    local rows
+    if #onlineCids > 0 then
+        rows = MySQL.query.await(COUNTS_SQL:format(' WHERE citizenid NOT IN (?)'), { onlineCids })
+    else
+        rows = MySQL.query.await(COUNTS_SQL:format(''))
+    end
+
+    for _, row in ipairs(rows or {}) do
+        local total = tonumber(row.total) or 0
+        local job = row.job_name and jobs[row.job_name]
+        if job then job.memberCount = job.memberCount + total end
+        local gang = row.gang_name and gangs[row.gang_name]
+        if gang then gang.memberCount = gang.memberCount + total end
+    end
+
+    return { jobs = sortedList(jobs), gangs = sortedList(gangs) }
+end
 
 lib.callback.register('mri_Qadmin:callback:GetGroupsData', function(src)
     if not CheckPerms(src, 'qadmin.page.groups') then return { jobs = {}, gangs = {} } end
-    return getGroups()
+    return GetGroupsData()
 end)
 
-lib.callback.register('mri_Qadmin:callback:GetGroupMembers', function(source, groupName, groupType)
--- ... keeping the other callback too just in case ...
-    if not CheckPerms(source, 'qadmin.page.groups') then return {} end
+-- Online members all come on the first page, offline ones are paged from the DB.
+lib.callback.register('mri_Qadmin:callback:GetGroupMembers', function(src, groupName, groupType, offset)
+    local empty = { members = {}, hasMore = false, nextOffset = 0 }
+    if not CheckPerms(src, 'qadmin.page.groups') then return empty end
+
+    local field = GROUP_FIELDS[groupType]
+    if not field or type(groupName) ~= 'string' or groupName == '' or #groupName > 64 then return empty end
+    offset = math.max(0, math.floor(tonumber(offset) or 0))
 
     local members = {}
-    local onlinePlayers = QBCore.Functions.GetQBPlayers()
-
-    -- Process Online Players
-    for _, player in pairs(onlinePlayers) do
-        local playerData = player.PlayerData
-        local targetGroup = (groupType == 'job') and playerData.job or playerData.gang
-
-        if targetGroup.name == groupName then
-            table.insert(members, {
-                id = player.PlayerData.source,
-                name = (playerData.charinfo.firstname or "N/A") .. ' ' .. (playerData.charinfo.lastname or ""),
-                cid = playerData.citizenid,
-                grade = targetGroup.grade,
-                online = true
-            })
-        end
-    end
-
-    -- Process Offline Players from DB
-    -- Note: This is still heavy if not indexed, but much better than fetching ALL players
-    -- SECURITY: whitelist field para evitar SQL injection via groupType, e
-    -- sanitiza groupName para LIKE wildcard abuse.
-    local field
-    if groupType == 'job' then field = 'job'
-    elseif groupType == 'gang' then field = 'gang'
-    else return members end
-
-    local cleanGroupName = SanitizeLikeSearch(groupName, 64)
-    if cleanGroupName == '' then return members end
-
-    local results = MySQL.query.await(("SELECT charinfo, citizenid, %s as group_info FROM players WHERE %s LIKE ?"):format(field, field), { '%' .. cleanGroupName .. '%' })
-
-    if results then
-        for _, player in ipairs(results) do
-            local group_info = json.decode(player.group_info) or {}
-            if group_info.name == groupName then
-                -- Check if already added (online)
-                local isOnline = false
-                for _, m in ipairs(members) do
-                    if m.cid == player.citizenid then isOnline = true break end
-                end
-
-                if not isOnline then
-                    local charinfo = json.decode(player.charinfo) or {}
-                    table.insert(members, {
-                        id = player.citizenid,
-                        name = (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or ""),
-                        cid = player.citizenid,
-                        grade = group_info.grade,
-                        online = false
-                    })
-                end
+    local online, onlineCids = getOnline()
+    if offset == 0 then
+        for _, playerData in ipairs(online) do
+            local group = playerData[field]
+            if group and group.name == groupName then
+                members[#members + 1] = {
+                    id = playerData.source,
+                    name = fullName(playerData.charinfo),
+                    cid = playerData.citizenid,
+                    grade = group.grade,
+                    online = true,
+                }
             end
         end
+        table.sort(members, function(a, b) return a.name < b.name end)
     end
 
-    table.sort(members, function(a, b)
-        if a.online == b.online then return a.name < b.name end
-        return a.online and not b.online
-    end)
+    local params = { groupName }
+    local onlineClause = ''
+    if #onlineCids > 0 then
+        onlineClause = ' AND citizenid NOT IN (?)'
+        params[#params + 1] = onlineCids
+    end
+    -- One extra row tells whether there is a next page without a COUNT over the table.
+    params[#params + 1] = MEMBERS_PAGE_SIZE + 1
+    params[#params + 1] = offset
 
-    return members
+    local rows = MySQL.query.await(MEMBERS_SQL:format(field, field, onlineClause), params) or {}
+    local hasMore = #rows > MEMBERS_PAGE_SIZE
+
+    for i = 1, math.min(#rows, MEMBERS_PAGE_SIZE) do
+        local row = rows[i]
+        members[#members + 1] = {
+            id = row.citizenid,
+            name = fullName(decode(row.charinfo)),
+            cid = row.citizenid,
+            grade = decode(row.group_info).grade,
+            online = false,
+        }
+    end
+
+    return { members = members, hasMore = hasMore, nextOffset = offset + MEMBERS_PAGE_SIZE }
+end)
+
+-- Matches across every group, returned with their job and gang.
+lib.callback.register('mri_Qadmin:callback:SearchGroupMembers', function(src, search)
+    local empty = { members = {}, hasMore = false }
+    if not CheckPerms(src, 'qadmin.page.groups') then return empty end
+
+    local likeSearch = SanitizeLikeSearch(search, 64)
+    if likeSearch == '' then return empty end
+    local lowerSearch = string.lower(search)
+
+    local members = {}
+    local online, onlineCids = getOnline()
+    for _, playerData in ipairs(online) do
+        if matchesSearch(playerData, lowerSearch) then
+            members[#members + 1] = {
+                id = playerData.source,
+                name = fullName(playerData.charinfo),
+                cid = playerData.citizenid,
+                online = true,
+                job = playerData.job and { name = playerData.job.name, grade = playerData.job.grade },
+                gang = playerData.gang and { name = playerData.gang.name, grade = playerData.gang.grade },
+            }
+        end
+    end
+
+    local pattern = '%' .. string.lower(likeSearch) .. '%'
+    local params = { pattern, pattern }
+    local onlineClause = ''
+    if #onlineCids > 0 then
+        onlineClause = ' AND citizenid NOT IN (?)'
+        params[#params + 1] = onlineCids
+    end
+    params[#params + 1] = SEARCH_LIMIT + 1
+
+    local rows = MySQL.query.await(SEARCH_SQL:format(onlineClause), params) or {}
+    local hasMore = #rows > SEARCH_LIMIT
+
+    for i = 1, math.min(#rows, SEARCH_LIMIT) do
+        local row = rows[i]
+        local job, gang = decode(row.job), decode(row.gang)
+        members[#members + 1] = {
+            id = row.citizenid,
+            name = fullName(decode(row.charinfo)),
+            cid = row.citizenid,
+            online = false,
+            job = { name = job.name, grade = job.grade },
+            gang = { name = gang.name, grade = gang.grade },
+        }
+    end
+
+    return { members = members, hasMore = hasMore }
 end)

@@ -448,7 +448,10 @@
         "jobs": "Jobs",
         "gangs": "Gangs",
         "members": "Members: %s",
-        "no_members": "No members in this group."
+        "no_members": "No members in this group.",
+        "online_count": "%s online",
+        "load_more": "Load more",
+        "search_limited": "Showing the first %s results. Refine your search."
     },
     "time": {
         "years_ago": "%s years ago",

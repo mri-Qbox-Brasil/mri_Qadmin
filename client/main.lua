@@ -420,6 +420,16 @@ RegisterNUICallback("getGroupsData", function(_, cb)
     cb(groups or {})
 end)
 
+RegisterNUICallback("getGroupMembers", function(data, cb)
+    local page = lib.callback.await('mri_Qadmin:callback:GetGroupMembers', false, data.name, data.type, data.offset)
+    cb(page or { members = {}, hasMore = false, nextOffset = 0 })
+end)
+
+RegisterNUICallback("searchGroupMembers", function(data, cb)
+    local result = lib.callback.await('mri_Qadmin:callback:SearchGroupMembers', false, data.search)
+    cb(result or { members = {}, hasMore = false })
+end)
+
 -- Get Player Coords
 RegisterNUICallback("GetPlayerCoords", function(data, cb)
     local coords = lib.callback.await('mri_Qadmin:callback:GetPlayerCoords', false, data.targetIds)

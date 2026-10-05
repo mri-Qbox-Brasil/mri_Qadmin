@@ -185,7 +185,7 @@ local function getPlayers(page, pageSize, search)
 
     -- 2. Fetch DB Page results if needed
     if slotsRemaining > 0 then
-        local selectQuery = "SELECT * FROM players" .. whereClause .. " LIMIT ? OFFSET ?"
+        local selectQuery = "SELECT citizenid, license, charinfo, job, gang, money, metadata, last_logged_out FROM players" .. whereClause .. " ORDER BY citizenid LIMIT ? OFFSET ?"
         local selectParams = { table.unpack(queryParams) }
         selectParams[#selectParams + 1] = slotsRemaining
         selectParams[#selectParams + 1] = dbOffset
@@ -278,7 +278,7 @@ local function getPlayers(page, pageSize, search)
         end
 
         if #targetCids > 0 then
-            local vResults = MySQL.query.await('SELECT * FROM player_vehicles WHERE citizenid IN (?)', { targetCids })
+            local vResults = MySQL.query.await('SELECT citizenid, vehicle, plate, fuel, engine, body FROM player_vehicles WHERE citizenid IN (?)', { targetCids })
             if vResults then
                 for _, v in ipairs(vResults) do
                     local pIndex = cidMap[v.citizenid]

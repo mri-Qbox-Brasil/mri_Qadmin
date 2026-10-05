@@ -33,7 +33,7 @@ RegisterNetEvent('mri_Qadmin:server:GetInitialData', function()
         permissionDefinitions = GetPermissionDefinitions(),
         categoryDefinitions = GetCategoryDefinitions(),
         actions = GetAllDynamicActions(),
-        groups = HasPerms(src, 'qadmin.page.groups') and GetGroupsData() or { jobs = {}, gangs = {} },
+        groups = HasPerms(src, 'qadmin.page.groups') and GetGroupsCatalog() or { jobs = {}, gangs = {} },
         items = HasPerms(src, 'qadmin.page.items') and GetItemsList() or {},
         vehicles = HasPerms(src, 'qadmin.page.vehicles') and GetVehiclesList() or {},
         commands = GetCommandsList(src),

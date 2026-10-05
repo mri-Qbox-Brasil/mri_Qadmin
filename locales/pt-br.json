@@ -448,7 +448,10 @@
         "jobs": "Empregos",
         "gangs": "Gangues",
         "members": "Membros: %s",
-        "no_members": "Nenhum membro neste grupo."
+        "no_members": "Nenhum membro neste grupo.",
+        "online_count": "%s online",
+        "load_more": "Carregar mais",
+        "search_limited": "Mostrando os primeiros %s resultados. Refine a busca."
     },
     "time": {
         "years_ago": "há %s anos",

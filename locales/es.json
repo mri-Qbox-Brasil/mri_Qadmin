@@ -448,7 +448,10 @@
         "jobs": "Empleos",
         "gangs": "Pandillas",
         "members": "Miembros: %s",
-        "no_members": "Sin miembros en este grupo."
+        "no_members": "Sin miembros en este grupo.",
+        "online_count": "%s en línea",
+        "load_more": "Cargar más",
+        "search_limited": "Mostrando los primeros %s resultados. Refina la búsqueda."
     },
     "time": {
         "years_ago": "hace %s años",
