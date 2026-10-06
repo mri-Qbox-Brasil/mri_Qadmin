@@ -287,7 +287,8 @@
                 "label": "Gangue",
                 "grade": "Cargo"
             }
-        }
+        },
+        "passport": "Passaporte"
     },
     "filter": {
         "all": "Tudo",

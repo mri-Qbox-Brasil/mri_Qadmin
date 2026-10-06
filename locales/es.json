@@ -287,7 +287,8 @@
                 "label": "Banda",
                 "grade": "Rango"
             }
-        }
+        },
+        "passport": "Pasaporte"
     },
     "filter": {
         "all": "Todo",

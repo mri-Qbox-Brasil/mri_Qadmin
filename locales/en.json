@@ -287,7 +287,8 @@
                 "label": "Gang",
                 "grade": "Grade"
             }
-        }
+        },
+        "passport": "Passport"
     },
     "filter": {
         "all": "All",

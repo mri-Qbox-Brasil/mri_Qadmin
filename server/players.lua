@@ -42,6 +42,14 @@ local function getPlayers(page, pageSize, search)
 
     local GetPlayers = QBCore.Functions.GetQBPlayers()
 
+    -- Passport is players.id (mri_Qbox passport module); online it comes from the export, offline from the row.
+    local passportOn = GetResourceState('mri_Qbox') == 'started'
+    local function onlinePassport(src)
+        if not passportOn then return nil end
+        local ok, passport = pcall(function() return exports.mri_Qbox:GetPlayerPassport(src) end)
+        return ok and passport or nil
+    end
+
     local allJobs
     if GetResourceState('qbx_core') == 'started' then
         allJobs = exports.qbx_core:GetJobs()
@@ -74,7 +82,7 @@ local function getPlayers(page, pageSize, search)
                 local nameMatch = string.find(string.lower(name), lowerSearch, 1, true)
                 local licenseMatch = license and string.find(string.lower(license), lowerSearch, 1, true)
                 local cidMatch = citizenid and string.find(string.lower(citizenid), lowerSearch, 1, true)
-                local idMatch = searchId and (k == searchId)
+                local idMatch = searchId and (k == searchId or onlinePassport(k) == searchId)
 
                 if not (nameMatch or licenseMatch or cidMatch or idMatch) then
                     match = false
@@ -135,6 +143,7 @@ local function getPlayers(page, pageSize, search)
             metadata = playerData.metadata or {},
             charinfo = charinfo,
             last_loggedout = playerData.lastLoggedOut,
+            passport = onlinePassport(k),
             online = true
         }
     end
@@ -166,8 +175,14 @@ local function getPlayers(page, pageSize, search)
         -- Nome distinto do `lowerSearch` do escopo de fora (busca literal em memória):
         -- este é o padrão LIKE, já sanitizado, e só ele vai para o SQL.
         local likePattern = "%" .. string.lower(cleanSearch) .. "%"
-        whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
         queryParams = { likePattern, likePattern, likePattern }
+        local passportSearch = passportOn and searchId and math.floor(searchId) == searchId
+        if passportSearch then
+            whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ? OR id = ?)"
+            queryParams[#queryParams + 1] = searchId
+        else
+            whereClause = " WHERE (LOWER(charinfo) LIKE ? OR LOWER(citizenid) LIKE ? OR LOWER(license) LIKE ?)"
+        end
 
         if #onlineCids > 0 then
             whereClause = whereClause .. " AND citizenid NOT IN (?)"
@@ -185,7 +200,7 @@ local function getPlayers(page, pageSize, search)
 
     -- 2. Fetch DB Page results if needed
     if slotsRemaining > 0 then
-        local selectQuery = "SELECT citizenid, license, charinfo, job, gang, money, metadata, last_logged_out FROM players" .. whereClause .. " ORDER BY citizenid LIMIT ? OFFSET ?"
+        local selectQuery = "SELECT id, citizenid, license, charinfo, job, gang, money, metadata, last_logged_out FROM players" .. whereClause .. " ORDER BY citizenid LIMIT ? OFFSET ?"
         local selectParams = { table.unpack(queryParams) }
         selectParams[#selectParams + 1] = slotsRemaining
         selectParams[#selectParams + 1] = dbOffset
@@ -259,6 +274,7 @@ local function getPlayers(page, pageSize, search)
                     citizenid = player.citizenid or "N/A",
                     cid = player.citizenid or "N/A",
                     last_loggedout = player.last_logged_out,
+                    passport = passportOn and player.id or nil,
                     online = false
                 }
             end
