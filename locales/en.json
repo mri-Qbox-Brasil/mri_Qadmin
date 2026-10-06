@@ -288,7 +288,20 @@
                 "grade": "Grade"
             }
         },
-        "passport": "Passport"
+        "passport": "Passport",
+        "passport_edit": {
+            "title": "Change passport",
+            "help": "Only a free number below the city's next passport is accepted.",
+            "reasons": {
+                "invalid": "Invalid number. Use a whole number greater than zero.",
+                "not_found": "Character not found.",
+                "taken": "This passport already belongs to another character.",
+                "not_reserved": "This number cannot be used yet: only a free passport below the city's next one is accepted.",
+                "no_permission": "You are not allowed to change this character's passport.",
+                "disabled": "The Passport module was turned off.",
+                "unavailable": "Could not reach mri_Qbox. Try again."
+            }
+        }
     },
     "filter": {
         "all": "All",
@@ -1541,7 +1554,8 @@
                 "staff_clock_in": "Staff Clock In",
                 "staff_clock_out": "Staff Clock Out",
                 "staff_chat_send": "Send Messages (StaffChat)",
-                "toggle_mock_mode": "Toggle Mock Mode"
+                "toggle_mock_mode": "Toggle Mock Mode",
+                "set_passport": "Change passport"
             },
             "commands": "Commands List"
         }
@@ -1671,7 +1685,8 @@
                 "staff_clock_in": "Start a time-clock session",
                 "staff_clock_out": "End a time-clock session",
                 "staff_chat_send": "Send messages in Staff Chat",
-                "toggle_mock_mode": "Enable mock data for testing"
+                "toggle_mock_mode": "Enable mock data for testing",
+                "set_passport": "Change a character's passport (fixed number), online or offline"
             },
             "commands": "Access the server commands list"
         }

@@ -440,6 +440,7 @@ PERM_DEFINITIONS = {
     { id = 'qadmin.action.fire_job',                category = 'players' },
     { id = 'qadmin.action.fire_gang',               category = 'players' },
     { id = 'qadmin.action.set_bucket',              category = 'players' },
+    { id = 'qadmin.action.set_passport',            category = 'players' },
     { id = 'qadmin.action.get_bucket',              category = 'players' },
     { id = 'qadmin.action.give_money',              category = 'players' },
     { id = 'qadmin.action.remove_money',            category = 'players' },

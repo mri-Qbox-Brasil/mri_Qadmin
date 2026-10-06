@@ -288,7 +288,20 @@
                 "grade": "Cargo"
             }
         },
-        "passport": "Passaporte"
+        "passport": "Passaporte",
+        "passport_edit": {
+            "title": "Trocar passaporte",
+            "help": "Só vale um número livre abaixo do próximo passaporte da cidade.",
+            "reasons": {
+                "invalid": "Número inválido. Use um número inteiro maior que zero.",
+                "not_found": "Personagem não encontrado.",
+                "taken": "Esse passaporte já é de outro personagem.",
+                "not_reserved": "Esse número ainda não pode ser usado: só vale um passaporte livre abaixo do próximo da cidade.",
+                "no_permission": "Você não tem permissão para trocar o passaporte deste personagem.",
+                "disabled": "O módulo Passaporte foi desligado.",
+                "unavailable": "Não foi possível falar com o mri_Qbox. Tente de novo."
+            }
+        }
     },
     "filter": {
         "all": "Tudo",
@@ -1541,7 +1554,8 @@
                 "staff_clock_in": "Entrada da Staff",
                 "staff_clock_out": "Saída da Staff",
                 "staff_chat_send": "Enviar Mensagens (StaffChat)",
-                "toggle_mock_mode": "Alternar Mock Mode"
+                "toggle_mock_mode": "Alternar Mock Mode",
+                "set_passport": "Trocar passaporte"
             },
             "commands": "Lista de Comandos"
         }
@@ -1671,7 +1685,8 @@
                 "staff_clock_in": "Iniciar sessão de ponto",
                 "staff_clock_out": "Encerrar sessão de ponto",
                 "staff_chat_send": "Enviar mensagens no Staff Chat",
-                "toggle_mock_mode": "Habilitar dados fictícios para testes"
+                "toggle_mock_mode": "Habilitar dados fictícios para testes",
+                "set_passport": "Trocar o passaporte (número fixo) de um personagem, online ou offline"
             },
             "commands": "Acessar a lista de comandos do servidor"
         }

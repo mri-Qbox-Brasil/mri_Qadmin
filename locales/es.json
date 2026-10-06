@@ -288,7 +288,20 @@
                 "grade": "Rango"
             }
         },
-        "passport": "Pasaporte"
+        "passport": "Pasaporte",
+        "passport_edit": {
+            "title": "Cambiar pasaporte",
+            "help": "Solo vale un número libre por debajo del próximo pasaporte de la ciudad.",
+            "reasons": {
+                "invalid": "Número inválido. Usa un número entero mayor que cero.",
+                "not_found": "Personaje no encontrado.",
+                "taken": "Ese pasaporte ya pertenece a otro personaje.",
+                "not_reserved": "Ese número todavía no se puede usar: solo vale un pasaporte libre por debajo del próximo de la ciudad.",
+                "no_permission": "No tienes permiso para cambiar el pasaporte de este personaje.",
+                "disabled": "El módulo Pasaporte fue desactivado.",
+                "unavailable": "No se pudo contactar con mri_Qbox. Inténtalo de nuevo."
+            }
+        }
     },
     "filter": {
         "all": "Todo",
@@ -1541,7 +1554,8 @@
                 "staff_clock_in": "Entrada de Staff",
                 "staff_clock_out": "Salida de Staff",
                 "staff_chat_send": "Enviar Mensajes (StaffChat)",
-                "toggle_mock_mode": "Alternar Modo Mock"
+                "toggle_mock_mode": "Alternar Modo Mock",
+                "set_passport": "Cambiar pasaporte"
             },
             "commands": "Lista de Comandos"
         }
@@ -1671,7 +1685,8 @@
                 "staff_clock_in": "Iniciar sesión de fichaje",
                 "staff_clock_out": "Finalizar sesión de fichaje",
                 "staff_chat_send": "Enviar mensajes en Staff Chat",
-                "toggle_mock_mode": "Habilitar datos de prueba"
+                "toggle_mock_mode": "Habilitar datos de prueba",
+                "set_passport": "Cambiar el pasaporte (número fijo) de un personaje, en línea o desconectado"
             },
             "commands": "Acceder a la lista de comandos del servidor"
         }

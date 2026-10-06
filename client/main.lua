@@ -31,6 +31,11 @@ local function pushOxLibUiConfig()
     end
 end
 
+-- Passport module turned on/off in mri_Qbox: the panel hides or shows it without reloading the list.
+AddStateBagChangeHandler('mri:passportEnabled', 'global', function(_, _, value)
+    SendNUIMessage({ action = 'setupUI', data = { passportEnabled = value == true } })
+end)
+
 RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
     if initialData then
         -- Update Config with settings from DB
@@ -78,6 +83,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 settingOptions = Config.Options,
                 inventory = Config.Inventory,
                 selfId = GetPlayerServerId(PlayerId()),
+                passportEnabled = GlobalState['mri:passportEnabled'] == true,
                 accentColor = GetConvar('mri:color', '#00E699'),
                 backgroundColor = Config.background_color or '',
                 resourceVersion = initialData and initialData.resourceVersion or nil,
@@ -337,6 +343,11 @@ local function RefreshItems()
 end
 
 -- The pages' refresh buttons: getData only replays the client cache.
+RegisterNUICallback("setPassport", function(data, cb)
+    local result = lib.callback.await('mri_Qadmin:callback:SetPassport', false, data.citizenid, data.passport)
+    cb(result or { ok = false, reason = 'unavailable' })
+end)
+
 RegisterNUICallback("refreshVehicles", function(_, cb)
     RefreshVehicles()
     cb({ status = "ok" })

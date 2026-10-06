@@ -43,7 +43,8 @@ local function getPlayers(page, pageSize, search)
     local GetPlayers = QBCore.Functions.GetQBPlayers()
 
     -- Passport is players.id (mri_Qbox passport module); online it comes from the export, offline from the row.
-    local passportOn = GetResourceState('mri_Qbox') == 'started'
+    -- mri_Qbox sets this flag (false when the module or the resource stops); players.id alone would show it while off.
+    local passportOn = GlobalState['mri:passportEnabled'] == true
     local function onlinePassport(src)
         if not passportOn then return nil end
         local ok, passport = pcall(function() return exports.mri_Qbox:GetPlayerPassport(src) end)
@@ -373,6 +374,25 @@ _G.getPlayers = getPlayers
 lib.callback.register('mri_Qadmin:callback:GetPlayers', function(src, page, limit, search)
     if not CheckPerms(src, 'qadmin.page.players') then return { players = {}, total = 0 } end
     return getPlayers(page, limit, search)
+end)
+
+-- Reasons come from mri_Qbox SetCitizenPassport ('invalid', 'not_found', 'taken', 'not_reserved', 'disabled').
+lib.callback.register('mri_Qadmin:callback:SetPassport', function(src, citizenid, passport)
+    if not CheckPerms(src, 'qadmin.action.set_passport') then return { ok = false, reason = 'no_permission' } end
+    if type(citizenid) ~= 'string' or citizenid == '' then return { ok = false, reason = 'invalid' } end
+    passport = tonumber(passport)
+    if not passport or passport < 1 or math.floor(passport) ~= passport then return { ok = false, reason = 'invalid' } end
+    if GlobalState['mri:passportEnabled'] ~= true then return { ok = false, reason = 'disabled' } end
+
+    local online = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+    if online and not CheckTargetable(src, online.PlayerData.source) then return { ok = false, reason = 'no_permission' } end
+
+    local callOk, ok, reason = pcall(function() return exports.mri_Qbox:SetCitizenPassport(citizenid, passport) end)
+    if not callOk then return { ok = false, reason = 'unavailable' } end
+    if not ok then return { ok = false, reason = reason or 'invalid' } end
+
+    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Passaporte: %s recebeu o passaporte %d'):format(citizenid, passport), { target_citizenid = citizenid, passport = passport })
+    return { ok = true }
 end)
 
 RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
