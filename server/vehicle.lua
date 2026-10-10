@@ -19,6 +19,23 @@ local function GetStockByModel()
     return stocks
 end
 
+local SCAN_TIMEOUT_MS = 20000
+
+-- The JS side walks the resource folders in the background; only a rescan waits (it runs inside a callback coroutine).
+function GetStreamedModels(rescan)
+    local fsBridge = exports[GetCurrentResourceName()]
+    pcall(function()
+        if rescan then fsBridge:QadminStartStreamScan() end
+        local waited = 0
+        while rescan and (waited == 0 or fsBridge:QadminIsStreamScanning()) and waited < SCAN_TIMEOUT_MS do
+            Wait(100)
+            waited = waited + 100
+        end
+    end)
+    local okGet, result = pcall(function() return fsBridge:QadminGetStreamedModels() end)
+    return okGet and type(result) == 'table' and result or {}
+end
+
 function GetVehiclesList()
     local vehicles = {}
     local baseVehicles
@@ -36,6 +53,7 @@ function GetVehiclesList()
     end
 
     local dbStocks = GetStockByModel()
+    local streamed = GetStreamedModels()
 
     for model, data in pairs(baseVehicles) do
         local m = data.model or model
@@ -45,7 +63,8 @@ function GetVehiclesList()
             model = m,
             category = data.category,
             brand = data.brand,
-            price = data.price
+            price = data.price,
+            addonResource = streamed[tostring(m):lower()],
         }
 
         if dbStocks then
@@ -61,8 +80,9 @@ end
 
 -- HasPerms (silencioso) de propósito: o client chama a cada abertura do painel pra
 -- atualizar a lista, e quem não tem a aba de veículos não deve receber "sem permissão".
-lib.callback.register('mri_Qadmin:callback:GetVehicles', function(source)
+lib.callback.register('mri_Qadmin:callback:GetVehicles', function(source, rescan)
     if not HasPerms(source, 'qadmin.page.vehicles') then return nil end
+    if rescan then GetStreamedModels(true) end
     return GetVehiclesList()
 end)
 

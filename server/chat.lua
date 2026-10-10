@@ -50,6 +50,54 @@ AddEventHandler('playerDropped', function()
 end)
 
 local MAX_MESSAGE_LEN = 1000
+
+-- KVP, not Config: every primitive Config key is broadcast to all staff, and the URL is a secret.
+local WEBHOOK_KVP = 'staffchat_webhook'
+local WEBHOOK_PATTERN = '^https://[%w%.]*discord%.com/api/webhooks/%d+/[%w_%-]+$'
+local WEBHOOK_PATTERN_LEGACY = '^https://[%w%.]*discordapp%.com/api/webhooks/%d+/[%w_%-]+$'
+
+local function getWebhook()
+    return GetResourceKvpString(WEBHOOK_KVP) or ''
+end
+
+local function isValidWebhook(url)
+    return type(url) == 'string' and (url:match(WEBHOOK_PATTERN) ~= nil or url:match(WEBHOOK_PATTERN_LEGACY) ~= nil)
+end
+
+-- Discord refuses webhook names containing these words.
+local function safeUsername(name)
+    name = tostring(name or ''):gsub('[Dd][Ii][Ss][Cc][Oo][Rr][Dd]', 'D1scord'):gsub('[Cc][Ll][Yy][Dd][Ee]', 'Cl yde')
+    if name == '' then name = 'Staff' end
+    return name:sub(1, 80)
+end
+
+local function discordIdOf(src)
+    local id = GetPlayerIdentifierByType(src, 'discord')
+    return id and id:gsub('^discord:', '') or nil
+end
+
+---@param url string
+---@param payload table
+---@param cb? fun(ok: boolean, status: integer)
+local function postWebhook(url, payload, cb)
+    -- allowed_mentions empty: the <@id> renders the linked account without pinging anyone.
+    payload.allowed_mentions = { parse = {} }
+    PerformHttpRequest(url, function(status)
+        if cb then cb(status >= 200 and status < 300, status) end
+        if status == 429 then Debug('error', '[staffchat] webhook do Discord limitou o envio (429)') end
+    end, 'POST', json.encode(payload), { ['Content-Type'] = 'application/json' })
+end
+
+local function relayToDiscord(src, fullname, role, message)
+    local url = getWebhook()
+    if url == '' then return end
+    local discordId = discordIdOf(src)
+    local content = discordId and ('<@%s> %s'):format(discordId, message) or message
+    postWebhook(url, {
+        username = safeUsername(role and ('%s · %s'):format(fullname, role) or fullname),
+        content = content:sub(1, 2000),
+    })
+end
 local MAX_MENTIONS = 20
 local CHAT_MIN_INTERVAL_MS = 750
 
@@ -82,6 +130,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, men
     AddLog(src, 'mri_Qadmin', 'chat', 'info', ('[Staff Chat] %s: %s'):format(fullname, message), { citizenid = citizenid, role = role })
 
     notifyPlayers(src)
+    relayToDiscord(src, fullname, role, message)
 
     -- Build mention set for O(1) lookup. Cap em MAX_MENTIONS para evitar
     -- payloads gigantes que forçariam loop em todos os players.
@@ -132,6 +181,35 @@ lib.callback.register('mri_Qadmin:callback:GetStaffPlayers', function(source)
         end
     end
     return staff
+end)
+
+lib.callback.register('mri_Qadmin:callback:GetStaffChatWebhook', function(source)
+    if not CheckPerms(source, 'qadmin.action.manage_settings') then return nil end
+    return { url = getWebhook() }
+end)
+
+---@return { ok: boolean, reason?: string }
+lib.callback.register('mri_Qadmin:callback:SaveStaffChatWebhook', function(source, url)
+    if not CheckPerms(source, 'qadmin.action.manage_settings') then return { ok = false, reason = 'no_permission' } end
+    url = type(url) == 'string' and url:gsub('^%s+', ''):gsub('%s+$', '') or ''
+    if url ~= '' and not isValidWebhook(url) then return { ok = false, reason = 'invalid_url' } end
+    if url == '' then DeleteResourceKvp(WEBHOOK_KVP) else SetResourceKvp(WEBHOOK_KVP, url) end
+    AddLog(source, 'mri_Qadmin', 'chat', 'info', url == '' and '[Staff Chat] webhook do Discord removida' or '[Staff Chat] webhook do Discord configurada', {})
+    return { ok = true }
+end)
+
+---@return { ok: boolean, status?: integer, reason?: string }
+lib.callback.register('mri_Qadmin:callback:TestStaffChatWebhook', function(source)
+    if not CheckPerms(source, 'qadmin.action.manage_settings') then return { ok = false, reason = 'no_permission' } end
+    local url = getWebhook()
+    if url == '' then return { ok = false, reason = 'not_set' } end
+    local result = promise.new()
+    local player = QBCore.Functions.GetPlayer(source)
+    local name = player and (player.PlayerData.charinfo.firstname .. ' ' .. player.PlayerData.charinfo.lastname) or GetPlayerName(source)
+    postWebhook(url, { username = safeUsername(name), content = locale('staffchat.webhook.test_message') }, function(ok, status)
+        result:resolve({ ok = ok, status = status })
+    end)
+    return Citizen.Await(result)
 end)
 
 lib.callback.register("mri_Qadmin:callback:GetMessages", function(source)

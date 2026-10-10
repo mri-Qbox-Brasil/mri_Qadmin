@@ -16,6 +16,18 @@ RegisterNUICallback("SendMessage", function(msgData, cb)
 	cb(1)
 end)
 
+RegisterNUICallback("GetStaffChatWebhook", function(_, cb)
+	cb(lib.callback.await('mri_Qadmin:callback:GetStaffChatWebhook', false) or {})
+end)
+
+RegisterNUICallback("SaveStaffChatWebhook", function(data, cb)
+	cb(lib.callback.await('mri_Qadmin:callback:SaveStaffChatWebhook', false, data.url) or { ok = false })
+end)
+
+RegisterNUICallback("TestStaffChatWebhook", function(_, cb)
+	cb(lib.callback.await('mri_Qadmin:callback:TestStaffChatWebhook', false) or { ok = false })
+end)
+
 RegisterNUICallback("GetStaffPlayers", function(_, cb)
 	local staff = lib.callback.await('mri_Qadmin:callback:GetStaffPlayers', false)
 	cb(staff or {})

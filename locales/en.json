@@ -194,7 +194,8 @@
             "offline_actions": "Offline Actions",
             "economy": "Economy",
             "quick_actions": "Quick Actions",
-            "inventory": "Inventory Management"
+            "inventory": "Inventory Management",
+            "character": "Character"
         },
         "inventory": {
             "open": "Open Inventory",
@@ -301,6 +302,28 @@
                 "disabled": "The Passport module was turned off.",
                 "unavailable": "Could not reach mri_Qbox. Try again."
             }
+        },
+        "mfd": {
+            "status": "Status",
+            "economy": "Economy",
+            "vehicles": "Vehicles",
+            "inventory": "Inventory",
+            "connection": "Connection",
+            "move": "Movement",
+            "control": "Control",
+            "character": "Character",
+            "moderation": "Moderation",
+            "select_hint": "Select a player from the list.",
+            "log_empty": "No actions this session.",
+            "offline_hint": "Player offline: only record actions work."
+        },
+        "tabs": {
+            "overview": "Overview",
+            "economy": "Economy",
+            "vehicles": "Vehicles",
+            "inventory": "Inventory",
+            "more": "More actions",
+            "connection": "Connection"
         }
     },
     "filter": {
@@ -332,6 +355,19 @@
         "filter": {
             "all": "All Actions",
             "favorites": "Favorites"
+        },
+        "favorite": "Favorite",
+        "unfavorite": "Unfavorite",
+        "groups": {
+            "favorites": "Favorites",
+            "player": "Player",
+            "teleport": "Teleport",
+            "vehicle": "Vehicle",
+            "economy": "Economy and groups",
+            "inventory": "Inventory and weapons",
+            "world": "World",
+            "tools": "Staff tools",
+            "custom": "Custom"
         }
     },
     "confirm": {
@@ -399,7 +435,11 @@
         "name": "Name",
         "confirm_label": "Confirm",
         "cancel_label": "Cancel",
-        "filters": "Filters"
+        "filters": "Filters",
+        "copy": "Copy",
+        "show": "Show",
+        "hide": "Hide",
+        "select": "Select..."
     },
     "categories": {
         "group": "Group",
@@ -465,7 +505,11 @@
         "no_members": "No members in this group.",
         "online_count": "%s online",
         "load_more": "Load more",
-        "search_limited": "Showing the first %s results. Refine your search."
+        "search_limited": "Showing the first %s results. Refine your search.",
+        "balance": "Balance",
+        "hiring": "Hiring",
+        "configure": "Open in the Groups panel",
+        "playtime": "Time in group"
     },
     "time": {
         "years_ago": "%s years ago",
@@ -618,7 +662,11 @@
             "invalid_option": "Invalid option. Choose one of the available options.",
             "invalid_key": "Setting \"%s\" is invalid or not allowed. Nothing was saved.",
             "invalid_type": "Invalid value for \"%s\": expected %s, got %s. Nothing was saved."
-        }
+        },
+        "text_size": "Text size",
+        "text_smaller": "Smaller text",
+        "text_bigger": "Bigger text",
+        "text_reset": "Back to 100%"
     },
     "permissions": {
         "title": "Permissions Manager",
@@ -1044,12 +1092,29 @@
         "status": {
             "alive": "Alive",
             "dead": "Dead"
-        }
+        },
+        "fill_all": "Fill all"
     },
     "staffchat": {
         "title": "Staff Chat",
         "placeholder": "Your message here...",
-        "no_messages": "No messages."
+        "no_messages": "No messages.",
+        "webhook": {
+            "button": "Discord",
+            "title": "Send to Discord",
+            "hint": "Every staff chat message goes to the webhook channel with the character name and role. Staff with a linked Discord show up tagged (no one gets pinged).",
+            "save": "Save",
+            "test": "Test",
+            "remove": "Remove",
+            "saved": "Webhook saved. New messages already go to Discord.",
+            "removed": "Webhook removed.",
+            "invalid": "Invalid URL. Use a Discord webhook link (https://discord.com/api/webhooks/...).",
+            "save_failed": "Could not save.",
+            "load_failed": "Could not load the settings.",
+            "test_ok": "Test message sent. Check the channel.",
+            "test_failed": "Discord rejected it (code %s). Check the URL.",
+            "test_message": "mri_Qadmin Staff Chat test: the webhook works."
+        }
     },
     "resources": {
         "search_placeholder": "Search resource by name...",
@@ -1244,9 +1309,72 @@
             "stock_in": "In stock",
             "stock_out": "Out of stock",
             "clear": "Clear filters",
-            "showing": "%s of %s"
+            "showing": "%s of %s",
+            "origin_all": "All",
+            "origin_addon": "Addons",
+            "origin_native": "Native"
         },
-        "stock_current": "Current stock: %s"
+        "stock_current": "Current stock: %s",
+        "no_image": "No image",
+        "in_stock": "%s in stock",
+        "out_of_stock": "Out of stock",
+        "addon": "Addon",
+        "catalog": {
+            "new": "New vehicle",
+            "missing": "Unlisted",
+            "missing_title": "Game models not in the list",
+            "missing_hint": "Vehicles the game knows (base game and running packs) that are not registered. Register opens the form with the game's name, brand and type.",
+            "missing_search": "Search by model, name or brand",
+            "missing_none": "No unlisted models.",
+            "missing_more": "Showing %s of %s. Refine the search to see the rest.",
+            "missing_count": "%s models",
+            "register": "Register",
+            "edit": "Edit entry",
+            "edit_title": "Edit %s",
+            "save": "Save",
+            "remove": "Remove",
+            "remove_confirm": "Confirm removal",
+            "remove_added": "%s will be deleted from the list.",
+            "remove_base": "%s is a game vehicle. It leaves the list and can come back from the Removed filter.",
+            "restore": "Restore original",
+            "restore_short": "Restore",
+            "type": "Type",
+            "model_placeholder": "spawn name, e.g. sultanrs",
+            "model_taken": "This model is already registered",
+            "not_in_game": "Model not found in the game. Check the name and whether the car pack is running.",
+            "category_placeholder": "Pick or type",
+            "status": {
+                "all": "All",
+                "changed": "Changed",
+                "removed": "Removed",
+                "edited": "Edited",
+                "added": "Added"
+            },
+            "errors": {
+                "no_permission": "No permission to edit the vehicle list.",
+                "invalid_data": "Invalid data.",
+                "invalid_model": "Invalid model.",
+                "model_not_lower_case": "The model must be lower case.",
+                "invalid_type": "Invalid type.",
+                "invalid_price": "Invalid price.",
+                "missing_name_or_type": "Fill in the name and type.",
+                "vehicle_not_exists": "Vehicle not found.",
+                "vehicle_removed": "Vehicle removed. Restore it before editing.",
+                "not_base_vehicle": "Only game vehicles can be restored.",
+                "catalog_offline": "mri_Qbox is not running.",
+                "unknown": "Could not reach the vehicle list."
+            },
+            "types": {
+                "automobile": "Car",
+                "bike": "Motorcycle",
+                "boat": "Boat",
+                "heli": "Helicopter",
+                "plane": "Plane",
+                "submarine": "Submarine",
+                "trailer": "Trailer",
+                "train": "Train"
+            }
+        }
     },
     "item": {
         "title": "Items",
@@ -1278,6 +1406,22 @@
             "weapon": "Weapons",
             "ammo": "Ammo",
             "component": "Attachments"
+        },
+        "give_to": "Give to",
+        "give_amount": "Give %sx",
+        "sent": "%sx sent",
+        "inventory": {
+            "title": "Inventory",
+            "summary": "%s items · %s units",
+            "pick": "Pick a player to see their inventory.",
+            "unavailable": "Could not load the inventory.",
+            "empty": "Inventory is empty.",
+            "no_view": "No permission to view inventories.",
+            "slot": "slot %s",
+            "remove_one": "Remove 1",
+            "remove_all": "Remove the whole slot",
+            "confirm_remove": "Click again to remove",
+            "confirm_short": "Remove"
         }
     },
     "qadmin": {
@@ -1374,7 +1518,17 @@
         "plugins": {
             "none": "No plugins registered.",
             "open": "Open",
-            "subtitle": "Resources integrated into the panel"
+            "subtitle": "Resources integrated into the panel",
+            "search": "Search plugins...",
+            "favorite": "Pin to top",
+            "unfavorite": "Unpin",
+            "groups": {
+                "favorites": "Pinned",
+                "system": "Systems",
+                "world": "World",
+                "interface": "Interface",
+                "other": "Other"
+            }
         }
     },
     "quick": {
@@ -1706,5 +1860,13 @@
             },
             "ready": "Plugin system ready."
         }
+    },
+    "dock": {
+        "title": "Admin",
+        "back": "Back",
+        "compact": "Compact mode",
+        "expand": "Full panel",
+        "close": "Close",
+        "cursor_free": "Mouse released. Press the panel key to use it again."
     }
 }

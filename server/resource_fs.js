@@ -127,4 +127,73 @@ function listResourceDirectory(root, relativePath) {
 
 exports('QadminListPhysicalResourceDirectory', listResourceDirectory);
 
+const SCAN_SKIP = new Set(['node_modules', '.git', 'web', 'html', 'ui', 'nui']);
+
+async function collectYft(dir, resourceName, found, depth) {
+  if (depth > 8) return;
+  let items;
+  try {
+    items = await fs.promises.readdir(dir, { withFileTypes: true });
+  } catch (_) {
+    return;
+  }
+  for (const item of items) {
+    if (item.isDirectory()) {
+      if (!SCAN_SKIP.has(item.name.toLowerCase())) await collectYft(path.join(dir, item.name), resourceName, found, depth + 1);
+    } else {
+      const lower = item.name.toLowerCase();
+      if (lower.endsWith('.yft') && !lower.endsWith('_hi.yft')) found[lower.slice(0, -4)] = resourceName;
+    }
+  }
+}
+
+// Model name -> resource that streams it; the game itself cannot tell a streamed model from a base one.
+// Async on purpose: the walk takes seconds on a big base and would freeze the server thread.
+let streamedModels = {};
+let scanning = false;
+let rescanPending = false;
+
+async function scanStreamedModels() {
+  if (scanning) {
+    rescanPending = true;
+    return;
+  }
+  scanning = true;
+  try {
+    const found = {};
+    for (let i = 0; i < GetNumResources(); i++) {
+      const name = GetResourceByFindIndex(i);
+      if (!name || GetResourceState(name) !== 'started') continue;
+      const root = GetResourcePath(name);
+      if (root) await collectYft(root, name, found, 0);
+    }
+    streamedModels = found;
+  } catch (error) {
+    console.log(`[mri_Qadmin] Falha ao varrer modelos em stream: ${error.message}`);
+  } finally {
+    scanning = false;
+  }
+  if (rescanPending) {
+    rescanPending = false;
+    scanStreamedModels();
+  }
+}
+
+// Car packs can start after this resource (boot order, ensure at runtime): rescan once things settle.
+let scanTimer = null;
+function scheduleScan() {
+  if (scanTimer) clearTimeout(scanTimer);
+  scanTimer = setTimeout(() => {
+    scanTimer = null;
+    scanStreamedModels();
+  }, 5000);
+}
+on('onServerResourceStart', scheduleScan);
+
+exports('QadminStartStreamScan', () => { scanStreamedModels(); });
+exports('QadminIsStreamScanning', () => scanning);
+exports('QadminGetStreamedModels', () => streamedModels);
+
+scheduleScan();
+
 console.log('[mri_Qadmin] Resource FS bridge carregado.');

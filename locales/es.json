@@ -194,7 +194,8 @@
             "offline_actions": "Acciones Offline",
             "economy": "Economía",
             "quick_actions": "Acciones Rápidas",
-            "inventory": "Gestión de Inventario"
+            "inventory": "Gestión de Inventario",
+            "character": "Personaje"
         },
         "inventory": {
             "open": "Abrir Inventario",
@@ -301,6 +302,28 @@
                 "disabled": "El módulo Pasaporte fue desactivado.",
                 "unavailable": "No se pudo contactar con mri_Qbox. Inténtalo de nuevo."
             }
+        },
+        "mfd": {
+            "status": "Estado",
+            "economy": "Economía",
+            "vehicles": "Vehículos",
+            "inventory": "Inventario",
+            "connection": "Conexión",
+            "move": "Movimiento",
+            "control": "Control",
+            "character": "Personaje",
+            "moderation": "Moderación",
+            "select_hint": "Selecciona un jugador de la lista.",
+            "log_empty": "Ninguna acción en esta sesión.",
+            "offline_hint": "Jugador desconectado: solo funcionan las acciones de registro."
+        },
+        "tabs": {
+            "overview": "Resumen",
+            "economy": "Economía",
+            "vehicles": "Vehículos",
+            "inventory": "Inventario",
+            "more": "Más acciones",
+            "connection": "Conexión"
         }
     },
     "filter": {
@@ -332,6 +355,19 @@
         "filter": {
             "all": "Todas las Acciones",
             "favorites": "Favoritos"
+        },
+        "favorite": "Marcar favorito",
+        "unfavorite": "Quitar favorito",
+        "groups": {
+            "favorites": "Favoritos",
+            "player": "Jugador",
+            "teleport": "Teletransporte",
+            "vehicle": "Vehículo",
+            "economy": "Economía y grupos",
+            "inventory": "Inventario y armas",
+            "world": "Mundo",
+            "tools": "Herramientas del staff",
+            "custom": "Personalizadas"
         }
     },
     "confirm": {
@@ -399,7 +435,11 @@
         "name": "Nombre",
         "confirm_label": "Confirmar",
         "cancel_label": "Cancelar",
-        "filters": "Filtros"
+        "filters": "Filtros",
+        "copy": "Copiar",
+        "show": "Mostrar",
+        "hide": "Ocultar",
+        "select": "Seleccionar..."
     },
     "categories": {
         "group": "Grupo",
@@ -465,7 +505,11 @@
         "no_members": "Sin miembros en este grupo.",
         "online_count": "%s en línea",
         "load_more": "Cargar más",
-        "search_limited": "Mostrando los primeros %s resultados. Refina la búsqueda."
+        "search_limited": "Mostrando los primeros %s resultados. Refina la búsqueda.",
+        "balance": "Saldo",
+        "hiring": "Contratando",
+        "configure": "Abrir en el Panel de Grupos",
+        "playtime": "Tiempo en el grupo"
     },
     "time": {
         "years_ago": "hace %s años",
@@ -618,7 +662,11 @@
             "invalid_option": "Opción inválida. Elige una de las opciones disponibles.",
             "invalid_key": "Configuración \"%s\" inválida o no permitida. No se guardó nada.",
             "invalid_type": "Valor inválido para \"%s\": se esperaba %s, se recibió %s. No se guardó nada."
-        }
+        },
+        "text_size": "Tamaño del texto",
+        "text_smaller": "Texto más pequeño",
+        "text_bigger": "Texto más grande",
+        "text_reset": "Volver a 100%"
     },
     "permissions": {
         "title": "Gestor de Permisos",
@@ -1044,12 +1092,29 @@
         "status": {
             "alive": "Vivo",
             "dead": "Muerto"
-        }
+        },
+        "fill_all": "Llenar todo"
     },
     "staffchat": {
         "title": "Staff Chat",
         "placeholder": "Tu mensaje aquí...",
-        "no_messages": "Sin mensajes."
+        "no_messages": "Sin mensajes.",
+        "webhook": {
+            "button": "Discord",
+            "title": "Enviar a Discord",
+            "hint": "Cada mensaje del chat del staff va al canal de la webhook con el nombre del personaje y el cargo. Quien tiene Discord vinculado aparece etiquetado (sin notificar a nadie).",
+            "save": "Guardar",
+            "test": "Probar",
+            "remove": "Quitar",
+            "saved": "Webhook guardada. Los próximos mensajes ya van a Discord.",
+            "removed": "Webhook quitada.",
+            "invalid": "URL inválida. Usa el enlace de webhook de Discord (https://discord.com/api/webhooks/...).",
+            "save_failed": "No se pudo guardar.",
+            "load_failed": "No se pudo cargar la configuración.",
+            "test_ok": "Mensaje de prueba enviado. Revisa el canal.",
+            "test_failed": "Discord lo rechazó (código %s). Revisa la URL.",
+            "test_message": "Prueba del Staff Chat de mri_Qadmin: la webhook funciona."
+        }
     },
     "resources": {
         "search_placeholder": "Buscar recurso por nombre...",
@@ -1244,9 +1309,72 @@
             "stock_in": "En stock",
             "stock_out": "Sin stock",
             "clear": "Limpiar filtros",
-            "showing": "%s de %s"
+            "showing": "%s de %s",
+            "origin_all": "Todos",
+            "origin_addon": "Addons",
+            "origin_native": "Nativos"
         },
-        "stock_current": "Stock actual: %s"
+        "stock_current": "Stock actual: %s",
+        "no_image": "Sin imagen",
+        "in_stock": "%s en stock",
+        "out_of_stock": "Sin stock",
+        "addon": "Addon",
+        "catalog": {
+            "new": "Nuevo vehículo",
+            "missing": "Fuera de la lista",
+            "missing_title": "Modelos del juego fuera de la lista",
+            "missing_hint": "Vehículos que el juego conoce (base y packs activos) y que no están registrados. Registrar abre el formulario con el nombre, la marca y el tipo del juego.",
+            "missing_search": "Buscar por modelo, nombre o marca",
+            "missing_none": "Ningún modelo fuera de la lista.",
+            "missing_more": "Mostrando %s de %s. Refina la búsqueda para ver el resto.",
+            "missing_count": "%s modelos",
+            "register": "Registrar",
+            "edit": "Editar registro",
+            "edit_title": "Editar %s",
+            "save": "Guardar",
+            "remove": "Quitar",
+            "remove_confirm": "Confirmar",
+            "remove_added": "%s se borrará del registro.",
+            "remove_base": "%s es un vehículo del juego. Sale de la lista y puede volver desde el filtro Quitados.",
+            "restore": "Volver al original",
+            "restore_short": "Restaurar",
+            "type": "Tipo",
+            "model_placeholder": "nombre de spawn, ej.: sultanrs",
+            "model_taken": "Este modelo ya está registrado",
+            "not_in_game": "Modelo no encontrado en el juego. Revisa el nombre y si el pack del coche está activo.",
+            "category_placeholder": "Elige o escribe",
+            "status": {
+                "all": "Todos",
+                "changed": "Cambiados",
+                "removed": "Quitados",
+                "edited": "Editado",
+                "added": "Añadido"
+            },
+            "errors": {
+                "no_permission": "Sin permiso para editar el registro.",
+                "invalid_data": "Datos inválidos.",
+                "invalid_model": "Modelo inválido.",
+                "model_not_lower_case": "El modelo debe estar en minúsculas.",
+                "invalid_type": "Tipo inválido.",
+                "invalid_price": "Precio inválido.",
+                "missing_name_or_type": "Indica nombre y tipo.",
+                "vehicle_not_exists": "Vehículo no encontrado.",
+                "vehicle_removed": "Vehículo quitado. Restáuralo antes de editar.",
+                "not_base_vehicle": "Solo los vehículos del juego pueden volver al original.",
+                "catalog_offline": "mri_Qbox no está activo.",
+                "unknown": "No se pudo contactar con el registro de vehículos."
+            },
+            "types": {
+                "automobile": "Coche",
+                "bike": "Moto",
+                "boat": "Barco",
+                "heli": "Helicóptero",
+                "plane": "Avión",
+                "submarine": "Submarino",
+                "trailer": "Remolque",
+                "train": "Tren"
+            }
+        }
     },
     "item": {
         "title": "Ítems",
@@ -1278,6 +1406,22 @@
             "weapon": "Armas",
             "ammo": "Munición",
             "component": "Accesorios"
+        },
+        "give_to": "Dar a",
+        "give_amount": "Dar %sx",
+        "sent": "%sx enviado",
+        "inventory": {
+            "title": "Inventario",
+            "summary": "%s ítems · %s unidades",
+            "pick": "Elige un jugador para ver su inventario.",
+            "unavailable": "No se pudo cargar el inventario.",
+            "empty": "Inventario vacío.",
+            "no_view": "Sin permiso para ver inventarios.",
+            "slot": "slot %s",
+            "remove_one": "Quitar 1",
+            "remove_all": "Quitar todo el slot",
+            "confirm_remove": "Haz clic de nuevo para quitar",
+            "confirm_short": "Quitar"
         }
     },
     "qadmin": {
@@ -1374,7 +1518,17 @@
         "plugins": {
             "none": "Ningún plugin registrado.",
             "open": "Abrir",
-            "subtitle": "Recursos integrados al panel"
+            "subtitle": "Recursos integrados al panel",
+            "search": "Buscar plugin...",
+            "favorite": "Fijar arriba",
+            "unfavorite": "Desfijar",
+            "groups": {
+                "favorites": "Fijados",
+                "system": "Sistemas",
+                "world": "Mundo",
+                "interface": "Interfaz",
+                "other": "Otros"
+            }
         }
     },
     "quick": {
@@ -1706,5 +1860,13 @@
             },
             "ready": "Sistema de plugins listo."
         }
+    },
+    "dock": {
+        "title": "Admin",
+        "back": "Volver",
+        "compact": "Modo reducido",
+        "expand": "Panel completo",
+        "close": "Cerrar",
+        "cursor_free": "Ratón liberado. Pulsa la tecla del panel para usarlo de nuevo."
     }
 }

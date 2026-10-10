@@ -49,7 +49,7 @@ local function broadcastPluginsUpdated()
     end
 end
 
----@param manifest table { id, label, icon, resource, requiredPerms?, description? }
+---@param manifest table { id, label, icon, resource, requiredPerms?, description?, category? }
 ---@return boolean success
 local function registerPlugin(manifest)
     if type(manifest) ~= 'table' then return false end
@@ -72,6 +72,7 @@ local function registerPlugin(manifest)
         requiredPerms   = manifest.requiredPerms or {},
         permDefs        = manifest.permDefs,
         description     = manifest.description,
+        category        = manifest.category,
     }
 
     Debug('info', locale('plugins.logs.register.received', manifest.id))

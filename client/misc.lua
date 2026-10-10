@@ -253,6 +253,7 @@ local toogleAdmin = lib.addKeybind({
     description = locale("commands.admin_desc"),
     defaultKey = Config.AdminKey,
     onPressed = function(_)
+        if ToggleDockCursor() then return end
         ExecuteCommand('adm')
     end
 })

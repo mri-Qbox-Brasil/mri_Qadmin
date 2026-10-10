@@ -327,8 +327,8 @@ end)
 
 -- A lista de veículos chega no login, mas muda depois: veículos cadastrados/editados em
 -- runtime (mri_Qbox) e o estoque. Recarrega o cache e manda pra NUI (setupUI mescla).
-local function RefreshVehicles()
-    local vehicles = lib.callback.await('mri_Qadmin:callback:GetVehicles', false)
+local function RefreshVehicles(rescan)
+    local vehicles = lib.callback.await('mri_Qadmin:callback:GetVehicles', false, rescan)
     if type(vehicles) ~= 'table' then return end
     SetDataCache({ vehicles = vehicles })
     SendNUIMessage({ action = 'setupUI', data = { vehicles = vehicles } })
@@ -348,8 +348,14 @@ RegisterNUICallback("setPassport", function(data, cb)
     cb(result or { ok = false, reason = 'unavailable' })
 end)
 
-RegisterNUICallback("refreshVehicles", function(_, cb)
+-- mri_Qbox tells whoever read its catalog that a vehicle or the stock changed
+RegisterNetEvent("mri_Qbox:vehicles:changed", function()
     RefreshVehicles()
+    SendNUIMessage({ action = "vehicleCatalogChanged" })
+end)
+
+RegisterNUICallback("refreshVehicles", function(_, cb)
+    RefreshVehicles(true)
     cb({ status = "ok" })
 end)
 

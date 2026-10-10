@@ -632,7 +632,7 @@ local function readResourceFile(resourceName, relativePath)
         editable = editable,
         tooLarge = size > MAX_EDITOR_FILE_SIZE,
         binary = binary,
-        content = binary and nil or content,
+        content = not binary and content or nil,
     }
 end
 

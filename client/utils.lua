@@ -1,16 +1,88 @@
--- luacheck: globals MenuVisible
+-- luacheck: globals MenuVisible PanelMode
 MenuVisible = false
+-- 'full' is the tablet; 'dock' is the narrow side panel you can walk with.
+PanelMode = GetResourceKvpString('panel_mode') == 'dock' and 'dock' or 'full'
 
+local dockCursor = true
+local dockTyping = false
+local dockGuard = false
+
+-- Mouse and attack still reach the game under keep-input: the camera would spin with the cursor.
+local DOCK_BLOCKED_CONTROLS = { 1, 2, 24, 25, 37, 68, 69, 70, 91, 92, 106, 140, 141, 142, 257, 263, 264, 199, 200, 14, 15, 16, 17 }
+
+local function startDockGuard()
+	if dockGuard then return end
+	dockGuard = true
+	CreateThread(function()
+		while MenuVisible and PanelMode == 'dock' do
+			if dockCursor and not dockTyping then
+				for i = 1, #DOCK_BLOCKED_CONTROLS do
+					DisableControlAction(0, DOCK_BLOCKED_CONTROLS[i], true)
+				end
+				DisablePlayerFiring(cache.playerId, true)
+			end
+			Wait(0)
+		end
+		dockGuard = false
+	end)
+end
+
+local function applyFocus()
+	if not MenuVisible then
+		SetNuiFocus(false, false)
+		SetNuiFocusKeepInput(false)
+		return
+	end
+	if PanelMode == 'dock' then
+		SetNuiFocus(dockCursor, dockCursor)
+		SetNuiFocusKeepInput(dockCursor and not dockTyping)
+		startDockGuard()
+	else
+		SetNuiFocus(true, true)
+		SetNuiFocusKeepInput(false)
+	end
+	SendNUIMessage({ action = 'dockCursor', data = dockCursor })
+end
 
 --- @param bool boolean
 function ToggleUI(bool)
     MenuVisible = bool
-	SetNuiFocus(bool, bool)
+	dockCursor = true
+	dockTyping = false
+	applyFocus()
 	SendNUIMessage({
 		action = "setVisible",
 		data = bool
 	})
 end
+
+--- Dock only: frees the mouse for the game while the panel stays on screen.
+function ToggleDockCursor()
+	if not MenuVisible or PanelMode ~= 'dock' then return false end
+	dockCursor = not dockCursor
+	applyFocus()
+	return true
+end
+
+RegisterNUICallback('getPanelMode', function(_, cb)
+	cb(PanelMode)
+end)
+
+RegisterNUICallback('setPanelMode', function(data, cb)
+	PanelMode = (type(data) == 'table' and data.mode == 'dock') and 'dock' or 'full'
+	SetResourceKvp('panel_mode', PanelMode)
+	dockCursor = true
+	dockTyping = false
+	applyFocus()
+	cb(PanelMode)
+end)
+
+-- Typing in the dock must not walk the ped.
+RegisterNUICallback('setTyping', function(data, cb)
+	dockTyping = type(data) == 'table' and data.typing == true
+	if MenuVisible and PanelMode == 'dock' then applyFocus() end
+	cb('ok')
+end)
 
 function IsMenuVisible()
     return MenuVisible

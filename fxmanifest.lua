@@ -5,7 +5,7 @@ use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
 author "MRI Qbox Team"
-version "1.33.1"
+version "1.34.0"
 
 ox_lib "locale"
 
@@ -66,6 +66,7 @@ client_scripts {
     "client/toggle_laser.lua",
     "client/troll.lua",
     "client/vehicles.lua",
+    "client/vehicle_catalog.lua",
     "client/wall.lua",
     "client/world.lua",
     "client/key_capture.lua",
