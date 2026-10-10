@@ -5,6 +5,8 @@ local SEARCH_LIMIT = 100
 
 local GROUP_FIELDS = { job = 'job', gang = 'gang' }
 
+local BOSSMENU_RESOURCE = 'mri_Qbossmenu'
+
 -- CAST keeps the GROUP BY temp table in memory: the raw JSON value is LONGTEXT and spills to disk.
 local COUNTS_SQL = [[
     SELECT
@@ -41,6 +43,17 @@ end
 local function fullName(charinfo)
     charinfo = charinfo or {}
     return (charinfo.firstname or "N/A") .. ' ' .. (charinfo.lastname or "")
+end
+
+-- Optional extras from mri_Qbossmenu (logo, balance, hiring, playtime); nil when it is not running.
+local function bossmenuExport(name, ...)
+    if GetResourceState(BOSSMENU_RESOURCE) ~= 'started' then return nil end
+    local args = table.pack(...)
+    local ok, result = pcall(function()
+        local resource = exports[BOSSMENU_RESOURCE]
+        return resource[name](resource, table.unpack(args, 1, args.n))
+    end)
+    return ok and result or nil
 end
 
 local function decode(value)
@@ -128,7 +141,22 @@ function GetGroupsData()
         if gang then gang.memberCount = gang.memberCount + total end
     end
 
-    return { jobs = sortedList(jobs), gangs = sortedList(gangs) }
+    local bossmenu = bossmenuExport('GetQadminGroupInfo')
+    if bossmenu then
+        for groupType, groups in pairs({ job = jobs, gang = gangs }) do
+            for name, extra in pairs(bossmenu[groupType] or {}) do
+                local group = groups[name]
+                if group then
+                    group.displayLabel = extra.displayLabel
+                    group.logo = extra.logo
+                    group.balance = extra.balance
+                    group.hiring = extra.hiring == true
+                end
+            end
+        end
+    end
+
+    return { jobs = sortedList(jobs), gangs = sortedList(gangs), bossmenuPlugin = bossmenu and bossmenu.pluginId or nil }
 end
 
 lib.callback.register('mri_Qadmin:callback:GetGroupsData', function(src)
@@ -185,6 +213,13 @@ lib.callback.register('mri_Qadmin:callback:GetGroupMembers', function(src, group
             grade = decode(row.group_info).grade,
             online = false,
         }
+    end
+
+    local cids = {}
+    for i = 1, #members do cids[i] = members[i].cid end
+    local playtime = bossmenuExport('GetQadminMemberPlaytime', groupName, groupType, cids)
+    if playtime then
+        for _, member in ipairs(members) do member.playTime = playtime[member.cid] or 0 end
     end
 
     return { members = members, hasMore = hasMore, nextOffset = offset + MEMBERS_PAGE_SIZE }
