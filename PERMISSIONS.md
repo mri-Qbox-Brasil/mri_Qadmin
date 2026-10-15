@@ -193,7 +193,6 @@ Plugins registram suas próprias permissões via export — veja a seção [Plug
 | `qadmin.action.toggle_coords` | Exibir coordenadas na tela |
 | `qadmin.action.toggle_blips` | Exibir blips de todos no mapa |
 | `qadmin.action.toggle_names` | Exibir nomes acima dos jogadores |
-| `qadmin.action.toggle_mock_mode` | Ativar mock de dados (dev/browser) |
 
 ### Telas ao Vivo
 | Permissão | Descrição |

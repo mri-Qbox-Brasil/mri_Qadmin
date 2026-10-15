@@ -499,6 +499,21 @@
         }
     },
     "groups": {
+        "grade": "Rango",
+        "add": {
+            "button": "Agregar miembro",
+            "title": "Agregar a %s",
+            "player": "Jugador",
+            "search": "Buscar por nombre o citizenid",
+            "online_hint": "Jugadores en línea ahora. Escribe para buscar también a los desconectados.",
+            "results": "Resultados en línea y desconectados.",
+            "offline": "Desconectado",
+            "grade": "Rango",
+            "confirm": "Agregar",
+            "already": "Este jugador ya está en este grupo. Cambia el rango desde la lista.",
+            "leaves_job": "Deja su trabajo actual (%s).",
+            "leaves_gang": "Deja su pandilla actual (%s)."
+        },
         "jobs": "Empleos",
         "gangs": "Pandillas",
         "members": "Miembros: %s",
@@ -565,11 +580,6 @@
         "server_configs": {
             "title": "Configuraciones del Servidor",
             "description": "Gestiona variables primitivas dinámicas que afectan la lógica del servidor al instante."
-        },
-        "developer": {
-            "title": "Configuración de Desarrollador",
-            "mock_mode": "Modo Mock",
-            "mock_mode_desc": "Habilita datos ficticios para pruebas incluso dentro de FiveM."
         },
         "wall": {
             "title": "Wall / ESP",
@@ -1229,6 +1239,24 @@
         "dismiss": "Descartar"
     },
     "vehicle": {
+        "garage": {
+            "title": "Garaje del jugador",
+            "pick": "Elige un jugador para ver sus autos.",
+            "empty": "Este jugador no tiene autos.",
+            "unavailable": "No se pudieron cargar los autos de este jugador.",
+            "summary": "%s vehículos",
+            "give": "Dar al jugador",
+            "spawn": "Traer hasta mí",
+            "delete": "Borrar auto",
+            "confirm_delete": "Haz clic de nuevo para borrar",
+            "change_plate": "Cambiar placa",
+            "fuel": "Comb.",
+            "engine": "Motor",
+            "body": "Carrocería",
+            "state_0": "Fuera",
+            "state_1": "Guardado",
+            "state_2": "Incautado"
+        },
         "title": "Gestión de Vehículos",
         "update_stock": "Actualizar Stock: %s",
         "total": "Vehículos: %s / Total: %s",
@@ -1347,6 +1375,7 @@
                 "all": "Todos",
                 "changed": "Cambiados",
                 "removed": "Quitados",
+                "missing": "No están en el juego",
                 "edited": "Editado",
                 "added": "Añadido"
             },
@@ -1708,7 +1737,6 @@
                 "staff_clock_in": "Entrada de Staff",
                 "staff_clock_out": "Salida de Staff",
                 "staff_chat_send": "Enviar Mensajes (StaffChat)",
-                "toggle_mock_mode": "Alternar Modo Mock",
                 "set_passport": "Cambiar pasaporte"
             },
             "commands": "Lista de Comandos"
@@ -1839,7 +1867,6 @@
                 "staff_clock_in": "Iniciar sesión de fichaje",
                 "staff_clock_out": "Finalizar sesión de fichaje",
                 "staff_chat_send": "Enviar mensajes en Staff Chat",
-                "toggle_mock_mode": "Habilitar datos de prueba",
                 "set_passport": "Cambiar el pasaporte (número fijo) de un personaje, en línea o desconectado"
             },
             "commands": "Acceder a la lista de comandos del servidor"

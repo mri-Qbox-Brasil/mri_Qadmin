@@ -149,6 +149,16 @@ RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function(data)
     end
 end)
 
+RegisterNUICallback('mri_Qadmin:callback:GetPlayerVehicles', function(data, cb)
+    cb(lib.callback.await('mri_Qadmin:callback:GetPlayerVehicles', false, data and data.targetId) or false)
+end)
+
+-- Plate of a garage car, straight in the database (the panel is not inside the car).
+RegisterNUICallback('mri_Qadmin:server:ChangeOwnedPlate', function(data, cb)
+    if type(data) == 'table' then TriggerServerEvent('mri_Qadmin:server:ChangePlate', data.newPlate, data.plate) end
+    cb('ok')
+end)
+
 -- Change plate
 RegisterNetEvent('mri_Qadmin:client:ChangePlate', function(data, selectedData)
     local actionData = CheckDataFromKey(data)

@@ -499,6 +499,21 @@
         }
     },
     "groups": {
+        "grade": "Grade",
+        "add": {
+            "button": "Add member",
+            "title": "Add to %s",
+            "player": "Player",
+            "search": "Search by name or citizenid",
+            "online_hint": "Players online now. Type to also search offline ones.",
+            "results": "Online and offline results.",
+            "offline": "Offline",
+            "grade": "Grade",
+            "confirm": "Add",
+            "already": "This player is already in this group. Change the grade from the list.",
+            "leaves_job": "They leave their current job (%s).",
+            "leaves_gang": "They leave their current gang (%s)."
+        },
         "jobs": "Jobs",
         "gangs": "Gangs",
         "members": "Members: %s",
@@ -565,11 +580,6 @@
         "server_configs": {
             "title": "Server Configurations",
             "description": "Manage dynamic primitive variables that affect the server logic instantly."
-        },
-        "developer": {
-            "title": "Developer Settings",
-            "mock_mode": "Mock Mode",
-            "mock_mode_desc": "Enable mock data for testing even in FiveM environment."
         },
         "wall": {
             "title": "Wall / ESP Settings",
@@ -1229,6 +1239,24 @@
         "dismiss": "Dismiss"
     },
     "vehicle": {
+        "garage": {
+            "title": "Player garage",
+            "pick": "Pick a player to see their cars.",
+            "empty": "This player has no cars.",
+            "unavailable": "Could not load this player's cars.",
+            "summary": "%s vehicles",
+            "give": "Give to player",
+            "spawn": "Bring to me",
+            "delete": "Delete car",
+            "confirm_delete": "Click again to delete",
+            "change_plate": "Change plate",
+            "fuel": "Fuel",
+            "engine": "Engine",
+            "body": "Body",
+            "state_0": "Out",
+            "state_1": "Stored",
+            "state_2": "Impounded"
+        },
         "title": "Vehicle Management",
         "update_stock": "Update Stock: %s",
         "total": "Vehicles: %s / Total: %s",
@@ -1347,6 +1375,7 @@
                 "all": "All",
                 "changed": "Changed",
                 "removed": "Removed",
+                "missing": "Not in game",
                 "edited": "Edited",
                 "added": "Added"
             },
@@ -1708,7 +1737,6 @@
                 "staff_clock_in": "Staff Clock In",
                 "staff_clock_out": "Staff Clock Out",
                 "staff_chat_send": "Send Messages (StaffChat)",
-                "toggle_mock_mode": "Toggle Mock Mode",
                 "set_passport": "Change passport"
             },
             "commands": "Commands List"
@@ -1839,7 +1867,6 @@
                 "staff_clock_in": "Start a time-clock session",
                 "staff_clock_out": "End a time-clock session",
                 "staff_chat_send": "Send messages in Staff Chat",
-                "toggle_mock_mode": "Enable mock data for testing",
                 "set_passport": "Change a character's passport (fixed number), online or offline"
             },
             "commands": "Access the server commands list"

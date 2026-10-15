@@ -333,6 +333,9 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     currentPlate = currentPlate:upper()
 
     if newPlate == currentPlate then return end
+    if CheckAlreadyPlate(newPlate) then
+        return QBCore.Functions.Notify(src, locale("notifications.already_plate"), 'error', 5000)
+    end
 
     if Config.Inventory == 'ox_inventory' then
         exports.ox_inventory:UpdateVehicle(currentPlate, newPlate)
@@ -342,6 +345,14 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     MySQL.update.await('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
     MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
     AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Placa alterada: %s -> %s'):format(currentPlate, newPlate), { oldPlate = currentPlate, newPlate = newPlate })
+end)
+
+-- Owned vehicles of an online player, for the garage panel of the Vehicles page.
+lib.callback.register('mri_Qadmin:callback:GetPlayerVehicles', function(src, targetId)
+    if not HasPerms(src, 'qadmin.action.manage_vehicles') then return nil end
+    local Player = QBCore.Functions.GetPlayer(tonumber(targetId))
+    if not Player then return nil end
+    return MySQL.query.await('SELECT vehicle, plate, garage, state, fuel, engine, body FROM player_vehicles WHERE citizenid = ? ORDER BY plate', { Player.PlayerData.citizenid }) or {}
 end)
 
 lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(src, plate)

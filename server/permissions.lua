@@ -519,7 +519,6 @@ PERM_DEFINITIONS = {
     { id = 'qadmin.action.copy_coords',             category = 'devmode'    },
     { id = 'qadmin.action.toggle_blips',            category = 'devmode'    },
     { id = 'qadmin.action.toggle_names',            category = 'devmode'    },
-    { id = 'qadmin.action.toggle_mock_mode',        category = 'devmode'    },
     -- ── Live Screens ─────────────────────────────────────────────────────────
     { id = 'qadmin.action.screen_capture',          category = 'livescreens' },
     { id = 'qadmin.action.enable_wall',             category = 'livescreens' },
