@@ -51,8 +51,8 @@ Master Admin (console bypass)
 
 | Command | Description |
 | :--- | :--- |
-| `mri_qadmin.setmaster [id/license]` | Grant Master Admin access |
-| `mri_qadmin.removemaster [id/license]` | Revoke Master Admin access |
+| `setmaster [id/license]` | Grant Master Admin access (includes `group.admin`) |
+| `removemaster [id/license]` | Revoke Master Admin access |
 | `mri_qadmin.purgemasters` | Clear all Master Admin bypasses from DB |
 | `mri_qadmin.debugperms [id]` | Show detailed permission debug for a player |
 | `mri_qadmin.inspectdb` | Inspect permission tables in the DB |

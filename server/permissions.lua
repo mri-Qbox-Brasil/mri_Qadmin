@@ -8,6 +8,20 @@ local ALL_KNOWN_QADMIN_PERMS
 local KNOWN_PERMS_SET
 local BroadcastPermissionUpdate
 
+-- Masters inherit group.admin through their own principal, so removemaster never drops a server.cfg add_principal.
+local MASTER_PRINCIPAL = 'mri.qadmin.master'
+lib.addPrincipal(MASTER_PRINCIPAL, 'group.admin')
+
+local function GrantMaster(license)
+    lib.addAce('identifier.' .. license, 'qadmin.master', true)
+    lib.addPrincipal('identifier.' .. license, MASTER_PRINCIPAL)
+end
+
+local function RevokeMaster(license)
+    lib.removeAce('identifier.' .. license, 'qadmin.master', true)
+    lib.removePrincipal('identifier.' .. license, MASTER_PRINCIPAL)
+end
+
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- WHITELIST DE NÓS
 -----------------------------------------------------------------------------------------------------------------------------------------
@@ -618,6 +632,89 @@ local function SeedGodGroup()
     end
 end
 
+-----------------------------------------------------------------------------------------------------------------------------------------
+-- STAFF ROLES (old /staff of mri_Qbox): a role is a panel group linked to group.admin, group.mod or group.support
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+local STAFF_ROLES = {
+    admin = { label = 'Admin do servidor', description = 'Recebe o cargo group.admin do servidor (todos os comandos e o painel inteiro)' },
+    mod = { label = 'Moderador', description = 'Recebe o cargo group.mod do servidor' },
+    support = { label = 'Suporte', description = 'Recebe o cargo group.support do servidor' },
+}
+
+---@param principal string
+---@return string? groupId
+local function FindGroupLinkedTo(principal)
+    for groupId, list in pairs(groupLinkedPrincipals) do
+        for _, lp in ipairs(list) do
+            if lp == principal then return groupId end
+        end
+    end
+end
+
+--- Group that hands out `group.<role>`: the one already linked to it, or a new one created here.
+---@param role string
+---@return string? groupId
+function StaffGroupFor(role)
+    if type(role) ~= 'string' or not role:match('^[%w_]+$') then return nil end
+    local principal = 'group.' .. role
+    local existing = FindGroupLinkedTo(principal)
+    if existing then return existing end
+
+    local groupId = 'staff_' .. role:lower()
+    local info = STAFF_ROLES[role] or { label = role:gsub('^%l', string.upper), description = ('Recebe o cargo %s do servidor'):format(principal) }
+    MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', { groupId, info.label, info.description })
+    local current = parseLinkedPrincipals(MySQL.scalar.await('SELECT linked_principals FROM mri_qadmin_groups WHERE id = ?', { groupId }))
+    current[#current + 1] = principal
+    MySQL.update.await('UPDATE mri_qadmin_groups SET linked_principals = ? WHERE id = ?', { json.encode(current), groupId })
+    groupLinkedPrincipals[groupId] = current
+    lib.addAce('mri.group.' .. groupId, 'qadmin.open', true)
+    return groupId
+end
+
+---@param citizenid string
+---@return table? player online player with that character
+local function OnlinePlayerByCitizenId(citizenid)
+    for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+        local p = QBCore.Functions.GetPlayer(id)
+        if p and p.PlayerData.citizenid == citizenid then return p end
+    end
+end
+
+---@return string[] groupIds groups linked to a staff role principal
+local function StaffRoleGroups()
+    local ids = {}
+    for role in pairs(STAFF_ROLES) do
+        local id = FindGroupLinkedTo('group.' .. role)
+        if id then ids[#ids + 1] = id end
+    end
+    return ids
+end
+
+--- Moves the role the old /staff kept in `metadata.staff` into the panel groups, once per character.
+local function MigrateLegacyStaff()
+    local rows = MySQL.query.await("SELECT citizenid, JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.staff')) AS staff FROM players WHERE JSON_EXTRACT(metadata, '$.staff') IS NOT NULL") or {}
+    local moved = 0
+    for _, row in ipairs(rows) do
+        local role = type(row.staff) == 'string' and row.staff:match('^group%.([%w_]+)$')
+        local groupId = role and StaffGroupFor(role)
+        if groupId then
+            MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', { row.citizenid, groupId })
+            moved = moved + 1
+        end
+        -- online players keep metadata in memory and would save it back
+        local player = OnlinePlayerByCitizenId(row.citizenid)
+        if player then
+            if role then lib.removePrincipal('player.' .. player.PlayerData.source, row.staff) end
+            player.Functions.SetMetaData('staff', nil)
+        end
+        MySQL.update.await("UPDATE players SET metadata = JSON_REMOVE(metadata, '$.staff') WHERE citizenid = ?", { row.citizenid })
+    end
+    if moved > 0 then
+        AddLog(0, 'mri_Qadmin', 'permissions', 'warn', ('Staff: %d cargo(s) do antigo /staff movido(s) para os grupos do painel'):format(moved), { count = moved, actor = 'boot' })
+    end
+end
+
 local function LoadPermissions()
     RunMigration()
 
@@ -672,11 +769,14 @@ local function LoadPermissions()
         end
     end
 
+    -- Before the re-sync below, so migrated staff get their group on this boot.
+    MigrateLegacyStaff()
+
     -- Load Master bypasses
     local masters = MySQL.query.await('SELECT license FROM mri_qadmin_masters') or {}
     for _, m in ipairs(masters) do
         Debug('debug', ('[mri_Qadmin] Applying Master Bypass: identifier.%s -> qadmin.master'):format(m.license))
-        lib.addAce('identifier.' .. m.license, 'qadmin.master', true)
+        GrantMaster(m.license)
         lib.addAce('identifier.' .. m.license, 'qadmin.open', true)
     end
 
@@ -811,7 +911,7 @@ function ClaimFirstMaster(src)
     local license = not panelConfigured and QBCore.Functions.GetIdentifier(src, 'license')
     if license then
         MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_masters (license) VALUES (?)', {license})
-        lib.addAce('identifier.' .. license, 'qadmin.master', true)
+        GrantMaster(license)
         lib.addAce('identifier.' .. license, 'qadmin.open', true)
         panelConfigured = true
         AddLog(src, 'mri_Qadmin', 'permissions', 'error', ('Master Admin CONCEDIDO ao primeiro admin a abrir o painel: %s (%s)'):format(GetPlayerName(src), license), { license = license, actor = 'first-open' })
@@ -875,6 +975,33 @@ local function DeferAcePropagation(resyncFn)
         end
         BroadcastPermissionUpdate()
     end)
+end
+
+--- Gives a character one staff role (or none), keeping its other panel groups.
+---@param citizenid string
+---@param role string? admin, mod, support... nil removes every staff role
+---@return string|false groupId the group given, or false when the role is invalid
+function SetStaffRole(citizenid, role)
+    local groupId = role and StaffGroupFor(role)
+    if role and not groupId then return false end
+
+    for _, gid in ipairs(StaffRoleGroups()) do
+        if gid ~= groupId then
+            MySQL.query.await('DELETE FROM mri_qadmin_character_groups WHERE citizenid = ? AND group_id = ?', { citizenid, gid })
+        end
+    end
+    if groupId then
+        MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_character_groups (citizenid, group_id) VALUES (?, ?)', { citizenid, groupId })
+    end
+
+    DeferAcePropagation(function()
+        local player = OnlinePlayerByCitizenId(citizenid)
+        if player then
+            SetupPlayerPrincipals(player.PlayerData.source, true)
+            TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', player.PlayerData.source)
+        end
+    end)
+    return groupId or ''
 end
 
 -- Callbacks
@@ -1229,7 +1356,7 @@ lib.callback.register('mri_Qadmin:callback:GetPrincipals', function(source)
     return result
 end)
 
-lib.addCommand('mri_qadmin.setmaster', {
+lib.addCommand({ 'setmaster', 'mri_qadmin.setmaster' }, {
     help = 'Set a player as Master Admin (Console Only)',
     params = {
         { name = 'target', help = 'Player ID, License or License2' },
@@ -1260,7 +1387,7 @@ lib.addCommand('mri_qadmin.setmaster', {
     MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_masters (license) VALUES (?)', {cleanLicense})
 
     -- Apply immediately
-    lib.addAce('identifier.' .. cleanLicense, 'qadmin.master', true)
+    GrantMaster(cleanLicense)
     print(('^2[mri_Qadmin] Executed: lib.addAce identifier.%s qadmin.master true^7'):format(cleanLicense))
 
     -- AUDIT: master grant é a ação mais privilegiada do sistema.
@@ -1277,7 +1404,7 @@ lib.addCommand('mri_qadmin.setmaster', {
     end
 end)
 
-lib.addCommand('mri_qadmin.removemaster', {
+lib.addCommand({ 'removemaster', 'mri_qadmin.removemaster' }, {
     help = 'Remove a player from Master Admin (Console Only)',
     params = {
         { name = 'target', help = 'Player ID, License or License2' },
@@ -1295,7 +1422,7 @@ lib.addCommand('mri_qadmin.removemaster', {
     local cleanLicense = license:gsub("identifier.", "")
 
     MySQL.query.await('DELETE FROM mri_qadmin_masters WHERE license = ?', {cleanLicense})
-    lib.removeAce('identifier.' .. cleanLicense, 'qadmin.master', true)
+    RevokeMaster(cleanLicense)
 
     print(('^2[mri_Qadmin] Executed: lib.removeAce identifier.%s qadmin.master^7'):format(cleanLicense))
 
@@ -1421,7 +1548,7 @@ lib.addCommand('mri_qadmin.purgemasters', {
 
     local masters = MySQL.query.await('SELECT license FROM mri_qadmin_masters') or {}
     for _, m in ipairs(masters) do
-        lib.removeAce('identifier.' .. m.license, 'qadmin.master', true)
+        RevokeMaster(m.license)
         lib.removeAce('identifier.' .. m.license, 'qadmin', true)
     end
 

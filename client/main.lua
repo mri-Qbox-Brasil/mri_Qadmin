@@ -371,7 +371,8 @@ RegisterNUICallback("update_vehicle_stock", function(data, cb)
 end)
 
 -- Open UI Event
-RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
+---@param route? string page to open on (e.g. 'permissions' from /staff)
+RegisterNetEvent('mri_Qadmin:client:OpenUI', function(route)
     print('^3[mri_Qadmin] Tentativa de abrir painel iniciada...^7')
 
     local hasPerm = CheckPerms("qadmin.open")
@@ -391,6 +392,10 @@ RegisterNetEvent('mri_Qadmin:client:OpenUI', function()
         SendNUIMessage({ action = 'setTranslations', data = { translations = tbl, locale = locale } })
     else
         print('^1[mri_Qadmin] AVISO: Falha ao carregar traduções, procedendo sem elas.^7')
+    end
+
+    if type(route) == 'string' then
+        SendNUIMessage({ action = 'navigate', data = { route = route } })
     end
 
     print('^2[mri_Qadmin] Chamando ToggleUI(true)...^7')

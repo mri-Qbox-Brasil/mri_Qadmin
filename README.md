@@ -51,7 +51,7 @@ Painel de administração para servidores QBCore/Qbox: jogadores, veículos, ite
 3. **SQL** — as tabelas são criadas automaticamente no start (`server/db.lua` lê e executa o `database.sql`). Importar na mão é opcional.
 4. **Primeiro acesso** — nenhum jogador tem acesso ao painel por padrão. Pelo console do servidor, promova alguém a Master Admin:
    ```
-   mri_qadmin.setmaster 1
+   setmaster 1
    ```
    O Master Admin ignora todas as checagens e consegue abrir o painel para criar os grupos definitivos.
 5. **Escrita em outros recursos** (opcional) — para o navegador de arquivos poder salvar em recursos de terceiros, libere cada um no `server.cfg`:
@@ -123,13 +123,15 @@ Boa parte desses campos também é editável pela aba **Configurações** do pai
 |---|---|---|
 | `/adm` | `qadmin.open` | Abre o painel |
 | `/nc` | `qadmin.action.noclip` | Alterna o noclip |
+| `/staff` | `qadmin.page.permissions` | Abre o painel em Permissões |
+| `/staff <id> add <cargo>` / `/staff <id> rem` | `qadmin.page.permissions` | Dá ou tira um cargo de staff (`admin`, `mod`, `support`) pelos grupos (ver [Cargos de staff](#cargos-de-staff)) |
 | `/vector2`, `/vec2` | `qadmin.action.toggle_coords` | Copia a posição atual como `vector2` |
 | `/vector3`, `/vec3` | `qadmin.action.toggle_coords` | Copia a posição atual como `vector3` |
 | `/vector4`, `/vec4` | `qadmin.action.toggle_coords` | Copia a posição atual como `vector4` (com heading) |
 | `/heading` | `qadmin.action.toggle_coords` | Copia o heading atual |
 | `/setammo` | `qadmin.action.set_ammo` | Define 999 de munição na arma equipada |
-| `mri_qadmin.setmaster <alvo>` | Console | Concede Master Admin. Aceita ID online, `license` ou `license2` |
-| `mri_qadmin.removemaster <alvo>` | Console | Revoga Master Admin |
+| `setmaster <alvo>` | Console | Concede Master Admin (já com o `group.admin`). Aceita ID online, `license` ou `license2`. O nome antigo `mri_qadmin.setmaster` também vale |
+| `removemaster <alvo>` | Console | Revoga Master Admin. O nome antigo `mri_qadmin.removemaster` também vale |
 | `mri_qadmin.purgemasters` | Console | Remove todos os Master Admins do banco e da sessão |
 | `mri_qadmin.debugperms <id>` | Console | Imprime o diagnóstico de permissões de um jogador |
 | `mri_qadmin.inspectdb` | Console | Inspeciona as tabelas de permissão em busca de linhas escondidas |
@@ -182,20 +184,30 @@ Um grupo pode ser alcançado de três formas:
 
 - **Principal do FiveM** — vinculando o grupo a `group.admin`, `job.police`, `gang.ballas` etc.
 - **Personagem** — vinculando um `citizenid` diretamente (`mri_qadmin_character_groups`).
+
+### Cargos de staff
+
+Um cargo de staff é o grupo vinculado a `group.admin`, `group.mod` ou `group.support`: quem entra nele recebe o cargo, e quem sai perde. O `/staff <id> add <cargo>` põe o personagem no grupo do cargo e cria o grupo (`staff_admin`, `staff_mod`, `staff_support`) se nenhum estiver vinculado a ele. O `/staff <id> rem` tira o personagem dos grupos de cargo e mantém os outros grupos dele.
+
+O `group.admin` libera todos os comandos do servidor e, com `Config.AceMaster`, o painel inteiro. Para staff que só deve ver parte do painel, use um grupo sem vínculo.
+
+Quem tinha cargo pelo antigo `/staff` do mri_Qbox (em `metadata.staff`) entra sozinho no grupo do cargo no start do recurso, e a metadata é limpa.
 ### Master Admin
 
 Status especial que ignora toda checagem de permissão. Três formas de ser master:
 
 - **ACE do servidor** (`Config.AceMaster = true`, padrão): quem tem a ACE `admin` ou `god` (ex.: está no `group.admin` do `permissions.cfg`) é master, sempre. Não grava nada no banco.
-- **Console**: `mri_qadmin.setmaster`, gravado em `mri_qadmin_masters` (por license) e reaplicado como ACE a cada start.
+- **Console**: `setmaster`, gravado em `mri_qadmin_masters` (por license) e reaplicado como ACE a cada start.
 - **Primeiro a abrir** (`Config.FirstMasterClaim = true`, desligado por padrão): enquanto o painel não tem master nem ninguém em grupo, o primeiro com ACE `admin`/`god` que abrir o painel vira master e fica gravado no banco.
+
+Todo master também entra no `group.admin`, então os comandos do servidor (`/tp`, `/tpm`, `/car`, `/revive`...) já funcionam com ele. O `removemaster` tira só o que o master deu: um `add_principal` do `server.cfg` continua valendo.
 
 O antigo `QBCoreAutoSync` era esse "primeiro a abrir" e foi substituído pelo `FirstMasterClaim`; o valor dele que ficou salvo no banco não tem mais efeito.
 
 ```
-mri_qadmin.setmaster 1                  # por ID online
-mri_qadmin.setmaster license:abcd1234   # por license
-mri_qadmin.removemaster 1
+setmaster 1                  # por ID online
+setmaster license:abcd1234   # por license
+removemaster 1
 mri_qadmin.purgemasters                 # limpa todos do banco
 ```
 

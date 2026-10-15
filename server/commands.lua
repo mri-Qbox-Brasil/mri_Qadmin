@@ -66,6 +66,49 @@ lib.addCommand({ 'nc', 'noclip' }, {
     TriggerClientEvent("mri_Qadmin:client:ToggleNoClip", source)
 end)
 
+-- /staff: o antigo do mri_Qbox. Sem argumento abre Permissões; com id, dá ou tira o cargo pelos grupos.
+lib.addCommand('staff', {
+    help = 'Open Permissions, or give/remove a staff role',
+    params = {
+        { name = 'id', type = 'playerId', help = 'Player ID', optional = true },
+        { name = 'tipo', type = 'string', help = 'add or rem', optional = true },
+        { name = 'cargo', type = 'string', help = 'admin, mod or support', optional = true },
+    },
+}, function(source, args)
+    if not CheckPerms(source, 'qadmin.page.permissions') then return end
+
+    if not args.id then
+        return TriggerClientEvent('mri_Qadmin:client:OpenUI', source, 'permissions')
+    end
+
+    local Player = QBCore.Functions.GetPlayer(args.id)
+    if not Player then
+        return QBCore.Functions.Notify(source, locale("notifications.not_online"), "error", 5000)
+    end
+    if args.tipo ~= 'add' and args.tipo ~= 'rem' then
+        return QBCore.Functions.Notify(source, 'Use: /staff <id> add <cargo> ou /staff <id> rem', 'error', 5000)
+    end
+    if args.tipo == 'add' and not args.cargo then
+        return QBCore.Functions.Notify(source, 'Informe o cargo: admin, mod ou support.', 'error', 5000)
+    end
+
+    local citizenid = Player.PlayerData.citizenid
+    local name = ('%s %s'):format(Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname)
+    local groupId = SetStaffRole(citizenid, args.tipo == 'add' and args.cargo or nil)
+    if groupId == false then
+        return QBCore.Functions.Notify(source, 'Cargo inválido.', 'error', 5000)
+    end
+
+    if args.tipo == 'add' then
+        QBCore.Functions.Notify(source, ('Cargo %s concedido a %s.'):format(args.cargo, name), 'success', 5000)
+        QBCore.Functions.Notify(args.id, ('Recebeu o cargo: %s'):format(args.cargo), 'success', 5000)
+    else
+        QBCore.Functions.Notify(source, ('Cargo de staff removido de %s.'):format(name), 'success', 5000)
+        QBCore.Functions.Notify(args.id, 'Seu cargo de staff foi removido.', 'primary', 5000)
+    end
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Staff: %s %s (/staff %s)'):format(name, args.tipo == 'add' and ('recebeu o grupo ' .. groupId) or 'saiu dos cargos de staff', args.tipo), { citizenid = citizenid, role = args.cargo, group = groupId })
+end)
+
 -- Atalhos das ações do painel. Mesmos eventos e permissões da ação.
 lib.addCommand('names', {
     help = 'Toggle player names',
