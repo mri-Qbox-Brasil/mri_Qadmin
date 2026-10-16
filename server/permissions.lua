@@ -613,6 +613,17 @@ local function SeedGodGroup()
     MySQL.insert.await('INSERT IGNORE INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)',
         {'god', 'God', 'Perfil com acesso total a todas as permissões'})
 
+    -- God is the top role, so it always carries group.admin (server commands like /tp, /car).
+    local linked = parseLinkedPrincipals(MySQL.scalar.await('SELECT linked_principals FROM mri_qadmin_groups WHERE id = ?', { 'god' }))
+    local hasAdmin = false
+    for _, lp in ipairs(linked) do
+        if lp == 'group.admin' then hasAdmin = true break end
+    end
+    if not hasAdmin then
+        linked[#linked + 1] = 'group.admin'
+        MySQL.update.await('UPDATE mri_qadmin_groups SET linked_principals = ? WHERE id = ?', { json.encode(linked), 'god' })
+    end
+
     local existing = MySQL.query.await('SELECT permission FROM mri_qadmin_group_permissions WHERE group_id = "god"') or {}
     local existingSet = {}
     for _, row in ipairs(existing) do existingSet[row.permission] = true end
@@ -645,11 +656,17 @@ local STAFF_ROLES = {
 ---@param principal string
 ---@return string? groupId
 local function FindGroupLinkedTo(principal)
+    local fallback
     for groupId, list in pairs(groupLinkedPrincipals) do
         for _, lp in ipairs(list) do
-            if lp == principal then return groupId end
+            if lp == principal then
+                -- A group the owner linked wins over the seeded God.
+                if groupId ~= 'god' then return groupId end
+                fallback = groupId
+            end
         end
     end
+    return fallback
 end
 
 --- Group that hands out `group.<role>`: the one already linked to it, or a new one created here.
@@ -921,9 +938,20 @@ function ClaimFirstMaster(src)
     return license and true or false
 end
 
+-- Fired by qbx_core inside Login, before the client loads: panel groups (and group.admin) are in place before other resources first check the player.
+AddEventHandler('QBCore:Server:PlayerLoaded', function(player)
+    local src = player and player.PlayerData and player.PlayerData.source
+    if not src then return end
+    SetupPlayerPrincipals(src, principalCache[src] ~= nil)
+end)
+
 RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
     local src = source
-    SetupPlayerPrincipals(src, false)
+    local cache = principalCache[src]
+    local player = QBCore.Functions.GetPlayer(src)
+    if not cache or not player or cache.citizenid ~= player.PlayerData.citizenid then
+        SetupPlayerPrincipals(src, cache ~= nil)
+    end
     TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', src)
     -- Principals/ACE já aplicados: só agora avisa o client pra carregar o painel.
     -- Evita a corrida em que o GetInitialData chegava antes das permissões prontas

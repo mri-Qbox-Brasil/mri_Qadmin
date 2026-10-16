@@ -187,7 +187,7 @@ Um grupo pode ser alcançado de três formas:
 
 ### Cargos de staff
 
-Um cargo de staff é o grupo vinculado a `group.admin`, `group.mod` ou `group.support`: quem entra nele recebe o cargo, e quem sai perde. O `/staff <id> add <cargo>` põe o personagem no grupo do cargo e cria o grupo (`staff_admin`, `staff_mod`, `staff_support`) se nenhum estiver vinculado a ele. O `/staff <id> rem` tira o personagem dos grupos de cargo e mantém os outros grupos dele.
+Um cargo de staff é o grupo vinculado a `group.admin`, `group.mod` ou `group.support`: quem entra nele recebe o cargo, e quem sai perde. O `/staff <id> add <cargo>` põe o personagem no grupo do cargo e cria o grupo (`staff_admin`, `staff_mod`, `staff_support`) se nenhum estiver vinculado a ele. O grupo God já vem vinculado a `group.admin`, então quem está nele tem os comandos do servidor (`/tp`, `/tpm`, `/car`, `/revive`) e o `add admin` põe no God, a não ser que você tenha criado outro grupo vinculado a `group.admin`. O `/staff <id> rem` tira o personagem dos grupos de cargo e mantém os outros grupos dele.
 
 O `group.admin` libera todos os comandos do servidor e, com `Config.AceMaster`, o painel inteiro. Para staff que só deve ver parte do painel, use um grupo sem vínculo.
 
