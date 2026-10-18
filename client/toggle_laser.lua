@@ -139,7 +139,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
     local wasActive = activeLaser
     activeLaser = not activeLaser
     TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info',
-        activeLaser and 'Laser dev: ativado' or 'Laser dev: desativado', {})
+        activeLaser and 'audit.dev_laser_on' or 'audit.dev_laser_off', {})
 
     -- Only spawn the loop when turning ON and no loop is already running.
     if activeLaser and not wasActive then

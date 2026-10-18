@@ -15,7 +15,7 @@ RegisterNetEvent('mri_Qadmin:server:TeleportToPlayer', function(_, selectedData)
 
     CheckRoutingbucket(src, player)
     TriggerClientEvent('mri_Qadmin:client:TeleportToPlayer', src, coords)
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Teleporte: admin teleportou para o jogador %s'):format(GetPlayerName(player) or player), GetTargetData(player))
+    AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.teleport_to_player', GetPlayerName(player) or player), GetTargetData(player))
 end)
 
 -- Bring Player
@@ -42,7 +42,7 @@ RegisterNetEvent('mri_Qadmin:server:BringPlayer', function(_, selectedData)
              adminCoords = pAdmin.PlayerData.position
          else
              Debug('debug', ('[mri_Qadmin] CRITICAL: Cannot determine Admin position. Aborting Bring to prevent sending player to void.'))
-             TriggerClientEvent('QBCore:Notify', src, 'Erro crítico: Sua posição é inválida (0,0,0). Mova-se um pouco.', 'error')
+             TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_admin_position'), 'error')
              return
          end
     end
@@ -70,7 +70,7 @@ RegisterNetEvent('mri_Qadmin:server:BringPlayer', function(_, selectedData)
     -- Execute Teleport
     Debug('debug', ('[mri_Qadmin] Teleporting ID %s to %s'):format(targetId, adminCoords))
     SetEntityCoords(targetPed, adminCoords.x, adminCoords.y, adminCoords.z)
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Trazer: admin trouxe jogador %s'):format(GetPlayerName(targetId) or targetId), GetTargetData(targetId))
+    AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.bring_player', GetPlayerName(targetId) or targetId), GetTargetData(targetId))
 end)
 
 -- Send Player Back
@@ -89,12 +89,12 @@ RegisterNetEvent('mri_Qadmin:server:SendPlayerBack', function(_, selectedData)
         -- Fix: SetEntityCoords expects x, y, z explicitly, not a vector object
         SetEntityCoords(targetPed, lastPos.x, lastPos.y, lastPos.z)
 
-        TriggerClientEvent('QBCore:Notify', source, 'Jogador enviado de volta com sucesso.', 'success')
-        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Enviar de volta: jogador %s enviado para posição anterior'):format(GetPlayerName(targetId) or targetId), GetTargetData(targetId))
+        TriggerClientEvent('QBCore:Notify', source, locale('notifications.player_sent_back'), 'success')
+        AddLog(source, 'mri_Qadmin', 'players', 'info', locale('audit.send_back', GetPlayerName(targetId) or targetId), GetTargetData(targetId))
 
         previousPositions[targetId] = nil -- limpa após usar
     else
         Debug('debug', ('[mri_Qadmin] SendPlayerBack: No saved position for ID %s'):format(targetId))
-        TriggerClientEvent('QBCore:Notify', source, 'Nenhuma posição salva para este jogador.', 'error')
+        TriggerClientEvent('QBCore:Notify', source, locale('notifications.no_saved_position'), 'error')
     end
 end)

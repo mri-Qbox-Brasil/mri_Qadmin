@@ -111,7 +111,7 @@ CreateThread(function()
                     end
 
                     if timeout <= 0 and spectateInfo['toggled'] then
-                        QBCore.Functions.Notify("Falha ao sincronizar com o alvo. Tente novamente.", "error")
+                        QBCore.Functions.Notify(locale('notifications.spectate_sync_failed'), "error")
                         TriggerEvent('mri_Qadmin:cancelSpectate')
                     end
                 end

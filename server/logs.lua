@@ -1049,6 +1049,6 @@ lib.callback.register('mri_Qadmin:callback:SaveLogSettings', function(source, da
     end
 
     SaveLogSettings()
-    AddLog(source, 'mri_Qadmin', 'system', 'info', 'Configurações de logs atualizadas', {})
+    AddLog(source, 'mri_Qadmin', 'system', 'info', locale('audit.log_settings_updated'), {})
     return true
 end)

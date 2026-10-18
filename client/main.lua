@@ -76,7 +76,7 @@ RegisterNetEvent('mri_Qadmin:client:ReceiveInitialData', function(initialData)
                 permissions = perms,
                 permissionDefinitions = initialData and initialData.permissionDefinitions or {},
                 categoryDefinitions = initialData and initialData.categoryDefinitions or {},
-                supportedLanguages = Config.SupportedLanguages,
+                supportedLanguages = GlobalState['mri_qadmin:languages'] or {},
                 webrtcUrl = Config.WebRTCUrl,
                 signalingProvider = Config.SignalingProvider,
                 descriptions = Config.Descriptions,
@@ -102,7 +102,7 @@ RegisterNUICallback('getServerInfo', function(_, cb)
     local serverInfo = lib.callback.await('mri_Qadmin:callback:GetServerInfo')
     if not serverInfo then
         Debug('error', 'Nenhum dado recebido do servidor.')
-        cb({ error = "Erro ao carregar informações do servidor." })
+        cb({ error = locale('dashboard.stats.error_loading_data') })
         return
     end
     cb(serverInfo)
@@ -112,7 +112,7 @@ local translationCache = {}
 
 -- Global: client/plugins.lua reusa isto no OpenPlugin.
 function GetTranslations(locale)
-    locale = locale or GetConvar('ox_locale', 'pt-br')
+    locale = locale or GetConvar('ox:locale', 'en')
     if translationCache[locale] then return translationCache[locale], locale end
 
     local path = ('locales/%s.json'):format(locale)
@@ -730,9 +730,9 @@ RegisterNUICallback("mri_Qadmin:server:GotoWaypoint", function(_, cb)
         end
         if found then z = groundZ end
         SetEntityCoords(cache.ped, coords.x, coords.y, z + 0.5, false, false, false, false)
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', ('Teleporte: admin foi para waypoint (%.1f, %.1f)'):format(coords.x, coords.y), {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.teleport_waypoint', {}, { coords.x, coords.y })
     else
-        QBCore.Functions.Notify(locale('notifications.no_waypoint') or 'Nenhum waypoint definido.', 'error')
+        QBCore.Functions.Notify(locale('notifications.no_waypoint'), 'error')
     end
     cb('ok')
 end)
@@ -746,9 +746,9 @@ RegisterNUICallback("mri_Qadmin:server:FixVehicle", function(_, cb)
         SetVehicleEngineHealth(veh, 1000.0)
         SetVehicleBodyHealth(veh, 1000.0)
         SetVehiclePetrolTankHealth(veh, 1000.0)
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin reparou o próprio veículo', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'audit.vehicle_self_repaired', {})
     else
-        QBCore.Functions.Notify(locale('notifications.not_in_vehicle') or 'Você não está em um veículo.', 'error')
+        QBCore.Functions.Notify(locale('notifications.not_in_vehicle'), 'error')
     end
     cb('ok')
 end)

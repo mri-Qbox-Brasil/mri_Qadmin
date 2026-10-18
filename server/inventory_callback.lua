@@ -29,15 +29,14 @@ local function AdminLog(src, action, target, item, count, invType)
         if tPlayer then
             targetName = tPlayer.PlayerData.charinfo.firstname .. ' ' .. tPlayer.PlayerData.charinfo.lastname .. " (" .. target .. ")"
         else
-            targetName = "Offline/Unknown (" .. tostring(target) .. ")"
+            targetName = locale('audit.offline_target', tostring(target))
         end
     else
         targetName = tostring(target) .. " (" .. tostring(invType) .. ")"
     end
 
-    local logMsg = ('[INVENTORY] Admin %s executou \'%s\' em %s. Item: %s, Qtd: %s'):format(
-        adminName, action, targetName, tostring(item or "N/A"), tostring(count or "N/A")
-    )
+    local logMsg = locale('audit.inventory_action',
+        adminName, action, targetName, tostring(item or "N/A"), tostring(count or "N/A"))
 
     AddLog(src, 'mri_Qadmin', 'inventory', 'info', logMsg, { action = action, target = tostring(target), item = item, count = count, invType = invType })
 end

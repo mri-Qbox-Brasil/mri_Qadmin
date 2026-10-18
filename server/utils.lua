@@ -7,7 +7,7 @@ local function noPerms(source)
     -- RateLimit: a tecla do painel (Config.AdminKey) é registrada para TODOS os
     -- jogadores, então um player qualquer pode disparar negações em sequência.
     if not RateLimit(source, 'no_perms_notify', 3000) then return end
-    Notify(source, locale('notifications.no_perms') or 'Permissões insuficientes.', 'error')
+    Notify(source, locale('notifications.no_perms'), 'error')
 end
 
 local function formatNodes(perms)
@@ -297,13 +297,13 @@ end
 --- @param target number player alvo da ação
 --- @return boolean allowed, string|nil reason
 function CanTargetPlayer(source, target)
-    if not target or target == 0 then return false, "target inválido" end
+    if not target or target == 0 then return false, locale('notifications.invalid_player') end
     if source == target then return true end
     -- Master pode mirar qualquer um
     if HasPerms(source, 'qadmin.master') then return true end
     -- Não-master não pode mirar master
     if HasPerms(target, 'qadmin.master') then
-        return false, "Alvo é Master Admin — apenas outro Master pode aplicar essa ação."
+        return false, locale('notifications.target_is_master')
     end
     return true
 end
@@ -313,8 +313,8 @@ end
 function CheckTargetable(source, target)
     local ok, reason = CanTargetPlayer(source, target)
     if not ok then
-        QBCore.Functions.Notify(source, reason or "Acesso negado.", "error", 5000)
-        AddLog(source, 'mri_Qadmin', 'security', 'warn', ('Hierarquia: %s tentou ação em %s mas foi bloqueado (%s)'):format(GetPlayerName(source) or source, GetPlayerName(target) or target, reason or ''), { actor = source, target = target })
+        QBCore.Functions.Notify(source, reason, "error", 5000)
+        AddLog(source, 'mri_Qadmin', 'security', 'warn', locale('audit.hierarchy_blocked', GetPlayerName(source) or source, GetPlayerName(target) or target, reason or ''), { actor = source, target = target })
         return false
     end
     return true

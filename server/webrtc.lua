@@ -57,7 +57,7 @@ lib.callback.register('mri_Qadmin:callback:GetPlayerScreen', function(source, ta
         -- Default to source if no specialized viewerId provided
         local vid = viewerId or tostring(source)
         TriggerClientEvent('mri_Qadmin:client:StartWebRTC', target, vid)
-        AddLog(source, 'mri_Qadmin', 'players', 'info', ('Tela ao vivo: admin iniciou visualização da tela de %s'):format(GetPlayerName(target) or target), GetTargetData(target))
+        AddLog(source, 'mri_Qadmin', 'players', 'info', locale('audit.livescreen_started', GetPlayerName(target) or target), GetTargetData(target))
         return { status = "ok" }
     end
     return { error = "invalid target" }
@@ -71,7 +71,7 @@ RegisterServerEvent('mri_Qadmin:server:StopPlayerScreen', function(targetId, vie
     if target and target ~= 0 then
         dropSession(src, target)
         TriggerClientEvent('mri_Qadmin:client:StopWebRTC', target, viewerId)
-        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Tela ao vivo: admin encerrou visualização da tela de %s'):format(GetPlayerName(target) or target), GetTargetData(target))
+        AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.livescreen_stopped', GetPlayerName(target) or target), GetTargetData(target))
     end
 end)
 

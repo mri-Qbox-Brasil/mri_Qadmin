@@ -127,7 +127,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, men
     MySQL.insert.await('INSERT INTO mri_qadmin_chat (message, citizenid, fullname, role) VALUES (?, ?, ?, ?)', {
         message, citizenid, fullname, role
     })
-    AddLog(src, 'mri_Qadmin', 'chat', 'info', ('[Staff Chat] %s: %s'):format(fullname, message), { citizenid = citizenid, role = role })
+    AddLog(src, 'mri_Qadmin', 'chat', 'info', locale('audit.staffchat_message', fullname, message), { citizenid = citizenid, role = role })
 
     notifyPlayers(src)
     relayToDiscord(src, fullname, role, message)
@@ -194,7 +194,7 @@ lib.callback.register('mri_Qadmin:callback:SaveStaffChatWebhook', function(sourc
     url = type(url) == 'string' and url:gsub('^%s+', ''):gsub('%s+$', '') or ''
     if url ~= '' and not isValidWebhook(url) then return { ok = false, reason = 'invalid_url' } end
     if url == '' then DeleteResourceKvp(WEBHOOK_KVP) else SetResourceKvp(WEBHOOK_KVP, url) end
-    AddLog(source, 'mri_Qadmin', 'chat', 'info', url == '' and '[Staff Chat] webhook do Discord removida' or '[Staff Chat] webhook do Discord configurada', {})
+    AddLog(source, 'mri_Qadmin', 'chat', 'info', locale(url == '' and 'audit.staffchat_webhook_removed' or 'audit.staffchat_webhook_set'), {})
     return { ok = true }
 end)
 

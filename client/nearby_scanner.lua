@@ -119,7 +119,7 @@ end
 
 RegisterNetEvent('mri_Qadmin:client:ToggleNearbyScanner', function()
     activeNearbyScanner = not activeNearbyScanner
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', activeNearbyScanner and 'Scanner de entidades: ativado' or 'Scanner de entidades: desativado', {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', activeNearbyScanner and 'audit.entity_scanner_on' or 'audit.entity_scanner_off', {})
     if activeNearbyScanner then
         nextScanTime = 0 -- Force immediate scan
         CreateThread(ScannerLoop)

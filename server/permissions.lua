@@ -728,7 +728,7 @@ local function MigrateLegacyStaff()
         MySQL.update.await("UPDATE players SET metadata = JSON_REMOVE(metadata, '$.staff') WHERE citizenid = ?", { row.citizenid })
     end
     if moved > 0 then
-        AddLog(0, 'mri_Qadmin', 'permissions', 'warn', ('Staff: %d cargo(s) do antigo /staff movido(s) para os grupos do painel'):format(moved), { count = moved, actor = 'boot' })
+        AddLog(0, 'mri_Qadmin', 'permissions', 'warn', locale('audit.staff_migrated', moved), { count = moved, actor = 'boot' })
     end
 end
 
@@ -769,10 +769,9 @@ local function LoadPermissions()
             -- Não apagamos a linha: boot não destrói dado. Ela é purgada no próximo save
             -- do grupo, que também barra o nó proibido mesmo já estando salvo.
             if IsForbiddenPermNode(p.permission) then
-                local msg = ('nó proibido "%s" gravado no grupo "%s" — ACE NÃO aplicada')
-                    :format(tostring(p.permission), g.id)
+                local msg = locale('audit.forbidden_node', tostring(p.permission), g.id)
                 print(('^1[mri_Qadmin] SECURITY ALERT: %s. Salve o grupo pelo painel para removê-lo do banco.^7'):format(msg))
-                AddLog(0, 'mri_Qadmin', 'permissions', 'error', ('Permissões: %s'):format(msg),
+                AddLog(0, 'mri_Qadmin', 'permissions', 'error', msg,
                     { group = g.id, permission = tostring(p.permission), actor = 'boot' })
             else
                 Debug('debug', ('[mri_Qadmin] Applying ACE: mri.group.%s -> %s'):format(g.id, p.permission))
@@ -931,7 +930,7 @@ function ClaimFirstMaster(src)
         GrantMaster(license)
         lib.addAce('identifier.' .. license, 'qadmin.open', true)
         panelConfigured = true
-        AddLog(src, 'mri_Qadmin', 'permissions', 'error', ('Master Admin CONCEDIDO ao primeiro admin a abrir o painel: %s (%s)'):format(GetPlayerName(src), license), { license = license, actor = 'first-open' })
+        AddLog(src, 'mri_Qadmin', 'permissions', 'error', locale('audit.master_first_open', GetPlayerName(src), license), { license = license, actor = 'first-open' })
     end
 
     claimingMaster = false
@@ -1066,7 +1065,7 @@ end)
 
 lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label, description)
     if not HasPerms(source, 'qadmin.page.permissions') then
-        return false, "Acesso Negado."
+        return false, locale('notifications.access_denied')
     end
 
     local cleanId = id:lower():gsub("%s+", "_")
@@ -1076,17 +1075,17 @@ lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label,
         local exists = MySQL.single.await('SELECT id FROM mri_qadmin_groups WHERE id = ?', {cleanId})
         if exists then
             MySQL.update.await('UPDATE mri_qadmin_groups SET label = ?, description = ? WHERE id = ?', {label, description, cleanId})
-            TriggerClientEvent('QBCore:Notify', source, 'Grupo atualizado', 'success')
+            TriggerClientEvent('QBCore:Notify', source, locale('notifications.group_updated'), 'success')
         else
             MySQL.insert.await('INSERT INTO mri_qadmin_groups (id, label, description) VALUES (?, ?, ?)', {cleanId, label, description})
-            TriggerClientEvent('QBCore:Notify', source, 'Grupo criado', 'success')
+            TriggerClientEvent('QBCore:Notify', source, locale('notifications.group_created'), 'success')
             isNew = true
         end
     end)
 
     if not ok then
         print('^1[mri_Qadmin] ERRO ao salvar grupo:^7', err)
-        return false, "Erro ao salvar grupo no banco de dados."
+        return false, locale('notifications.group_save_failed')
     end
 
     if isNew then
@@ -1094,14 +1093,14 @@ lib.callback.register('mri_Qadmin:server:SaveGroup', function(source, id, label,
         Debug('debug', ('[mri_Qadmin] Novo grupo "%s": ACE qadmin.open aplicado imediatamente'):format(cleanId))
     end
 
-    AddLog(source, 'mri_Qadmin', 'permissions', 'info', ('Grupo: grupo "%s" criado/atualizado'):format(cleanId), { group = cleanId, label = label })
+    AddLog(source, 'mri_Qadmin', 'permissions', 'info', locale('audit.group_saved', cleanId), { group = cleanId, label = label })
     DeferAcePropagation()
     return true
 end)
 
 lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
     if not HasPerms(source, 'qadmin.page.permissions') then
-        return false, "Acesso Negado."
+        return false, locale('notifications.access_denied')
     end
 
     -- Collect online players in this group before deleting
@@ -1137,11 +1136,11 @@ lib.callback.register('mri_Qadmin:server:DeleteGroup', function(source, id)
 
     if not ok then
         print('^1[mri_Qadmin] ERRO ao deletar grupo:^7', err)
-        return false, "Erro ao deletar grupo do banco de dados."
+        return false, locale('notifications.group_delete_failed')
     end
 
-    TriggerClientEvent('QBCore:Notify', source, 'Grupo removido', 'success')
-    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupo: grupo "%s" removido'):format(id), { group = id })
+    TriggerClientEvent('QBCore:Notify', source, locale('notifications.group_removed'), 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', locale('audit.group_removed', id), { group = id })
     -- Re-sync affected players so linked principals are also revoked (depois de a fila de
     -- removeAce/removePrincipal drenar), e só então broadcast.
     DeferAcePropagation(function()
@@ -1157,7 +1156,7 @@ end)
 
 lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(source, groupId, permissionsArray, linkedPrincipals)
     if not HasPerms(source, 'qadmin.page.permissions') then
-        return false, "Acesso Negado."
+        return false, locale('notifications.access_denied')
     end
 
     Debug('debug', ('[mri_Qadmin] Iniciando atualização de permissões para grupo: %s'):format(groupId))
@@ -1179,7 +1178,7 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
     end
 
     if type(permissionsArray) ~= 'table' then
-        return false, "Payload inválido."
+        return false, locale('notifications.invalid_payload')
     end
 
     local blocked = {}   -- nós proibidos (nunca podem ser concedidos)
@@ -1226,7 +1225,7 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
 
     if not ok then
         print('^1[mri_Qadmin] ERRO ao atualizar permissões do grupo:^7', err)
-        return false, "Erro ao salvar no banco de dados."
+        return false, locale('notifications.db_save_failed')
     end
 
     -- Descarte tem que ser barulhento: o callback responde SUCESSO e a NUI mostra um toast
@@ -1239,16 +1238,14 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
             local discarded = {}
             for _, p in ipairs(blocked)  do discarded[#discarded + 1] = p end
             for _, p in ipairs(rejected) do discarded[#discarded + 1] = p end
-            parts[#parts + 1] = ('%d permissão(ões) descartada(s): %s')
-                :format(#discarded, table.concat(discarded, ', '))
+            parts[#parts + 1] = locale('audit.perms_discarded', #discarded, table.concat(discarded, ', '))
         end
 
         if #droppedLinked > 0 then
-            parts[#parts + 1] = ('%d linked principal(is) descartado(s): %s')
-                :format(#droppedLinked, table.concat(droppedLinked, ', '))
+            parts[#parts + 1] = locale('audit.linked_discarded', #droppedLinked, table.concat(droppedLinked, ', '))
         end
 
-        local msg = ('Permissões: grupo "%s" — %s'):format(groupId, table.concat(parts, ' | '))
+        local msg = locale('audit.group_perms_discarded', groupId, table.concat(parts, ' | '))
         Debug('error', ('[mri_Qadmin] %s'):format(msg))
         Notify(source, msg, 'error')
         AddLog(source, 'mri_Qadmin', 'permissions', 'warn', msg,
@@ -1260,9 +1257,9 @@ lib.callback.register('mri_Qadmin:server:UpdateGroupPermissions', function(sourc
     local memberSet = {}
     for _, row in ipairs(memberRows) do memberSet[row.citizenid] = true end
 
-    TriggerClientEvent('QBCore:Notify', source, 'Permissões do grupo atualizadas.', 'success')
+    TriggerClientEvent('QBCore:Notify', source, locale('notifications.group_perms_updated'), 'success')
     AddLog(source, 'mri_Qadmin', 'permissions', 'warn',
-        ('Permissões: grupo "%s" atualizado (%d perms, %d linked principals)'):format(groupId, #permissionsArray, #cleanLinked),
+        locale('audit.group_perms_updated', groupId, #permissionsArray, #cleanLinked),
         { group = groupId, count = #permissionsArray, linkedPrincipals = cleanLinked })
     -- Adia o re-sync/broadcast até os add_ace/remove_ace deste save aplicarem, senão o
     -- cliente re-lê GetMyPermissions antes e continua vendo as permissões antigas.
@@ -1280,7 +1277,7 @@ end)
 
 lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source, citizenid, groupsArray)
     if not HasPerms(source, 'qadmin.page.permissions') then
-        return false, "Acesso Negado."
+        return false, locale('notifications.access_denied')
     end
 
     Debug('debug', ('[mri_Qadmin] Atualizando grupos para citizenid: %s'):format(citizenid))
@@ -1302,11 +1299,11 @@ lib.callback.register('mri_Qadmin:server:UpdateCharacterGroups', function(source
 
     if not ok then
         print('^1[mri_Qadmin] ERRO ao atualizar grupos do personagem:^7', err)
-        return false, "Erro ao salvar no banco de dados."
+        return false, locale('notifications.db_save_failed')
     end
 
-    TriggerClientEvent('QBCore:Notify', source, 'Grupos do jogador atualizados.', 'success')
-    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Grupos: personagem %s teve grupos atualizados: %s'):format(citizenid, table.concat(groupsArray, ', ')), { citizenid = citizenid, groups = groupsArray })
+    TriggerClientEvent('QBCore:Notify', source, locale('notifications.player_groups_updated'), 'success')
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', locale('audit.player_groups_updated', citizenid, table.concat(groupsArray, ', ')), { citizenid = citizenid, groups = groupsArray })
     -- Adia o re-sync/broadcast até os add_principal/remove_principal aplicarem, senão o
     -- cliente re-lê GetMyPermissions antes e continua vendo os grupos antigos.
     DeferAcePropagation(function()
@@ -1419,14 +1416,14 @@ lib.addCommand({ 'setmaster', 'mri_qadmin.setmaster' }, {
     print(('^2[mri_Qadmin] Executed: lib.addAce identifier.%s qadmin.master true^7'):format(cleanLicense))
 
     -- AUDIT: master grant é a ação mais privilegiada do sistema.
-    AddLog(0, 'mri_Qadmin', 'permissions', 'error', ('Master Admin CONCEDIDO via console: %s'):format(cleanLicense), { license = cleanLicense, actor = 'console' })
+    AddLog(0, 'mri_Qadmin', 'permissions', 'error', locale('audit.master_granted_console', cleanLicense), { license = cleanLicense, actor = 'console' })
 
     local players = QBCore.Functions.GetPlayers()
     for _, id in ipairs(players) do
         local p = QBCore.Functions.GetPlayer(id)
         if p and (p.PlayerData.license == cleanLicense) then
             TriggerEvent('mri_Qadmin:server:Reload', id)
-            TriggerClientEvent('QBCore:Notify', id, 'Você agora é Master Admin!', 'success')
+            TriggerClientEvent('QBCore:Notify', id, locale('notifications.master_admin_granted'), 'success')
             BroadcastPermissionUpdate()
         end
     end
@@ -1455,14 +1452,14 @@ lib.addCommand({ 'removemaster', 'mri_qadmin.removemaster' }, {
     print(('^2[mri_Qadmin] Executed: lib.removeAce identifier.%s qadmin.master^7'):format(cleanLicense))
 
     -- AUDIT
-    AddLog(0, 'mri_Qadmin', 'permissions', 'warn', ('Master Admin REVOGADO via console: %s'):format(cleanLicense), { license = cleanLicense, actor = 'console' })
+    AddLog(0, 'mri_Qadmin', 'permissions', 'warn', locale('audit.master_revoked_console', cleanLicense), { license = cleanLicense, actor = 'console' })
 
     local players = QBCore.Functions.GetPlayers()
     for _, id in ipairs(players) do
         local p = QBCore.Functions.GetPlayer(id)
         if p and (p.PlayerData.license == cleanLicense) then
             TriggerEvent('mri_Qadmin:server:Reload', id)
-            TriggerClientEvent('QBCore:Notify', id, 'Seu acesso Master Admin foi revogado.', 'error')
+            TriggerClientEvent('QBCore:Notify', id, locale('notifications.master_admin_revoked'), 'error')
             BroadcastPermissionUpdate()
         end
     end
@@ -1597,7 +1594,7 @@ lib.addCommand('mri_qadmin.purgemasters', {
     print('^2[mri_Qadmin] SESSION CLEANED: Master ACES removed from known licenses and common groups.^7')
 
     -- AUDIT: wipe global de masters — operação irreversível.
-    AddLog(0, 'mri_Qadmin', 'permissions', 'error', ('PURGE MASTERS via console: %d masters removidos do DB, group_permissions limpos'):format(mastersCount), { actor = 'console', count = mastersCount })
+    AddLog(0, 'mri_Qadmin', 'permissions', 'error', locale('audit.masters_purged', mastersCount), { actor = 'console', count = mastersCount })
 
     BroadcastPermissionUpdate()
 end)
@@ -1663,11 +1660,11 @@ RegisterNetEvent('mri_Qadmin:server:SeedAces', function()
     if type(Config.OpenPanelPerms) == "string" then addSafe(Config.OpenPanelPerms) end
 
     if count > 0 then
-        TriggerClientEvent('QBCore:Notify', src, ('Seeded %d permissions for \'admin\' group'):format(count), 'success')
-        AddLog(src, 'mri_Qadmin', 'permissions', 'warn', ('SeedAces: %d permissões adicionadas ao grupo "admin"'):format(count), { count = count })
+        TriggerClientEvent('QBCore:Notify', src, locale('notifications.perms_seeded', count), 'success')
+        AddLog(src, 'mri_Qadmin', 'permissions', 'warn', locale('audit.perms_seeded', count), { count = count })
         DeferAcePropagation()
     else
-        TriggerClientEvent('QBCore:Notify', src, 'All permissions already exist', 'primary')
+        TriggerClientEvent('QBCore:Notify', src, locale('notifications.perms_already_seeded'), 'primary')
     end
 end)
 

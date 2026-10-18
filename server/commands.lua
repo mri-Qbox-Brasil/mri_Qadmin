@@ -52,7 +52,7 @@ lib.addCommand({ 'adm', 'admin' }, {
 }, function(source)
     if not HasPerms(source, 'qadmin.open') and ClaimFirstMaster(source) then
         Wait(250) -- add_ace só aplica no fim do frame (ExecuteCommand)
-        QBCore.Functions.Notify(source, 'Você é o Master Admin do painel.', 'success', 8000)
+        QBCore.Functions.Notify(source, locale('notifications.master_admin_self'), 'success', 8000)
     end
 
     if not CheckPerms(source, 'qadmin.open') then return end
@@ -89,24 +89,24 @@ lib.addCommand('staff', {
         return QBCore.Functions.Notify(source, 'Use: /staff <id> add <cargo> ou /staff <id> rem', 'error', 5000)
     end
     if args.tipo == 'add' and not args.cargo then
-        return QBCore.Functions.Notify(source, 'Informe o cargo: admin, mod ou support.', 'error', 5000)
+        return QBCore.Functions.Notify(source, locale('notifications.staff_role_required'), 'error', 5000)
     end
 
     local citizenid = Player.PlayerData.citizenid
     local name = ('%s %s'):format(Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname)
     local groupId = SetStaffRole(citizenid, args.tipo == 'add' and args.cargo or nil)
     if groupId == false then
-        return QBCore.Functions.Notify(source, 'Cargo inválido.', 'error', 5000)
+        return QBCore.Functions.Notify(source, locale('notifications.invalid_staff_role'), 'error', 5000)
     end
 
     if args.tipo == 'add' then
-        QBCore.Functions.Notify(source, ('Cargo %s concedido a %s.'):format(args.cargo, name), 'success', 5000)
-        QBCore.Functions.Notify(args.id, ('Recebeu o cargo: %s'):format(args.cargo), 'success', 5000)
+        QBCore.Functions.Notify(source, locale('notifications.staff_role_granted', args.cargo, name), 'success', 5000)
+        QBCore.Functions.Notify(args.id, locale('notifications.staff_role_received', args.cargo), 'success', 5000)
     else
-        QBCore.Functions.Notify(source, ('Cargo de staff removido de %s.'):format(name), 'success', 5000)
-        QBCore.Functions.Notify(args.id, 'Seu cargo de staff foi removido.', 'primary', 5000)
+        QBCore.Functions.Notify(source, locale('notifications.staff_role_removed', name), 'success', 5000)
+        QBCore.Functions.Notify(args.id, locale('notifications.staff_role_removed_self'), 'primary', 5000)
     end
-    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', ('Staff: %s %s (/staff %s)'):format(name, args.tipo == 'add' and ('recebeu o grupo ' .. groupId) or 'saiu dos cargos de staff', args.tipo), { citizenid = citizenid, role = args.cargo, group = groupId })
+    AddLog(source, 'mri_Qadmin', 'permissions', 'warn', args.tipo == 'add' and locale('audit.staff_added', name, groupId, args.tipo) or locale('audit.staff_removed', name, args.tipo), { citizenid = citizenid, role = args.cargo, group = groupId })
 end)
 
 -- Atalhos das ações do painel. Mesmos eventos e permissões da ação.
@@ -155,7 +155,7 @@ lib.addCommand({ 'setped', 'setmodel' }, {
     end
 
     TriggerClientEvent("mri_Qadmin:client:setPed", target, args.model)
-    AddLog(source, 'mri_Qadmin', 'players', 'info', ('Ped: modelo %s aplicado em %s %s'):format(args.model, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = target, ped = args.model })
+    AddLog(source, 'mri_Qadmin', 'players', 'info', locale('audit.ped_applied', args.model, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = target, ped = args.model })
 end)
 
 lib.addCommand("vector2", {

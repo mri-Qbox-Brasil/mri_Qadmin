@@ -63,13 +63,13 @@ CreateThread(function()
     AddEventHandler(toggleEvent, function(val)
         wall = val
         if wall then
-            QBCore.Functions.Notify("Wall Ativado!", "success")
+            QBCore.Functions.Notify(locale('notifications.wall_enabled'), "success")
             -- Initial Fetch
             QBCore.Functions.TriggerCallback('mri_wall:getWallInfos', function(result)
                 wall_users = result
             end)
         else
-            QBCore.Functions.Notify("Wall Desativado!", "error")
+            QBCore.Functions.Notify(locale('notifications.wall_disabled'), "error")
             wall_users = {}
         end
     end)

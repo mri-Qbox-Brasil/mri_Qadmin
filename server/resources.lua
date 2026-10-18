@@ -124,11 +124,11 @@ local function listWithFsBridge(target)
     end)
 
     if not ok then
-        return nil, ('FS bridge falhou ao executar: %s'):format(tostring(result))
+        return nil, locale('resources.fs.bridge_failed', tostring(result))
     end
 
     if type(result) ~= 'table' then
-        return nil, 'FS bridge nao retornou uma resposta valida.'
+        return nil, locale('resources.fs.bridge_invalid')
     end
 
     if result.ok == true then
@@ -346,17 +346,17 @@ end
 local function resolveTarget(resourceName, relativePath)
     local resource, indexedName = findIndexedResource(resourceName)
     if not resource then
-        return nil, 'Resource nao encontrado no indice.'
+        return nil, locale('resources.fs.not_indexed')
     end
 
     local relative = sanitizeRelativePath(relativePath or '')
     if relative == nil then
-        return nil, 'Caminho invalido.'
+        return nil, locale('resources.fs.invalid_path')
     end
 
     local root = normalizeSlashes(resource.root or '')
     if root == '' then
-        return nil, 'Resource sem diretorio indexado.'
+        return nil, locale('resources.fs.no_directory')
     end
 
     local absolute = root
@@ -610,12 +610,12 @@ end
 local function readResourceFile(resourceName, relativePath)
     local target = resolveTarget(resourceName, relativePath)
     if not target or target.relative == '' then
-        return { ok = false, message = 'Arquivo invalido.' }
+        return { ok = false, message = locale('resources.fs.invalid_file') }
     end
 
     local content = readDiskFile(target)
     if type(content) ~= 'string' then
-        return { ok = false, message = 'Arquivo nao encontrado.' }
+        return { ok = false, message = locale('resources.fs.file_not_found') }
     end
 
     local size = tonumber(#content) or 0
@@ -654,7 +654,7 @@ local function ensureDirectoryExists(absolutePath)
     end
 
     if hasShellHazard(absolutePath) then
-        return false, 'Caminho com caractere nao suportado para criar pasta.'
+        return false, locale('resources.fs.unsupported_folder_create')
     end
 
     local command = isWindows()
@@ -666,7 +666,7 @@ local function ensureDirectoryExists(absolutePath)
         return true
     end
 
-    return false, 'Nao foi possivel criar a pasta no disco.'
+    return false, locale('resources.fs.folder_create_failed_disk')
 end
 
 -- Exclui um arquivo (os.remove) ou pasta (rmdir/rm -rf) direto no disco, sem
@@ -674,7 +674,7 @@ end
 local function deletePhysicalEntry(absolutePath, isDirectory)
     if isDirectory then
         if hasShellHazard(absolutePath) then
-            return false, 'Caminho com caractere nao suportado para excluir pasta.'
+            return false, locale('resources.fs.unsupported_folder_delete')
         end
 
         local command = isWindows()
@@ -686,7 +686,7 @@ local function deletePhysicalEntry(absolutePath, isDirectory)
             return true
         end
 
-        return false, 'Nao foi possivel excluir a pasta no disco.'
+        return false, locale('resources.fs.folder_delete_failed_disk')
     end
 
     local removed = os.remove(absolutePath)
@@ -694,7 +694,7 @@ local function deletePhysicalEntry(absolutePath, isDirectory)
         return true
     end
 
-    return false, 'Nao foi possivel excluir o arquivo no disco.'
+    return false, locale('resources.fs.file_delete_failed_disk')
 end
 
 -- Confirma a gravacao relendo o conteudo do disco (io cru) ou via native
@@ -758,27 +758,27 @@ local function createDirectory(target)
         return true
     end
 
-    return false, createError or 'Nao foi possivel criar a pasta.'
+    return false, createError or locale('resources.fs.folder_create_failed')
 end
 
 local function saveResourceEditorFile(source, data)
     if not CheckPerms(source, 'qadmin.action.change_resource') then
-        return { ok = false, message = 'Sem permissao para editar arquivos.' }
+        return { ok = false, message = locale('resources.fs.no_edit_permission') }
     end
 
     local target = resolveTarget(data.resource, data.path)
     if not target or target.relative == '' then
-        return { ok = false, message = 'Arquivo invalido.' }
+        return { ok = false, message = locale('resources.fs.invalid_file') }
     end
 
     if not isTextFile(target.relative) then
-        return { ok = false, message = 'Esse tipo de arquivo nao pode ser editado pelo painel.' }
+        return { ok = false, message = locale('resources.fs.not_editable') }
     end
 
     local saved, saveError = writeDiskFile(target, data.content or '')
     if not saved then
         print(('[mri_Qadmin] Falha ao salvar %s/%s: %s'):format(target.resource, target.relative, tostring(saveError)))
-        return { ok = false, message = saveError or 'Nao foi possivel salvar o arquivo.' }
+        return { ok = false, message = saveError or locale('resources.fs.save_failed') }
     end
 
     upsertIndexedEntry(target.resource, target.relative, false, #(tostring(data.content or '')))
@@ -796,7 +796,7 @@ local function saveResourceEditorFile(source, data)
         restarted = true
     end
 
-    AddLog(source, 'mri_Qadmin', 'server', 'info', ('Arquivo salvo em %s: %s'):format(target.resource, target.relative), {
+    AddLog(source, 'mri_Qadmin', 'server', 'info', locale('audit.file_saved', target.resource, target.relative), {
         resource = target.resource,
         file = target.relative,
         restarted = restarted,
@@ -805,9 +805,9 @@ local function saveResourceEditorFile(source, data)
     local selfEdit = data.restartResource == true and not restarted
     return {
         ok = true,
-        message = restarted and 'Arquivo salvo e resource reiniciado.'
+        message = restarted and locale('resources.fs.saved_restarted')
             or (selfEdit and 'Arquivo salvo. Reinicie o mri_Qadmin manualmente para aplicar.'
-            or 'Arquivo salvo com sucesso.'),
+            or locale('resources.fs.saved')),
         file = readResourceFile(target.resource, target.relative),
         resources = refreshResources(),
     }
@@ -815,7 +815,7 @@ end
 
 local function createEntry(source, data)
     if not CheckPerms(source, 'qadmin.action.change_resource') then
-        return { ok = false, message = 'Sem permissao para criar arquivos.' }
+        return { ok = false, message = locale('resources.fs.no_create_permission') }
     end
 
     local safeDirectory = sanitizeRelativePath(data.directory or '')
@@ -823,57 +823,57 @@ local function createEntry(source, data)
     local kind = tostring(data.kind or 'file')
 
     if safeDirectory == nil then
-        return { ok = false, message = 'Diretorio invalido.' }
+        return { ok = false, message = locale('resources.fs.invalid_directory') }
     end
 
     if not safeName then
-        return { ok = false, message = 'Nome invalido.' }
+        return { ok = false, message = locale('resources.fs.invalid_name') }
     end
 
     local relativePath = sanitizeRelativePath(joinRelativePath(safeDirectory, safeName))
     if not relativePath then
-        return { ok = false, message = 'Caminho invalido.' }
+        return { ok = false, message = locale('resources.fs.invalid_path') }
     end
 
     local target = resolveTarget(data.resource, relativePath)
     if not target then
-        return { ok = false, message = 'Destino invalido.' }
+        return { ok = false, message = locale('resources.fs.invalid_target') }
     end
 
     if kind == 'folder' then
         if pathExists(target.absolute) then
-            return { ok = false, message = 'Ja existe uma pasta ou arquivo com esse nome.' }
+            return { ok = false, message = locale('resources.fs.already_exists') }
         end
 
         local created, createError = createDirectory(target)
         if not created then
             print(('[mri_Qadmin] Falha ao criar pasta %s: %s'):format(target.absolute, tostring(createError)))
-            return { ok = false, message = createError or 'Nao foi possivel criar a pasta.' }
+            return { ok = false, message = createError or locale('resources.fs.folder_create_failed') }
         end
 
         upsertIndexedEntry(target.resource, target.relative, true, 0)
         return {
             ok = true,
-            message = 'Pasta criada com sucesso.',
+            message = locale('resources.fs.folder_created'),
             browse = listDirectory(target.resource, safeDirectory),
         }
     end
 
     if pathExists(target.absolute) then
-        return { ok = false, message = 'Ja existe uma pasta ou arquivo com esse nome.' }
+        return { ok = false, message = locale('resources.fs.already_exists') }
     end
 
     local created, createError = writeDiskFile(target, data.content or '')
     if not created then
         print(('[mri_Qadmin] Falha ao criar arquivo %s: %s'):format(target.absolute, tostring(createError)))
-        return { ok = false, message = createError or 'Nao foi possivel criar o arquivo.' }
+        return { ok = false, message = createError or locale('resources.fs.file_create_failed') }
     end
 
     upsertIndexedEntry(target.resource, target.relative, false, #(tostring(data.content or '')))
 
     return {
         ok = true,
-        message = 'Arquivo criado com sucesso.',
+        message = locale('resources.fs.file_created'),
         browse = listDirectory(target.resource, safeDirectory),
         file = readResourceFile(target.resource, target.relative),
     }
@@ -881,22 +881,22 @@ end
 
 local function deleteEntry(source, data)
     if not CheckPerms(source, 'qadmin.page.resources') then
-        return { ok = false, message = 'Sem permissao para acessar resources.' }
+        return { ok = false, message = locale('resources.fs.no_access') }
     end
 
     -- Exige change_resource (como browse/get/save) alem de resource_delete, pra
     -- nao deixar a exclusao com gate mais frouxo que a leitura/edicao.
     if not CheckPerms(source, 'qadmin.action.change_resource') then
-        return { ok = false, message = 'Sem permissao para gerenciar arquivos do resource.' }
+        return { ok = false, message = locale('resources.fs.no_manage_permission') }
     end
 
     if not CheckPerms(source, 'qadmin.action.resource_delete') then
-        return { ok = false, message = 'Sem permissao para excluir arquivos ou pastas.' }
+        return { ok = false, message = locale('resources.fs.no_delete_permission') }
     end
 
     local target = resolveTarget(data.resource, data.path)
     if not target or target.relative == '' then
-        return { ok = false, message = 'Entrada invalida para exclusao.' }
+        return { ok = false, message = locale('resources.fs.invalid_delete') }
     end
 
     local isDirectory = data.isDirectory == true
@@ -905,12 +905,12 @@ local function deleteEntry(source, data)
     local deleted, deleteError = deletePhysicalEntry(target.absolute, isDirectory)
     if not deleted then
         print(('[mri_Qadmin] Falha ao excluir %s/%s: %s'):format(target.resource, target.relative, tostring(deleteError)))
-        return { ok = false, message = deleteError or 'Nao foi possivel excluir a entrada.' }
+        return { ok = false, message = deleteError or locale('resources.fs.delete_failed') }
     end
 
     removeIndexedEntry(target.resource, target.relative)
 
-    AddLog(source, 'mri_Qadmin', 'server', 'warn', ('Entrada excluida em %s: %s'):format(target.resource, target.relative), {
+    AddLog(source, 'mri_Qadmin', 'server', 'warn', locale('audit.entry_deleted', target.resource, target.relative), {
         resource = target.resource,
         path = target.relative,
         isDirectory = isDirectory,
@@ -918,7 +918,7 @@ local function deleteEntry(source, data)
 
     return {
         ok = true,
-        message = isDirectory and 'Pasta excluida com sucesso.' or 'Arquivo excluido com sucesso.',
+        message = isDirectory and locale('resources.fs.folder_deleted') or locale('resources.fs.file_deleted'),
         browse = listDirectory(target.resource, parent),
         deletedPath = target.relative,
         deletedDirectory = isDirectory,
@@ -935,7 +935,7 @@ local function safeCallback(name, handler)
         print(('[mri_Qadmin] callback %s failed: %s'):format(name, tostring(response)))
         return {
             ok = false,
-            message = 'Erro interno no modulo de resources. Veja o console do servidor.',
+            message = locale('resources.fs.internal_error'),
         }
     end)
 end
@@ -961,15 +961,15 @@ safeCallback('mri_Qadmin:callback:ChangeResourceState', function(source, data)
 
     if state == 'start' then
         StartResource(resourceName)
-        AddLog(source, 'mri_Qadmin', 'server', 'info', ('Recurso iniciado: %s'):format(resourceName), { resource = resourceName })
+        AddLog(source, 'mri_Qadmin', 'server', 'info', locale('audit.resource_started', resourceName), { resource = resourceName })
     elseif state == 'stop' then
         StopResource(resourceName)
-        AddLog(source, 'mri_Qadmin', 'server', 'warn', ('Recurso parado: %s'):format(resourceName), { resource = resourceName })
+        AddLog(source, 'mri_Qadmin', 'server', 'warn', locale('audit.resource_stopped', resourceName), { resource = resourceName })
     elseif state == 'restart' then
         StopResource(resourceName)
         Wait(200)
         StartResource(resourceName)
-        AddLog(source, 'mri_Qadmin', 'server', 'warn', ('Recurso reiniciado: %s'):format(resourceName), { resource = resourceName })
+        AddLog(source, 'mri_Qadmin', 'server', 'warn', locale('audit.resource_restarted', resourceName), { resource = resourceName })
     end
 
     return refreshResources()
@@ -977,11 +977,11 @@ end)
 
 safeCallback('mri_Qadmin:callback:BrowseResourceFiles', function(source, resourceName, directory)
     if not CheckPerms(source, 'qadmin.page.resources') then
-        return { ok = false, message = 'Sem permissao para acessar resources.' }
+        return { ok = false, message = locale('resources.fs.no_access') }
     end
 
     if not CheckPerms(source, 'qadmin.action.change_resource') then
-        return { ok = false, message = 'Sem permissao para explorar resources.' }
+        return { ok = false, message = locale('resources.fs.no_explore_permission') }
     end
 
     return listDirectory(resourceName, directory)
@@ -989,11 +989,11 @@ end)
 
 safeCallback('mri_Qadmin:callback:GetResourceFile', function(source, resourceName, path)
     if not CheckPerms(source, 'qadmin.page.resources') then
-        return { ok = false, message = 'Sem permissao para acessar resources.' }
+        return { ok = false, message = locale('resources.fs.no_access') }
     end
 
     if not CheckPerms(source, 'qadmin.action.change_resource') then
-        return { ok = false, message = 'Sem permissao para abrir arquivos.' }
+        return { ok = false, message = locale('resources.fs.no_open_permission') }
     end
 
     return readResourceFile(resourceName, path)
@@ -1001,7 +1001,7 @@ end)
 
 safeCallback('mri_Qadmin:callback:SaveResourceFile', function(source, data)
     if not CheckPerms(source, 'qadmin.page.resources') then
-        return { ok = false, message = 'Sem permissao para acessar resources.' }
+        return { ok = false, message = locale('resources.fs.no_access') }
     end
 
     return saveResourceEditorFile(source, data or {})
@@ -1009,7 +1009,7 @@ end)
 
 safeCallback('mri_Qadmin:callback:CreateResourceEntry', function(source, data)
     if not CheckPerms(source, 'qadmin.page.resources') then
-        return { ok = false, message = 'Sem permissao para acessar resources.' }
+        return { ok = false, message = locale('resources.fs.no_access') }
     end
 
     return createEntry(source, data or {})

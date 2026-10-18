@@ -63,7 +63,7 @@ RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
     end
 
     TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(vehicle))
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', ('Veículo: admin spawnando %s temporário'):format(selectedVehicle), {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'audit.vehicle_spawn_temp', {}, { selectedVehicle })
 end)
 
 -- Delete Vehicle: o que o admin está dirigindo ou, a pé, o que ele está mirando (até 10m).
@@ -104,7 +104,7 @@ RegisterNetEvent('mri_Qadmin:client:DeleteVehicle', function(data)
     if DoesEntityExist(veh) then DeleteEntity(veh) end
 
     QBCore.Functions.Notify(locale("notifications.vehicle_deleted"), 'success')
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin deletou um veículo', {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'audit.vehicle_deleted', {})
 end)
 
 -- Fix Vehicle (o próprio veículo do admin). Era `type = "command"` apontando para o /fix,
@@ -128,7 +128,7 @@ RegisterNetEvent('mri_Qadmin:client:FixVehicle', function(data)
     SetVehicleDirtLevel(veh, 0.0)
 
     QBCore.Functions.Notify(locale("notifications.vehicle_repaired"), 'success')
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin consertou o próprio veículo', {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'audit.vehicle_self_repaired', {})
 end)
 
 -- Refuel Vehicle
@@ -143,7 +143,7 @@ RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function(data)
             exports[Config.Fuel]:SetFuel(cache.vehicle, 100.0)
         end
         QBCore.Functions.Notify(locale("notifications.refueled_vehicle"), 'success')
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin abasteceu o próprio veículo', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'audit.vehicle_self_refueled', {})
     else
         QBCore.Functions.Notify(locale("notifications.not_in_vehicle"), 'error')
     end
@@ -237,7 +237,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleVehDevMenu', function(data)
 
     VEHICLE_DEV_MODE = not VEHICLE_DEV_MODE
 
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', VEHICLE_DEV_MODE and 'Menu dev de veículo: ativado' or 'Menu dev de veículo: desativado', {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', VEHICLE_DEV_MODE and 'audit.vehicle_dev_menu_on' or 'audit.vehicle_dev_menu_off', {})
 
     if VEHICLE_DEV_MODE then
         CreateThread(UpdateVehicleMenu)
@@ -266,7 +266,7 @@ RegisterNetEvent('mri_Qadmin:client:maxmodVehicle', function(data)
 
     if cache.vehicle then
         UpgradePerformance(cache.vehicle)
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'Veículo: admin aplicou max mods no próprio veículo', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'audit.vehicle_self_max_mods', {})
     else
         QBCore.Functions.Notify(locale("notifications.vehicle_not_driver"), 'error', 7500)
     end

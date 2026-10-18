@@ -24,7 +24,7 @@ RegisterNetEvent('mri_Qadmin:server:StartWatchingPlayer', function(targetId)
 
     if not found then
         table.insert(viewers[target], adminSrc)
-        AddLog(adminSrc, 'mri_Qadmin', 'players', 'info', ('Tela ao vivo: admin começou a assistir a tela de %s'):format(GetPlayerName(target) or target), GetTargetData(target))
+        AddLog(adminSrc, 'mri_Qadmin', 'players', 'info', locale('audit.livescreen_started', GetPlayerName(target) or target), GetTargetData(target))
     end
 end)
 
@@ -54,7 +54,7 @@ RegisterNetEvent('mri_Qadmin:server:StopWatchingPlayer', function(targetId)
     end
 
     if removed then
-        AddLog(adminSrc, 'mri_Qadmin', 'players', 'info', ('Tela ao vivo: admin parou de assistir a tela de %s'):format(GetPlayerName(target) or target), GetTargetData(target))
+        AddLog(adminSrc, 'mri_Qadmin', 'players', 'info', locale('audit.livescreen_stopped', GetPlayerName(target) or target), GetTargetData(target))
     end
 end)
 

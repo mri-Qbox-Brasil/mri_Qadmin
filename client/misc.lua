@@ -8,7 +8,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleInvisible', function(data)
     visible = not visible
 
     SetEntityVisible(cache.ped, visible, 0)
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', visible and 'Invisibilidade: desativada' or 'Invisibilidade: ativada', {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', visible and 'audit.invisible_off' or 'audit.invisible_on', {})
 end)
 
 -- God Mode
@@ -16,13 +16,13 @@ local godmode = false
 RegisterNetEvent('mri_Qadmin:client:ToggleGodmode', function(data)
     if godmode then
         godmode = false
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'God mode: desativado', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.god_mode_off', {})
     else
         if not data then return end
         local actionData = CheckDataFromKey(data)
         if not actionData or not CheckPerms(actionData.perms) then return end
         godmode = true
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'God mode: ativado', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.god_mode_on', {})
     end
 
     if godmode then
@@ -96,7 +96,7 @@ RegisterNetEvent('mri_Qadmin:client:setInfiniteAmmo', function(data)
     infiniteAmmoOn = not infiniteAmmoOn
 
     TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info',
-        'Munição infinita: ' .. (infiniteAmmoOn and 'ativada' or 'desativada'), {})
+        infiniteAmmoOn and 'audit.infinite_ammo_on' or 'audit.infinite_ammo_off', {})
 
     if not infiniteAmmoOn then return end
 
@@ -149,13 +149,13 @@ end
 RegisterNetEvent('mri_Qadmin:client:ToggleCoords', function(data)
     if showCoords then
         showCoords = false
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', 'Coordenadas: exibição desativada', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', 'audit.coords_display_off', {})
     else
         if not data then return end
         local actionData = CheckDataFromKey(data)
         if not actionData or not CheckPerms(actionData.perms) then return end
         showCoords = true
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', 'Coordenadas: exibição ativada', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', 'audit.coords_display_on', {})
     end
 
     if showCoords then
@@ -175,7 +175,7 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
         QBCore.Functions.Notify(locale("notifications.set_weapon_ammo", tostring(ammo)), 'success')
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', ('Munição: definida para %s'):format(ammo), {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.ammo_set', {}, { ammo })
     else
         QBCore.Functions.Notify(locale("notifications.no_weapon"), 'error')
     end
@@ -188,7 +188,7 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmoAdmin', function()
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
         QBCore.Functions.Notify(locale("notifications.set_weapon_ammo", tostring(ammo)), 'success')
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Munição: 999 definido via comando /setammo', {})
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.ammo_set_command', {})
     else
         QBCore.Functions.Notify(locale("notifications.no_weapon"), 'error')
     end
@@ -209,7 +209,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleDev', function(dataKey)
         ToggleDev = true
     end
 
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', ToggleDev and 'Dev mode: ativado' or 'Dev mode: desativado', {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', ToggleDev and 'audit.dev_mode_on' or 'audit.dev_mode_off', {})
 
     TriggerEvent("qb-admin:client:ToggleDevmode")              -- toggle dev mode (ps-hud/qb-hud)
     TriggerEvent('mri_Qadmin:client:ToggleCoords', dataKey)  -- toggle Coords

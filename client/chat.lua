@@ -39,6 +39,6 @@ end)
 
 RegisterNetEvent('mri_Qadmin:client:mentioned', function(senderName)
 	PlaySoundFrontend(-1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
-	QBCore.Functions.Notify(senderName .. ' te marcou no Staff Chat!', 'primary', 6000)
+	QBCore.Functions.Notify(locale('notifications.staffchat_mention', senderName), 'primary', 6000)
 	SendNUIMessage({ type = 'mentioned', senderName = senderName })
 end)

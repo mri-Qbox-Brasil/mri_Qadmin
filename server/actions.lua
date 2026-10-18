@@ -123,15 +123,15 @@ RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
     if not CheckPerms(src, 'qadmin.action.manage_actions') then return end
 
     if type(id) ~= 'string' or id == '' or #id > 64 then
-        return QBCore.Functions.Notify(src, 'ID de ação inválido.', 'error')
+        return QBCore.Functions.Notify(src, locale('notifications.invalid_action_id'), 'error')
     end
     if not ALLOWED_CATEGORIES[category] then
-        return QBCore.Functions.Notify(src, 'Categoria inválida.', 'error')
+        return QBCore.Functions.Notify(src, locale('notifications.invalid_category'), 'error')
     end
     local ok, err = validateActionPayload(data)
     if not ok then
-        AddLog(src, 'mri_Qadmin', 'server', 'error', ('Action rejeitada: %s'):format(err), { id = id, category = category })
-        return QBCore.Functions.Notify(src, 'Ação rejeitada: ' .. err, 'error')
+        AddLog(src, 'mri_Qadmin', 'server', 'error', locale('audit.action_rejected', err), { id = id, category = category })
+        return QBCore.Functions.Notify(src, locale('notifications.action_rejected', err), 'error')
     end
 
     local jsonString = json.encode(data)
@@ -149,7 +149,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
     end
 
     Debug('debug', ('Action %s atualizada/criada por %s (Cat: %s)'):format(id, GetPlayerName(src), category))
-    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Ação salva: %s (%s)'):format(id, category), { id = id, category = category })
+    AddLog(src, 'mri_Qadmin', 'server', 'info', locale('audit.action_saved', id, category), { id = id, category = category })
 
     -- Broadcast update to admins only
     local admins = GetAdminPlayers()
@@ -157,7 +157,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
     for _, adminId in ipairs(admins) do
         TriggerClientEvent('mri_Qadmin:client:UpdateActions', adminId, actionsData)
     end
-    QBCore.Functions.Notify(src, 'Ação salva e sincronizada!', 'success')
+    QBCore.Functions.Notify(src, locale('notifications.action_saved'), 'success')
 end)
 
 -- Endpoint to Delete an action
@@ -166,10 +166,10 @@ RegisterNetEvent('mri_Qadmin:server:DeleteAction', function(id, category)
     if not CheckPerms(src, 'qadmin.action.manage_actions') then return end
 
     if type(id) ~= 'string' or id == '' or #id > 64 then
-        return QBCore.Functions.Notify(src, 'ID de ação inválido.', 'error')
+        return QBCore.Functions.Notify(src, locale('notifications.invalid_action_id'), 'error')
     end
     if not ALLOWED_CATEGORIES[category] then
-        return QBCore.Functions.Notify(src, 'Categoria inválida.', 'error')
+        return QBCore.Functions.Notify(src, locale('notifications.invalid_category'), 'error')
     end
 
     MySQL.query.await('DELETE FROM mri_qadmin_actions WHERE id = ?', {id})
@@ -181,7 +181,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteAction', function(id, category)
     end
 
     Debug('debug', ('Action %s deletada por %s'):format(id, GetPlayerName(src)))
-    AddLog(src, 'mri_Qadmin', 'server', 'warn', ('Ação deletada: %s (%s)'):format(id, category), { id = id, category = category })
+    AddLog(src, 'mri_Qadmin', 'server', 'warn', locale('audit.action_deleted', id, category), { id = id, category = category })
 
     -- Broadcast update to admins only
     local admins = GetAdminPlayers()
@@ -189,5 +189,5 @@ RegisterNetEvent('mri_Qadmin:server:DeleteAction', function(id, category)
     for _, adminId in ipairs(admins) do
         TriggerClientEvent('mri_Qadmin:client:UpdateActions', adminId, actionsData)
     end
-    QBCore.Functions.Notify(src, 'Ação deletada com sucesso!', 'success')
+    QBCore.Functions.Notify(src, locale('notifications.action_deleted'), 'success')
 end)

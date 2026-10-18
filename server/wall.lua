@@ -136,7 +136,7 @@ RegisterNetEvent("mri_Qadmin:server:enableWall", function(data)
     Debug('debug', ('Wall Source: %s'):format(tostring(src)))
     Debug('debug', ('Wall Data: %s'):format(tostring(data)))
     enableWall(src)
-    AddLog(src, 'mri_Qadmin', 'server', 'info', 'Wall: admin alternou o wall ESP', {})
+    AddLog(src, 'mri_Qadmin', 'server', 'info', locale('audit.wall_toggled'), {})
 end)
 
 QBCore.Functions.CreateCallback('mri_wall:getWallInfos', function(src, cb)
@@ -206,7 +206,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
             if key:sub(1, #p) == p then allowed = true; break end
         end
         if not allowed then
-            QBCore.Functions.Notify(src, 'Principal inválido: ' .. tostring(key), 'error')
+            QBCore.Functions.Notify(src, locale('notifications.invalid_principal', tostring(key)), 'error')
             return
         end
         principal_colors[key] = value
@@ -222,8 +222,8 @@ RegisterNetEvent('mri_Qadmin:server:SaveWallSetting', function(type, key, value)
     -- Single broadcast
     broadcastWallInfos()
 
-    TriggerClientEvent('QBCore:Notify', src, 'Wall settings updated', 'success')
-    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Wall: configuração "%s/%s" atualizada'):format(type, key), { type = type, key = key, value = value })
+    TriggerClientEvent('QBCore:Notify', src, locale('notifications.wall_settings_updated'), 'success')
+    AddLog(src, 'mri_Qadmin', 'server', 'info', locale('audit.wall_setting_updated', type, key), { type = type, key = key, value = value })
 end)
 
 RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principal)
@@ -243,8 +243,8 @@ RegisterNetEvent('mri_Qadmin:server:DeleteWallPrincipalColor', function(principa
     -- Single broadcast
     broadcastWallInfos()
 
-    TriggerClientEvent('QBCore:Notify', src, 'Principal color removed', 'success')
-    AddLog(src, 'mri_Qadmin', 'server', 'info', ('Wall: cor do principal "%s" removida'):format(principal), { principal = principal })
+    TriggerClientEvent('QBCore:Notify', src, locale('notifications.wall_principal_color_removed'), 'success')
+    AddLog(src, 'mri_Qadmin', 'server', 'info', locale('audit.wall_principal_color_removed', principal), { principal = principal })
 end)
 
 AddEventHandler('playerDropped', function()

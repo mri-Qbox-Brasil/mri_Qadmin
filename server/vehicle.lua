@@ -110,7 +110,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
         end
     end
     if not trustedEntry then
-        AddLog(src, 'mri_Qadmin', 'vehicles', 'error', ('Admin Car rejeitado: modelo desconhecido %s'):format(modelKey), { received = modelKey })
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'error', locale('audit.admin_car_rejected', modelKey), { received = modelKey })
         return TriggerClientEvent('QBCore:Notify', src, locale("notifications.cannot_store_veh"), 'error', 3000)
     end
 
@@ -136,7 +136,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveCar', function(mods, vehicle, _, plate)
             })
         MarkDashboardDirty('vehicle_added')
         TriggerClientEvent('QBCore:Notify', src, locale("notifications.veh_owner"), 'success', 5000)
-        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Admin Car: veículo %s salvo com placa %s'):format(trustedEntry.model or trustedEntry._sharedKey, plate), { model = trustedEntry.model, plate = plate })
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.admin_car_saved', trustedEntry.model or trustedEntry._sharedKey, plate), { model = trustedEntry.model, plate = plate })
     else
         TriggerClientEvent('QBCore:Notify', src, locale("notifications.u_veh_owner"), 'error', 3000)
     end
@@ -214,7 +214,7 @@ RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
     giveCarData.model = vehmodel
     giveCarData.plate = plate
     giveCarData.garage = garage
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo: %s dado a %s (placa: %s)'):format(vehmodel, targetName, plate), giveCarData)
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.vehicle_given', vehmodel, targetName, plate), giveCarData)
 end)
 
 -- Dedicated event for the Vehicle Wizard (Frontend)
@@ -284,7 +284,7 @@ RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
     wizardCarData.model = model
     wizardCarData.plate = plate
     wizardCarData.garage = garage
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Dar veículo (wizard): %s dado a %s (placa: %s)'):format(model, targetName, plate), wizardCarData)
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.vehicle_given_wizard', model, targetName, plate), wizardCarData)
 end)
 
 -- Give Car
@@ -315,7 +315,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(_, selectedData)
     MySQL.update.await('UPDATE player_vehicles SET state = ?, depotprice = ? WHERE plate = ?', { state, 0, plate })
 
     QBCore.Functions.Notify(src, locale("notifications.state_changed"), "success", 5000)
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estado do veículo: placa %s alterada para estado %d'):format(plate, state), { plate = plate, state = state })
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.vehicle_state_set', plate, state), { plate = plate, state = state })
 end)
 
 -- Change Plate
@@ -344,7 +344,7 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     MySQL.update.await('UPDATE player_vehicles SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
     MySQL.update.await('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
     MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Placa alterada: %s -> %s'):format(currentPlate, newPlate), { oldPlate = currentPlate, newPlate = newPlate })
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.plate_changed', currentPlate, newPlate), { oldPlate = currentPlate, newPlate = newPlate })
 end)
 
 -- Owned vehicles of an online player, for the garage panel of the Vehicles page.
@@ -378,7 +378,7 @@ RegisterNetEvent('mri_Qadmin:server:FixVehFor', function(_, selectedData)
         TriggerClientEvent('iens:repaira', Player.PlayerData.source)
         TriggerClientEvent('vehiclemod:client:fixEverything', Player.PlayerData.source)
         QBCore.Functions.Notify(src, locale("notifications.veh_fixed", name), 'success', 7500)
-        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Reparar veículo: veículo de %s reparado'):format(name), { target = playerId })
+        AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.vehicle_repaired_for', name), { target = playerId })
     else
         TriggerClientEvent('QBCore:Notify', src, locale("notifications.not_online"), "error")
     end
@@ -412,7 +412,7 @@ RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedD
     MarkDashboardDirty('vehicle_deleted')
 
     QBCore.Functions.Notify(src, locale("notifications.veh_deleted", plate), "success", 5000)
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'warn', ('Deletar veículo: placa %s removida do banco'):format(plate), { plate = plate })
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'warn', locale('audit.vehicle_deleted_db', plate), { plate = plate })
 end)
 
 -- Update Vehicle Stock
@@ -438,7 +438,7 @@ lib.callback.register('mri_Qadmin:server:UpdateVehicleStock', function(src, sele
         return false
     end
 
-    QBCore.Functions.Notify(src, "Stock updated for " .. model, "success")
-    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', ('Estoque do veículo %s alterado para %d'):format(model, stock), { model = model, stock = stock })
+    QBCore.Functions.Notify(src, locale('notifications.stock_updated', model), "success")
+    AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.vehicle_stock_set', model, stock), { model = model, stock = stock })
     return true
 end)

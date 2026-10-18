@@ -196,4 +196,10 @@ exports('QadminGetStreamedModels', () => streamedModels);
 
 scheduleScan();
 
+// The panel language list is the locales folder itself: a new <code>.json shows up on its own.
+GlobalState['mri_qadmin:languages'] = fs.readdirSync(path.join(GetResourcePath(GetCurrentResourceName()), 'locales'))
+  .filter((file) => file.endsWith('.json'))
+  .map((file) => file.slice(0, -5))
+  .sort();
+
 console.log('[mri_Qadmin] Resource FS bridge carregado.');

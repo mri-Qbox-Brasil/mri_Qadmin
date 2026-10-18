@@ -199,7 +199,7 @@ RegisterNetEvent('mri_Qadmin:server:UpdateSetting', function(key, value)
 
     TriggerClientEvent('mri_Qadmin:client:UpdateSettings', -1, GetPrimitiveSettings())
     Debug("debug", message)
-    Notify(src, 'Configuração salva e sincronizada!', 'success')
+    Notify(src, locale('notifications.settings_saved'), 'success')
     AddLog(src, 'mri_Qadmin', 'server', 'debug', message, { key = key, oldVal = oldVal, newVal = value })
 end)
 

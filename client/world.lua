@@ -7,7 +7,7 @@ RegisterNetEvent('mri_Qadmin:client:ChangeTime', function(srcData, selectedData)
     if not time then return end
 
     TriggerServerEvent('qb-weathersync:server:setTime', time, 00)
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'server', 'info', ('Hora: alterada para %s'):format(tostring(time)), {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'server', 'info', 'audit.time_changed', {}, { tostring(time) })
 end)
 
 -- Changes the weather
@@ -17,7 +17,7 @@ RegisterNetEvent('mri_Qadmin:client:ChangeWeather', function(srcData, selectedDa
     local weather = selectedData["Weather"].value
 
     TriggerServerEvent('qb-weathersync:server:setWeather', weather)
-    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'server', 'info', ('Clima: alterado para %s'):format(tostring(weather)), {})
+    TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'server', 'info', 'audit.weather_changed', {}, { tostring(weather) })
 end)
 
 RegisterNetEvent('mri_Qadmin:client:copyToClipboard', function(srcData, selectedData)

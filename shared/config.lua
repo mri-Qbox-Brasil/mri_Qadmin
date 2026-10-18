@@ -5,12 +5,6 @@ Config.Dealership = "mri"     -- "mri" (for qbx_vehicleshop with stock system) o
 Config.OpenPanelPerms = { 'qadmin.open' }
 Config.RenewedPhone = false    -- if you use qb-phone from renewed. (multijob)
 
-Config.SupportedLanguages = {
-    { id = 'pt-br', label = 'Português (BR)' },
-    { id = 'en', label = 'English' },
-    { id = 'es', label = 'Español' },
-}
-
 -- Key Bindings
 Config.Keybindings = true
 Config.AdminKey = "0"

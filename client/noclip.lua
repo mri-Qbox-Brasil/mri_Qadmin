@@ -251,8 +251,8 @@ local function ToggleNoclip()
         HideEntity()
         EnableCameraVoice()
 
-        QBCore.Functions.Notify("Noclip Ativado", "success")
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Noclip: ativado', {})
+        QBCore.Functions.Notify(locale('notifications.noclip_enabled'), "success")
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.noclip_on', {})
 
         CreateThread(function()
             while noclip do
@@ -286,8 +286,8 @@ local function ToggleNoclip()
         RestoreEntity(dest)       -- ped volta pra superfície primeiro
         DestroyNoclipCam()        -- depois corta pra câmera de gameplay (já em cima)
 
-        QBCore.Functions.Notify("Noclip Desativado", "error")
-        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'Noclip: desativado', {})
+        QBCore.Functions.Notify(locale('notifications.noclip_disabled'), "error")
+        TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.noclip_off', {})
     end
 end
 

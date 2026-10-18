@@ -19,7 +19,7 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventory', function(_, selectedData)
 
     local playerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
     QBCore.Functions.Notify(src, locale("notifications.invcleared", playerName), 'success', 7500)
-    AddLog(src, 'mri_Qadmin', 'inventory', 'warn', ('Limpar inventário: inventário de %s limpo'):format(playerName), GetTargetData(tonumber(player)))
+    AddLog(src, 'mri_Qadmin', 'inventory', 'warn', locale('audit.inventory_cleared', playerName), GetTargetData(tonumber(player)))
 end)
 
 -- Clear Inventory Offline
@@ -29,7 +29,7 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(_, selected
     local src = source
     local citizenId = GetValue(selectedData, "Citizen ID")
     if type(citizenId) ~= 'string' or citizenId == '' or #citizenId > 64 then
-        return QBCore.Functions.Notify(src, "CID inválido.", 'error', 5000)
+        return QBCore.Functions.Notify(src, locale('notifications.invalid_cid'), 'error', 5000)
     end
     local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
 
@@ -44,13 +44,13 @@ RegisterNetEvent('mri_Qadmin:server:ClearInventoryOffline', function(_, selected
         end
         local playerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
         QBCore.Functions.Notify(src, locale("notifications.invcleared", playerName), 'success', 7500)
-        AddLog(src, 'mri_Qadmin', 'inventory', 'warn', ('Limpar inventário (offline): inventário de %s limpo'):format(playerName), { citizenid = citizenId })
+        AddLog(src, 'mri_Qadmin', 'inventory', 'warn', locale('audit.inventory_cleared_offline', playerName), { citizenid = citizenId })
     else
         local result = MySQL.query.await("SELECT * FROM players WHERE citizenid = ?", { citizenId })
         if result and result[1] then
             MySQL.update.await("UPDATE players SET inventory = '{}' WHERE citizenid = ?", { citizenId })
-            QBCore.Functions.Notify(src, "Player's inventory cleared", 'success', 7500)
-            AddLog(src, 'mri_Qadmin', 'inventory', 'warn', ('Limpar inventário (offline-db): CID %s limpo'):format(citizenId), { citizenid = citizenId })
+            QBCore.Functions.Notify(src, locale('notifications.invcleared', citizenId), 'success', 7500)
+            AddLog(src, 'mri_Qadmin', 'inventory', 'warn', locale('audit.inventory_cleared_db', citizenId), { citizenid = citizenId })
         else
             QBCore.Functions.Notify(src, locale("notifications.player_not_found"), 'error', 7500)
         end
@@ -67,7 +67,7 @@ RegisterNetEvent('mri_Qadmin:server:OpenInv', function(data)
     end
     if not CheckTargetable(source, targetPlayer) then return end
     exports.ox_inventory:forceOpenInventory(source, 'player', targetPlayer)
-    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Inventário: admin abriu inventário de %s'):format(GetPlayerName(targetPlayer) or targetPlayer), GetTargetData(targetPlayer))
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', locale('audit.inventory_opened', GetPlayerName(targetPlayer) or targetPlayer), GetTargetData(targetPlayer))
 end)
 
 -- Open Stash [ox side]
@@ -92,7 +92,7 @@ RegisterNetEvent('mri_Qadmin:server:OpenStash', function(data)
         return QBCore.Functions.Notify(src, locale("notifications.stash_open_failed"), 'error', 5000)
     end
 
-    AddLog(src, 'mri_Qadmin', 'inventory', 'info', ('Stash: admin abriu/criou stash "%s"'):format(stashId), { stash = stashId })
+    AddLog(src, 'mri_Qadmin', 'inventory', 'info', locale('audit.stash_opened', stashId), { stash = stashId })
 end)
 
 -- Open Trunk [ox side]
@@ -107,7 +107,7 @@ RegisterNetEvent('mri_Qadmin:server:OpenTrunk', function(actionData, vehiclePlat
     if not success then
         return QBCore.Functions.Notify(source, locale("vehicle.messages.trunk_not_found"), 'error', 7500)
     end
-    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Porta-malas: admin abriu porta-malas do veículo %s'):format(plate), { plate = plate })
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', locale('audit.trunk_opened', plate), { plate = plate })
 end)
 
 local MAX_ITEM_AMOUNT = 10000
@@ -124,7 +124,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveItem', function(_, selectedData)
 
     if type(item) ~= 'string' or item == '' then return end
     if not amount or amount <= 0 then
-        return QBCore.Functions.Notify(source, "Quantidade inválida.", 'error', 5000)
+        return QBCore.Functions.Notify(source, locale('notifications.invalid_amount'), 'error', 5000)
     end
     if amount > MAX_ITEM_AMOUNT then amount = MAX_ITEM_AMOUNT end
     if not Player then
@@ -137,14 +137,14 @@ RegisterNetEvent('mri_Qadmin:server:GiveItem', function(_, selectedData)
     local giveItemData = GetTargetData(tonumber(target))
     giveItemData.item = item
     giveItemData.amount = amount
-    AddLog(source, 'mri_Qadmin', 'inventory', 'info', ('Dar item: %dx %s dado a %s'):format(amount, item, playerName), giveItemData)
+    AddLog(source, 'mri_Qadmin', 'inventory', 'info', locale('audit.item_given', amount, item, playerName), giveItemData)
 end)
 
 -- Give Item to All
 RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_item_all') then return end
     if not RateLimit(source, 'give_item_all', 5000) then
-        return QBCore.Functions.Notify(source, 'Aguarde antes de repetir essa ação.', 'error', 3000)
+        return QBCore.Functions.Notify(source, locale('notifications.wait_before_repeat'), 'error', 3000)
     end
 
     local item = GetValue(selectedData, "Item")
@@ -153,7 +153,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(actionKey, selectedDa
 
     if type(item) ~= 'string' or item == '' then return end
     if not amount or amount <= 0 then
-        return QBCore.Functions.Notify(source, "Quantidade inválida.", 'error', 5000)
+        return QBCore.Functions.Notify(source, locale('notifications.invalid_amount'), 'error', 5000)
     end
     if amount > MAX_ITEM_AMOUNT then amount = MAX_ITEM_AMOUNT end
 
@@ -164,5 +164,5 @@ RegisterNetEvent('mri_Qadmin:server:GiveItemAll', function(actionKey, selectedDa
         end
     end
     QBCore.Functions.Notify(source, locale("notifications.give_item_all", amount .. " " .. item), "success", 7500)
-    AddLog(source, 'mri_Qadmin', 'inventory', 'warn', ('Dar item a todos: %dx %s dado a todos os jogadores'):format(amount, item), { item = item, amount = amount })
+    AddLog(source, 'mri_Qadmin', 'inventory', 'warn', locale('audit.item_given_all', amount, item), { item = item, amount = amount })
 end)

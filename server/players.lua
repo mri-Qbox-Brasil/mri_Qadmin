@@ -391,7 +391,7 @@ lib.callback.register('mri_Qadmin:callback:SetPassport', function(src, citizenid
     if not callOk then return { ok = false, reason = 'unavailable' } end
     if not ok then return { ok = false, reason = reason or 'invalid' } end
 
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Passaporte: %s recebeu o passaporte %d'):format(citizenid, passport), { target_citizenid = citizenid, passport = passport })
+    AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.passport_set', citizenid, passport), { target_citizenid = citizenid, passport = passport })
     return { ok = true }
 end)
 
@@ -406,10 +406,10 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
     local Grade = tonumber(GetValue(selectedData, "Grade"))
 
     if type(Job) ~= 'string' or Job == '' then
-        return TriggerClientEvent('QBCore:Notify', src, 'Job inválido.', 'error')
+        return TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_job'), 'error')
     end
     if not Grade or Grade < 0 or Grade > 100 then
-        return TriggerClientEvent('QBCore:Notify', src, 'Grade inválido.', 'error')
+        return TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_grade'), 'error')
     end
     Grade = math.floor(Grade)
 
@@ -420,7 +420,7 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
     else
         Player = QBCore.Functions.GetOfflinePlayerByCitizenId(playerId)
         if not Player then
-            TriggerClientEvent('QBCore:Notify', src, 'Jogador offline não encontrado.', 'error')
+            TriggerClientEvent('QBCore:Notify', src, locale('notifications.offline_player_not_found'), 'error')
             return
         end
     end
@@ -430,7 +430,7 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
     if GetResourceState('qbx_core') == 'started' then JOBS = exports.qbx_core:GetJobs() else JOBS = QBCore.Shared.Jobs end
     jobInfo = JOBS[Job]
     if not jobInfo then
-        TriggerClientEvent('QBCore:Notify', src, 'Trabalho inválido.', 'error')
+        TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_job'), 'error')
         return
     end
 
@@ -442,7 +442,7 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
     end
 
     if not grade then
-        TriggerClientEvent('QBCore:Notify', src, 'Cargo inválido.', 'error')
+        TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_grade'), 'error')
         return
     end
 
@@ -462,7 +462,7 @@ RegisterNetEvent('mri_Qadmin:server:SetJob', function(_actionKey, selectedData)
         end
 
         QBCore.Functions.Notify(src, locale("notifications.jobset", name, Job, grade.name), 'success', 5000)
-        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Cargo: %s recebeu cargo %s (%s)'):format(name, Job, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, job = Job, grade = Grade })
+        AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.job_set', name, Job, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, job = Job, grade = Grade })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
@@ -479,10 +479,10 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
     local Grade = tonumber(GetValue(selectedData, "Grade"))
 
     if type(Gang) ~= 'string' or Gang == '' then
-        return TriggerClientEvent('QBCore:Notify', src, 'Gang inválido.', 'error')
+        return TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_gang'), 'error')
     end
     if not Grade or Grade < 0 or Grade > 100 then
-        return TriggerClientEvent('QBCore:Notify', src, 'Grade inválido.', 'error')
+        return TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_grade'), 'error')
     end
     Grade = math.floor(Grade)
 
@@ -493,7 +493,7 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
     else
         Player = QBCore.Functions.GetOfflinePlayerByCitizenId(playerId)
         if not Player then
-            TriggerClientEvent('QBCore:Notify', src, 'Jogador offline não encontrado.', 'error')
+            TriggerClientEvent('QBCore:Notify', src, locale('notifications.offline_player_not_found'), 'error')
             return
         end
     end
@@ -503,7 +503,7 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
     if GetResourceState('qbx_core') == 'started' then GANGS = exports.qbx_core:GetGangs() else GANGS = QBCore.Shared.Gangs end
     GangInfo = GANGS[Gang]
     if not GangInfo then
-        TriggerClientEvent('QBCore:Notify', src, 'Gangue inválida.', 'error')
+        TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_gang'), 'error')
         return
     end
 
@@ -515,7 +515,7 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
     end
 
     if not grade then
-        TriggerClientEvent('QBCore:Notify', src, 'Cargo inválido.', 'error')
+        TriggerClientEvent('QBCore:Notify', src, locale('notifications.invalid_grade'), 'error')
         return
     end
 
@@ -531,7 +531,7 @@ RegisterNetEvent('mri_Qadmin:server:SetGang', function(_actionKey, selectedData)
         end
 
         QBCore.Functions.Notify(src, locale("notifications.gangset", name, Gang, grade.name), 'success', 5000)
-        AddLog(src, 'mri_Qadmin', 'players', 'info', ('Gangue: %s recebeu gangue %s (%s)'):format(name, Gang, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, gang = Gang, grade = Grade })
+        AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.gang_set', name, Gang, grade.name), { target_name = name, target_citizenid = citizenid, target_src = Player.PlayerData.source, gang = Gang, grade = Grade })
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
     end
 end)
@@ -556,13 +556,13 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
 
     rank = tostring(rank or ''):lower()
     if rank == '' then
-        QBCore.Functions.Notify(src, "Rank inválido.", "error", 5000)
+        QBCore.Functions.Notify(src, locale('notifications.invalid_rank'), "error", 5000)
         return
     end
 
     if ELEVATED_QBCORE_RANKS[rank] and not HasPerms(src, 'qadmin.master') then
-        QBCore.Functions.Notify(src, "Apenas Master Admins podem atribuir o rank '" .. rank .. "'.", "error", 5000)
-        AddLog(src, 'mri_Qadmin', 'players', 'error', ('Tentativa de escalada: %s tentou atribuir rank "%s"'):format(GetPlayerName(src), rank), { target = targetId, rank = rank })
+        QBCore.Functions.Notify(src, locale('notifications.rank_master_only', rank), "error", 5000)
+        AddLog(src, 'mri_Qadmin', 'players', 'error', locale('audit.rank_escalation', GetPlayerName(src), rank), { target = targetId, rank = rank })
         return
     end
 
@@ -572,7 +572,7 @@ RegisterNetEvent("mri_Qadmin:server:SetPerms", function(dataKey, selectedData)
     QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("notifications.player_perms", name, rank), 'success', 5000)
     local permLogData = GetTargetData(tonumber(targetId))
     permLogData.rank = rank
-    AddLog(src, 'mri_Qadmin', 'players', 'warn', ('Permissão: %s recebeu permissão %s'):format(name, rank), permLogData)
+    AddLog(src, 'mri_Qadmin', 'players', 'warn', locale('audit.rank_set', name, rank), permLogData)
 end)
 
 -- Remove Stress
@@ -592,7 +592,7 @@ RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(dataKey, selectedDat
     TriggerClientEvent('mri_Qadmin:client:removeStress', targetId)
 
     QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("notifications.removed_stress_player"), 'success', 5000)
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Stress removido de %s %s'):format(tPlayer.PlayerData.charinfo.firstname, tPlayer.PlayerData.charinfo.lastname), GetTargetData(tonumber(targetId)))
+    AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.stress_removed', tPlayer.PlayerData.charinfo.firstname, tPlayer.PlayerData.charinfo.lastname), GetTargetData(tonumber(targetId)))
 end)
 
 -- Set Vital (Unified event for Health, Armor, Hunger, Thirst, Stress)
@@ -611,7 +611,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
 
     local numValue = tonumber(value)
     if not numValue then
-        QBCore.Functions.Notify(src, "Valor de vital inválido.", "error", 5000)
+        QBCore.Functions.Notify(src, locale('notifications.invalid_vital_value'), "error", 5000)
         return
     end
 
@@ -625,7 +625,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     }
     local range = VITAL_RANGES[vital]
     if not range then
-        QBCore.Functions.Notify(src, "Vital desconhecido: " .. tostring(vital), "error", 5000)
+        QBCore.Functions.Notify(src, locale('notifications.unknown_vital', tostring(vital)), "error", 5000)
         return
     end
     if numValue < range.min then numValue = range.min end
@@ -645,7 +645,7 @@ RegisterNetEvent("mri_Qadmin:server:SetVital", function(targetId, vital, value)
     local vitalLogData = GetTargetData(tonumber(targetId))
     vitalLogData.vital = vital
     vitalLogData.value = value
-    AddLog(src, 'mri_Qadmin', 'players', 'info', ('Vital: %s de %s definido para %s'):format(vital, targetName, value), vitalLogData)
+    AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.vital_set', vital, targetName, value), vitalLogData)
 
     -- Broadcast update immediate to admins only
     local admins = GetAdminPlayers()
