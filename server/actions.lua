@@ -38,6 +38,10 @@ local function LoadActions()
 
         if func then
             local defaults = func()
+            -- Untouched defaults are translated by the panel; a manager save drops the flag and keeps the owner's text.
+            for _, bucket in pairs(defaults) do
+                for _, action in pairs(bucket) do action.builtin = true end
+            end
             if defaults.Actions then for k, v in pairs(defaults.Actions) do Config.Actions[k] = v end end
             if defaults.PlayerActions then for k, v in pairs(defaults.PlayerActions) do Config.PlayerActions[k] = v end end
             if defaults.OtherActions then for k, v in pairs(defaults.OtherActions) do Config.OtherActions[k] = v end end
@@ -55,6 +59,7 @@ local function LoadActions()
             local id = row.id
             local category = row.category
             local data = json.decode(row.data)
+            data.builtin = nil
 
             if category == 'Actions' then
                 Config.Actions[id] = data
@@ -134,6 +139,7 @@ RegisterNetEvent('mri_Qadmin:server:SaveAction', function(id, category, data)
         return QBCore.Functions.Notify(src, locale('notifications.action_rejected', err), 'error')
     end
 
+    data.builtin = nil
     local jsonString = json.encode(data)
 
     MySQL.insert.await([[

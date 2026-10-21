@@ -41,6 +41,12 @@ local function AdminLog(src, action, target, item, count, invType)
     AddLog(src, 'mri_Qadmin', 'inventory', 'info', logMsg, { action = action, target = tostring(target), item = item, count = count, invType = invType })
 end
 
+-- Hierarchy only covers player inventories; trunks and gloveboxes have no owner to protect.
+local function canTouchInventory(source, targetId, invType)
+    if invType and invType ~= 'player' then return true end
+    return CheckTargetable(source, tonumber(targetId))
+end
+
 lib.callback.register('mri_Qadmin:callback:GetPlayerInventory', function(source, targetId)
     if not CheckPerms(source, 'qadmin.action.view_inventory') then return nil end
 
@@ -128,7 +134,7 @@ lib.callback.register('mri_Qadmin:callback:GetVehicleInventory', function(source
                 weight = inventory.weight or 0,
                 maxWeight = inventory.maxWeight or 0,
                 slots = inventory.slots or 0,
-                label = (invType == 'trunk' and 'Porta-malas: ' or 'Porta-luvas: ') .. plate
+                label = locale(invType == 'trunk' and 'vehicle.inventory.trunk' or 'vehicle.inventory.glovebox', plate)
             }
         end
     end
@@ -161,7 +167,7 @@ lib.callback.register('mri_Qadmin:callback:GetVehicleInventory', function(source
         weight = 0, -- Hard to determine without specific inv export
         maxWeight = 100000,
         slots = 50,
-        label = (invType == 'trunk' and 'Porta-malas: ' or 'Porta-luvas: ') .. plate
+        label = locale(invType == 'trunk' and 'vehicle.inventory.trunk' or 'vehicle.inventory.glovebox', plate)
     }
 end)
 
@@ -176,6 +182,7 @@ lib.callback.register('mri_Qadmin:server:RemoveInventoryItem', function(source, 
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
+    if not canTouchInventory(source, targetId, invType) then return false end
 
     AdminLog(source, "Remove Item", targetId, item, count, invType)
 
@@ -207,6 +214,7 @@ lib.callback.register('mri_Qadmin:server:ClearPlayerInventory', function(source,
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
+    if not canTouchInventory(source, targetId, invType) then return false end
 
     AdminLog(source, "Clear Inventory", targetId, nil, nil, invType)
 
@@ -238,6 +246,7 @@ lib.callback.register('mri_Qadmin:server:GiveInventoryItem', function(source, ta
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
+    if not canTouchInventory(source, targetId, invType) then return false end
 
     AdminLog(source, "Give Item", targetId, item, count, invType)
 
@@ -267,10 +276,13 @@ lib.callback.register('mri_Qadmin:server:TransferItemToSelf', function(source, t
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
+    if not canTouchInventory(source, targetId, invType) then return false end
 
     AdminLog(source, "Transfer Item to Self", targetId, item, count, invType)
 
     if Config.Inventory == 'ox_inventory' then
+        -- Without room on the admin the removed item would be lost.
+        if not exports.ox_inventory:CanCarryItem(source, item, count) then return false end
         local success = exports.ox_inventory:RemoveItem(target, item, count, nil, slot)
         if success then
             exports.ox_inventory:AddItem(source, item, count)
@@ -299,6 +311,7 @@ lib.callback.register('mri_Qadmin:server:CopyInventoryToSelf', function(source, 
 
     local target = (not invType or invType == 'player') and tonumber(targetId) or (invType == 'trunk' and 'trunk'..targetId or 'glovebox'..targetId)
     if not target then return false end
+    if not canTouchInventory(source, targetId, invType) then return false end
 
     AdminLog(source, "Copy Inventory to Self", targetId, nil, nil, invType)
 
@@ -352,6 +365,7 @@ lib.callback.register('mri_Qadmin:server:MoveInventoryItem', function(source, da
     local toTarget = (not data.toType or data.toType == 'player') and tonumber(data.toId) or (data.toType == 'trunk' and 'trunk'..data.toId or 'glovebox'..data.toId)
 
     if not fromTarget or not toTarget then return false end
+    if not canTouchInventory(source, data.fromId, data.fromType) or not canTouchInventory(source, data.toId, data.toType) then return false end
 
     AdminLog(source, "Move Item", data.fromId, data.item, data.count, data.fromType)
     if data.fromId ~= data.toId then

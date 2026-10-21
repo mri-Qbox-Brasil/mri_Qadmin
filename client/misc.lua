@@ -2,10 +2,10 @@
 -- Toggles Invincibility
 
 local visible = true
-RegisterNetEvent('mri_Qadmin:client:ToggleInvisible', function(data)
-    local actionData = CheckDataFromKey(data)
-    if not actionData or not CheckPerms(actionData.perms) then return end
+RegisterNetEvent('mri_Qadmin:client:ToggleInvisible', function()
+    if not CheckPerms('qadmin.action.invisible') then return end
     visible = not visible
+    SetSelfState('invisible', not visible)
 
     SetEntityVisible(cache.ped, visible, 0)
     TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', visible and 'audit.invisible_off' or 'audit.invisible_on', {})
@@ -18,13 +18,12 @@ RegisterNetEvent('mri_Qadmin:client:ToggleGodmode', function(data)
         godmode = false
         TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.god_mode_off', {})
     else
-        if not data then return end
-        local actionData = CheckDataFromKey(data)
-        if not actionData or not CheckPerms(actionData.perms) then return end
+        if not data or not CheckPerms('qadmin.action.god_mode') then return end
         godmode = true
         TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'players', 'info', 'audit.god_mode_on', {})
     end
 
+    SetSelfState('god', godmode)
     if godmode then
 
         QBCore.Functions.Notify(locale("notifications.godmode", "Ativado"), 'primary')
@@ -158,6 +157,7 @@ RegisterNetEvent('mri_Qadmin:client:ToggleCoords', function(data)
         TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info', 'audit.coords_display_on', {})
     end
 
+    SetSelfState('coords', showCoords)
     if showCoords then
 
         CreateThread(showCoordsMenu)
@@ -169,7 +169,8 @@ RegisterNetEvent('mri_Qadmin:client:SetAmmo', function(data, selectedData)
     local actionData = CheckDataFromKey(data)
     if not actionData or not CheckPerms(actionData.perms) then return end
 
-    local ammo = selectedData["Ammo Ammount"].value
+    local ammo = math.floor(tonumber(selectedData and selectedData.Ammo and selectedData.Ammo.value) or -1)
+    if ammo < 0 then return QBCore.Functions.Notify(locale("notifications.invalid_amount"), 'error') end
     local weapon = GetSelectedPedWeapon(cache.ped)
 
     if weapon ~= nil then

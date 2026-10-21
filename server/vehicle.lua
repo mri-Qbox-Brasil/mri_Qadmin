@@ -146,10 +146,7 @@ end)
 RegisterNetEvent("mri_Qadmin:server:givecar", function(_, selectedData)
     local src = source
 
-    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
-        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
-        return
-    end
+    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then return end
 
     local vehmodel = selectedData['Vehicle'] and selectedData['Vehicle'].value
     if type(vehmodel) ~= 'string' or vehmodel == '' or not QBCore.Shared.Vehicles[vehmodel] then
@@ -220,10 +217,7 @@ end)
 -- Dedicated event for the Vehicle Wizard (Frontend)
 RegisterNetEvent("mri_Qadmin:server:GiveVehicle", function(data)
     local src = source
-    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then
-        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error")
-        return
-    end
+    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then return end
 
     if type(data) ~= 'table' then return end
     local playerId = tonumber(data.playerId)
@@ -291,10 +285,7 @@ end)
 RegisterNetEvent("mri_Qadmin:server:SetVehicleState", function(_, selectedData)
     local src = source
 
-    if not CheckPerms(src, 'qadmin.action.change_vehicle_state') then
-        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
-        return
-    end
+    if not CheckPerms(src, 'qadmin.action.change_vehicle_state') then return end
 
     local plateField = selectedData and selectedData['Plate']
     local stateField = selectedData and selectedData['State']
@@ -342,8 +333,12 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     end
 
     MySQL.update.await('UPDATE player_vehicles SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    MySQL.update.await('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
+    -- trunkitems/gloveboxitems only exist on qb-style inventories; querying them under ox_inventory errors out.
+    if Config.Inventory ~= 'ox_inventory' then
+        MySQL.update.await('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
+        MySQL.update.await('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
+    end
+    QBCore.Functions.Notify(src, locale('notifications.plate_changed', currentPlate, newPlate), 'success', 5000)
     AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.plate_changed', currentPlate, newPlate), { oldPlate = currentPlate, newPlate = newPlate })
 end)
 
@@ -388,10 +383,7 @@ end)
 RegisterNetEvent('mri_Qadmin:server:DeleteVehicleByPlate', function(_, selectedData)
     local src = source
 
-    if not CheckPerms(src, 'qadmin.action.delete_vehicle') then
-        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
-        return
-    end
+    if not CheckPerms(src, 'qadmin.action.delete_vehicle') then return end
 
     local plateField = selectedData and selectedData["Plate"]
     if not plateField then return end

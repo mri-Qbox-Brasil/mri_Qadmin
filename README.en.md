@@ -86,6 +86,7 @@ When a resource isn't writable, the panel shows a **"read-only"** notice with th
 | :--- | :--- | :--- |
 | `/adm` | `qadmin.open` | Open the admin panel |
 | `/nc` | `qadmin.action.noclip` | Toggle noclip |
+| `/cds`, `/coords` | Admin | Coordinates screen: copy any format in one click and mark points by aiming |
 | `/vector2`, `/vec2` | Admin | Copy coords as Vector2 |
 | `/vector3`, `/vec3` | Admin | Copy coords as Vector3 |
 | `/vector4`, `/vec4` | Admin | Copy coords as Vector4 (with heading) |

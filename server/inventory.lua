@@ -85,7 +85,7 @@ RegisterNetEvent('mri_Qadmin:server:OpenStash', function(data)
     -- Registrar aqui (idempotente) faz a primeira abertura CRIAR o baú.
     -- owner = nil → baú compartilhado: qualquer admin que abrir o mesmo nome vê o mesmo
     -- conteúdo, que é o comportamento esperado de um baú de administração.
-    exports.ox_inventory:RegisterStash(stashId, ('Baú Admin: %s'):format(stashId), 50, 100000)
+    exports.ox_inventory:RegisterStash(stashId, locale('vehicle.inventory.admin_stash', stashId), 50, 100000)
 
     local opened = exports.ox_inventory:forceOpenInventory(src, 'stash', stashId)
     if not opened then
@@ -132,7 +132,10 @@ RegisterNetEvent('mri_Qadmin:server:GiveItem', function(_, selectedData)
     end
 
     local playerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
-    Player.Functions.AddItem(item, amount)
+    -- ox_inventory answers false for an unknown item or a full inventory.
+    if not Player.Functions.AddItem(item, amount) then
+        return QBCore.Functions.Notify(source, locale("notifications.give_item_failed", item, playerName), 'error', 7500)
+    end
     QBCore.Functions.Notify(source, locale("notifications.give_item", amount .. " " .. item, playerName), "success", 7500)
     local giveItemData = GetTargetData(tonumber(target))
     giveItemData.item = item

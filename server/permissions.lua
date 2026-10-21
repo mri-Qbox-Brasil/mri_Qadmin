@@ -963,7 +963,8 @@ AddEventHandler('mri_Qadmin:server:Reload', function(src)
     TriggerEvent('mri_Qadmin:server:PlayerPermissionsReady', src)
 end)
 
-RegisterNetEvent('QBCore:Server:OnPlayerUnload', function(source)
+-- Server-only (qbx_core TriggerEvent); as a net event any client could pass an admin's id and strip their principals.
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(source)
     local src = source
     Debug('debug', ('OnPlayerUnload chamado para: %s'):format(src))
     CleanupPlayerPrincipals(src)
@@ -1351,36 +1352,6 @@ lib.callback.register('mri_Qadmin:callback:GetMyPermissions', function(source)
     return allowed
 end)
 
-lib.callback.register('mri_Qadmin:callback:GetAces', function(source)
-    -- Gated on qadmin.page.permissions (not qadmin.open): raw ACE lines expose
-    -- every principal and the license identifiers of Master Admins.
-    if not CheckPerms(source, 'qadmin.page.permissions') then return {} end
-    local raw = GetAces() or ''
-    local result = {}
-    for line in raw:gmatch('[^\n]+') do
-        local atype, principal, object = line:match('^(%S+)%s+(%S+)%s+(%S+)$')
-        if atype and principal and object then
-            table.insert(result, { type = atype, principal = principal, object = object })
-        end
-    end
-    return result
-end)
-
-lib.callback.register('mri_Qadmin:callback:GetPrincipals', function(source)
-    -- Gated on qadmin.page.permissions (not qadmin.open): principal inheritance
-    -- lines reveal the full ACE/permission topology of the server.
-    if not CheckPerms(source, 'qadmin.page.permissions') then return {} end
-    local raw = GetPrincipals() or ''
-    local result = {}
-    for line in raw:gmatch('[^\n]+') do
-        local child, parent = line:match('^(%S+)%s+(%S+)$')
-        if child and parent then
-            table.insert(result, { child = child, parent = parent })
-        end
-    end
-    return result
-end)
-
 lib.addCommand({ 'setmaster', 'mri_qadmin.setmaster' }, {
     help = 'Set a player as Master Admin (Console Only)',
     params = {
@@ -1525,7 +1496,7 @@ lib.addCommand('mri_qadmin.debugperms', {
     local dbGroups = MySQL.query.await('SELECT group_id FROM mri_qadmin_character_groups WHERE citizenid = ?', {p.PlayerData.citizenid}) or {}
     print(('^3DB GROUPS para %s (%d found):^7'):format(p.PlayerData.citizenid, #dbGroups))
     if #dbGroups == 0 then
-        print('^1  (nenhum — char não está em nenhum grupo no banco)^7')
+        print('^1  (nenhum: char não está em nenhum grupo no banco)^7')
     end
     for _, g in ipairs(dbGroups) do
         print(('  - group.%s'):format(g.group_id))

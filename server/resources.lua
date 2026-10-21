@@ -959,6 +959,12 @@ safeCallback('mri_Qadmin:callback:ChangeResourceState', function(source, data)
         return refreshResources()
     end
 
+    -- Stopping itself kills this callback, so a restart would never reach StartResource.
+    if resourceName == GetCurrentResourceName() and state ~= 'start' then
+        Notify(source, locale('notifications.cannot_stop_self'), 'error')
+        return refreshResources()
+    end
+
     if state == 'start' then
         StartResource(resourceName)
         AddLog(source, 'mri_Qadmin', 'server', 'info', locale('audit.resource_started', resourceName), { resource = resourceName })

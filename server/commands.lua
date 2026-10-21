@@ -158,6 +158,13 @@ lib.addCommand({ 'setped', 'setmodel' }, {
     AddLog(source, 'mri_Qadmin', 'players', 'info', locale('audit.ped_applied', args.model, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = target, ped = args.model })
 end)
 
+lib.addCommand({ 'cds', 'coords' }, {
+    help = 'Open the coordinates tool (copy vec2/vec3/vec4, heading, aimed points)',
+}, function(source)
+    if not HasPerms(source, 'qadmin.action.copy_coords') and not CheckPerms(source, 'qadmin.action.toggle_coords') then return end
+    TriggerClientEvent('mri_Qadmin:client:OpenCoordsTool', source)
+end)
+
 lib.addCommand("vector2", {
     help = 'Copy vector2 coordinates to clipboard',
 }, function(source)

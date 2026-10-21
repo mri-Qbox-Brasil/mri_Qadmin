@@ -426,14 +426,14 @@ local fivemanageQueue = CreateDeliveryQueue({
     classify = function(statusCode, body)
         if statusCode >= 200 and statusCode < 300 then return 'ok' end
         if statusCode == 401 or statusCode == 403 then
-            return 'permanent', ('HTTP %d — token invalido ou de tipo errado (use um token de Logs, nao de Media)'):format(statusCode)
+            return 'permanent', ('HTTP %d: token invalido ou de tipo errado (use um token de Logs, nao de Media)'):format(statusCode)
         end
         if statusCode == 400 then
-            return 'permanent', ('HTTP 400 — %s'):format(tostring(body):sub(1, 200))
+            return 'permanent', ('HTTP 400: %s'):format(tostring(body):sub(1, 200))
         end
         -- Dataset inexistente chega aqui como 500, então o corpo da resposta
         -- vai junto: só "HTTP 500" manda o admin procurar no escuro.
-        return 'retry', ('HTTP %s — %s'):format(tostring(statusCode), tostring(body):sub(1, 200))
+        return 'retry', ('HTTP %s: %s'):format(tostring(statusCode), tostring(body):sub(1, 200))
     end,
 
     onSuccess = function()
@@ -442,7 +442,7 @@ local fivemanageQueue = CreateDeliveryQueue({
 
     onPermanent = function(detail, dropped)
         fmLastError = detail
-        print(('[mri_Qadmin] ERRO Fivemanage: %s — %d log(s) descartado(s). Corrija o token/dataset nas configuracoes de logs.'):format(detail, dropped))
+        print(('[mri_Qadmin] ERRO Fivemanage: %s. %d log(s) descartado(s). Corrija o token/dataset nas configuracoes de logs.'):format(detail, dropped))
     end,
 
     onRetry = function(detail, errorCount, pending)
@@ -453,7 +453,7 @@ local fivemanageQueue = CreateDeliveryQueue({
     end,
 
     onOverflow = function(maxQueue)
-        fmLastError = ('fila cheia (%d) — logs mais antigos descartados'):format(maxQueue)
+        fmLastError = ('fila cheia (%d), logs mais antigos descartados'):format(maxQueue)
     end,
 })
 
@@ -486,7 +486,7 @@ local function FivemanageGet(params)
 
     local res = Citizen.Await(p)
     if res.status ~= 200 then
-        return nil, ('HTTP %s — %s'):format(tostring(res.status), tostring(res.body):sub(1, 200))
+        return nil, ('HTTP %s: %s'):format(tostring(res.status), tostring(res.body):sub(1, 200))
     end
 
     local ok, decoded = pcall(json.decode, res.body)

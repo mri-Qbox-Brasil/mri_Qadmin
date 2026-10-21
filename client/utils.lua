@@ -1,4 +1,4 @@
--- luacheck: globals MenuVisible PanelMode
+-- luacheck: globals MenuVisible PanelMode CloseCoordsTool
 MenuVisible = false
 -- 'full' is the tablet; 'dock' is the narrow side panel you can walk with.
 PanelMode = GetResourceKvpString('panel_mode') == 'dock' and 'dock' or 'full'
@@ -37,6 +37,7 @@ local function applyFocus()
 		SetNuiFocus(dockCursor, dockCursor)
 		SetNuiFocusKeepInput(dockCursor and not dockTyping)
 		startDockGuard()
+		StartDockFeed()
 	else
 		SetNuiFocus(true, true)
 		SetNuiFocusKeepInput(false)
@@ -46,6 +47,7 @@ end
 
 --- @param bool boolean
 function ToggleUI(bool)
+    if bool and CloseCoordsTool then CloseCoordsTool() end
     MenuVisible = bool
 	dockCursor = true
 	dockTyping = false
@@ -83,6 +85,10 @@ RegisterNUICallback('setTyping', function(data, cb)
 	if MenuVisible and PanelMode == 'dock' then applyFocus() end
 	cb('ok')
 end)
+
+function IsDockCursorFree()
+	return MenuVisible and PanelMode == 'dock' and not dockCursor
+end
 
 function IsMenuVisible()
     return MenuVisible

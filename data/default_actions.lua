@@ -11,9 +11,10 @@ return {
             label = "Banir Jogador",
             perms = "qadmin.action.ban_player",
             dropdown = {
-                { label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Reason", option = "text" },
+                { key = "player", label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "reason", label = "Reason", option = "text" },
                 {
+                    key = "duration",
                     label = "Duração",
                     option = "dropdown",
                     data = {
@@ -29,7 +30,7 @@ return {
                         { label = "3 Semanas",  value = "1814400" },
                     },
                 },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:BanPlayer" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:BanPlayer" },
             },
         },
 
@@ -37,8 +38,8 @@ return {
             label = "Puxar Jogador",
             perms = "qadmin.action.bring_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:BringPlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:BringPlayer" },
             },
         },
 
@@ -47,6 +48,7 @@ return {
             perms = "qadmin.action.change_weather",
             dropdown = {
                 {
+                    key = "weather",
                     label = "Weather",
                     option = "dropdown",
                     data = {
@@ -67,7 +69,7 @@ return {
                         { label = "Halloween",  value = "Halloween" },
                     },
                 },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:ChangeWeather" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:ChangeWeather" },
             },
         },
 
@@ -76,6 +78,7 @@ return {
             perms = "qadmin.action.change_time",
             dropdown = {
                 {
+                    key = "time",
                     label = "Time Events",
                     option = "dropdown",
                     data = {
@@ -87,7 +90,7 @@ return {
                         { label = "Noite",   value = "24" },
                     },
                 },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:ChangeTime" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:ChangeTime" },
             },
         },
 
@@ -95,8 +98,8 @@ return {
             label = "Alterar Placa",
             perms = "qadmin.action.change_plate",
             dropdown = {
-                { label = "Plate",   option = "text" },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:ChangePlate" },
+                { key = "plate", label = "Plate",   option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:ChangePlate" },
             },
         },
 
@@ -104,8 +107,8 @@ return {
             label = "Limpar Inventário",
             perms = "qadmin.action.clear_inventory",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClearInventory" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClearInventory" },
             },
         },
 
@@ -113,8 +116,8 @@ return {
             label = "Limpar Inventário Offline",
             perms = "qadmin.action.clear_inventory_offline",
             dropdown = {
-                { label = "Citizen ID", option = "text", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClearInventoryOffline" },
+                { key = "citizen_id", label = "Citizen ID", option = "text", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClearInventoryOffline" },
             },
         },
 
@@ -122,8 +125,8 @@ return {
             label = "Dar Menu de Roupas",
             perms = "qadmin.action.clothing_menu",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClothingMenu" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:ClothingMenu" },
             },
         },
 
@@ -131,9 +134,9 @@ return {
             label = "Definir Ped",
             perms = "qadmin.action.set_ped",
             dropdown = {
-                { label = "Player",     option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Ped Models", option = "dropdown", data = "pedlist", valueField = "model", labelField = "label" },
-                { label = "Confirmar",    option = "button", type = "server", event = "mri_Qadmin:server:setPed" },
+                { key = "player", label = "Player",     option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "ped", label = "Ped Models", option = "dropdown", data = "pedlist", valueField = "model", labelField = "label" },
+                { key = "confirm", label = "Confirmar",    option = "button", type = "server", event = "mri_Qadmin:server:setPed" },
             },
         },
 
@@ -142,6 +145,7 @@ return {
             perms = "qadmin.action.copy_coords",
             dropdown = {
                 {
+                    key = "coords_format",
                     label = "Copy Coords",
                     option = "dropdown",
                     data = {
@@ -151,7 +155,7 @@ return {
                         { label = "Copiar Direção", value = "heading" },
                     },
                 },
-                { label = "Copiar para Área de Transferência", option = "button", type = "client", event = "mri_Qadmin:client:copyToClipboard"},
+                { key = "copy", label = "Copiar para Área de Transferência", option = "button", type = "client", event = "mri_Qadmin:client:copyToClipboard"},
             },
         },
 
@@ -166,8 +170,8 @@ return {
             label = "Congelar Jogador",
             perms = "qadmin.action.freeze_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:FreezePlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:FreezePlayer" },
             },
         },
 
@@ -175,8 +179,8 @@ return {
             label = "Matar Jogador",
             perms = "qadmin.action.kill_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:KillPlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:KillPlayer" },
             },
         },
 
@@ -184,8 +188,8 @@ return {
             label = "Deixar Jogador Bêbado",
             perms = "qadmin.action.drunk_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:DrunkPlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:DrunkPlayer" },
             },
         },
 
@@ -193,8 +197,8 @@ return {
             label = "Remover Estresse",
             perms = "qadmin.action.remove_stress",
             dropdown = {
-                { label = "Jogador (Opcional)", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar",           option = "button", type = "server", event = "mri_Qadmin:server:RemoveStress" },
+                { id = "Player", key = "player_optional", label = "Jogador (Opcional)", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar",           option = "button", type = "server", event = "mri_Qadmin:server:RemoveStress" },
             },
         },
 
@@ -202,8 +206,8 @@ return {
             label = "Definir Munição",
             perms = "qadmin.action.set_ammo",
             dropdown = {
-                { label = "Quantidade de Munição", option = "text" },
-                { label = "Confirmar",      option = "button", type = "client", event = "mri_Qadmin:client:SetAmmo" },
+                { id = "Ammo", key = "ammo", label = "Quantidade de Munição", option = "text" },
+                { key = "confirm", label = "Confirmar",      option = "button", type = "client", event = "mri_Qadmin:client:SetAmmo" },
             },
         },
 
@@ -218,11 +222,11 @@ return {
             label = "Dar Carro",
             perms = "qadmin.action.give_car",
             dropdown = {
-                { label = "Vehicle",           option = "dropdown", data = "vehicles", valueField = "model", labelField = "name" },
-                { label = "Player",            option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Placa (Opcional)",  option = "text" },
-                { label = "Garagem (Opcional)", option = "text" },
-                { label = "Confirmar",           option = "button", type = "server", event = "mri_Qadmin:server:givecar" },
+                { key = "vehicle", label = "Vehicle",           option = "dropdown", data = "vehicles", valueField = "model", labelField = "name" },
+                { key = "player", label = "Player",            option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "plate_optional", label = "Placa (Opcional)",  option = "text" },
+                { key = "garage_optional", label = "Garagem (Opcional)", option = "text" },
+                { key = "confirm", label = "Confirmar",           option = "button", type = "server", event = "mri_Qadmin:server:givecar" },
             }
         },
 
@@ -258,9 +262,9 @@ return {
             label = "Definir Bucket de Roteamento",
             perms = "qadmin.action.set_bucket",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Bucket",  option = "text" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:SetBucket" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "bucket", label = "Bucket",  option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:SetBucket" },
             },
         },
 
@@ -268,8 +272,8 @@ return {
             label = "Obter Bucket de Roteamento",
             perms = "qadmin.action.get_bucket",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:GetBucket" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:GetBucket" },
             },
         },
 
@@ -277,8 +281,8 @@ return {
             label = "Silenciar Jogador",
             perms = "qadmin.action.mute_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:MutePlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:MutePlayer" },
             },
         },
 
@@ -293,8 +297,8 @@ return {
             label = "Abrir Inventário",
             perms = "qadmin.action.open_inventory",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:openInventory" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:openInventory" },
             },
         },
 
@@ -302,8 +306,8 @@ return {
             label = "Abrir Depósito",
             perms = "qadmin.action.open_stash",
             dropdown = {
-                { label = "Stash",   option = "text" },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:openStash" },
+                { key = "stash", label = "Stash",   option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:openStash" },
             },
         },
 
@@ -311,8 +315,8 @@ return {
             label = "Abrir Porta-malas",
             perms = "qadmin.action.open_trunk",
             dropdown = {
-                { label = "Plate",   option = "text" },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:openTrunk" },
+                { key = "plate", label = "Plate",   option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:openTrunk" },
             },
         },
 
@@ -320,8 +324,10 @@ return {
             label = "Definir Estado do Veículo na Garagem",
             perms = "qadmin.action.change_vehicle_state",
             dropdown = {
-                { label = "Plate",   option = "text" },
+                { key = "plate", label = "Plate",   option = "text" },
                 {
+                    id = "State",
+                    key = "state",
                     label = "Estado",
                     option = "dropdown",
                     data = {
@@ -329,7 +335,7 @@ return {
                         { label = "Fora", value = "0" },
                     },
                 },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:SetVehicleState" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:SetVehicleState" },
             },
         },
 
@@ -337,15 +343,15 @@ return {
             label = "Reviver Todos",
             type = "server",
             event = "mri_Qadmin:server:ReviveAll",
-            perms = "qadmin.action.revive",
+            perms = "qadmin.action.revive_all",
         },
 
         ["revive_player"] = {
             label = "Reviver Jogador",
             perms = "qadmin.action.revive",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:Revive" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:Revive" },
             },
         },
 
@@ -353,7 +359,7 @@ return {
             label = "Reviver Raio",
             type = "server",
             event = "mri_Qadmin:server:ReviveRadius",
-            perms = "qadmin.action.revive",
+            perms = "qadmin.action.revive_all",
         },
 
         ["refuel_vehicle"] = {
@@ -367,9 +373,9 @@ return {
             label = "Definir Emprego",
             perms = "qadmin.action.set_job",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Job", option = "dropdown", data = "jobs", valueField = "name", labelField = "label" },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:SetJob" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "job", label = "Job", option = "dropdown", data = "jobs", valueField = "name", labelField = "label" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:SetJob" },
             },
         },
 
@@ -377,8 +383,9 @@ return {
             label = "Demitir do Emprego",
             perms = "qadmin.action.fire_job",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
                 {
+                    key = "job",
                     label = "Job",
                     option = "dropdown",
                     valueField = "name",
@@ -388,13 +395,14 @@ return {
                     },
                 },
                 {
+                    key = "grade",
                     label = "Grade",
                     option = "dropdown",
                     data = {
                         { label = "Civil",      value = 0 },
                     },
                 },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:SetJob" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:SetJob" },
             },
         },
 
@@ -402,8 +410,9 @@ return {
             label = "Demitir da Gangue",
             perms = "qadmin.action.fire_gang",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
                 {
+                    key = "gang",
                     label = "Gang",
                     option = "dropdown",
                     valueField = "name",
@@ -413,13 +422,14 @@ return {
                     },
                 },
                 {
+                    key = "grade",
                     label = "Grade",
                     option = "dropdown",
                     data = {
                         { label = "Civil",      value = 0 },
                     },
                 },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:SetGang" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:SetGang" },
             },
         },
 
@@ -427,9 +437,9 @@ return {
             label = "Definir Gangue",
             perms = "qadmin.action.set_gang",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Gang",    option = "dropdown", data = "gangs", valueField = "name", labelField = "label" },
-                { label = "Confirmar", option = "button",   type = "client", event = "mri_Qadmin:client:SetGang" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "gang", label = "Gang",    option = "dropdown", data = "gangs", valueField = "name", labelField = "label" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "client", event = "mri_Qadmin:client:SetGang" },
             },
         },
 
@@ -437,9 +447,10 @@ return {
             label = "Dar Dinheiro",
             perms = "qadmin.action.give_money",
             dropdown = {
-                { label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Amount", option = "text" },
+                { key = "player", label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "amount", label = "Amount", option = "text" },
                 {
+                    key = "money_type",
                     label = "Type",
                     option = "dropdown",
                     data = {
@@ -448,7 +459,7 @@ return {
                         { label = "Cripto", value = "crypto" },
                     },
                 },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:GiveMoney" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:GiveMoney" },
             },
         },
 
@@ -456,8 +467,9 @@ return {
             label = "Dar Dinheiro para Todos",
             perms = "qadmin.action.give_money_all",
             dropdown = {
-                { label = "Amount",  option = "text" },
+                { key = "amount", label = "Amount",  option = "text" },
                 {
+                    key = "money_type",
                     label = "Type",
                     option = "dropdown",
                     data = {
@@ -466,7 +478,7 @@ return {
                         { label = "Cripto", value = "crypto" },
                     },
                 },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:GiveMoneyAll" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:GiveMoneyAll" },
             },
         },
 
@@ -474,9 +486,10 @@ return {
             label = "Remover Dinheiro",
             perms = "qadmin.action.remove_money",
             dropdown = {
-                { label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Amount", option = "text" },
+                { key = "player", label = "Player", option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "amount", label = "Amount", option = "text" },
                 {
+                    key = "money_type",
                     label = "Type",
                     option = "dropdown",
                     data = {
@@ -484,7 +497,7 @@ return {
                         { label = "Banco", value = "bank" },
                     },
                 },
-                { label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:TakeMoney" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "server", event = "mri_Qadmin:server:TakeMoney" },
             },
         },
 
@@ -492,10 +505,10 @@ return {
             label = "Dar Item",
             perms = "qadmin.action.give_item",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Item",    option = "dropdown", data = "items", valueField = "item", labelField = "name" },
-                { label = "Amount",  option = "text" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:GiveItem" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "item", label = "Item",    option = "dropdown", data = "items", valueField = "item", labelField = "name" },
+                { key = "amount", label = "Amount",  option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:GiveItem" },
             },
         },
 
@@ -503,9 +516,9 @@ return {
             label = "Dar Item para Todos",
             perms = "qadmin.action.give_item_all",
             dropdown = {
-                { label = "Item",    option = "dropdown", data = "items", valueField = "item", labelField = "name" },
-                { label = "Amount",  option = "text" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:GiveItemAll" },
+                { key = "item", label = "Item",    option = "dropdown", data = "items", valueField = "item", labelField = "name" },
+                { key = "amount", label = "Amount",  option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:GiveItemAll" },
             },
         },
 
@@ -513,8 +526,8 @@ return {
             label = "Gerar Veículo",
             perms = "qadmin.action.spawn_vehicle",
             dropdown = {
-                { label = "Vehicle", option = "dropdown", data = "vehicles", valueField = "model", labelField = "name" },
-                { label = "Confirmar", option = "button",   type = "client",  event = "mri_Qadmin:client:SpawnVehicle" },
+                { key = "vehicle", label = "Vehicle", option = "dropdown", data = "vehicles", valueField = "model", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "client",  event = "mri_Qadmin:client:SpawnVehicle" },
             },
         },
 
@@ -529,8 +542,8 @@ return {
             label = "Consertar Veículo para jogador",
             perms = "qadmin.action.fix_vehicle_for",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:FixVehFor" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:FixVehFor" },
             },
         },
 
@@ -538,8 +551,8 @@ return {
             label = "Espectar Jogador",
             perms = "qadmin.action.spectate_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:SpectateTarget" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:SpectateTarget" },
             },
         },
 
@@ -547,8 +560,8 @@ return {
             label = "Teleportar para Jogador",
             perms = "qadmin.action.teleport_to_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:TeleportToPlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:TeleportToPlayer" },
             },
         },
 
@@ -556,8 +569,8 @@ return {
             label = "Teleportar para Coordenadas",
             perms = "qadmin.action.teleport_to_coords",
             dropdown = {
-                { label = "Coordenadas",  option = "text" },
-                { label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:TeleportToCoords" },
+                { key = "coords", label = "Coordenadas",  option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button", type = "client", event = "mri_Qadmin:client:TeleportToCoords" },
             },
         },
 
@@ -565,8 +578,8 @@ return {
             label = "Teleportar para Localização",
             perms = "qadmin.action.teleport_to_location",
             dropdown = {
-                { label = "Location", option = "dropdown", data = "locations" },
-                { label = "Confirmar",  option = "button",   type = "client",   event = "mri_Qadmin:client:TeleportToLocation" },
+                { key = "location", label = "Location", option = "dropdown", data = "locations" },
+                { key = "confirm", label = "Confirmar",  option = "button",   type = "client",   event = "mri_Qadmin:client:TeleportToLocation" },
             },
         },
 
@@ -616,8 +629,8 @@ return {
             label = "Ativar/Desativar Algemas",
             perms = "qadmin.action.toggle_cuffs",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:CuffPlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:CuffPlayer" },
             },
         },
 
@@ -632,9 +645,9 @@ return {
             label = "Alertar Jogador",
             perms = "qadmin.action.warn_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Reason",  option = "text" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:WarnPlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "reason", label = "Reason",  option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:WarnPlayer" },
             },
         },
 
@@ -649,9 +662,9 @@ return {
             label = "Expulsar Jogador",
             perms = "qadmin.action.kick_player",
             dropdown = {
-                { label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
-                { label = "Reason",  option = "text" },
-                { label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:KickPlayer" },
+                { key = "player", label = "Player",  option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "reason", label = "Reason",  option = "text" },
+                { key = "confirm", label = "Confirmar", option = "button",   type = "server", event = "mri_Qadmin:server:KickPlayer" },
             },
         },
 
@@ -659,8 +672,9 @@ return {
             label = "Tocar Som",
             perms = "qadmin.action.play_sound",
             dropdown = {
-                { label = "Player",     option = "dropdown", data = "players", valueField = "id", labelField = "name" },
+                { key = "player", label = "Player",     option = "dropdown", data = "players", valueField = "id", labelField = "name" },
                 {
+                    key = "sound",
                     label = "Sound",
                     option = "dropdown",
                     data = {
@@ -669,7 +683,7 @@ return {
                         { label = "Chave de Ar", value = "airwrench" },
                     },
                 },
-                { label = "Tocar Som", option = "button",   type = "client", event = "mri_Qadmin:client:PlaySound" },
+                { key = "play", label = "Tocar Som", option = "button",   type = "client", event = "mri_Qadmin:client:PlaySound" },
             },
         },
 

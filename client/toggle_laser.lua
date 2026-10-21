@@ -138,6 +138,7 @@ end
 RegisterNetEvent('mri_Qadmin:client:ToggleLaser', function()
     local wasActive = activeLaser
     activeLaser = not activeLaser
+    SetSelfState('laser', activeLaser)
     TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'actions', 'info',
         activeLaser and 'audit.dev_laser_on' or 'audit.dev_laser_off', {})
 

@@ -93,6 +93,11 @@ RegisterNetEvent('mri_Qadmin:server:delete_cid', function(_, selectedData)
 end)
 
 
+local function banNotice(name, banTime, reason)
+    if banTime >= 2147483647 then return locale("notifications.playerbanned_perm", name, reason) end
+    return locale("notifications.playerbanned_until", name, os.date('%d/%m/%Y %H:%M', banTime), reason)
+end
+
 -- Ban Player
 RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.ban_player') then return end
@@ -142,7 +147,7 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
                 timeTable['day'] ..
                 '/' .. timeTable['month'] .. '/' .. timeTable['year'] .. ' ' .. timeTable['hour'] .. ':' .. timeTable['min'])
         end
-        QBCore.Functions.Notify(source, locale("notifications.playerbanned", GetPlayerName(player), banTime, reason), 'success', 7500)
+        QBCore.Functions.Notify(source, banNotice(GetPlayerName(player), banTime, reason), 'success', 7500)
         local logData = GetTargetData(player)
         logData.reason = reason
         logData.duration = duration
@@ -169,7 +174,7 @@ RegisterNetEvent('mri_Qadmin:server:BanPlayer', function(actionKey, selectedData
         MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
             { name, licenseVal, discord or "", "0.0.0.0", reason, banTime, GetPlayerName(source) })
 
-        QBCore.Functions.Notify(source, locale("notifications.playerbanned", name, banTime, reason), 'success', 7500)
+        QBCore.Functions.Notify(source, banNotice(name, banTime, reason), 'success', 7500)
         AddLog(source, 'mri_Qadmin', 'bans', 'warn', locale('audit.player_banned_offline', name), { reason = reason, duration = duration, name = name, license = licenseVal })
     end
 
@@ -221,15 +226,14 @@ end)
 RegisterNetEvent('mri_Qadmin:server:WarnPlayer', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.warn_player') then return end
     local targetId = tonumber(GetValue(selectedData, "Player"))
+    if targetId and not CheckTargetable(source, targetId) then return end
     local target = targetId and QBCore.Functions.GetPlayer(targetId)
     local reason = tostring(GetValue(selectedData, "Reason") or "")
     local sender = QBCore.Functions.GetPlayer(source)
     local warnId = 'WARN-' .. math.random(1111, 9999)
     if target ~= nil then
-        QBCore.Functions.Notify(target.PlayerData.source,
-            locale("notifications.warned") .. ", por: " .. locale("notifications.reason") .. " " .. reason, 'inform', 60000)
-        QBCore.Functions.Notify(source,
-            locale("notifications.warngiven") .. GetPlayerName(target.PlayerData.source) .. ", por: " .. reason)
+        QBCore.Functions.Notify(target.PlayerData.source, locale("notifications.warned_reason", reason), 'inform', 60000)
+        QBCore.Functions.Notify(source, locale("notifications.warn_given", GetPlayerName(target.PlayerData.source), reason), 'success')
         local warnLogData = GetTargetData(target.PlayerData.source)
         warnLogData.reason = reason
         warnLogData.warnId = warnId
@@ -252,7 +256,7 @@ RegisterNetEvent('mri_Qadmin:server:KickPlayer', function(_, selectedData)
     local playerVal = tonumber(GetValue(selectedData, "Player"))
     if not CheckTargetable(src, playerVal) then return end
     local target = QBCore.Functions.GetPlayer(playerVal)
-    local reason = GetValue(selectedData, "Reason")
+    local reason = tostring(GetValue(selectedData, "Reason") or "")
 
     if not target then
         QBCore.Functions.Notify(src, locale("notifications.not_online"), 'error', 7500)
@@ -296,21 +300,21 @@ RegisterNetEvent('mri_Qadmin:server:verifyPlayer', function(actionKey, selectedD
 			Player.Functions.SetMetaData("verified_by", nil)
 		end
 
-		local message = newState and "Jogador marcado como verificado." or "Verificação removida do jogador."
-		TriggerClientEvent('QBCore:Notify', src, message, newState and "success" or "error", 5000)
+		TriggerClientEvent('QBCore:Notify', src, locale(newState and 'notifications.verified_marked' or 'notifications.verified_removed'), newState and "success" or "error", 5000)
 
 		-- Also notify the target player
 		TriggerClientEvent('QBCore:Notify', playerId, locale(newState and 'notifications.verified_on' or 'notifications.verified_off'), "primary", 5000)
 		AddLog(src, 'mri_Qadmin', 'players', 'info', locale(newState and 'audit.player_verified' or 'audit.player_unverified', GetPlayerName(playerId) or playerId), { target = playerId })
 
-		-- Broadcast update to everyone so all admins see it immediately
 		local ped = GetPlayerPed(playerId)
-		TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', -1, {
-			id = playerId,
-			health = GetEntityHealth(ped),
-			armor = GetPedArmour(ped),
-			metadata = Player.PlayerData.metadata
-		})
+		for _, adminId in ipairs(GetAdminPlayers()) do
+			TriggerClientEvent('mri_Qadmin:client:UpdatePlayerVitals', adminId, {
+				id = playerId,
+				health = GetEntityHealth(ped),
+				armor = GetPedArmour(ped),
+				metadata = Player.PlayerData.metadata
+			})
+		end
 
         TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 	else
@@ -446,6 +450,13 @@ local function formatPlayerMoney(Player)
     return moneyArr
 end
 
+function BroadcastPlayerMoney(id, Player)
+    local payload = { id = id, money = formatPlayerMoney(Player) }
+    for _, adminId in ipairs(GetAdminPlayers()) do
+        TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', adminId, payload)
+    end
+end
+
 -- Give Money
 RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(_, selectedData)
     if not CheckPerms(source, 'qadmin.action.give_money') then return end
@@ -477,10 +488,7 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoney', function(_, selectedData)
     moneyLogData.type = moneyType
     AddLog(src, 'mri_Qadmin', 'money', 'info', locale('audit.money_given', amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), moneyLogData)
 
-    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
-        id = tonumber(target),
-        money = formatPlayerMoney(Player)
-    })
+    BroadcastPlayerMoney(tonumber(target), Player)
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -520,15 +528,11 @@ RegisterNetEvent('mri_Qadmin:server:GiveMoneyAll', function(_, selectedData)
         local Player = QBCore.Functions.GetPlayer(tonumber(v))
         if Player then
             Player.Functions.AddMoney(moneyType, amount)
-            QBCore.Functions.Notify(src,
-                locale((moneyType == "crypto" and "notifications.give_money_all_crypto" or "notifications.give_money_all"), amount), "success")
-
-            TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
-                id = tonumber(v),
-                money = formatPlayerMoney(Player)
-            })
+            BroadcastPlayerMoney(tonumber(v), Player)
         end
     end
+    QBCore.Functions.Notify(src,
+        locale((moneyType == "crypto" and "notifications.give_money_all_crypto" or "notifications.give_money_all"), amount), "success")
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -563,17 +567,14 @@ RegisterNetEvent('mri_Qadmin:server:TakeMoney', function(_, selectedData)
     Player.Functions.RemoveMoney(moneyType, amount, "state-fees")
 
     QBCore.Functions.Notify(src,
-        locale((moneyType == "crypto" and "notifications.take_money_crypto" or "notifications.take_money"), amount .. "R$",
+        locale((moneyType == "crypto" and "notifications.take_money_crypto" or "notifications.take_money"), amount,
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
     local takeLogData = GetTargetData(tonumber(target))
     takeLogData.amount = amount
     takeLogData.type = moneyType
     AddLog(src, 'mri_Qadmin', 'money', 'warn', locale('audit.money_removed', amount, moneyType, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), takeLogData)
 
-    TriggerClientEvent('mri_Qadmin:client:UpdatePlayerMoney', -1, {
-        id = tonumber(target),
-        money = formatPlayerMoney(Player)
-    })
+    BroadcastPlayerMoney(tonumber(target), Player)
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)
 end)
 
@@ -608,10 +609,10 @@ RegisterNetEvent('mri_Qadmin:server:ToggleBlackout', function(_)
     exports["qb-weathersync"]:setBlackout(Blackout)
 
     if Blackout then
-        TriggerClientEvent('QBCore:Notify', src, locale("notifications.blackout", "Ativado"), 'primary')
+        TriggerClientEvent('QBCore:Notify', src, locale("notifications.blackout_on"), 'primary')
         AddLog(src, 'mri_Qadmin', 'server', 'warn', locale('audit.blackout_on'), {})
     else
-        TriggerClientEvent('QBCore:Notify', src, locale("notifications.blackout", "Desativado"), 'primary')
+        TriggerClientEvent('QBCore:Notify', src, locale("notifications.blackout_off"), 'primary')
         AddLog(src, 'mri_Qadmin', 'server', 'info', locale('audit.blackout_off'), {})
     end
 end)
@@ -665,10 +666,7 @@ end)
 -- Set Ped
 RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
     local src = source
-    if not CheckPerms(source, 'qadmin.action.set_ped') then
-        QBCore.Functions.Notify(src, locale("notifications.no_perms"), "error", 5000)
-        return
-    end
+    if not CheckPerms(source, 'qadmin.action.set_ped') then return end
 
     local ped = GetValue(selectedData, "Ped Models") -- Assuming label as default if table
     local tsrc = tonumber(GetValue(selectedData, "Player"))
@@ -676,7 +674,7 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
     local Player = QBCore.Functions.GetPlayer(tsrc)
 
     if not Player then
-        QBCore.Functions.Notify(locale("notifications.not_online"), "error", 5000)
+        QBCore.Functions.Notify(src, locale("notifications.not_online"), "error", 5000)
         return
     end
 
@@ -893,7 +891,7 @@ RegisterNetEvent('mri_Qadmin:server:Announce', function(message)
     TriggerClientEvent('chat:addMessage', -1, {
         color = { 255, 0, 0},
         multiline = true,
-        args = {"ANÚNCIO", message}
+        args = { locale("notifications.announce_title"), message }
     })
     AddLog(src, 'mri_Qadmin', 'server', 'info', locale('audit.announcement', message), { message = message })
 end)

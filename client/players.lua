@@ -37,6 +37,8 @@ local function ToggleBlipsAndNames(isBlips)
         local message = ShowNames and "notifications.names_activated" or "notifications.names_deactivated"
         QBCore.Functions.Notify(locale(message), ShowNames and "success" or "error")
     end
+    SetSelfState('blips', ShowBlips)
+    SetSelfState('names', ShowNames)
     if not ShowNames or not ShowBlips then
         removeNameAndBlips()
     end
@@ -200,10 +202,9 @@ RegisterNetEvent('mri_Qadmin:client:SetGang', function(actionKey, selectedData)
 end)
 
 -- Mute Player
-RegisterNetEvent("mri_Qadmin:client:MutePlayer", function(actionKey, selectedData)
-    local data = CheckDataFromKey(actionKey)
-    if not data or not CheckPerms(data.perms) then return end
-    local playerId = selectedData["Player"].value
+RegisterNetEvent("mri_Qadmin:client:MutePlayer", function(_, selectedData)
+    if not CheckPerms('qadmin.action.mute_player') then return end
+    local playerId = selectedData and selectedData.Player and selectedData.Player.value
     if not playerId then return end
     exports["pma-voice"]:toggleMutePlayer(playerId)
 end)

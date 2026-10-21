@@ -624,16 +624,6 @@ RegisterNUICallback("mri_Qadmin:callback:GetMyPermissions", function(_, cb)
     cb(perms or {})
 end)
 
-RegisterNUICallback("mri_Qadmin:callback:GetPrincipals", function(_, cb)
-    local principals = lib.callback.await('mri_Qadmin:callback:GetPrincipals')
-    cb(principals or {})
-end)
-
-RegisterNUICallback("mri_Qadmin:callback:GetAces", function(_, cb)
-    local aces = lib.callback.await('mri_Qadmin:callback:GetAces')
-    cb(aces or {})
-end)
-
 RegisterNUICallback("seed_pages", function(_, cb)
     TriggerServerEvent('mri_Qadmin:server:SeedAces')
     cb('ok')

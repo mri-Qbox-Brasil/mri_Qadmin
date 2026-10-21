@@ -37,6 +37,7 @@ RegisterNetEvent('mri_Qadmin:requestSpectate', function(target, _)
         target = target,
         targetPed = 0
     }
+    SetSelfState('spectating', target)
 
     -- Immediate Safety & Invisibility
     SetEntityVisible(cache.ped, false, 0)
@@ -62,7 +63,10 @@ RegisterNetEvent('mri_Qadmin:cancelSpectate', function()
         buttonsScaleform = nil
     end
 
+    local wasOn = spectateInfo.toggled
     spectateInfo = { toggled = false, target = 0, targetPed = 0 }
+    SetSelfState('spectating', false)
+    if wasOn then TriggerServerEvent('mri_Qadmin:server:SpectateEnded') end
 
     if oldPos then
         RequestCollisionAtCoord(oldPos.x, oldPos.y, oldPos.z)

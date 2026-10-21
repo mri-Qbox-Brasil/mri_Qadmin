@@ -206,7 +206,8 @@ function CheckAlreadyPlate(plate)
 end
 
 function GeneratePlate()
-    local plate = string.upper(lib.string.random('AA AA 000')) -- Example format
+    -- GTA plates hold 8 characters; '0' is a literal in lib.string.random, '1' is a digit.
+    local plate = lib.string.random('11AAA111')
     if CheckAlreadyPlate(plate) then
         return GeneratePlate()
     end

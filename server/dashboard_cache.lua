@@ -35,9 +35,9 @@ local TOP_LIMIT   = 25               -- linhas do ranking de patrimônio
 -- no payload, então a UI só renderiza — não replica os limites.
 local WEALTH_BUCKETS = {
     { label = '<10k',     min = nil,        max = 10000 },
-    { label = '10–100k',  min = 10000,      max = 100000 },
-    { label = '100k–1M',  min = 100000,     max = 1000000 },
-    { label = '1–10M',    min = 1000000,    max = 10000000 },
+    { label = '10-100k',  min = 10000,      max = 100000 },
+    { label = '100k-1M',  min = 100000,     max = 1000000 },
+    { label = '1-10M',    min = 1000000,    max = 10000000 },
     { label = '10M+',     min = 10000000,   max = nil },
 }
 

@@ -149,7 +149,7 @@ local function cfRequest(method, path, body)
     local s = cfSecrets()
     local appId     = s.CloudflareAppId     or ''
     local appSecret = s.CloudflareAppSecret or ''
-    if appId == '' then return { error = 'CF credentials missing — check server/server_secrets.json' } end
+    if appId == '' then return { error = 'CF credentials missing, check server/server_secrets.json' } end
 
     local p = promise.new()
     local url = CF_BASE .. appId .. path
@@ -171,7 +171,7 @@ local function cfRequest(method, path, body)
             else p:resolve({ raw = responseBody })
             end
         elseif code == 0 then
-            p:resolve({ error = 'CF API: connection failed (code 0) — check server outbound HTTPS access' })
+            p:resolve({ error = 'CF API: connection failed (code 0), check server outbound HTTPS access' })
         else
             p:resolve({ error = ('CF API error %d: %s'):format(code, responseBody or '') })
         end

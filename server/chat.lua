@@ -99,6 +99,8 @@ local function relayToDiscord(src, fullname, role, message)
     })
 end
 local MAX_MENTIONS = 20
+-- History kept in memory and sent on open; the table keeps everything.
+local HISTORY_LIMIT = 200
 local CHAT_MIN_INTERVAL_MS = 750
 
 RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, mentions)
@@ -123,6 +125,7 @@ RegisterNetEvent("mri_Qadmin:server:sendMessage", function(message, _unused, men
 
     local newMsg = { message = message, citizenid = citizenid, fullname = fullname, role = role, createdAt = createdAt }
     messages[#messages + 1] = newMsg
+    if #messages > HISTORY_LIMIT then table.remove(messages, 1) end
 
     MySQL.insert.await('INSERT INTO mri_qadmin_chat (message, citizenid, fullname, role) VALUES (?, ?, ?, ?)', {
         message, citizenid, fullname, role
@@ -218,5 +221,5 @@ lib.callback.register("mri_Qadmin:callback:GetMessages", function(source)
 end)
 
 AddEventHandler('mri_Qadmin:db:ready', function()
-    messages = MySQL.query.await("SELECT * FROM mri_qadmin_chat", {}) or {}
+    messages = MySQL.query.await("SELECT * FROM (SELECT * FROM mri_qadmin_chat ORDER BY createdAt DESC LIMIT ?) t ORDER BY createdAt ASC", { HISTORY_LIMIT }) or {}
 end)

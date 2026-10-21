@@ -5,7 +5,7 @@ use_experimental_fxv2_oal "yes"
 
 description "Admin Panel for QbCore and Qbox"
 author "MRI Qbox Team"
-version "1.38.0"
+version "1.39.0"
 
 ox_lib "locale"
 
@@ -54,10 +54,12 @@ server_scripts {
 client_scripts {
     "client/main.lua",
     "client/utils.lua",
+    "client/dock.lua",
     "client/data.lua",
     "client/chat.lua",
     "client/inventory.lua",
     "client/misc.lua",
+    "client/coords.lua",
     "client/notify.lua",
     "client/noclip.lua",
     "client/players.lua",

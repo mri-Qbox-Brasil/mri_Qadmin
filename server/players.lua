@@ -579,7 +579,7 @@ end)
 RegisterNetEvent("mri_Qadmin:server:RemoveStress", function(dataKey, selectedData)
     if not CheckPerms(source, 'qadmin.action.remove_stress') then return end
     local src = source
-    local playerOpt = GetValue(selectedData, 'Player (Optional)')
+    local playerOpt = GetValue(selectedData, 'Player')
     local targetId = playerOpt and tonumber(playerOpt) or src
     if not CheckTargetable(src, tonumber(targetId)) then return end
     local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))

@@ -125,6 +125,7 @@ Boa parte desses campos também é editável pela aba **Configurações** do pai
 | `/nc` | `qadmin.action.noclip` | Alterna o noclip |
 | `/staff` | `qadmin.page.permissions` | Abre o painel em Permissões |
 | `/staff <id> add <cargo>` / `/staff <id> rem` | `qadmin.page.permissions` | Dá ou tira um cargo de staff (`admin`, `mod`, `support`) pelos grupos (ver [Cargos de staff](#cargos-de-staff)) |
+| `/cds`, `/coords` | `qadmin.action.copy_coords` ou `qadmin.action.toggle_coords` | Abre a tela de coordenadas: copia vec2, vec3, vec4, heading, tabela Lua, JSON, veículo e câmera num clique, e marca pontos mirando (E) |
 | `/vector2`, `/vec2` | `qadmin.action.toggle_coords` | Copia a posição atual como `vector2` |
 | `/vector3`, `/vec3` | `qadmin.action.toggle_coords` | Copia a posição atual como `vector3` |
 | `/vector4`, `/vec4` | `qadmin.action.toggle_coords` | Copia a posição atual como `vector4` (com heading) |

@@ -132,9 +132,8 @@ RegisterNetEvent('mri_Qadmin:client:FixVehicle', function(data)
 end)
 
 -- Refuel Vehicle
-RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function(data)
-    local actionData = CheckDataFromKey(data)
-    if not actionData or not CheckPerms(actionData.perms) then return end
+RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function()
+    if not CheckPerms('qadmin.action.refuel_vehicle') then return end
 
     if cache.vehicle then
         if Config.Fuel == "ox_fuel" then

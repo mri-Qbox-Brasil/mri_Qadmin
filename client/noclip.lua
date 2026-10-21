@@ -243,6 +243,7 @@ end
 -- Toggle Noclip
 local function ToggleNoclip()
     noclip = not noclip
+    SetSelfState('noclip', noclip)
 
     entity = cache.vehicle or cache.ped
 
