@@ -263,8 +263,7 @@
             "fivem_license": "LICENÇA FIVEM",
             "discord_id": "ID DISCORD",
             "license": "LICENÇA",
-            "license2": "LICENÇA 2",
-            "no_personal_vehicles": "Nenhum veículo pessoal encontrado."
+            "license2": "LICENÇA 2"
         },
         "sections": {
             "moderation": "Moderação",
@@ -622,7 +621,6 @@
         "kick": "Kickar %s?",
         "unban": "Desbanir %s?",
         "inventory_clear": "Tem certeza que deseja limpar o inventário de %s?",
-        "vehicle_delete": "Deletar veículo com placa %s? Esta ação é permanente.",
         "job_fire": "Demitir %s do emprego %s?",
         "gang_fire": "Remover %s da gangue %s?",
         "character_delete": "Deletar permanentemente o personagem de %s? Esta ação é irreversível."

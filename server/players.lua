@@ -140,7 +140,6 @@ local function getPlayers(page, pageSize, search)
             end)(),
             health = GetEntityHealth(GetPlayerPed(k)),
             armor = GetPedArmour(GetPlayerPed(k)),
-            vehicles = {},
             metadata = playerData.metadata or {},
             charinfo = charinfo,
             last_loggedout = playerData.lastLoggedOut,
@@ -269,7 +268,6 @@ local function getPlayers(page, pageSize, search)
                     end)(),
                     phone = charinfo.phone or "Desconhecido",
                     birthdate = charinfo.birthdate or "Desconhecido",
-                    vehicles = {},
                     metadata = player.metadata and json.decode(player.metadata) or {},
                     charinfo = charinfo,
                     citizenid = player.citizenid or "N/A",
@@ -282,46 +280,7 @@ local function getPlayers(page, pageSize, search)
         end
     end
 
-    -- 3. Populate Vehicles for the results (Batch query)
-    if #resultPlayers > 0 then
-        local targetCids = {}
-        local cidMap = {}
-        for i, p in ipairs(resultPlayers) do
-            if p.citizenid and p.citizenid ~= "N/A" then
-                targetCids[#targetCids + 1] = p.citizenid
-                cidMap[p.citizenid] = i
-            end
-            p.vehicles = {}
-        end
-
-        if #targetCids > 0 then
-            local vResults = MySQL.query.await('SELECT citizenid, vehicle, plate, fuel, engine, body FROM player_vehicles WHERE citizenid IN (?)', { targetCids })
-            if vResults then
-                for _, v in ipairs(vResults) do
-                    local pIndex = cidMap[v.citizenid]
-                    if pIndex then
-                        local vData = QBCore.Shared.Vehicles[v.vehicle] or {
-                            name = ("Desconhecido (%s)"):format(v.vehicle or "N/A"),
-                            brand = "N/A",
-                            model = v.vehicle or "N/A"
-                        }
-                        table.insert(resultPlayers[pIndex].vehicles, {
-                            cid = v.citizenid,
-                            label = vData.name,
-                            brand = vData.brand,
-                            model = vData.model,
-                            plate = v.plate,
-                            fuel = v.fuel,
-                            engine = v.engine,
-                            body = v.body
-                        })
-                    end
-                end
-            end
-        end
-    end
-
-    -- 4. Batch ban lookup for all players
+    -- 3. Batch ban lookup for all players
     if #resultPlayers > 0 then
         local targetLicenses = {}
         local licenseToIdx = {}

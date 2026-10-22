@@ -342,19 +342,21 @@ RegisterNetEvent('mri_Qadmin:server:ChangePlate', function(newPlate, currentPlat
     AddLog(src, 'mri_Qadmin', 'vehicles', 'info', locale('audit.plate_changed', currentPlate, newPlate), { oldPlate = currentPlate, newPlate = newPlate })
 end)
 
--- Owned vehicles of an online player, for the garage panel of the Vehicles page.
-lib.callback.register('mri_Qadmin:callback:GetPlayerVehicles', function(src, targetId)
-    if not HasPerms(src, 'qadmin.action.manage_vehicles') then return nil end
-    local Player = QBCore.Functions.GetPlayer(tonumber(targetId))
-    if not Player then return nil end
-    return MySQL.query.await('SELECT vehicle, plate, garage, state, fuel, engine, body FROM player_vehicles WHERE citizenid = ? ORDER BY plate', { Player.PlayerData.citizenid }) or {}
+-- Owned vehicles of a character (online or not): the one list behind the Vehicles garage panel and the Players vehicles tab.
+lib.callback.register('mri_Qadmin:callback:GetPlayerVehicles', function(src, citizenid)
+    if not HasPerms(src, 'qadmin.action.manage_vehicles') and not HasPerms(src, 'qadmin.page.players') then return nil end
+    if type(citizenid) ~= 'string' or citizenid == '' then return nil end
+    return MySQL.query.await('SELECT vehicle, plate, garage, state, fuel, engine, body FROM player_vehicles WHERE citizenid = ? ORDER BY plate', { citizenid }) or {}
 end)
 
+-- Model and saved mods of an owned car, so the admin spawns it as the owner has it.
 lib.callback.register('mri_Qadmin:server:GetVehicleByPlate', function(src, plate)
-    if not CheckPerms(src, 'qadmin.page.vehicles') then return nil end
-    local result = MySQL.query.await('SELECT vehicle FROM player_vehicles WHERE plate = ?', { plate })
-    local veh = result[1] and result[1].vehicle or {}
-    return veh
+    if not CheckPerms(src, 'qadmin.action.spawn_vehicle') then return nil end
+    if type(plate) ~= 'string' or plate == '' then return nil end
+    local row = MySQL.single.await('SELECT vehicle, mods FROM player_vehicles WHERE plate = ?', { plate })
+    if not row then return nil end
+    local ok, mods = pcall(json.decode, row.mods or '')
+    return { model = row.vehicle, mods = ok and type(mods) == 'table' and mods or {} }
 end)
 
 -- Fix Vehicle for player

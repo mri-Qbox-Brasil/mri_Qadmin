@@ -24,45 +24,48 @@ RegisterNetEvent('mri_Qadmin:client:Admincar', function(_data)
     end
 end)
 
--- Spawn Vehicle
-RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
-    if not CheckPerms('qadmin.action.spawn_vehicle') then return end
-
-    local selectedVehicle = selectedData["Vehicle"].value
-    local hash = GetHashKey(selectedVehicle)
-
-    if not IsModelValid(hash) then return end
-
-    lib.requestModel(hash)
-
+-- One spawn path for catalog and owned cars: created on the server, since sv_entityLockdown refuses client network entities.
+local function SpawnAdminVehicle(model, mods, plate)
     if cache.vehicle then
         DeleteVehicle(cache.vehicle)
     end
 
     local coords = GetEntityCoords(cache.ped)
-    local heading = GetEntityHeading(cache.ped)
-
-    -- Type safety check for coordinates
-    if type(coords.x) ~= "number" or type(coords.y) ~= "number" or type(coords.z) ~= "number" then
-        return
-    end
-
     local groundFound, groundZ = GetGroundSafe(coords.x, coords.y, coords.z + 100.0)
-    local spawnZ = groundFound and groundZ + 0.5 or coords.z + 0.5
-
-    local vehicle = CreateVehicle(hash, coords.x, coords.y, spawnZ, heading, true, false)
-    TaskWarpPedIntoVehicle(cache.ped, vehicle, -1)
+    local spawnAt = vec4(coords.x, coords.y, groundFound and groundZ + 0.5 or coords.z + 0.5, GetEntityHeading(cache.ped))
     ToggleUI(false)
 
-    Wait(100)
+    QBCore.Functions.TriggerCallback('QBCore:Server:SpawnVehicle', function(netId)
+        local veh = lib.waitFor(function()
+            if NetworkDoesEntityExistWithNetworkId(netId) then return NetToVeh(netId) end
+        end, nil, 5000)
+        TaskWarpPedIntoVehicle(cache.ped, veh, -1)
 
-    if Config.Fuel == "ox_fuel" then
-        Entity(vehicle).state.fuel = 100.0
-    else
-        exports[Config.Fuel]:SetFuel(vehicle, 100.0)
-    end
+        if mods then lib.setVehicleProperties(veh, mods) end
+        -- The plate column is the truth: a plate change does not rewrite mods.plate.
+        if plate then SetVehicleNumberPlateText(veh, plate) end
+        SetVehicleFixed(veh)
+        SetVehicleEngineHealth(veh, 1000.0)
+        SetVehicleBodyHealth(veh, 1000.0)
 
-    TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(vehicle))
+        if Config.Fuel == "ox_fuel" then
+            Entity(veh).state.fuel = 100.0
+        else
+            exports[Config.Fuel]:SetFuel(veh, 100.0)
+        end
+
+        TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(veh))
+    end, model, spawnAt, true)
+end
+
+-- Spawn Vehicle
+RegisterNetEvent('mri_Qadmin:client:SpawnVehicle', function(_data, selectedData)
+    if not CheckPerms('qadmin.action.spawn_vehicle') then return end
+
+    local selectedVehicle = selectedData["Vehicle"].value
+    if not IsModelValid(GetHashKey(selectedVehicle)) then return end
+
+    SpawnAdminVehicle(selectedVehicle)
     TriggerServerEvent('mri_Qadmin:server:LogClientAction', 'vehicles', 'info', 'audit.vehicle_spawn_temp', {}, { selectedVehicle })
 end)
 
@@ -149,7 +152,7 @@ RegisterNetEvent('mri_Qadmin:client:RefuelVehicle', function()
 end)
 
 RegisterNUICallback('mri_Qadmin:callback:GetPlayerVehicles', function(data, cb)
-    cb(lib.callback.await('mri_Qadmin:callback:GetPlayerVehicles', false, data and data.targetId) or false)
+    cb(lib.callback.await('mri_Qadmin:callback:GetPlayerVehicles', false, data and data.citizenid) or false)
 end)
 
 -- Plate of a garage car, straight in the database (the panel is not inside the car).
@@ -277,39 +280,13 @@ RegisterNetEvent("mri_Qadmin:client:SpawnPersonalVehicle", function(_data, selec
     if not CheckPerms('qadmin.action.spawn_vehicle') then return end
 
     local plate = selectedData['VehiclePlate'].value
-    local ped = PlayerPedId()
-    local coords = QBCore.Functions.GetCoords(ped)
-    -- local cid = QBCore.Functions.GetPlayerData().citizenid
-
-    -- Fetch the model synchronously so it is reliably available before spawning.
-    local targetVehModel = lib.callback.await('mri_Qadmin:server:GetVehicleByPlate', false, plate)
-
-    -- Server returns an empty table when the plate has no matching vehicle.
-    if type(targetVehModel) ~= 'string' or targetVehModel == '' then
+    local owned = lib.callback.await('mri_Qadmin:server:GetVehicleByPlate', false, plate)
+    if type(owned) ~= 'table' or type(owned.model) ~= 'string' or owned.model == '' then
         QBCore.Functions.Notify(locale('vehicle.messages.not_found', plate), 'error')
         return
     end
 
-    QBCore.Functions.TriggerCallback('QBCore:Server:SpawnVehicle', function(netId)
-        local veh = NetToVeh(netId)
-        local props = QBCore.Functions.GetVehicleProperties(veh)
-        SetEntityHeading(veh, coords.w)
-        TaskWarpPedIntoVehicle(ped, veh, -1)
-        SetVehicleModKit(veh, 0)
-        Wait(100)
-        QBCore.Functions.SetVehicleProperties(veh, props)
-        SetVehicleNumberPlateText(veh, plate)
-
-        if Config.Fuel == "ox_fuel" then
-            Entity(veh).state.fuel = 100.0
-        else
-            exports[Config.Fuel]:SetFuel(veh, 100.0)
-        end
-
-        TriggerEvent("vehiclekeys:client:SetOwner", plate)
-        TriggerEvent('iens:repaira', ped)
-        TriggerEvent('vehiclemod:client:fixEverything', ped)
-    end, targetVehModel, coords, true)
+    SpawnAdminVehicle(owned.model, owned.mods, plate)
 end)
 
 
