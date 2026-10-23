@@ -44,6 +44,28 @@ function SetDataCache(data)
 end
 _G.SetDataCache = SetDataCache
 
+-- qbx_core broadcasts every runtime group change (mri_Qbossmenu creates and edits through it).
+local function onGroupUpdate(groupType, name, group)
+    local list = Cache.groups and Cache.groups[groupType == 'gang' and 'gangs' or 'jobs']
+    if type(list) ~= 'table' or type(name) ~= 'string' then return end
+
+    for i = #list, 1, -1 do
+        if list[i].name == name then table.remove(list, i) end
+    end
+
+    local entry
+    if type(group) == 'table' then
+        entry = { name = name, label = group.label, type = groupType, grades = group.grades or {} }
+        list[#list + 1] = entry
+        table.sort(list, function(a, b) return (a.label or '') < (b.label or '') end)
+    end
+
+    SendNUIMessage({ action = 'groupChanged', data = { type = groupType, name = name, group = entry } })
+end
+
+RegisterNetEvent('qbx_core:client:onJobUpdate', function(name, job) onGroupUpdate('job', name, job) end)
+RegisterNetEvent('qbx_core:client:onGangUpdate', function(name, gang) onGroupUpdate('gang', name, gang) end)
+
 function HasInitialData()
     return Cache.permissionDefinitions ~= nil and #Cache.permissionDefinitions > 0
 end

@@ -2501,5 +2501,23 @@
             "mock_active": "Simulación activa",
             "simulator": "Simulador"
         }
+    },
+    "peds": {
+        "title": "Elegir ped",
+        "count": "{n} modelos",
+        "search": "Buscar por función, nombre o modelo (ej.: policía, médico, a_m_y_business_01)",
+        "empty": "Ningún modelo encontrado. Escribe el nombre del modelo para usar uno que no está en la lista.",
+        "pick": "Elegir ped",
+        "use_typed": "Usar \"{model}\"",
+        "close": "Cerrar",
+        "category": {
+            "all": "Todos",
+            "men": "Hombres",
+            "women": "Mujeres",
+            "jobs": "Profesiones",
+            "gangs": "Pandillas",
+            "characters": "Personajes",
+            "animals": "Animales"
+        }
     }
 }

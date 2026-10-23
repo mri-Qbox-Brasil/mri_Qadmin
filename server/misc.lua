@@ -678,6 +678,12 @@ RegisterNetEvent("mri_Qadmin:server:setPed", function(_, selectedData)
         return
     end
 
+    -- The panel also takes a typed model, so it is checked on the admin's client like /setped.
+    if not lib.callback.await('mri_Qadmin:client:isValidPed', src, ped) then
+        QBCore.Functions.Notify(src, locale("notifications.invalid_ped", tostring(ped)), "error", 5000)
+        return
+    end
+
     TriggerClientEvent("mri_Qadmin:client:setPed", Player.PlayerData.source, ped)
     AddLog(src, 'mri_Qadmin', 'players', 'info', locale('audit.ped_applied', ped, Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname), { target = tsrc, ped = ped })
     TriggerClientEvent('mri_Qadmin:client:RefreshPlayers', src)

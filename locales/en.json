@@ -2501,5 +2501,23 @@
             "mock_active": "Mock active",
             "simulator": "Simulator"
         }
+    },
+    "peds": {
+        "title": "Choose ped",
+        "count": "{n} models",
+        "search": "Search by role, name or model (e.g. cop, doctor, a_m_y_business_01)",
+        "empty": "No model found. Type the model name to use one that is not on the list.",
+        "pick": "Choose ped",
+        "use_typed": "Use \"{model}\"",
+        "close": "Close",
+        "category": {
+            "all": "All",
+            "men": "Men",
+            "women": "Women",
+            "jobs": "Jobs",
+            "gangs": "Gangs",
+            "characters": "Characters",
+            "animals": "Animals"
+        }
     }
 }
