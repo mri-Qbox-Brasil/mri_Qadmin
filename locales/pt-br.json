@@ -1891,9 +1891,11 @@
             "unfavorite": "Desafixar",
             "groups": {
                 "favorites": "Fixados",
-                "system": "Sistemas",
+                "access": "Grupos e acessos",
                 "world": "Mundo",
+                "characters": "Personagens",
                 "interface": "Interface",
+                "system": "Base",
                 "other": "Outros"
             }
         }

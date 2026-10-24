@@ -1891,9 +1891,11 @@
             "unfavorite": "Unpin",
             "groups": {
                 "favorites": "Pinned",
-                "system": "Systems",
+                "access": "Groups and access",
                 "world": "World",
+                "characters": "Characters",
                 "interface": "Interface",
+                "system": "Core",
                 "other": "Other"
             }
         }

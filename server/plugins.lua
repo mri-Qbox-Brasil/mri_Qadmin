@@ -73,6 +73,7 @@ local function registerPlugin(manifest)
         permDefs        = manifest.permDefs,
         description     = manifest.description,
         category        = manifest.category,
+        sidebar         = manifest.sidebar == true,
     }
 
     Debug('info', locale('plugins.logs.register.received', manifest.id))
