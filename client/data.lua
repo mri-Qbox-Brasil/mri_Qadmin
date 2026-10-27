@@ -18,6 +18,7 @@ function GetCoreData()
         permissionDefinitions = Cache.permissionDefinitions or {},
         categoryDefinitions = Cache.categoryDefinitions or {},
         vehicleImages = Config.VehicleImages,
+        itemImagePath = GetConvar('inventory:imagepath', 'nui://ox_inventory/web/images'),
         webrtcUrl = Config.WebRTCUrl,
         players = Cache.players and Cache.players.data or {},
         playersTotal = Cache.players and Cache.players.total or 0,

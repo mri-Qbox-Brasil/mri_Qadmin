@@ -74,6 +74,7 @@ local function registerPlugin(manifest)
         description     = manifest.description,
         category        = manifest.category,
         sidebar         = manifest.sidebar == true,
+        searchItems     = type(manifest.searchItems) == 'table' and manifest.searchItems or nil,
     }
 
     Debug('info', locale('plugins.logs.register.received', manifest.id))
