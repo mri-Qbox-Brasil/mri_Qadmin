@@ -98,7 +98,7 @@ local function LaserLoop()
             end
 
             if IsDisabledControlJustReleased(0, 26) then
-                lib.setClipboard(json.encode(objectData, {
+                CopyToClipboard(json.encode(objectData, {
                     indent = true
                 }))
             end

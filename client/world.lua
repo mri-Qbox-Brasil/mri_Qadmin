@@ -60,7 +60,7 @@ RegisterNetEvent('mri_Qadmin:client:copyToClipboard', function(srcData, selected
 
     -- Only copy when we actually built a value (avoid clipboarding nil).
     if string ~= nil then
-        lib.setClipboard(string)
+        CopyToClipboard(string)
     end
 
 end)

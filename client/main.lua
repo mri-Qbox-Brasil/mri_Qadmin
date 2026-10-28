@@ -186,10 +186,10 @@ RegisterNetEvent('ox_lib:uiConfigChanged', function(cfg)
     end
 end)
 
-RegisterNUICallback("setClipboard", function(data, cb)
-    lib.setClipboard(data.value)
-    cb("ok")
-end)
+-- ox_lib copies from its own unfocused frame, which CEF 144 refuses; the panel page copies instead.
+function CopyToClipboard(text)
+    SendNUIMessage({ action = "copyText", data = tostring(text) })
+end
 
 -- Event Handlers
 AddEventHandler("QBCore:Client:OnPlayerLoaded", function()

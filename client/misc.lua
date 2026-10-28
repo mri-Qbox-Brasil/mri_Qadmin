@@ -76,7 +76,7 @@ local function CopyCoords(dataType)
         message = locale('success.heading_copied')
     end
 
-    lib.setClipboard(clipboardText)
+    CopyToClipboard(clipboardText)
     QBCore.Functions.Notify(message, 'success')
 end
 
