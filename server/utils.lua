@@ -45,6 +45,8 @@ end
 function HasPerms(source, perms)
     Debug('debug', ('HasPerms Source: %s, Nodes: %s'):format(tostring(source), formatNodes(perms)))
     if not perms then return false end
+    -- Server console: player natives throw on source 0 ("Argument at index 0 was null").
+    if source == 0 then return true end
 
     local function checkNode(node)
         if not node then return false end

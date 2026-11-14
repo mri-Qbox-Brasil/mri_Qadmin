@@ -77,33 +77,40 @@ lib.addCommand('staff', {
 }, function(source, args)
     if not CheckPerms(source, 'qadmin.page.permissions') then return end
 
+    -- The server console has no screen: answers go to its output.
+    local function reply(message, nType)
+        if source == 0 then return print(message) end
+        QBCore.Functions.Notify(source, message, nType, 5000)
+    end
+
     if not args.id then
+        if source == 0 then return reply('Use: staff <id> add <cargo> ou staff <id> rem') end
         return TriggerClientEvent('mri_Qadmin:client:OpenUI', source, 'permissions')
     end
 
     local Player = QBCore.Functions.GetPlayer(args.id)
     if not Player then
-        return QBCore.Functions.Notify(source, locale("notifications.not_online"), "error", 5000)
+        return reply(locale("notifications.not_online"), "error")
     end
     if args.tipo ~= 'add' and args.tipo ~= 'rem' then
-        return QBCore.Functions.Notify(source, 'Use: /staff <id> add <cargo> ou /staff <id> rem', 'error', 5000)
+        return reply('Use: /staff <id> add <cargo> ou /staff <id> rem', 'error')
     end
     if args.tipo == 'add' and not args.cargo then
-        return QBCore.Functions.Notify(source, locale('notifications.staff_role_required'), 'error', 5000)
+        return reply(locale('notifications.staff_role_required'), 'error')
     end
 
     local citizenid = Player.PlayerData.citizenid
     local name = ('%s %s'):format(Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname)
     local groupId = SetStaffRole(citizenid, args.tipo == 'add' and args.cargo or nil)
     if groupId == false then
-        return QBCore.Functions.Notify(source, locale('notifications.invalid_staff_role'), 'error', 5000)
+        return reply(locale('notifications.invalid_staff_role'), 'error')
     end
 
     if args.tipo == 'add' then
-        QBCore.Functions.Notify(source, locale('notifications.staff_role_granted', args.cargo, name), 'success', 5000)
+        reply(locale('notifications.staff_role_granted', args.cargo, name), 'success')
         QBCore.Functions.Notify(args.id, locale('notifications.staff_role_received', args.cargo), 'success', 5000)
     else
-        QBCore.Functions.Notify(source, locale('notifications.staff_role_removed', name), 'success', 5000)
+        reply(locale('notifications.staff_role_removed', name), 'success')
         QBCore.Functions.Notify(args.id, locale('notifications.staff_role_removed_self'), 'primary', 5000)
     end
     AddLog(source, 'mri_Qadmin', 'permissions', 'warn', args.tipo == 'add' and locale('audit.staff_added', name, groupId, args.tipo) or locale('audit.staff_removed', name, args.tipo), { citizenid = citizenid, role = args.cargo, group = groupId })
